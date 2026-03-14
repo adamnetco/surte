@@ -2,10 +2,10 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { categories } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
-import { Drumstick, Cherry, Droplets, Flame, Croissant, ChevronRight } from "lucide-react";
+import { Drumstick, Cherry, Droplets, Flame, Croissant, ChevronRight, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 
-const iconMap: Record<string, React.FC<{ size?: number; className?: string }>> = {
+const iconMap: Record<string, LucideIcon> = {
   Drumstick, Cherry, Droplets, Flame, Croissant,
 };
 
