@@ -1,7 +1,7 @@
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { useCart } from "@/context/CartContext";
-import { MIN_ORDER_AMOUNT } from "@/data/mockData";
+import { useAppSettings } from "@/hooks/useStore";
 import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -10,15 +10,17 @@ const formatPrice = (price: number) =>
 
 const Carrito = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
-  const meetsMinimum = totalPrice >= MIN_ORDER_AMOUNT;
+  const { data: settings } = useAppSettings();
+  const minOrder = Number(settings?.min_order_amount || 40000);
+  const whatsappNumber = settings?.whatsapp_number || "573000000000";
+  const meetsMinimum = totalPrice >= minOrder;
 
   const handleWhatsAppOrder = () => {
     const orderLines = items.map(
       (i) => `• ${i.quantity}x ${i.product.name} - ${formatPrice(i.product.price * i.quantity)}`
     );
     const message = `🛒 *Nuevo Pedido SURTÉ*\n\n${orderLines.join("\n")}\n\n*Total: ${formatPrice(totalPrice)}*`;
-    const encoded = encodeURIComponent(message);
-    window.open(`https://wa.me/573000000000?text=${encoded}`, "_blank");
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   return (
@@ -46,10 +48,14 @@ const Carrito = () => {
                   className="flex items-center gap-3 bg-card rounded-xl p-3 mb-3"
                   style={{ boxShadow: "var(--shadow-card)" }}
                 >
-                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <span className="text-xl font-heading font-bold text-muted-foreground/40">
-                      {item.product.name.charAt(0)}
-                    </span>
+                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                    {item.product.image_url ? (
+                      <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xl font-heading font-bold text-muted-foreground/40">
+                        {item.product.name.charAt(0)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-medium text-foreground truncate">{item.product.name}</h3>
@@ -59,23 +65,14 @@ const Carrito = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                      className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground"
-                    >
+                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground">
                       <Minus size={14} />
                     </button>
                     <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                      className="w-7 h-7 rounded-lg bg-accent text-accent-foreground flex items-center justify-center"
-                    >
+                    <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="w-7 h-7 rounded-lg bg-accent text-accent-foreground flex items-center justify-center">
                       <Plus size={14} />
                     </button>
-                    <button
-                      onClick={() => removeItem(item.product.id)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1"
-                    >
+                    <button onClick={() => removeItem(item.product.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -83,13 +80,12 @@ const Carrito = () => {
               ))}
             </AnimatePresence>
 
-            {/* Minimum order warning */}
             {!meetsMinimum && (
               <div className="flex items-start gap-2 bg-surte-orange/10 border border-surte-orange/30 rounded-xl p-3 mb-4">
                 <AlertTriangle size={18} className="text-surte-orange shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-foreground">Pedido mínimo: {formatPrice(MIN_ORDER_AMOUNT)}</p>
-                  <p className="text-xs text-muted-foreground">Te faltan {formatPrice(MIN_ORDER_AMOUNT - totalPrice)} para completar tu pedido</p>
+                  <p className="text-sm font-medium text-foreground">Pedido mínimo: {formatPrice(minOrder)}</p>
+                  <p className="text-xs text-muted-foreground">Te faltan {formatPrice(minOrder - totalPrice)}</p>
                 </div>
               </div>
             )}
@@ -97,7 +93,6 @@ const Carrito = () => {
         )}
       </main>
 
-      {/* Fixed checkout bar */}
       {items.length > 0 && (
         <div className="fixed bottom-[68px] left-0 right-0 bg-card border-t border-border px-4 py-3 z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
           <div className="flex items-center justify-between mb-3">
@@ -108,9 +103,7 @@ const Carrito = () => {
             onClick={handleWhatsAppOrder}
             disabled={!meetsMinimum}
             className={`w-full flex items-center justify-center gap-2 font-heading font-semibold py-3.5 rounded-xl text-sm transition-all ${
-              meetsMinimum
-                ? "btn-surte"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
+              meetsMinimum ? "btn-surte" : "bg-muted text-muted-foreground cursor-not-allowed"
             }`}
           >
             <MessageCircle size={18} />

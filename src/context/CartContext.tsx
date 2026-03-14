@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { Product } from "@/data/mockData";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Product = Tables<"products">;
 
 export interface CartItem {
   product: Product;
