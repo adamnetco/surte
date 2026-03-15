@@ -1,6 +1,9 @@
 import { Heart, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
+import { useFavorites } from "@/hooks/useFavorites";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Product = Tables<"products">;
@@ -14,12 +17,27 @@ const formatPrice = (price: number) =>
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const navigate = useNavigate();
+  const fav = isFavorite(product.id);
+
+  const handleAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addItem(product);
+    toast.success(`${product.name} agregado`);
+  };
+
+  const handleFav = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleFavorite(product.id);
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="card-product flex flex-col"
+      className="card-product flex flex-col cursor-pointer"
+      onClick={() => navigate(`/producto/${product.id}`)}
     >
       <div className="relative aspect-square bg-muted flex items-center justify-center overflow-hidden">
         {product.image_url ? (
@@ -33,8 +51,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
           {product.is_fresh && <span className="badge-fresh">🌿 Fresco</span>}
           {product.is_wholesale && <span className="badge-wholesale">💰 Mayorista</span>}
         </div>
-        <button className="absolute top-2 right-2 w-8 h-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
-          <Heart size={16} />
+        <button
+          onClick={handleFav}
+          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center transition-colors"
+        >
+          <Heart size={16} className={fav ? "text-destructive fill-destructive" : "text-muted-foreground"} />
         </button>
       </div>
       <div className="p-3 flex flex-col flex-1">
@@ -48,7 +69,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             )}
           </div>
           <button
-            onClick={() => addItem(product)}
+            onClick={handleAdd}
             className="w-9 h-9 rounded-xl bg-accent text-accent-foreground flex items-center justify-center hover:opacity-90 transition-opacity"
           >
             <Plus size={18} strokeWidth={2.5} />

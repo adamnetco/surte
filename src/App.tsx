@@ -14,6 +14,11 @@ import Ofertas from "./pages/Ofertas";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import MisPedidos from "./pages/MisPedidos";
+import Perfil from "./pages/Perfil";
+import Favoritos from "./pages/Favoritos";
+import Ayuda from "./pages/Ayuda";
+import Configuracion from "./pages/Configuracion";
+import ProductoDetalle from "./pages/ProductoDetalle";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +40,11 @@ const App = () => (
               <Route path="/ofertas" element={<Ofertas />} />
               <Route path="/login" element={<Login />} />
               <Route path="/pedidos" element={<MisPedidos />} />
+              <Route path="/perfil" element={<Perfil />} />
+              <Route path="/favoritos" element={<Favoritos />} />
+              <Route path="/ayuda" element={<Ayuda />} />
+              <Route path="/configuracion" element={<Configuracion />} />
+              <Route path="/producto/:id" element={<ProductoDetalle />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
