@@ -13,6 +13,7 @@ import MenuPage from "./pages/MenuPage";
 import Ofertas from "./pages/Ofertas";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
+import MisPedidos from "./pages/MisPedidos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

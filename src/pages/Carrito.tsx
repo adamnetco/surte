@@ -1,9 +1,14 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { useCart } from "@/context/CartContext";
 import { useAppSettings } from "@/hooks/useStore";
-import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -11,16 +16,72 @@ const formatPrice = (price: number) =>
 const Carrito = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
   const { data: settings } = useAppSettings();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const minOrder = Number(settings?.min_order_amount || 40000);
-  const whatsappNumber = settings?.whatsapp_number || "573000000000";
   const meetsMinimum = totalPrice >= minOrder;
+  const [submitting, setSubmitting] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ name: "", phone: "", address: "", notes: "" });
 
-  const handleWhatsAppOrder = () => {
-    const orderLines = items.map(
-      (i) => `• ${i.quantity}x ${i.product.name} - ${formatPrice(i.product.price * i.quantity)}`
-    );
-    const message = `🛒 *Nuevo Pedido SURTÉ*\n\n${orderLines.join("\n")}\n\n*Total: ${formatPrice(totalPrice)}*`;
-    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank");
+  const handleFinalize = () => {
+    if (!meetsMinimum) return;
+    if (!user) {
+      toast.info("Inicia sesión para hacer tu pedido");
+      navigate("/login");
+      return;
+    }
+    // Pre-fill from user metadata
+    setForm({
+      name: user.user_metadata?.full_name || "",
+      phone: user.user_metadata?.phone || "",
+      address: "",
+      notes: "",
+    });
+    setShowForm(true);
+  };
+
+  const handleSubmitOrder = async () => {
+    if (!form.name || !form.phone) {
+      toast.error("Nombre y teléfono son obligatorios");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const payload = {
+        items: items.map((i) => ({
+          product_id: i.product.id,
+          name: i.product.name,
+          price: i.product.price,
+          quantity: i.quantity,
+        })),
+        customer_name: form.name,
+        customer_phone: form.phone,
+        customer_address: form.address,
+        notes: form.notes,
+      };
+
+      const { data, error } = await supabase.functions.invoke("send-whatsapp-order", {
+        body: payload,
+      });
+
+      if (error) throw error;
+
+      toast.success(`¡Pedido #${data.order_number} creado!`);
+      clearCart();
+      setShowForm(false);
+
+      // If WhatsApp API wasn't configured, open fallback link
+      if (data.whatsapp_fallback_url) {
+        window.open(data.whatsapp_fallback_url, "_blank");
+      }
+
+      navigate("/pedidos");
+    } catch (err: any) {
+      toast.error(err.message || "Error al crear pedido");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -89,18 +150,44 @@ const Carrito = () => {
                 </div>
               </div>
             )}
+
+            {/* Order Form */}
+            <AnimatePresence>
+              {showForm && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="bg-card rounded-xl p-4 mb-4 space-y-3"
+                  style={{ boxShadow: "var(--shadow-card)" }}
+                >
+                  <h3 className="font-heading font-semibold text-sm text-foreground">Datos del Pedido</h3>
+                  <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
+                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="WhatsApp (ej: 573001234567) *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
+                  <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
+                  <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notas adicionales" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" rows={2} />
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-2.5 text-sm text-muted-foreground font-medium">Cancelar</button>
+                    <button onClick={handleSubmitOrder} disabled={submitting} className="flex-1 btn-surte py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                      {submitting ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
+                      {submitting ? "Enviando..." : "Confirmar"}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
       </main>
 
-      {items.length > 0 && (
+      {items.length > 0 && !showForm && (
         <div className="fixed bottom-[68px] left-0 right-0 bg-card border-t border-border px-4 py-3 z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-muted-foreground">Total</span>
             <span className="text-xl font-heading font-bold text-foreground">{formatPrice(totalPrice)}</span>
           </div>
           <button
-            onClick={handleWhatsAppOrder}
+            onClick={handleFinalize}
             disabled={!meetsMinimum}
             className={`w-full flex items-center justify-center gap-2 font-heading font-semibold py-3.5 rounded-xl text-sm transition-all ${
               meetsMinimum ? "btn-surte" : "bg-muted text-muted-foreground cursor-not-allowed"
