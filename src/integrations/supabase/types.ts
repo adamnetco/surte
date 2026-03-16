@@ -35,6 +35,45 @@ export type Database = {
         }
         Relationships: []
       }
+      banners: {
+        Row: {
+          created_at: string
+          cta_link: string | null
+          cta_text: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          sort_order: number | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string | null
@@ -68,6 +107,36 @@ export type Database = {
           slug?: string
           sort_order?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      gallery: {
+        Row: {
+          caption: string | null
+          category: string | null
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean | null
+          sort_order: number | null
+        }
+        Insert: {
+          caption?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          sort_order?: number | null
+        }
+        Update: {
+          caption?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          sort_order?: number | null
         }
         Relationships: []
       }
@@ -253,6 +322,39 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          content: string
+          created_at: string
+          customer_city: string | null
+          customer_name: string
+          id: string
+          is_active: boolean | null
+          rating: number | null
+          sort_order: number | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          customer_city?: string | null
+          customer_name: string
+          id?: string
+          is_active?: boolean | null
+          rating?: number | null
+          sort_order?: number | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          customer_city?: string | null
+          customer_name?: string
+          id?: string
+          is_active?: boolean | null
+          rating?: number | null
+          sort_order?: number | null
         }
         Relationships: []
       }
