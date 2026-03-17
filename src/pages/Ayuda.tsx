@@ -11,7 +11,7 @@ const faqs = [
   { q: "¿Cómo hago seguimiento de mi pedido?", a: "Ve a Menú → Mis Pedidos para ver el estado en tiempo real de tus órdenes." },
   { q: "¿Qué métodos de pago aceptan?", a: "Actualmente trabajamos con pago contra entrega (efectivo o transferencia). Pronto habilitaremos pagos en línea." },
   { q: "¿Puedo cancelar un pedido?", a: "Puedes cancelar tu pedido mientras esté en estado 'Pendiente'. Contáctanos por WhatsApp." },
-  { q: "¿Hacen entregas fuera de Medellín?", a: "Por ahora operamos en Medellín y municipios cercanos. Estamos en expansión." },
+  { q: "¿Hacen entregas fuera de Bucaramanga?", a: "Por ahora operamos en Bucaramanga y su Área Metropolitana (Floridablanca, Girón, Piedecuesta). Estamos en expansión." },
 ];
 
 const Ayuda = () => {
