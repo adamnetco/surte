@@ -26,9 +26,8 @@ Deno.serve(async (req) => {
 
     let userId: string | null = null;
     if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data } = await supabaseUser.auth.getClaims(token);
-      userId = data?.claims?.sub || null;
+      const { data: { user } } = await supabaseUser.auth.getUser();
+      userId = user?.id || null;
     }
 
     const { items, customer_name, customer_phone, customer_address, notes } = await req.json();
