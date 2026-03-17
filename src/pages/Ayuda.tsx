@@ -7,7 +7,7 @@ import { useAppSettings } from "@/hooks/useStore";
 
 const faqs = [
   { q: "¿Cuál es el pedido mínimo?", a: "El pedido mínimo es de $40.000 COP y puede variar según configuración de la tienda." },
-  { q: "¿Cuánto demora la entrega?", a: "Las entregas se realizan en 24-48 horas hábiles dentro de Medellín y Área Metropolitana." },
+  { q: "¿Cuánto demora la entrega?", a: "Las entregas se realizan en 24-48 horas hábiles dentro de Bucaramanga y Área Metropolitana (Floridablanca, Girón, Piedecuesta)." },
   { q: "¿Cómo hago seguimiento de mi pedido?", a: "Ve a Menú → Mis Pedidos para ver el estado en tiempo real de tus órdenes." },
   { q: "¿Qué métodos de pago aceptan?", a: "Actualmente trabajamos con pago contra entrega (efectivo o transferencia). Pronto habilitaremos pagos en línea." },
   { q: "¿Puedo cancelar un pedido?", a: "Puedes cancelar tu pedido mientras esté en estado 'Pendiente'. Contáctanos por WhatsApp." },
