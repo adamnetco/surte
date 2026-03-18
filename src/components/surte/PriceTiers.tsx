@@ -1,4 +1,5 @@
 import { Tag, TrendingDown, Crown } from "lucide-react";
+import { useAppSettings } from "@/hooks/useStore";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -17,6 +18,10 @@ const tiers = [
 ];
 
 const PriceTiers = ({ price, priceWholesale, priceDistributor, compact = false }: PriceTiersProps) => {
+  const { data: settings } = useAppSettings();
+
+  if (settings?.show_price_tiers === "false") return null;
+
   const prices = {
     detal: price,
     mayor: priceWholesale,

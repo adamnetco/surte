@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search } from "lucide-react";
 import { toast } from "sonner";
 
 const formatPrice = (price: number) =>
@@ -9,14 +9,15 @@ const formatPrice = (price: number) =>
 
 const ProductsTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [form, setForm] = useState({
-    name: "", description: "", price: "", original_price: "", stock: "", unit: "unidad",
-    category_id: "", is_fresh: false, is_wholesale: false, image_url: "",
+    name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "",
+    stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, image_url: "",
   });
   const { upload, uploading } = useImageUpload();
 
   const resetForm = () => {
-    setForm({ name: "", description: "", price: "", original_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, image_url: "" });
+    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, image_url: "" });
     setEditing(null);
   };
 
@@ -24,6 +25,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     setForm({
       name: p.name, description: p.description || "", price: String(p.price),
       original_price: p.original_price ? String(p.original_price) : "",
+      price_wholesale: p.price_wholesale ? String(p.price_wholesale) : "",
+      price_distributor: p.price_distributor ? String(p.price_distributor) : "",
       stock: String(p.stock), unit: p.unit || "unidad", category_id: p.category_id || "",
       is_fresh: p.is_fresh, is_wholesale: p.is_wholesale, image_url: p.image_url || "",
     });
@@ -42,6 +45,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     const payload = {
       name: form.name, description: form.description, price: Number(form.price),
       original_price: form.original_price ? Number(form.original_price) : null,
+      price_wholesale: form.price_wholesale ? Number(form.price_wholesale) : null,
+      price_distributor: form.price_distributor ? Number(form.price_distributor) : null,
       stock: Number(form.stock), unit: form.unit, category_id: form.category_id || null,
       is_fresh: form.is_fresh, is_wholesale: form.is_wholesale, image_url: form.image_url || null,
     };
@@ -68,17 +73,34 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     queryClient.invalidateQueries({ queryKey: ["admin-products"] });
   };
 
+  const filtered = products?.filter((p: any) =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h2 className="font-heading font-bold text-lg text-foreground">Productos ({products?.length || 0})</h2>
         <button onClick={() => { resetForm(); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
           <Plus size={14} /> Nuevo
         </button>
       </div>
 
+      {/* Search */}
+      {!editing && (products?.length || 0) > 5 && (
+        <div className="relative mb-3">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar producto..."
+            className="w-full bg-muted rounded-lg pl-9 pr-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors"
+          />
+        </div>
+      )}
+
       {editing && (
-        <div className="bg-card rounded-xl p-4 mb-4 space-y-3" style={{ boxShadow: "var(--shadow-card)" }}>
+        <div className="bg-card rounded-xl p-4 mb-4 space-y-3 border border-border">
           <div className="flex justify-between items-center">
             <h3 className="font-heading font-semibold text-sm">{editing === "new" ? "Nuevo Producto" : "Editar Producto"}</h3>
             <button onClick={resetForm}><X size={18} className="text-muted-foreground" /></button>
@@ -99,35 +121,71 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
                 {uploading ? "Subiendo..." : "Subir imagen"}
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
               </label>
-              <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP. Máx 5MB</p>
+              <p className="text-[11px] text-muted-foreground mt-1">JPG, PNG, WebP. Máx 5MB</p>
             </div>
           </div>
 
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre *" className="w-full bg-muted rounded-lg px-3 py-2 text-sm" />
-          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descripción" className="w-full bg-muted rounded-lg px-3 py-2 text-sm" rows={2} />
-          <div className="grid grid-cols-2 gap-2">
-            <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Precio *" type="number" className="bg-muted rounded-lg px-3 py-2 text-sm" />
-            <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="Precio original" type="number" className="bg-muted rounded-lg px-3 py-2 text-sm" />
-            <input value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="Stock" type="number" className="bg-muted rounded-lg px-3 py-2 text-sm" />
-            <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder="Unidad" className="bg-muted rounded-lg px-3 py-2 text-sm" />
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descripción" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" rows={2} />
+
+          {/* Pricing section */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Precios</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Detal *</label>
+                <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0" type="number" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Precio anterior</label>
+                <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="0" type="number" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+              </div>
+              <div>
+                <label className="text-[11px] text-accent mb-0.5 block font-medium">Mayorista</label>
+                <input value={form.price_wholesale} onChange={(e) => setForm({ ...form, price_wholesale: e.target.value })} placeholder="0" type="number" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-accent/30 focus:border-accent focus:outline-none transition-colors" />
+              </div>
+              <div>
+                <label className="text-[11px] text-surte-orange mb-0.5 block font-medium">Distribuidor</label>
+                <input value={form.price_distributor} onChange={(e) => setForm({ ...form, price_distributor: e.target.value })} placeholder="0" type="number" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-surte-orange/30 focus:border-surte-orange focus:outline-none transition-colors" />
+              </div>
+            </div>
           </div>
-          <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2 text-sm">
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block">Stock</label>
+              <input value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" type="number" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block">Unidad</label>
+              <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder="unidad" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+            </div>
+          </div>
+
+          <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors">
             <option value="">Sin categoría</option>
             {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
+
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_fresh} onChange={(e) => setForm({ ...form, is_fresh: e.target.checked })} /> Fresco</label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_wholesale} onChange={(e) => setForm({ ...form, is_wholesale: e.target.checked })} /> Mayorista</label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.is_fresh} onChange={(e) => setForm({ ...form, is_fresh: e.target.checked })} className="rounded border-border" /> Fresco</label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.is_wholesale} onChange={(e) => setForm({ ...form, is_wholesale: e.target.checked })} className="rounded border-border" /> Mayorista</label>
           </div>
-          <button onClick={saveProduct} className="btn-surte w-full text-sm py-2.5 flex items-center justify-center gap-1">
-            <Save size={16} /> Guardar
-          </button>
+
+          <div className="flex gap-2">
+            <button onClick={saveProduct} className="btn-surte flex-1 text-sm py-2.5 flex items-center justify-center gap-1">
+              <Save size={14} /> Guardar
+            </button>
+            <button onClick={resetForm} className="bg-muted rounded-xl px-4 py-2.5 text-sm text-muted-foreground font-medium hover:bg-muted/80 transition-colors">
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
 
       <div className="space-y-2">
-        {products?.map((p: any) => (
-          <div key={p.id} className="flex items-center gap-3 bg-card rounded-xl p-3" style={{ boxShadow: "var(--shadow-card)" }}>
+        {filtered?.map((p: any) => (
+          <div key={p.id} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border">
             <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
               {p.image_url ? (
                 <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
@@ -137,10 +195,14 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
-              <p className="text-xs text-muted-foreground">{formatPrice(p.price)} · Stock: {p.stock}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatPrice(p.price)}
+                {p.price_wholesale && <span className="text-accent ml-1">· May: {formatPrice(p.price_wholesale)}</span>}
+              </p>
+              <p className="text-[11px] text-muted-foreground">Stock: {p.stock} · {p.categories?.name || "Sin cat."}</p>
             </div>
-            <button onClick={() => editProduct(p)} className="text-muted-foreground"><Pencil size={16} /></button>
-            <button onClick={() => deleteProduct(p.id)} className="text-destructive"><Trash2 size={16} /></button>
+            <button onClick={() => editProduct(p)} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
+            <button onClick={() => deleteProduct(p.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
         ))}
       </div>
