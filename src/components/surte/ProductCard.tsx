@@ -4,6 +4,7 @@ import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import PriceTiers from "./PriceTiers";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Product = Tables<"products">;
