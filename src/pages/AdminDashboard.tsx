@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OverviewTab from "@/components/admin/OverviewTab";
@@ -12,12 +12,14 @@ import CategoriesTab from "@/components/admin/CategoriesTab";
 import OrdersTab from "@/components/admin/OrdersTab";
 import SettingsTab from "@/components/admin/SettingsTab";
 import ContentTab from "@/components/admin/ContentTab";
+import BrandsTab from "@/components/admin/BrandsTab";
 
 const tabs = [
   { id: "overview", label: "Resumen", icon: BarChart3 },
   { id: "products", label: "Productos", icon: Package },
   { id: "categories", label: "Categorías", icon: Tag },
   { id: "orders", label: "Pedidos", icon: ShoppingCart },
+  { id: "brands", label: "Marcas", icon: Handshake },
   { id: "content", label: "Contenido", icon: FileText },
   { id: "settings", label: "Config", icon: Settings },
 ];
@@ -84,16 +86,17 @@ const AdminDashboard = () => {
       <div className="flex overflow-x-auto border-b border-border bg-card scrollbar-hide">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button key={id} onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === id ? "border-accent text-accent" : "border-transparent text-muted-foreground"}`}>
-            <Icon size={16} /> {label}
+            className={`flex items-center gap-1.5 px-4 py-3 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === id ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+            <Icon size={15} /> {label}
           </button>
         ))}
       </div>
-      <main className="p-4">
+      <main className="p-4 pb-8">
         {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
         {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
         {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
         {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
+        {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </main>
