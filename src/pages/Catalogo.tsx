@@ -4,6 +4,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import ProductCard from "@/components/surte/ProductCard";
 import { useProducts, useCategories } from "@/hooks/useStore";
+import FloatingCart from "@/components/surte/FloatingCart";
 import { SlidersHorizontal, ArrowUpDown } from "lucide-react";
 
 const Catalogo = () => {
@@ -95,6 +96,7 @@ const Catalogo = () => {
           </div>
         )}
       </main>
+      <FloatingCart />
       <BottomNav />
     </div>
   );
