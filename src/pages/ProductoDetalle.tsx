@@ -6,6 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ArrowLeft, Heart, Minus, Plus, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
+import PriceTiers from "@/components/surte/PriceTiers";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
