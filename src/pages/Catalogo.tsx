@@ -96,6 +96,7 @@ const Catalogo = () => {
           </div>
         )}
       </main>
+      <FloatingCart />
       <BottomNav />
     </div>
   );

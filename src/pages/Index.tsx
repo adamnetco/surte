@@ -6,6 +6,8 @@ import FeaturedProducts from "@/components/surte/FeaturedProducts";
 import BannerCarousel from "@/components/surte/BannerCarousel";
 import TestimonialsSection from "@/components/surte/TestimonialsSection";
 import GallerySection from "@/components/surte/GallerySection";
+import BrandsSection from "@/components/surte/BrandsSection";
+import FloatingCart from "@/components/surte/FloatingCart";
 
 const Index = () => {
   return (
@@ -16,9 +18,11 @@ const Index = () => {
         <BannerCarousel />
         <CategoryGrid />
         <FeaturedProducts />
+        <BrandsSection />
         <GallerySection />
         <TestimonialsSection />
       </main>
+      <FloatingCart />
       <BottomNav />
     </div>
   );

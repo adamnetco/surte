@@ -98,6 +98,10 @@ const ProductoDetalle = () => {
           )}
         </div>
 
+        <div className="mb-4">
+          <PriceTiers price={product.price} priceWholesale={(product as any).price_wholesale} priceDistributor={(product as any).price_distributor} />
+        </div>
+
         {product.description && (
           <div className="mb-4">
             <h3 className="text-sm font-heading font-semibold text-foreground mb-1">Descripción</h3>

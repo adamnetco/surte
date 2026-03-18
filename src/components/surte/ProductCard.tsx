@@ -92,6 +92,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       <div className="p-3 flex flex-col flex-1">
         <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">{product.unit}</p>
         <h3 className="text-sm font-medium text-foreground leading-tight mb-auto line-clamp-2">{product.name}</h3>
+        <PriceTiers price={product.price} priceWholesale={(product as any).price_wholesale} priceDistributor={(product as any).price_distributor} compact />
         <div className="flex items-end justify-between pt-2 mt-1">
           <div>
             <span className="text-base font-heading font-bold text-foreground">{formatPrice(product.price)}</span>
