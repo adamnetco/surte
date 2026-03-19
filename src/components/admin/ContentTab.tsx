@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
-import { Plus, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Star, MessageSquareQuote } from "lucide-react";
+import { Plus, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Star, MessageSquareQuote, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import SortableList from "./SortableList";
 
 const ContentTab = ({ queryClient }: { queryClient: any }) => {
   const [section, setSection] = useState<"banners" | "testimonials" | "gallery">("banners");
@@ -67,6 +69,12 @@ const BannersSection = ({ queryClient }: { queryClient: any }) => {
     toast.success("Banner eliminado");
   };
 
+  const toggleActive = async (id: string, current: boolean) => {
+    await supabase.from("banners").update({ is_active: !current }).eq("id", id);
+    queryClient.invalidateQueries({ queryKey: ["admin-banners"] });
+    queryClient.invalidateQueries({ queryKey: ["banners"] });
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -74,7 +82,7 @@ const BannersSection = ({ queryClient }: { queryClient: any }) => {
         <button onClick={() => { setForm({ title: "", subtitle: "", image_url: "", cta_text: "Ver más", cta_link: "/catalogo", sort_order: "0" }); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1"><Plus size={14} /> Nuevo</button>
       </div>
       {editing && (
-        <div className="bg-card rounded-xl p-4 mb-4 space-y-3" style={{ boxShadow: "var(--shadow-card)" }}>
+        <div className="bg-card rounded-xl p-4 mb-4 space-y-3 border border-border">
           <div className="flex justify-between"><span className="font-heading font-semibold text-sm">{editing === "new" ? "Nuevo" : "Editar"} Banner</span><button onClick={() => setEditing(null)}><X size={18} className="text-muted-foreground" /></button></div>
           <div className="flex items-center gap-3">
             <div className="w-20 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-border">
@@ -85,27 +93,33 @@ const BannersSection = ({ queryClient }: { queryClient: any }) => {
               <input type="file" accept="image/*" onChange={handleImg} className="hidden" disabled={uploading} />
             </label>
           </div>
-          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Título *" className="w-full bg-muted rounded-lg px-3 py-2 text-sm" />
-          <input value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="Subtítulo" className="w-full bg-muted rounded-lg px-3 py-2 text-sm" />
+          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Título *" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+          <input value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="Subtítulo" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
           <div className="grid grid-cols-2 gap-2">
-            <input value={form.cta_text} onChange={(e) => setForm({ ...form, cta_text: e.target.value })} placeholder="Texto botón" className="bg-muted rounded-lg px-3 py-2 text-sm" />
-            <input value={form.cta_link} onChange={(e) => setForm({ ...form, cta_link: e.target.value })} placeholder="Link" className="bg-muted rounded-lg px-3 py-2 text-sm" />
+            <input value={form.cta_text} onChange={(e) => setForm({ ...form, cta_text: e.target.value })} placeholder="Texto botón" className="bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+            <input value={form.cta_link} onChange={(e) => setForm({ ...form, cta_link: e.target.value })} placeholder="Link" className="bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
           </div>
           <button onClick={save} className="btn-surte w-full text-sm py-2 flex items-center justify-center gap-1"><Save size={14} /> Guardar</button>
         </div>
       )}
-      <div className="space-y-2">
-        {banners?.map((b: any) => (
-          <div key={b.id} className="flex items-center gap-3 bg-card rounded-xl p-3" style={{ boxShadow: "var(--shadow-card)" }}>
+
+      <SortableList
+        items={banners || []}
+        table="banners"
+        queryKeys={["admin-banners", "banners"]}
+        queryClient={queryClient}
+        renderItem={(b) => (
+          <div className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${b.is_active !== false ? 'border-border' : 'border-border opacity-50'}`}>
             <div className="w-16 h-10 rounded-lg bg-muted overflow-hidden shrink-0">
               {b.image_url ? <img src={b.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} className="text-muted-foreground/40" /></div>}
             </div>
             <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{b.title}</p><p className="text-xs text-muted-foreground truncate">{b.subtitle}</p></div>
-            <button onClick={() => { setForm({ title: b.title, subtitle: b.subtitle || "", image_url: b.image_url || "", cta_text: b.cta_text || "", cta_link: b.cta_link || "", sort_order: String(b.sort_order || 0) }); setEditing(b.id); }} className="text-muted-foreground"><Star size={16} /></button>
-            <button onClick={() => del(b.id)} className="text-destructive"><Trash2 size={16} /></button>
+            <Switch checked={b.is_active !== false} onCheckedChange={() => toggleActive(b.id, b.is_active !== false)} />
+            <button onClick={() => { setForm({ title: b.title, subtitle: b.subtitle || "", image_url: b.image_url || "", cta_text: b.cta_text || "", cta_link: b.cta_link || "", sort_order: String(b.sort_order || 0) }); setEditing(b.id); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
+            <button onClick={() => del(b.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
-        ))}
-      </div>
+        )}
+      />
     </div>
   );
 };
@@ -151,12 +165,12 @@ const TestimonialsSection = ({ queryClient }: { queryClient: any }) => {
         <button onClick={() => { setForm({ customer_name: "", customer_city: "", content: "", rating: "5" }); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1"><Plus size={14} /> Nuevo</button>
       </div>
       {editing && (
-        <div className="bg-card rounded-xl p-4 mb-4 space-y-3" style={{ boxShadow: "var(--shadow-card)" }}>
+        <div className="bg-card rounded-xl p-4 mb-4 space-y-3 border border-border">
           <div className="flex justify-between"><span className="font-heading font-semibold text-sm">{editing === "new" ? "Nuevo" : "Editar"}</span><button onClick={() => setEditing(null)}><X size={18} className="text-muted-foreground" /></button></div>
-          <input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} placeholder="Nombre del cliente *" className="w-full bg-muted rounded-lg px-3 py-2 text-sm" />
-          <input value={form.customer_city} onChange={(e) => setForm({ ...form, customer_city: e.target.value })} placeholder="Ciudad" className="w-full bg-muted rounded-lg px-3 py-2 text-sm" />
-          <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Testimonio *" className="w-full bg-muted rounded-lg px-3 py-2 text-sm" rows={3} />
-          <select value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2 text-sm">
+          <input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} placeholder="Nombre del cliente *" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+          <input value={form.customer_city} onChange={(e) => setForm({ ...form, customer_city: e.target.value })} placeholder="Ciudad" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+          <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Testimonio *" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" rows={3} />
+          <select value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors">
             {[5, 4, 3, 2, 1].map((r) => <option key={r} value={r}>{"⭐".repeat(r)} ({r})</option>)}
           </select>
           <button onClick={save} className="btn-surte w-full text-sm py-2 flex items-center justify-center gap-1"><Save size={14} /> Guardar</button>
@@ -164,15 +178,15 @@ const TestimonialsSection = ({ queryClient }: { queryClient: any }) => {
       )}
       <div className="space-y-2">
         {testimonials?.map((t: any) => (
-          <div key={t.id} className="bg-card rounded-xl p-3 flex items-start gap-3" style={{ boxShadow: "var(--shadow-card)" }}>
+          <div key={t.id} className="bg-card rounded-xl p-3 flex items-start gap-3 border border-border">
             <MessageSquareQuote size={20} className="text-accent shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">{t.customer_name}</p>
               <p className="text-xs text-muted-foreground">{t.customer_city} · {"⭐".repeat(t.rating)}</p>
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.content}</p>
             </div>
-            <button onClick={() => { setForm({ customer_name: t.customer_name, customer_city: t.customer_city || "", content: t.content, rating: String(t.rating) }); setEditing(t.id); }} className="text-muted-foreground"><Star size={14} /></button>
-            <button onClick={() => del(t.id)} className="text-destructive"><Trash2 size={14} /></button>
+            <button onClick={() => { setForm({ customer_name: t.customer_name, customer_city: t.customer_city || "", content: t.content, rating: String(t.rating) }); setEditing(t.id); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={14} /></button>
+            <button onClick={() => del(t.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={14} /></button>
           </div>
         ))}
       </div>

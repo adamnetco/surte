@@ -3,12 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import SortableList from "./SortableList";
 
 const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#6B8E23" });
+  const [form, setForm] = useState({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50" });
 
-  const resetForm = () => { setForm({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#6B8E23" }); setEditing(null); };
+  const resetForm = () => { setForm({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50" }); setEditing(null); };
 
   const saveCategory = async () => {
     if (!form.name) { toast.error("El nombre es obligatorio"); return; }
@@ -65,9 +66,14 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
           </div>
         </div>
       )}
-      <div className="space-y-2">
-        {categories?.map((c: any) => (
-          <div key={c.id} className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${c.is_active ? "border-border" : "border-border opacity-50"}`}>
+
+      <SortableList
+        items={categories || []}
+        table="categories"
+        queryKeys={["admin-categories", "categories"]}
+        queryClient={queryClient}
+        renderItem={(c) => (
+          <div className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${c.is_active ? "border-border" : "border-border opacity-50"}`}>
             <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white text-sm shrink-0" style={{ backgroundColor: c.color || "hsl(var(--muted))" }}>
               {c.name.charAt(0)}
             </div>
@@ -76,11 +82,11 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
               <p className="text-[11px] text-muted-foreground">/{c.slug}</p>
             </div>
             <Switch checked={c.is_active} onCheckedChange={() => toggleActive(c.id, c.is_active)} />
-            <button onClick={() => { setForm({ name: c.name, slug: c.slug, icon: c.icon || "Package", sort_order: String(c.sort_order || 0), color: c.color || "#6B8E23" }); setEditing(c.id); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
+            <button onClick={() => { setForm({ name: c.name, slug: c.slug, icon: c.icon || "Package", sort_order: String(c.sort_order || 0), color: c.color || "#5D7B50" }); setEditing(c.id); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
             <button onClick={() => deleteCategory(c.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
-        ))}
-      </div>
+        )}
+      />
     </div>
   );
 };
