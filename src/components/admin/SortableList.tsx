@@ -48,7 +48,7 @@ const SortableList = ({ items, table, queryKeys, queryClient, renderItem }: Sort
 
     // Persist new order
     const updates = reordered.map((item, idx) =>
-      supabase.from(table).update({ sort_order: idx }).eq("id", item.id)
+      supabase.from(table as any).update({ sort_order: idx } as any).eq("id", item.id)
     );
     await Promise.all(updates);
     queryKeys.forEach((qk) => queryClient.invalidateQueries({ queryKey: [qk] }));
