@@ -52,6 +52,11 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         surte: {
+          tierra: "hsl(var(--surte-tierra))",
+          "rojo-teja": "hsl(var(--surte-rojo-teja))",
+          "verde-campina": "hsl(var(--surte-verde-campina))",
+          "azul-marino": "hsl(var(--surte-azul-marino))",
+          cream: "hsl(var(--surte-cream))",
           navy: "hsl(var(--surte-navy))",
           "navy-light": "hsl(var(--surte-navy-light))",
           green: "hsl(var(--surte-green))",
@@ -59,7 +64,6 @@ export default {
           lime: "hsl(var(--surte-lime))",
           teal: "hsl(var(--surte-teal))",
           orange: "hsl(var(--surte-orange))",
-          cream: "hsl(var(--surte-cream))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, ExternalLink, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import SortableList from "./SortableList";
 
 const BrandsTab = ({ queryClient }: { queryClient: any }) => {
   const { data: brands } = useQuery({
@@ -85,8 +86,6 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
             <h3 className="font-heading font-semibold text-sm">{editing === "new" ? "Nueva Marca" : "Editar Marca"}</h3>
             <button onClick={resetForm}><X size={18} className="text-muted-foreground" /></button>
           </div>
-
-          {/* Logo Upload */}
           <div className="flex items-center gap-3">
             <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0 border-2 border-dashed border-border">
               {form.logo_url ? (
@@ -104,7 +103,6 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
               <p className="text-[11px] text-muted-foreground mt-1">PNG transparente recomendado</p>
             </div>
           </div>
-
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre de la marca *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
           <input value={form.website_url} onChange={(e) => setForm({ ...form, website_url: e.target.value })} placeholder="URL del sitio web (opcional)" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
           <div className="grid grid-cols-2 gap-2">
@@ -114,7 +112,6 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
               <span className="text-sm text-foreground">{form.is_active ? "Activa" : "Inactiva"}</span>
             </div>
           </div>
-
           <div className="flex gap-2">
             <button onClick={save} className="btn-surte flex-1 text-sm py-2.5 flex items-center justify-center gap-1">
               <Save size={14} /> Guardar
@@ -134,10 +131,13 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
         </div>
       )}
 
-      <div className="space-y-2">
-        {brands?.map((b: any) => (
-          <div key={b.id} className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${b.is_active ? 'border-border' : 'border-border opacity-50'}`}>
-            <GripVertical size={14} className="text-muted-foreground/30 shrink-0" />
+      <SortableList
+        items={brands || []}
+        table="brands"
+        queryKeys={["admin-brands", "brands"]}
+        queryClient={queryClient}
+        renderItem={(b) => (
+          <div className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${b.is_active ? 'border-border' : 'border-border opacity-50'}`}>
             <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
               {b.logo_url ? (
                 <img src={b.logo_url} alt={b.name} className="w-full h-full object-contain p-1" />
@@ -161,8 +161,8 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
               <Trash2 size={15} />
             </button>
           </div>
-        ))}
-      </div>
+        )}
+      />
     </div>
   );
 };

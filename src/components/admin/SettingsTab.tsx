@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, Eye, EyeOff, DollarSign, Phone, Store } from "lucide-react";
+import { Save, Eye, EyeOff, DollarSign, Phone, Store, Palette, RotateCcw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+
+const DEFAULT_COLORS: Record<string, { hex: string; label: string; desc: string }> = {
+  color_tierra: { hex: "#8D6E63", label: "Tierra Santandereana", desc: "Fondos cálidos y empaques artesanales" },
+  color_rojo_teja: { hex: "#A52A2A", label: "Rojo Teja", desc: "Botones de acción, etiquetas de cárnicos y salsas" },
+  color_verde_campina: { hex: "#5D7B50", label: "Verde Campiña", desc: "Pulpas de fruta y frescura natural" },
+  color_azul_marino: { hex: "#1A2B3C", label: "Azul Marino Tradicional", desc: "Textos principales y confianza institucional" },
+  color_cream: { hex: "#F0F0F0", label: "Cloud Dancer", desc: "Base orgánica, fondo limpio y artesanal" },
+};
 
 const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }) => {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -44,6 +52,34 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
     queryClient.invalidateQueries({ queryKey: ["app_settings"] });
   };
 
+  const saveColor = async (key: string, hex: string) => {
+    setValues({ ...values, [key]: hex });
+    const existing = settings?.find((s: any) => s.key === key);
+    if (existing) {
+      await supabase.from("app_settings").update({ value: hex }).eq("key", key);
+    } else {
+      await supabase.from("app_settings").insert({ key, value: hex });
+    }
+    queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
+    queryClient.invalidateQueries({ queryKey: ["app_settings"] });
+    toast.success("Color actualizado");
+  };
+
+  const resetColors = async () => {
+    if (!confirm("¿Restablecer todos los colores a los valores por defecto?")) return;
+    for (const [key, { hex }] of Object.entries(DEFAULT_COLORS)) {
+      const existing = settings?.find((s: any) => s.key === key);
+      if (existing) {
+        await supabase.from("app_settings").update({ value: hex }).eq("key", key);
+      } else {
+        await supabase.from("app_settings").insert({ key, value: hex });
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
+    queryClient.invalidateQueries({ queryKey: ["app_settings"] });
+    toast.success("Colores restablecidos");
+  };
+
   type SettingMeta = { label: string; icon: typeof Save; type: "text" | "toggle"; description?: string };
   const settingsMeta: Record<string, SettingMeta> = {
     store_name: { label: "Nombre de la Tienda", icon: Store, type: "text" },
@@ -52,7 +88,7 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
     show_price_tiers: { label: "Mostrar Precios Escalonados", icon: Eye, type: "toggle", description: "Muestra precios Mayor y Distribuidor en el catálogo" },
   };
 
-  const textSettings = Object.entries(values).filter(([key]) => settingsMeta[key]?.type !== "toggle");
+  const textSettings = Object.entries(values).filter(([key]) => settingsMeta[key]?.type === "text");
   const toggleSettings = Object.entries(values).filter(([key]) => settingsMeta[key]?.type === "toggle");
 
   return (
@@ -108,6 +144,68 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
           })}
         </div>
       )}
+
+      {/* Color Manager */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Palette size={14} className="text-accent" />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Paleta de Colores — Sabor Santandereano</p>
+          </div>
+          <button onClick={resetColors} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+            <RotateCcw size={12} /> Restablecer
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3">
+          {Object.entries(DEFAULT_COLORS).map(([key, { hex: defaultHex, label, desc }]) => {
+            const currentHex = values[key] || defaultHex;
+            return (
+              <div key={key} className="bg-card rounded-xl p-4 border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={currentHex}
+                      onChange={(e) => setValues({ ...values, [key]: e.target.value })}
+                      className="w-12 h-12 rounded-xl cursor-pointer border-2 border-border bg-transparent"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-heading font-semibold text-foreground">{label}</p>
+                    <p className="text-[11px] text-muted-foreground">{desc}</p>
+                    <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{currentHex.toUpperCase()}</p>
+                  </div>
+                  <button
+                    onClick={() => saveColor(key, currentHex)}
+                    className="bg-accent text-accent-foreground rounded-lg px-3 py-2 text-xs font-medium hover:opacity-90 transition-opacity"
+                  >
+                    <Save size={12} />
+                  </button>
+                </div>
+                {/* Preview bar */}
+                <div className="mt-2 h-2 rounded-full" style={{ backgroundColor: currentHex }} />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Live Preview */}
+        <div className="bg-card rounded-xl p-4 border border-border">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Vista previa</p>
+          <div className="flex gap-2 flex-wrap">
+            {Object.entries(DEFAULT_COLORS).map(([key, { label }]) => {
+              const hex = values[key] || DEFAULT_COLORS[key].hex;
+              return (
+                <div key={key} className="text-center">
+                  <div className="w-14 h-14 rounded-xl border-2 border-border mx-auto mb-1" style={{ backgroundColor: hex }} />
+                  <p className="text-[9px] text-muted-foreground font-medium">{label.split(" ")[0]}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
