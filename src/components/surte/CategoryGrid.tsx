@@ -1,6 +1,7 @@
 import { useCategories } from "@/hooks/useStore";
 import { useNavigate } from "react-router-dom";
 import { Drumstick, Cherry, Droplets, Flame, Croissant, Package, type LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 const iconMap: Record<string, LucideIcon> = {
   Drumstick, Cherry, Droplets, Flame, Croissant, Package,
@@ -27,26 +28,39 @@ const CategoryGrid = () => {
   }
 
   return (
-    <section className="px-4 py-5">
+    <motion.section
+      initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="px-4 py-5"
+    >
       <h2 className="text-lg font-heading font-bold text-foreground mb-3">Categorías</h2>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        {categories?.map((cat) => {
+        {categories?.map((cat, i) => {
           const Icon = iconMap[cat.icon || "Package"] || Package;
           return (
-            <button
+            <motion.button
               key={cat.id}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
               onClick={() => navigate(`/catalogo?cat=${cat.slug}`)}
-              className="flex flex-col items-center gap-1.5 min-w-[72px] shrink-0"
+              className="flex flex-col items-center gap-1.5 min-w-[72px] shrink-0 group"
             >
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-muted transition-transform hover:scale-105">
-                <Icon size={26} className="text-accent" />
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-active:scale-95"
+                style={{ backgroundColor: `${cat.color}18` }}
+              >
+                <Icon size={26} style={{ color: cat.color || "hsl(var(--accent))" }} />
               </div>
               <span className="text-xs font-medium text-foreground text-center leading-tight">{cat.name}</span>
-            </button>
+            </motion.button>
           );
         })}
       </div>
-    </section>
+    </motion.section>
   );
 };
 

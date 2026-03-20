@@ -5,7 +5,8 @@ import BottomNav from "@/components/surte/BottomNav";
 import ProductCard from "@/components/surte/ProductCard";
 import { useProducts, useCategories } from "@/hooks/useStore";
 import FloatingCart from "@/components/surte/FloatingCart";
-import { SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { SlidersHorizontal, ArrowUpDown, Package } from "lucide-react";
+import { motion } from "framer-motion";
 
 const Catalogo = () => {
   const [searchParams] = useSearchParams();
@@ -25,19 +26,36 @@ const Catalogo = () => {
     return result;
   }, [products, sortBy]);
 
+  const cycleSortBy = () =>
+    setSortBy(sortBy === "default" ? "price-asc" : sortBy === "price-asc" ? "price-desc" : "default");
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4">
-        <h1 className="text-xl font-heading font-bold text-foreground mb-1">
-          {activeCategory ? categories?.find((c) => c.slug === activeCategory)?.name || "Catálogo" : "Catálogo"}
-        </h1>
-        {searchQuery && <p className="text-sm text-muted-foreground mb-3">Resultados para "{searchQuery}"</p>}
+        <div className="flex items-baseline justify-between mb-1">
+          <h1 className="text-xl font-heading font-bold text-foreground">
+            {activeCategory
+              ? categories?.find((c) => c.slug === activeCategory)?.name || "Catálogo"
+              : "Catálogo"}
+          </h1>
+          {!isLoading && (
+            <span className="text-xs text-muted-foreground font-medium">
+              {sorted.length} producto{sorted.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+        {searchQuery && (
+          <p className="text-sm text-muted-foreground mb-3">
+            Resultados para "<span className="font-medium text-foreground">{searchQuery}</span>"
+          </p>
+        )}
 
-        <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-2">
+        {/* Category pills */}
+        <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-1">
           <button
             onClick={() => setActiveCategory("")}
-            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors active:scale-[0.97] ${
               !activeCategory ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
             }`}
           >
@@ -46,8 +64,8 @@ const Catalogo = () => {
           {categories?.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setActiveCategory(cat.slug)}
-              className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              onClick={() => setActiveCategory(activeCategory === cat.slug ? "" : cat.slug)}
+              className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors active:scale-[0.97] ${
                 activeCategory === cat.slug ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
@@ -56,22 +74,24 @@ const Catalogo = () => {
           ))}
         </div>
 
+        {/* Sort & filter */}
         <div className="flex gap-2 mb-4">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-sm text-muted-foreground">
-            <SlidersHorizontal size={14} /> Filtros
-          </button>
           <button
-            onClick={() => setSortBy(sortBy === "price-asc" ? "price-desc" : sortBy === "price-desc" ? "default" : "price-asc")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-sm text-muted-foreground"
+            onClick={cycleSortBy}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition-colors active:scale-[0.97] ${
+              sortBy !== "default"
+                ? "border-accent text-accent bg-accent/5"
+                : "border-border text-muted-foreground"
+            }`}
           >
             <ArrowUpDown size={14} />
-            {sortBy === "price-asc" ? "Menor precio" : sortBy === "price-desc" ? "Mayor precio" : "Ordenar por"}
+            {sortBy === "price-asc" ? "Menor precio" : sortBy === "price-desc" ? "Mayor precio" : "Ordenar"}
           </button>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="card-product">
                 <div className="aspect-square bg-muted animate-pulse" />
                 <div className="p-3 space-y-2">
@@ -82,15 +102,23 @@ const Catalogo = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {sorted.map((p) => (
-              <ProductCard key={p.id} product={p} />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {sorted.map((p, i) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.4), ease: [0.16, 1, 0.3, 1] }}
+              >
+                <ProductCard product={p} />
+              </motion.div>
             ))}
           </div>
         )}
 
         {!isLoading && sorted.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-16 text-muted-foreground">
+            <Package size={48} strokeWidth={1.2} className="mx-auto mb-3 opacity-30" />
             <p className="text-lg font-heading font-semibold mb-1">Sin resultados</p>
             <p className="text-sm">Intenta con otra búsqueda o categoría</p>
           </div>
