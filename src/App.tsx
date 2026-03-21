@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import FloatingWhatsApp from "@/components/surte/FloatingWhatsApp";
 import Index from "./pages/Index";
 import Catalogo from "./pages/Catalogo";
 import Carrito from "./pages/Carrito";
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <FloatingWhatsApp />
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>

@@ -18,6 +18,8 @@ const ProductoDetalle = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { data: profile } = useProfile();
+  const businessType = (profile as any)?.business_type;
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
