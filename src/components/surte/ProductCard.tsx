@@ -112,9 +112,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} compact />
         <div className="flex items-end justify-between pt-2 mt-1">
           <div>
-            <span className="text-base font-heading font-bold text-foreground">{formatPrice(product.price)}</span>
-            {product.original_price && (
-              <span className="block text-[11px] text-muted-foreground line-through">{formatPrice(product.original_price)}</span>
+            <span className="text-base font-heading font-bold text-foreground">{formatPrice(userPrice)}</span>
+            {(product.original_price || userPrice < product.price) && (
+              <span className="block text-[11px] text-muted-foreground line-through">
+                {formatPrice(product.original_price || product.price)}
+              </span>
+            )}
+            {businessType && businessType !== "detal" && userPrice < product.price && (
+              <span className="text-[9px] text-accent font-medium">Precio {businessType}</span>
             )}
           </div>
           <button

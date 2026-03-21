@@ -5,8 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
-import { ArrowLeft, Save, User, Phone, MapPin, Building2, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, User, Phone, MapPin, Building2, Loader2, Store } from "lucide-react";
 import { toast } from "sonner";
+import type { BusinessType } from "@/hooks/useProfile";
+
+const businessTypes: { value: BusinessType; label: string; desc: string }[] = [
+  { value: "detal", label: "Detal", desc: "Compras personales o pequeñas cantidades" },
+  { value: "horeca", label: "HORECA", desc: "Hoteles, restaurantes, cafeterías" },
+  { value: "minimercado", label: "Minimercado", desc: "Tiendas de barrio y minimercados" },
+  { value: "distribuidor", label: "Distribuidor", desc: "Distribución y reventa al por mayor" },
+];
 
 const Perfil = () => {
   const { user, loading: authLoading } = useAuth();
@@ -19,6 +27,7 @@ const Perfil = () => {
     address: "",
     city: "",
     business_name: "",
+    business_type: "detal" as BusinessType,
   });
 
   const { data: profile, isLoading } = useQuery({
@@ -43,6 +52,7 @@ const Perfil = () => {
         address: profile.address || "",
         city: profile.city || "",
         business_name: profile.business_name || "",
+        business_type: (profile as any).business_type || "detal",
       });
     }
   }, [profile]);
@@ -52,7 +62,7 @@ const Perfil = () => {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update(form)
+      .update(form as any)
       .eq("user_id", user.id);
     if (error) {
       toast.error(error.message);
@@ -109,6 +119,34 @@ const Perfil = () => {
               <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
           </div>
+        </div>
+
+        {/* Business Type Selector */}
+        <div className="bg-card rounded-xl p-4 mb-3" style={{ boxShadow: "var(--shadow-card)" }}>
+          <label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Store size={14} /> Tipo de Negocio
+          </label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {businessTypes.map((bt) => (
+              <button
+                key={bt.value}
+                onClick={() => setForm({ ...form, business_type: bt.value })}
+                className={`text-left p-3 rounded-xl border-2 transition-all ${
+                  form.business_type === bt.value
+                    ? "border-accent bg-accent/10"
+                    : "border-border bg-muted/50 hover:border-muted-foreground/30"
+                }`}
+              >
+                <p className={`text-sm font-heading font-semibold ${form.business_type === bt.value ? "text-accent" : "text-foreground"}`}>
+                  {bt.label}
+                </p>
+                <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{bt.desc}</p>
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            Tu tipo de negocio determina los precios que ves en el catálogo.
+          </p>
         </div>
 
         <div className="space-y-3">
