@@ -8,6 +8,7 @@ import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2 } fro
 import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
 import { motion } from "framer-motion";
+import { useProfile, getPriceForType } from "@/hooks/useProfile";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
