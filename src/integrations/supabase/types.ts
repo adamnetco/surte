@@ -365,6 +365,7 @@ export type Database = {
         Row: {
           address: string | null
           business_name: string | null
+          business_type: Database["public"]["Enums"]["business_type"]
           city: string | null
           created_at: string
           full_name: string | null
@@ -376,6 +377,7 @@ export type Database = {
         Insert: {
           address?: string | null
           business_name?: string | null
+          business_type?: Database["public"]["Enums"]["business_type"]
           city?: string | null
           created_at?: string
           full_name?: string | null
@@ -387,6 +389,7 @@ export type Database = {
         Update: {
           address?: string | null
           business_name?: string | null
+          business_type?: Database["public"]["Enums"]["business_type"]
           city?: string | null
           created_at?: string
           full_name?: string | null
@@ -463,6 +466,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      business_type: "detal" | "horeca" | "minimercado" | "distribuidor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -591,6 +595,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      business_type: ["detal", "horeca", "minimercado", "distribuidor"],
     },
   },
 } as const

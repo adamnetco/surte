@@ -5,6 +5,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { toast } from "sonner";
 import PriceTiers from "./PriceTiers";
 import type { Tables } from "@/integrations/supabase/types";
+import { useProfile, getPriceForType } from "@/hooks/useProfile";
 
 type Product = Tables<"products">;
 
@@ -19,7 +20,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const navigate = useNavigate();
+  const { data: profile } = useProfile();
   const fav = isFavorite(product.id);
+  const businessType = (profile as any)?.business_type;
+  const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
 
   const discount = product.original_price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
@@ -108,9 +112,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} compact />
         <div className="flex items-end justify-between pt-2 mt-1">
           <div>
-            <span className="text-base font-heading font-bold text-foreground">{formatPrice(product.price)}</span>
-            {product.original_price && (
-              <span className="block text-[11px] text-muted-foreground line-through">{formatPrice(product.original_price)}</span>
+            <span className="text-base font-heading font-bold text-foreground">{formatPrice(userPrice)}</span>
+            {(product.original_price || userPrice < product.price) && (
+              <span className="block text-[11px] text-muted-foreground line-through">
+                {formatPrice(product.original_price || product.price)}
+              </span>
+            )}
+            {businessType && businessType !== "detal" && userPrice < product.price && (
+              <span className="text-[9px] text-accent font-medium">Precio {businessType}</span>
             )}
           </div>
           <button
