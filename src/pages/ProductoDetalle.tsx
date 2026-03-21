@@ -59,8 +59,9 @@ const ProductoDetalle = () => {
     );
   }
 
+  const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
   const discount = product.original_price
-    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
+    ? Math.round(((product.original_price - userPrice) / product.original_price) * 100)
     : 0;
 
   const outOfStock = product.stock <= 0;
