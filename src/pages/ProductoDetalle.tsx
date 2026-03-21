@@ -196,7 +196,7 @@ const ProductoDetalle = () => {
           ) : (
             <>
               <ShoppingCart size={18} />
-              Agregar {formatPrice(product.price * qty)}
+              Agregar {formatPrice(userPrice * qty)}
             </>
           )}
         </button>
