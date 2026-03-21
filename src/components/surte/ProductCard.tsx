@@ -5,6 +5,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { toast } from "sonner";
 import PriceTiers from "./PriceTiers";
 import type { Tables } from "@/integrations/supabase/types";
+import { useProfile, getPriceForType } from "@/hooks/useProfile";
 
 type Product = Tables<"products">;
 
