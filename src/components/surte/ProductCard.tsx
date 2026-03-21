@@ -20,7 +20,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const navigate = useNavigate();
+  const { data: profile } = useProfile();
   const fav = isFavorite(product.id);
+  const businessType = (profile as any)?.business_type;
+  const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
 
   const discount = product.original_price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
