@@ -8,9 +8,10 @@ import TestimonialsSection from "@/components/surte/TestimonialsSection";
 import GallerySection from "@/components/surte/GallerySection";
 import BrandsSection from "@/components/surte/BrandsSection";
 import FloatingCart from "@/components/surte/FloatingCart";
+import NotificationBanner from "@/components/surte/NotificationBanner";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Flame } from "lucide-react";
+import { ArrowRight, Flame, Truck, Shield, Star } from "lucide-react";
 
 const PromoSection = () => {
   const navigate = useNavigate();
@@ -50,14 +51,41 @@ const PromoSection = () => {
   );
 };
 
+/* Trust/Value strip inspired by diezequis & todorapidas */
+const ValueStrip = () => (
+  <motion.section
+    initial={{ opacity: 0 }}
+    whileInView={{ opacity: 1 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.5 }}
+    className="px-4 py-3"
+  >
+    <div className="grid grid-cols-3 gap-2">
+      {[
+        { icon: Truck, label: "Envío Gratis", sub: "+$40.000" },
+        { icon: Shield, label: "Pago Seguro", sub: "Contraentrega" },
+        { icon: Star, label: "Calidad", sub: "Garantizada" },
+      ].map(({ icon: Icon, label, sub }) => (
+        <div key={label} className="bg-card rounded-xl p-3 text-center border border-border">
+          <Icon size={20} className="mx-auto text-accent mb-1" />
+          <p className="text-xs font-heading font-semibold text-foreground">{label}</p>
+          <p className="text-[10px] text-muted-foreground">{sub}</p>
+        </div>
+      ))}
+    </div>
+  </motion.section>
+);
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main>
         <HeroSection />
+        <NotificationBanner />
         <BannerCarousel />
         <CategoryGrid />
+        <ValueStrip />
         <FeaturedProducts />
         <PromoSection />
         <BrandsSection />

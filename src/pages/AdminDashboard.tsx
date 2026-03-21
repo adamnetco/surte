@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OverviewTab from "@/components/admin/OverviewTab";
@@ -13,6 +13,7 @@ import OrdersTab from "@/components/admin/OrdersTab";
 import SettingsTab from "@/components/admin/SettingsTab";
 import ContentTab from "@/components/admin/ContentTab";
 import BrandsTab from "@/components/admin/BrandsTab";
+import NotificationsTab from "@/components/admin/NotificationsTab";
 
 const tabs = [
   { id: "overview", label: "Resumen", icon: BarChart3 },
@@ -21,6 +22,7 @@ const tabs = [
   { id: "orders", label: "Pedidos", icon: ShoppingCart },
   { id: "brands", label: "Marcas", icon: Handshake },
   { id: "content", label: "Contenido", icon: FileText },
+  { id: "notifications", label: "Notificaciones", icon: Bell },
   { id: "settings", label: "Config", icon: Settings },
 ];
 
@@ -98,6 +100,7 @@ const AdminDashboard = () => {
         {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
+        {activeTab === "notifications" && <NotificationsTab queryClient={queryClient} />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </main>
     </div>

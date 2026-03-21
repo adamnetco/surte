@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 const formatPrice = (price: number) =>
@@ -10,14 +11,15 @@ const formatPrice = (price: number) =>
 const ProductsTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterVisibility, setFilterVisibility] = useState<"all" | "visible" | "hidden">("all");
   const [form, setForm] = useState({
     name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "",
-    stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, image_url: "",
+    stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "",
   });
   const { upload, uploading } = useImageUpload();
 
   const resetForm = () => {
-    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, image_url: "" });
+    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "" });
     setEditing(null);
   };
 
@@ -28,7 +30,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       price_wholesale: p.price_wholesale ? String(p.price_wholesale) : "",
       price_distributor: p.price_distributor ? String(p.price_distributor) : "",
       stock: String(p.stock), unit: p.unit || "unidad", category_id: p.category_id || "",
-      is_fresh: p.is_fresh, is_wholesale: p.is_wholesale, image_url: p.image_url || "",
+      is_fresh: p.is_fresh, is_wholesale: p.is_wholesale, is_active: p.is_active !== false, image_url: p.image_url || "",
     });
     setEditing(p.id);
   };
@@ -48,7 +50,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       price_wholesale: form.price_wholesale ? Number(form.price_wholesale) : null,
       price_distributor: form.price_distributor ? Number(form.price_distributor) : null,
       stock: Number(form.stock), unit: form.unit, category_id: form.category_id || null,
-      is_fresh: form.is_fresh, is_wholesale: form.is_wholesale, image_url: form.image_url || null,
+      is_fresh: form.is_fresh, is_wholesale: form.is_wholesale, is_active: form.is_active, image_url: form.image_url || null,
     };
 
     if (editing && editing !== "new") {
@@ -73,29 +75,59 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     queryClient.invalidateQueries({ queryKey: ["admin-products"] });
   };
 
-  const filtered = products?.filter((p: any) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const toggleVisibility = async (id: string, currentActive: boolean) => {
+    const { error } = await supabase.from("products").update({ is_active: !currentActive }).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(!currentActive ? "Producto visible" : "Producto oculto");
+    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
+  };
+
+  const filtered = products?.filter((p: any) => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesVisibility = filterVisibility === "all" ? true :
+      filterVisibility === "visible" ? p.is_active !== false :
+      p.is_active === false;
+    return matchesSearch && matchesVisibility;
+  });
+
+  const visibleCount = products?.filter((p: any) => p.is_active !== false).length || 0;
+  const hiddenCount = (products?.length || 0) - visibleCount;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-heading font-bold text-lg text-foreground">Productos ({products?.length || 0})</h2>
+        <div>
+          <h2 className="font-heading font-bold text-lg text-foreground">Productos ({products?.length || 0})</h2>
+          <p className="text-[11px] text-muted-foreground">
+            <span className="text-accent">{visibleCount} visibles</span> · <span className="text-muted-foreground">{hiddenCount} ocultos</span>
+          </p>
+        </div>
         <button onClick={() => { resetForm(); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
           <Plus size={14} /> Nuevo
         </button>
       </div>
 
-      {/* Search */}
-      {!editing && (products?.length || 0) > 5 && (
-        <div className="relative mb-3">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar producto..."
-            className="w-full bg-muted rounded-lg pl-9 pr-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors"
-          />
+      {/* Search + Filter */}
+      {!editing && (products?.length || 0) > 0 && (
+        <div className="space-y-2 mb-3">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar producto..."
+              className="w-full bg-muted rounded-lg pl-9 pr-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors"
+            />
+          </div>
+          <div className="flex gap-1.5">
+            {(["all", "visible", "hidden"] as const).map((f) => (
+              <button key={f} onClick={() => setFilterVisibility(f)}
+                className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${filterVisibility === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                {f === "all" ? `Todos (${products?.length || 0})` : f === "visible" ? `👁 Visibles (${visibleCount})` : `🚫 Ocultos (${hiddenCount})`}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -104,6 +136,15 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           <div className="flex justify-between items-center">
             <h3 className="font-heading font-semibold text-sm">{editing === "new" ? "Nuevo Producto" : "Editar Producto"}</h3>
             <button onClick={resetForm}><X size={18} className="text-muted-foreground" /></button>
+          </div>
+
+          {/* Visibility toggle */}
+          <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2.5">
+            <div className="flex items-center gap-2">
+              {form.is_active ? <Eye size={16} className="text-accent" /> : <EyeOff size={16} className="text-muted-foreground" />}
+              <span className="text-sm font-medium">{form.is_active ? "Visible en catálogo" : "Oculto del catálogo"}</span>
+            </div>
+            <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
           </div>
 
           {/* Image Upload */}
@@ -128,7 +169,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descripción" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" rows={2} />
 
-          {/* Pricing section */}
+          {/* Pricing */}
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Precios</p>
             <div className="grid grid-cols-2 gap-2">
@@ -185,7 +226,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
       <div className="space-y-2">
         {filtered?.map((p: any) => (
-          <div key={p.id} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border">
+          <div key={p.id} className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${p.is_active !== false ? "border-border" : "border-border opacity-50"}`}>
             <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
               {p.image_url ? (
                 <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
@@ -194,13 +235,22 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                {p.is_active === false && (
+                  <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium shrink-0">OCULTO</span>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
                 {formatPrice(p.price)}
                 {p.price_wholesale && <span className="text-accent ml-1">· May: {formatPrice(p.price_wholesale)}</span>}
               </p>
               <p className="text-[11px] text-muted-foreground">Stock: {p.stock} · {p.categories?.name || "Sin cat."}</p>
             </div>
+            <Switch
+              checked={p.is_active !== false}
+              onCheckedChange={() => toggleVisibility(p.id, p.is_active !== false)}
+            />
             <button onClick={() => editProduct(p)} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
             <button onClick={() => deleteProduct(p.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
