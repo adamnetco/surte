@@ -170,6 +170,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_subscriptions: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          notify_fresh: boolean | null
+          notify_new_products: boolean | null
+          notify_offers: boolean | null
+          phone: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notify_fresh?: boolean | null
+          notify_new_products?: boolean | null
+          notify_offers?: boolean | null
+          phone: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notify_fresh?: boolean | null
+          notify_new_products?: boolean | null
+          notify_offers?: boolean | null
+          phone?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
