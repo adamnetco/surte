@@ -134,12 +134,15 @@ const ProductoDetalle = () => {
         <h1 className="text-xl font-heading font-bold text-foreground mb-1" style={{ textWrap: "balance" }}>{product.name}</h1>
         <p className="text-sm text-muted-foreground mb-3">{product.unit}</p>
 
-        <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-2xl font-heading font-bold text-foreground">{formatPrice(product.price)}</span>
-          {product.original_price && (
-            <span className="text-base text-muted-foreground line-through">{formatPrice(product.original_price)}</span>
+        <div className="flex items-baseline gap-2 mb-1">
+          <span className="text-2xl font-heading font-bold text-foreground">{formatPrice(userPrice)}</span>
+          {(product.original_price || userPrice < product.price) && (
+            <span className="text-base text-muted-foreground line-through">{formatPrice(product.original_price || product.price)}</span>
           )}
         </div>
+        {businessType && businessType !== "detal" && userPrice < product.price && (
+          <p className="text-xs text-accent font-medium mb-3">Precio {businessType.toUpperCase()}</p>
+        )}
 
         <div className="mb-4">
           <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} />
