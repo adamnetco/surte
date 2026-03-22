@@ -147,6 +147,7 @@ const AdminDashboard = () => {
         {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
         {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
+        {activeTab === "users" && <UsersTab queryClient={queryClient} />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
         {activeTab === "notifications" && <NotificationsTab queryClient={queryClient} />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
