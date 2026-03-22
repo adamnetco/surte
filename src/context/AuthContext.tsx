@@ -21,11 +21,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<AppRole>("user");
   const [loading, setLoading] = useState(true);
 
-  const checkAdmin = async (userId: string) => {
-    const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    setIsAdmin(!!data);
+  const checkRole = async (userId: string) => {
+    const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).single();
+    const userRole = (data?.role as AppRole) || "user";
+    setRole(userRole);
+    setIsAdmin(["superadmin", "admin"].includes(userRole));
   };
 
   useEffect(() => {
