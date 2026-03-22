@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OverviewTab from "@/components/admin/OverviewTab";
@@ -17,13 +17,13 @@ import NotificationsTab from "@/components/admin/NotificationsTab";
 
 const tabs = [
   { id: "overview", label: "Resumen", icon: BarChart3 },
-  { id: "products", label: "Productos", icon: Package },
-  { id: "categories", label: "Categorías", icon: Tag },
   { id: "orders", label: "Pedidos", icon: ShoppingCart },
+  { id: "products", label: "Inventario", icon: Package },
+  { id: "categories", label: "Categorías", icon: Tag },
   { id: "brands", label: "Marcas", icon: Handshake },
   { id: "content", label: "Contenido", icon: FileText },
-  { id: "notifications", label: "Notificaciones", icon: Bell },
-  { id: "settings", label: "Config", icon: Settings },
+  { id: "notifications", label: "Alertas", icon: Bell },
+  { id: "settings", label: "Ajustes", icon: Settings },
 ];
 
 const AdminDashboard = () => {
@@ -79,25 +79,52 @@ const AdminDashboard = () => {
     enabled: isAdmin,
   });
 
+  // Realtime: listen for new orders
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin-orders-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin, queryClient]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Cargando...</p></div>;
   if (!isAdmin) return null;
+
+  const pendingCount = orders?.filter((o: any) => o.status === "pendiente").length || 0;
 
   return (
     <div className="min-h-screen bg-background">
       <AdminHeader />
+
+      {/* Tab navigation */}
       <div className="flex overflow-x-auto border-b border-border bg-card scrollbar-hide">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button key={id} onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-1.5 px-4 py-3 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === id ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-            <Icon size={15} /> {label}
+            className={`relative flex items-center gap-1.5 px-4 py-3 text-xs font-heading font-semibold whitespace-nowrap border-b-2 transition-colors ${
+              activeTab === id
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}>
+            <Icon size={15} />
+            {label}
+            {id === "orders" && pendingCount > 0 && (
+              <span className="absolute -top-0.5 right-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] flex items-center justify-center font-bold">
+                {pendingCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
+
       <main className="p-4 pb-8">
         {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
+        {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
         {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
         {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
-        {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
         {activeTab === "notifications" && <NotificationsTab queryClient={queryClient} />}

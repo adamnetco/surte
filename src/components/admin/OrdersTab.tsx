@@ -1,21 +1,37 @@
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Phone, MapPin, Clock } from "lucide-react";
+import { Phone, MapPin, Clock, MessageCircle, Loader2, CheckCircle2, ChevronDown, Filter } from "lucide-react";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
 const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
-  pendiente: { label: "Pendiente", bg: "bg-yellow-100 dark:bg-yellow-950/40", text: "text-yellow-800 dark:text-yellow-300" },
-  confirmado: { label: "Confirmado", bg: "bg-blue-100 dark:bg-blue-950/40", text: "text-blue-800 dark:text-blue-300" },
-  en_preparacion: { label: "Preparando", bg: "bg-orange-100 dark:bg-orange-950/40", text: "text-orange-800 dark:text-orange-300" },
-  enviado: { label: "Enviado", bg: "bg-purple-100 dark:bg-purple-950/40", text: "text-purple-800 dark:text-purple-300" },
-  entregado: { label: "Entregado", bg: "bg-green-100 dark:bg-green-950/40", text: "text-green-800 dark:text-green-300" },
-  cancelado: { label: "Cancelado", bg: "bg-red-100 dark:bg-red-950/40", text: "text-red-800 dark:text-red-300" },
+  pendiente: { label: "Pendiente", bg: "bg-accent", text: "text-accent-foreground" },
+  confirmado: { label: "Confirmado", bg: "bg-primary", text: "text-primary-foreground" },
+  en_preparacion: { label: "Preparando", bg: "bg-secondary/80", text: "text-secondary-foreground" },
+  enviado: { label: "Enviado", bg: "bg-primary/70", text: "text-primary-foreground" },
+  entregado: { label: "Entregado", bg: "bg-secondary", text: "text-secondary-foreground" },
+  cancelado: { label: "Cancelado", bg: "bg-destructive", text: "text-destructive-foreground" },
+};
+
+const categoryEmojis: Record<string, string> = {
+  cárnicos: "🥩", carnicos: "🥩", pulpas: "🍏", agua: "💧", salsas: "🍯", café: "☕", zumos: "🧃",
+};
+
+const getEmoji = (name: string) => {
+  const lower = name.toLowerCase();
+  for (const [key, emoji] of Object.entries(categoryEmojis)) {
+    if (lower.includes(key)) return emoji;
+  }
+  return "📦";
 };
 
 const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any }) => {
   const statuses = ["pendiente", "confirmado", "en_preparacion", "enviado", "entregado", "cancelado"];
+  const [sendingWhatsApp, setSendingWhatsApp] = useState<Record<string, boolean>>({});
+  const [sentWhatsApp, setSentWhatsApp] = useState<Record<string, boolean>>({});
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const updateStatus = async (orderId: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
@@ -24,51 +40,148 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
     queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
   };
 
+  const sendWhatsAppUpdate = async (order: any) => {
+    setSendingWhatsApp((p) => ({ ...p, [order.id]: true }));
+    try {
+      const sc = statusConfig[order.status] || { label: order.status };
+      const statusEmoji = order.status === "pendiente" ? "🟠" : order.status === "confirmado" ? "🔵" : order.status === "en_preparacion" ? "🟡" : order.status === "enviado" ? "🟣" : order.status === "entregado" ? "🟢" : "🔴";
+
+      const itemLines = order.order_items?.map((item: any) =>
+        `${getEmoji(item.product_name)} ${item.quantity}x ${item.product_name} — ${formatPrice(item.total_price)}`
+      ) || [];
+
+      const message = [
+        `📦 *SURTÉ YA - Actualización de Pedido*`,
+        `_Soluciones Alimenticias | Grupo Conjuguémonos_`,
+        ``,
+        `Hola, *${order.customer_name}*!`,
+        ``,
+        `Tu pedido *#${order.order_number}* ha sido actualizado.`,
+        ``,
+        `*Detalle del Pedido:*`,
+        ...itemLines,
+        ``,
+        `💰 *Total a Pagar: ${formatPrice(order.total)} COP*`,
+        ``,
+        order.customer_address ? `📍 *Dirección:* ${order.customer_address}` : "",
+        ``,
+        `${statusEmoji} *Estado: ${sc.label}*`,
+        ``,
+        `Gracias por confiar en La Unión y *SURTÉ YA*. 🙏`,
+      ].filter(Boolean).join("\n");
+
+      const phone = order.customer_phone.replace(/\D/g, "");
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+
+      setSentWhatsApp((p) => ({ ...p, [order.id]: true }));
+      toast.success("WhatsApp preparado");
+      setTimeout(() => setSentWhatsApp((p) => ({ ...p, [order.id]: false })), 3000);
+    } catch {
+      toast.error("Error al preparar WhatsApp");
+    } finally {
+      setSendingWhatsApp((p) => ({ ...p, [order.id]: false }));
+    }
+  };
+
+  const filtered = statusFilter === "all" ? orders : orders?.filter((o: any) => o.status === statusFilter);
+
   return (
     <div>
-      <h2 className="font-heading font-bold text-lg text-foreground mb-4">Pedidos ({orders?.length || 0})</h2>
-      {orders?.length === 0 && (
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-heading font-bold text-lg text-foreground">Pedidos ({orders?.length || 0})</h2>
+      </div>
+
+      {/* Status filter chips */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-4 pb-1">
+        <button onClick={() => setStatusFilter("all")}
+          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-heading font-semibold transition-colors ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+          Todos
+        </button>
+        {statuses.map((s) => {
+          const count = orders?.filter((o: any) => o.status === s).length || 0;
+          if (count === 0) return null;
+          const sc = statusConfig[s];
+          return (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-heading font-semibold transition-colors ${statusFilter === s ? `${sc.bg} ${sc.text}` : "bg-muted text-muted-foreground"}`}>
+              {sc.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {filtered?.length === 0 && (
         <div className="text-center py-12 bg-card rounded-xl border border-dashed border-border">
-          <p className="text-sm text-muted-foreground">Sin pedidos aún</p>
+          <p className="text-sm text-muted-foreground">Sin pedidos en este estado</p>
         </div>
       )}
+
       <div className="space-y-3">
-        {orders?.map((o: any) => {
+        {filtered?.map((o: any) => {
           const sc = statusConfig[o.status] || { label: o.status, bg: "bg-muted", text: "text-muted-foreground" };
+          const isSending = sendingWhatsApp[o.id];
+          const isSent = sentWhatsApp[o.id];
+
           return (
-            <div key={o.id} className="bg-card rounded-xl p-4 space-y-3 border border-border">
+            <div key={o.id} className="bg-card rounded-lg p-4 space-y-3 border border-border shadow-sm">
+              {/* Header */}
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-heading font-bold text-foreground">#{o.order_number}</p>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${sc.bg} ${sc.text}`}>{sc.label}</span>
+                    <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-heading font-bold ${sc.bg} ${sc.text}`}>
+                      {sc.label}
+                    </span>
                   </div>
                   <p className="text-xs text-foreground font-medium mt-0.5">{o.customer_name}</p>
                 </div>
-                <p className="text-base font-heading font-bold text-foreground">{formatPrice(o.total)}</p>
+                <p className="text-base font-heading font-bold text-primary">{formatPrice(o.total)}</p>
               </div>
 
+              {/* Contact info */}
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
                 <span className="flex items-center gap-1"><Phone size={10} /> {o.customer_phone}</span>
                 {o.customer_address && <span className="flex items-center gap-1"><MapPin size={10} /> {o.customer_address}</span>}
-                <span className="flex items-center gap-1"><Clock size={10} /> {new Date(o.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                <span className="flex items-center gap-1">
+                  <Clock size={10} />
+                  {new Date(o.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </span>
               </div>
 
+              {/* Items */}
               <div className="flex flex-wrap gap-1">
                 {o.order_items?.map((item: any) => (
-                  <span key={item.id} className="text-[11px] bg-muted rounded-lg px-2 py-1 font-medium">{item.quantity}× {item.product_name}</span>
+                  <span key={item.id} className="text-[11px] bg-muted rounded-lg px-2 py-1 font-medium">
+                    {getEmoji(item.product_name)} {item.quantity}× {item.product_name}
+                  </span>
                 ))}
               </div>
 
               {o.notes && <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-lg px-3 py-2">📝 {o.notes}</p>}
 
-              <select
-                value={o.status}
-                onChange={(e) => updateStatus(o.id, e.target.value)}
-                className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm font-medium border border-transparent focus:border-accent focus:outline-none transition-colors"
-              >
-                {statuses.map((s) => <option key={s} value={s}>{statusConfig[s]?.label || s}</option>)}
-              </select>
+              {/* Actions */}
+              <div className="flex gap-2">
+                <select
+                  value={o.status}
+                  onChange={(e) => updateStatus(o.id, e.target.value)}
+                  className="flex-1 bg-muted rounded-lg px-3 py-2.5 text-sm font-heading font-medium border border-transparent focus:border-primary focus:outline-none transition-colors"
+                >
+                  {statuses.map((s) => <option key={s} value={s}>{statusConfig[s]?.label || s}</option>)}
+                </select>
+
+                <button
+                  onClick={() => sendWhatsAppUpdate(o)}
+                  disabled={isSending}
+                  className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-heading font-semibold transition-all ${
+                    isSent
+                      ? "bg-secondary text-secondary-foreground"
+                      : "bg-[#25D366] text-white hover:opacity-90 active:scale-95"
+                  }`}
+                >
+                  {isSending ? <Loader2 size={14} className="animate-spin" /> : isSent ? <CheckCircle2 size={14} /> : <MessageCircle size={14} />}
+                  {isSent ? "Enviado" : "WhatsApp"}
+                </button>
+              </div>
             </div>
           );
         })}
