@@ -31,17 +31,32 @@ const allTabs = [
 ];
 
 const AdminDashboard = () => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, role, loading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
 
+  // Filter tabs by role
+  const tabs = allTabs.filter((t) => t.roles.includes(role));
+
+  // Set default tab for editors
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) {
+    if (!loading && role === "editor") {
+      setActiveTab("orders");
+    }
+  }, [role, loading]);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      toast.error("Acceso denegado");
+      navigate("/");
+      return;
+    }
+    if (!loading && !["superadmin", "admin", "editor"].includes(role)) {
       toast.error("Acceso denegado");
       navigate("/");
     }
-  }, [user, isAdmin, loading, navigate]);
+  }, [user, role, loading, navigate]);
 
   const { data: products } = useQuery({
     queryKey: ["admin-products"],
