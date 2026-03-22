@@ -77,7 +77,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+    enabled: hasAdminAccess,
   });
 
   const { data: orders } = useQuery({
