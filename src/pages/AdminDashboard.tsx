@@ -17,15 +17,17 @@ import BrandsTab from "@/components/admin/BrandsTab";
 import NotificationsTab from "@/components/admin/NotificationsTab";
 import UsersTab from "@/components/admin/UsersTab";
 
-const tabs = [
-  { id: "overview", label: "Resumen", icon: BarChart3 },
-  { id: "orders", label: "Pedidos", icon: ShoppingCart },
-  { id: "products", label: "Inventario", icon: Package },
-  { id: "categories", label: "Categorías", icon: Tag },
-  { id: "brands", label: "Marcas", icon: Handshake },
-  { id: "content", label: "Contenido", icon: FileText },
-  { id: "notifications", label: "Alertas", icon: Bell },
-  { id: "settings", label: "Ajustes", icon: Settings },
+// Tabs visible per role
+const allTabs = [
+  { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "orders", label: "Pedidos", icon: ShoppingCart, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { id: "products", label: "Inventario", icon: Package, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { id: "categories", label: "Categorías", icon: Tag, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "notifications", label: "Alertas", icon: Bell, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
 
 const AdminDashboard = () => {
