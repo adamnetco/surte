@@ -58,6 +58,8 @@ const AdminDashboard = () => {
     }
   }, [user, role, loading, navigate]);
 
+  const hasAdminAccess = ["superadmin", "admin", "editor"].includes(role);
+
   const { data: products } = useQuery({
     queryKey: ["admin-products"],
     queryFn: async () => {
@@ -65,7 +67,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+    enabled: hasAdminAccess,
   });
 
   const { data: categories } = useQuery({
