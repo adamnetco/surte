@@ -102,7 +102,7 @@ const AdminDashboard = () => {
 
   // Realtime: listen for new orders
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!hasAdminAccess) return;
     const channel = supabase
       .channel("admin-orders-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
@@ -110,10 +110,10 @@ const AdminDashboard = () => {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [isAdmin, queryClient]);
+  }, [hasAdminAccess, queryClient]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Cargando...</p></div>;
-  if (!isAdmin) return null;
+  if (!hasAdminAccess) return null;
 
   const pendingCount = orders?.filter((o: any) => o.status === "pendiente").length || 0;
 
