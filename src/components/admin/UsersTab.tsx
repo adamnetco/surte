@@ -66,20 +66,20 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
       if (userRecord?.role_id) {
         const { error } = await supabase
           .from("user_roles")
-          .update({ role: value })
+          .update({ role: value as AppRole })
           .eq("id", userRecord.role_id);
         if (error) { toast.error(error.message); return; }
       } else {
         const { error } = await supabase
           .from("user_roles")
-          .insert({ user_id: userId, role: value });
+          .insert([{ user_id: userId, role: value as AppRole }]);
         if (error) { toast.error(error.message); return; }
       }
       toast.success(`Rol actualizado a ${roleMeta[value as AppRole]?.label || value}`);
     } else {
       const { error } = await supabase
         .from("profiles")
-        .update({ business_type: value })
+        .update({ business_type: value as BusinessType })
         .eq("user_id", userId);
       if (error) { toast.error(error.message); return; }
       toast.success(`Tipología actualizada a ${businessMeta[value as BusinessType]?.label || value}`);
