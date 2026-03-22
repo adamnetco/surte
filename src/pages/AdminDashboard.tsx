@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users } from "lucide-react";
@@ -14,30 +15,50 @@ import SettingsTab from "@/components/admin/SettingsTab";
 import ContentTab from "@/components/admin/ContentTab";
 import BrandsTab from "@/components/admin/BrandsTab";
 import NotificationsTab from "@/components/admin/NotificationsTab";
+import UsersTab from "@/components/admin/UsersTab";
 
-const tabs = [
-  { id: "overview", label: "Resumen", icon: BarChart3 },
-  { id: "orders", label: "Pedidos", icon: ShoppingCart },
-  { id: "products", label: "Inventario", icon: Package },
-  { id: "categories", label: "Categorías", icon: Tag },
-  { id: "brands", label: "Marcas", icon: Handshake },
-  { id: "content", label: "Contenido", icon: FileText },
-  { id: "notifications", label: "Alertas", icon: Bell },
-  { id: "settings", label: "Ajustes", icon: Settings },
+// Tabs visible per role
+const allTabs = [
+  { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "orders", label: "Pedidos", icon: ShoppingCart, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { id: "products", label: "Inventario", icon: Package, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { id: "categories", label: "Categorías", icon: Tag, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "notifications", label: "Alertas", icon: Bell, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
 
 const AdminDashboard = () => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, role, loading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
 
+  // Filter tabs by role
+  const tabs = allTabs.filter((t) => t.roles.includes(role));
+
+  // Set default tab for editors
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) {
+    if (!loading && role === "editor") {
+      setActiveTab("orders");
+    }
+  }, [role, loading]);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      toast.error("Acceso denegado");
+      navigate("/");
+      return;
+    }
+    if (!loading && !["superadmin", "admin", "editor"].includes(role)) {
       toast.error("Acceso denegado");
       navigate("/");
     }
-  }, [user, isAdmin, loading, navigate]);
+  }, [user, role, loading, navigate]);
+
+  const hasAdminAccess = ["superadmin", "admin", "editor"].includes(role);
 
   const { data: products } = useQuery({
     queryKey: ["admin-products"],
@@ -46,7 +67,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+    enabled: hasAdminAccess,
   });
 
   const { data: categories } = useQuery({
@@ -56,7 +77,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+    enabled: hasAdminAccess,
   });
 
   const { data: orders } = useQuery({
@@ -66,7 +87,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+    enabled: hasAdminAccess,
   });
 
   const { data: settings } = useQuery({
@@ -76,12 +97,12 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+    enabled: hasAdminAccess,
   });
 
   // Realtime: listen for new orders
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!hasAdminAccess) return;
     const channel = supabase
       .channel("admin-orders-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
@@ -89,10 +110,10 @@ const AdminDashboard = () => {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [isAdmin, queryClient]);
+  }, [hasAdminAccess, queryClient]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Cargando...</p></div>;
-  if (!isAdmin) return null;
+  if (!hasAdminAccess) return null;
 
   const pendingCount = orders?.filter((o: any) => o.status === "pendiente").length || 0;
 
@@ -126,6 +147,7 @@ const AdminDashboard = () => {
         {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
         {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
+        {activeTab === "users" && <UsersTab queryClient={queryClient} />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
         {activeTab === "notifications" && <NotificationsTab queryClient={queryClient} />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
