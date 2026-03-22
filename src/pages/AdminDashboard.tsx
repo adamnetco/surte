@@ -97,7 +97,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+    enabled: hasAdminAccess,
   });
 
   // Realtime: listen for new orders
