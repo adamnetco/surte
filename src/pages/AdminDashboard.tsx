@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users } from "lucide-react";
@@ -14,6 +15,7 @@ import SettingsTab from "@/components/admin/SettingsTab";
 import ContentTab from "@/components/admin/ContentTab";
 import BrandsTab from "@/components/admin/BrandsTab";
 import NotificationsTab from "@/components/admin/NotificationsTab";
+import UsersTab from "@/components/admin/UsersTab";
 
 const tabs = [
   { id: "overview", label: "Resumen", icon: BarChart3 },
