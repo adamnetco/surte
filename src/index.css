@@ -110,19 +110,19 @@
 
 @layer components {
   .badge-fresh {
-    background: var(--gradient-badge);
-    @apply text-accent-foreground text-xs font-semibold px-2.5 py-0.5 rounded-full;
+    background: var(--gradient-fresh);
+    @apply text-secondary-foreground text-xs font-semibold px-2.5 py-0.5 rounded-full;
   }
   .badge-wholesale {
     @apply bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-0.5 rounded-full;
   }
   .badge-teja {
-    background: var(--gradient-teja);
+    background: var(--gradient-cta);
     @apply text-white text-xs font-semibold px-2.5 py-0.5 rounded-full;
   }
   .card-product {
     box-shadow: var(--shadow-card);
-    @apply bg-card rounded-xl overflow-hidden transition-all duration-300;
+    @apply bg-card rounded-lg overflow-hidden transition-all duration-300;
   }
   .card-product:hover {
     box-shadow: var(--shadow-card-hover);
@@ -130,14 +130,21 @@
   }
   .btn-surte {
     background: var(--gradient-fresh);
-    @apply text-accent-foreground font-heading font-semibold px-6 py-3 rounded-xl transition-all duration-200;
+    @apply text-secondary-foreground font-heading font-semibold px-6 py-3 rounded-lg transition-all duration-200;
   }
   .btn-surte:hover {
     @apply opacity-90 scale-[1.02];
   }
+  .btn-cta {
+    background: var(--gradient-cta);
+    @apply text-white font-heading font-semibold px-6 py-3 rounded-lg transition-all duration-200;
+  }
+  .btn-cta:hover {
+    @apply opacity-90 scale-[1.02];
+  }
   .btn-teja {
-    background: var(--gradient-teja);
-    @apply text-white font-heading font-semibold px-6 py-3 rounded-xl transition-all duration-200;
+    background: var(--gradient-cta);
+    @apply text-white font-heading font-semibold px-6 py-3 rounded-lg transition-all duration-200;
   }
   .btn-teja:hover {
     @apply opacity-90 scale-[1.02];
