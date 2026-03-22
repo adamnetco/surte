@@ -36,9 +36,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => checkAdmin(session.user.id), 0);
+        setTimeout(() => checkRole(session.user.id), 0);
       } else {
         setIsAdmin(false);
+        setRole("user");
       }
       setLoading(false);
     });
