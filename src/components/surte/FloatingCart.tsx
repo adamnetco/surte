@@ -22,7 +22,7 @@ const FloatingCart = () => {
             <button className="relative flex items-center gap-2 bg-accent text-accent-foreground pl-3 pr-4 py-2.5 rounded-full font-heading font-semibold text-sm shadow-lg hover:opacity-90 transition-all active:scale-95">
               <div className="relative">
                 <ShoppingCart size={18} />
-                <span className="absolute -top-2 -right-2.5 bg-surte-orange text-primary-foreground text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full">
+                <span className="absolute -top-2 -right-2.5 bg-surte-naranja text-primary-foreground text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full">
                   {totalItems}
                 </span>
               </div>

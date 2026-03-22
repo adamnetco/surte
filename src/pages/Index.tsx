@@ -25,7 +25,7 @@ const PromoSection = () => {
     >
       <div
         className="rounded-2xl p-5 relative overflow-hidden"
-        style={{ background: "var(--gradient-teja)" }}
+        style={{ background: "var(--gradient-cta)" }}
       >
         <div className="relative z-10">
           <span className="inline-flex items-center gap-1 text-white/80 text-xs font-medium mb-2">
@@ -39,7 +39,7 @@ const PromoSection = () => {
           </p>
           <button
             onClick={() => navigate("/catalogo?cat=salsas")}
-            className="bg-white text-surte-rojo-teja font-heading font-semibold text-sm px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-white/90 transition-colors active:scale-[0.97]"
+            className="bg-white text-surte-naranja font-heading font-semibold text-sm px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-white/90 transition-colors active:scale-[0.97]"
           >
             Ver Salsas <ArrowRight size={14} />
           </button>

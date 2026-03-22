@@ -142,8 +142,8 @@ const Carrito = () => {
             </AnimatePresence>
 
             {!meetsMinimum && (
-              <div className="flex items-start gap-2 bg-surte-orange/10 border border-surte-orange/30 rounded-xl p-3 mb-4">
-                <AlertTriangle size={18} className="text-surte-orange shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 bg-surte-naranja/10 border border-surte-naranja/30 rounded-xl p-3 mb-4">
+                <AlertTriangle size={18} className="text-surte-naranja shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-foreground">Pedido mínimo: {formatPrice(minOrder)}</p>
                   <p className="text-xs text-muted-foreground">Te faltan {formatPrice(minOrder - totalPrice)}</p>

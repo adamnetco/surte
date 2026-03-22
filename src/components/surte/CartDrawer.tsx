@@ -22,7 +22,7 @@ const CartDrawer = ({ children }: CartDrawerProps) => {
           <button className="relative w-10 h-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-lg">
             <ShoppingCart size={20} />
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-surte-orange text-primary-foreground text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
+              <span className="absolute -top-1 -right-1 bg-surte-naranja text-primary-foreground text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
                 {totalItems}
               </span>
             )}

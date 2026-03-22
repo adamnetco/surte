@@ -83,7 +83,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           {product.is_fresh && <span className="badge-fresh text-[10px]">🌿 Fresco</span>}
           {product.is_wholesale && <span className="badge-wholesale text-[10px]">💰 Mayor</span>}
           {lowStock && !outOfStock && (
-            <span className="bg-surte-orange/90 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-md">
+            <span className="bg-surte-naranja/90 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-md">
               ¡Últimas {product.stock}!
             </span>
           )}

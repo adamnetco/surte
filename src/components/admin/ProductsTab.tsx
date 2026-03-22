@@ -186,8 +186,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
                 <input value={form.price_wholesale} onChange={(e) => setForm({ ...form, price_wholesale: e.target.value })} placeholder="0" type="number" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-accent/30 focus:border-accent focus:outline-none transition-colors" />
               </div>
               <div>
-                <label className="text-[11px] text-surte-orange mb-0.5 block font-medium">Distribuidor</label>
-                <input value={form.price_distributor} onChange={(e) => setForm({ ...form, price_distributor: e.target.value })} placeholder="0" type="number" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-surte-orange/30 focus:border-surte-orange focus:outline-none transition-colors" />
+                <label className="text-[11px] text-surte-naranja mb-0.5 block font-medium">Distribuidor</label>
+                <input value={form.price_distributor} onChange={(e) => setForm({ ...form, price_distributor: e.target.value })} placeholder="0" type="number" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-surte-naranja/30 focus:border-surte-naranja focus:outline-none transition-colors" />
               </div>
             </div>
           </div>
