@@ -38,7 +38,7 @@ const TestimonialsSection = () => {
             <Quote size={20} className="text-accent/20 absolute top-3 right-3" />
             <div className="flex gap-0.5 mb-2">
               {Array.from({ length: t.rating || 5 }).map((_, j) => (
-                <Star key={j} size={13} className="text-surte-orange fill-surte-orange" />
+                <Star key={j} size={13} className="text-surte-naranja fill-surte-naranja" />
               ))}
             </div>
             <p className="text-sm text-foreground leading-relaxed mb-3 line-clamp-4">"{t.content}"</p>

@@ -14,7 +14,7 @@ interface PriceTiersProps {
 const tiers = [
   { key: "detal" as const, label: "Detal", icon: Tag, color: "text-foreground" },
   { key: "mayor" as const, label: "Mayor", icon: TrendingDown, color: "text-accent" },
-  { key: "distribuidor" as const, label: "Distribuidor", icon: Crown, color: "text-surte-orange" },
+  { key: "distribuidor" as const, label: "Distribuidor", icon: Crown, color: "text-surte-naranja" },
 ];
 
 const PriceTiers = ({ price, priceWholesale, priceDistributor, compact = false }: PriceTiersProps) => {

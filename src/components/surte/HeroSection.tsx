@@ -13,8 +13,8 @@ const HeroSection = () => {
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <span className="inline-flex items-center gap-1.5 bg-surte-rojo-teja/20 text-white text-xs font-semibold px-3 py-1 rounded-full mb-3 border border-surte-rojo-teja/30">
-            <Flame size={12} className="text-surte-orange" />
+          <span className="inline-flex items-center gap-1.5 bg-surte-naranja/20 text-white text-xs font-semibold px-3 py-1 rounded-full mb-3 border border-surte-naranja/30">
+            <Flame size={12} className="text-surte-naranja" />
             Sabor Santandereano de Verdad
           </span>
           <h1 className="text-2xl md:text-4xl font-heading font-extrabold text-primary-foreground leading-[1.1] mb-2" style={{ textWrap: "balance" }}>
@@ -44,7 +44,7 @@ const HeroSection = () => {
 
       {/* Decorative */}
       <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-accent/8" />
-      <div className="absolute -right-4 bottom-4 w-28 h-28 rounded-full bg-surte-rojo-teja/8" />
+      <div className="absolute -right-4 bottom-4 w-28 h-28 rounded-full bg-surte-naranja/8" />
 
       {/* Trust badges */}
       <motion.div
