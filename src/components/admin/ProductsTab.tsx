@@ -15,7 +15,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   const [filterVisibility, setFilterVisibility] = useState<"all" | "visible" | "hidden">("all");
   const [form, setForm] = useState({
     name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "",
-    stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "",
+    cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "",
   });
   const { upload, uploading } = useImageUpload();
 
