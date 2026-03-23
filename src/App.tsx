@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import FloatingWhatsApp from "@/components/surte/FloatingWhatsApp";
+import DynamicThemeInjector from "@/components/DynamicThemeInjector";
 import Index from "./pages/Index";
 import Catalogo from "./pages/Catalogo";
 import Carrito from "./pages/Carrito";
@@ -31,6 +32,7 @@ const App = () => (
         <CartProvider>
           <Toaster />
           <Sonner />
+          <DynamicThemeInjector />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />

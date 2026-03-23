@@ -5,10 +5,10 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 const DEFAULT_COLORS: Record<string, { hex: string; label: string; desc: string }> = {
+  color_primary: { hex: "#0C4B83", label: "Azul Confianza", desc: "Headers, navegación y confianza institucional" },
+  color_secondary: { hex: "#76B833", label: "Verde Vitalidad", desc: "Éxito, frescura y productos naturales" },
+  color_accent: { hex: "#F37021", label: "Naranja Energía", desc: "CTA, promociones y estímulo de apetito" },
   color_tierra: { hex: "#8D6E63", label: "Tierra Santandereana", desc: "Fondos cálidos y empaques artesanales" },
-  color_rojo_teja: { hex: "#A52A2A", label: "Rojo Teja", desc: "Botones de acción, etiquetas de cárnicos y salsas" },
-  color_verde_campina: { hex: "#5D7B50", label: "Verde Campiña", desc: "Pulpas de fruta y frescura natural" },
-  color_azul_marino: { hex: "#1A2B3C", label: "Azul Marino Tradicional", desc: "Textos principales y confianza institucional" },
   color_cream: { hex: "#F0F0F0", label: "Cloud Dancer", desc: "Base orgánica, fondo limpio y artesanal" },
 };
 
@@ -85,6 +85,7 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
     store_name: { label: "Nombre de la Tienda", icon: Store, type: "text" },
     whatsapp_number: { label: "Número WhatsApp", icon: Phone, type: "text", description: "Con código de país: 573001234567" },
     min_order_amount: { label: "Pedido Mínimo (COP)", icon: DollarSign, type: "text", description: "Monto mínimo para realizar un pedido" },
+    footer_text: { label: "Texto Legal Pie de Página", icon: Save, type: "text", description: "Texto legal que aparece en el footer" },
     show_price_tiers: { label: "Mostrar Precios Escalonados", icon: Eye, type: "toggle", description: "Muestra precios Mayor y Distribuidor en el catálogo" },
   };
 
