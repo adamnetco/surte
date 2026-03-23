@@ -30,6 +30,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       original_price: p.original_price ? String(p.original_price) : "",
       price_wholesale: p.price_wholesale ? String(p.price_wholesale) : "",
       price_distributor: p.price_distributor ? String(p.price_distributor) : "",
+      cost_price: p.cost_price ? String(p.cost_price) : "",
       stock: String(p.stock), unit: p.unit || "unidad", category_id: p.category_id || "",
       is_fresh: p.is_fresh, is_wholesale: p.is_wholesale, is_active: p.is_active !== false, image_url: p.image_url || "",
     });
