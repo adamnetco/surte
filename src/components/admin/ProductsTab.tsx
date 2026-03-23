@@ -20,7 +20,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   const { upload, uploading } = useImageUpload();
 
   const resetForm = () => {
-    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "" });
+    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "" });
     setEditing(null);
   };
 
