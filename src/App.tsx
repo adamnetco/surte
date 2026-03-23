@@ -32,6 +32,7 @@ const App = () => (
         <CartProvider>
           <Toaster />
           <Sonner />
+          <DynamicThemeInjector />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
