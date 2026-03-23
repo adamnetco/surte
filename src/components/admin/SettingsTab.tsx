@@ -85,6 +85,7 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
     store_name: { label: "Nombre de la Tienda", icon: Store, type: "text" },
     whatsapp_number: { label: "Número WhatsApp", icon: Phone, type: "text", description: "Con código de país: 573001234567" },
     min_order_amount: { label: "Pedido Mínimo (COP)", icon: DollarSign, type: "text", description: "Monto mínimo para realizar un pedido" },
+    footer_text: { label: "Texto Legal Pie de Página", icon: Save, type: "text", description: "Texto legal que aparece en el footer" },
     show_price_tiers: { label: "Mostrar Precios Escalonados", icon: Eye, type: "toggle", description: "Muestra precios Mayor y Distribuidor en el catálogo" },
   };
 
