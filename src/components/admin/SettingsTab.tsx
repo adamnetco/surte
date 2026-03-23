@@ -5,10 +5,10 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 const DEFAULT_COLORS: Record<string, { hex: string; label: string; desc: string }> = {
+  color_primary: { hex: "#0C4B83", label: "Azul Confianza", desc: "Headers, navegación y confianza institucional" },
+  color_secondary: { hex: "#76B833", label: "Verde Vitalidad", desc: "Éxito, frescura y productos naturales" },
+  color_accent: { hex: "#F37021", label: "Naranja Energía", desc: "CTA, promociones y estímulo de apetito" },
   color_tierra: { hex: "#8D6E63", label: "Tierra Santandereana", desc: "Fondos cálidos y empaques artesanales" },
-  color_rojo_teja: { hex: "#A52A2A", label: "Rojo Teja", desc: "Botones de acción, etiquetas de cárnicos y salsas" },
-  color_verde_campina: { hex: "#5D7B50", label: "Verde Campiña", desc: "Pulpas de fruta y frescura natural" },
-  color_azul_marino: { hex: "#1A2B3C", label: "Azul Marino Tradicional", desc: "Textos principales y confianza institucional" },
   color_cream: { hex: "#F0F0F0", label: "Cloud Dancer", desc: "Base orgánica, fondo limpio y artesanal" },
 };
 
