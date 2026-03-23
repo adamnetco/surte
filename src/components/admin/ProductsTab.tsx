@@ -51,6 +51,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       original_price: form.original_price ? Number(form.original_price) : null,
       price_wholesale: form.price_wholesale ? Number(form.price_wholesale) : null,
       price_distributor: form.price_distributor ? Number(form.price_distributor) : null,
+      cost_price: form.cost_price ? Number(form.cost_price) : null,
       stock: Number(form.stock), unit: form.unit, category_id: form.category_id || null,
       is_fresh: form.is_fresh, is_wholesale: form.is_wholesale, is_active: form.is_active, image_url: form.image_url || null,
     };
