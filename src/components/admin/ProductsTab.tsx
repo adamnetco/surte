@@ -175,6 +175,11 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           {/* Pricing */}
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Precios</p>
+            {/* Cost price - only visible to admin */}
+            <div>
+              <label className="text-[11px] text-destructive mb-0.5 block font-medium">Costo La Unión (oculto al cliente)</label>
+              <input value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} placeholder="0" type="number" className="w-full bg-destructive/5 rounded-lg px-3 py-2.5 text-sm border border-destructive/20 focus:border-destructive focus:outline-none transition-colors font-mono" />
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-[11px] text-muted-foreground mb-0.5 block">Detal *</label>
@@ -194,6 +199,14 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
               </div>
             </div>
           </div>
+
+          {/* Margin Calculator */}
+          <MarginCalculator
+            costPrice={form.cost_price}
+            price={form.price}
+            priceWholesale={form.price_wholesale}
+            priceDistributor={form.price_distributor}
+          />
 
           <div className="grid grid-cols-2 gap-2">
             <div>
