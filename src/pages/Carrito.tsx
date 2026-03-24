@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { useCart } from "@/context/CartContext";
 import { useAppSettings } from "@/hooks/useStore";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2 } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
