@@ -54,6 +54,7 @@ const Carrito = () => {
       phone: user.user_metadata?.phone || "",
       address: "",
       notes: "",
+      neighborhood_id: "",
     });
     setShowForm(true);
   };
