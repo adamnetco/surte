@@ -31,7 +31,7 @@ const Login = () => {
     setLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email, password, fullName, businessType, phone);
         if (error) throw error;
         toast.success("¡Cuenta creada! Revisa tu email para confirmar.");
       } else {
