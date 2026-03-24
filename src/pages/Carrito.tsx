@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { useCart } from "@/context/CartContext";
 import { useAppSettings } from "@/hooks/useStore";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2 } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -22,7 +23,23 @@ const Carrito = () => {
   const meetsMinimum = totalPrice >= minOrder;
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", address: "", notes: "" });
+  const [form, setForm] = useState({ name: "", phone: "", address: "", notes: "", neighborhood_id: "" });
+  const [deliveryCost, setDeliveryCost] = useState(0);
+
+  const { data: shippingZones } = useQuery({
+    queryKey: ["shipping-zones"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("shipping_zones").select("*").eq("is_active", true).order("city").order("neighborhood");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleZoneChange = (zoneId: string) => {
+    setForm({ ...form, neighborhood_id: zoneId });
+    const zone = shippingZones?.find((z: any) => z.id === zoneId);
+    setDeliveryCost(zone ? Number(zone.delivery_price) : 0);
+  };
 
   const handleFinalize = () => {
     if (!meetsMinimum) return;
@@ -37,6 +54,7 @@ const Carrito = () => {
       phone: user.user_metadata?.phone || "",
       address: "",
       notes: "",
+      neighborhood_id: "",
     });
     setShowForm(true);
   };
@@ -165,6 +183,33 @@ const Carrito = () => {
                   <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
                   <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="WhatsApp (ej: 573001234567) *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
                   <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
+                  {shippingZones && shippingZones.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <MapPin size={14} className="text-accent" />
+                        <span className="text-xs font-medium text-muted-foreground">Zona de entrega</span>
+                      </div>
+                      <select value={form.neighborhood_id} onChange={(e) => handleZoneChange(e.target.value)} className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none">
+                        <option value="">Seleccionar barrio...</option>
+                        {["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"].map(city => {
+                          const cityZones = shippingZones.filter((z: any) => z.city === city);
+                          if (cityZones.length === 0) return null;
+                          return (
+                            <optgroup key={city} label={city}>
+                              {cityZones.map((z: any) => (
+                                <option key={z.id} value={z.id}>
+                                  {z.neighborhood} — {formatPrice(z.delivery_price)}
+                                </option>
+                              ))}
+                            </optgroup>
+                          );
+                        })}
+                      </select>
+                      {deliveryCost > 0 && (
+                        <p className="text-xs text-accent font-medium mt-1">Domicilio: {formatPrice(deliveryCost)}</p>
+                      )}
+                    </div>
+                  )}
                   <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notas adicionales" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" rows={2} />
                   <div className="flex gap-2">
                     <button onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-2.5 text-sm text-muted-foreground font-medium">Cancelar</button>
@@ -182,9 +227,19 @@ const Carrito = () => {
 
       {items.length > 0 && !showForm && (
         <div className="fixed bottom-[68px] left-0 right-0 bg-card border-t border-border px-4 py-3 z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm text-muted-foreground">Subtotal</span>
+            <span className="text-sm font-medium text-foreground">{formatPrice(totalPrice)}</span>
+          </div>
+          {deliveryCost > 0 && (
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm text-muted-foreground">Domicilio</span>
+              <span className="text-sm font-medium text-foreground">{formatPrice(deliveryCost)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">Total</span>
-            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(totalPrice)}</span>
+            <span className="text-sm font-semibold text-foreground">Total</span>
+            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(totalPrice + deliveryCost)}</span>
           </div>
           <button
             onClick={handleFinalize}

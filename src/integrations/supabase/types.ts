@@ -403,6 +403,33 @@ export type Database = {
         }
         Relationships: []
       }
+      shipping_zones: {
+        Row: {
+          city: string
+          created_at: string
+          delivery_price: number
+          id: string
+          is_active: boolean | null
+          neighborhood: string
+        }
+        Insert: {
+          city?: string
+          created_at?: string
+          delivery_price?: number
+          id?: string
+          is_active?: boolean | null
+          neighborhood: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          delivery_price?: number
+          id?: string
+          is_active?: boolean | null
+          neighborhood?: string
+        }
+        Relationships: []
+      }
       testimonials: {
         Row: {
           content: string
@@ -476,7 +503,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "superadmin" | "editor"
-      business_type: "detal" | "horeca" | "minimercado" | "distribuidor"
+      business_type:
+        | "detal"
+        | "horeca"
+        | "minimercado"
+        | "distribuidor"
+        | "casa"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -605,7 +637,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "superadmin", "editor"],
-      business_type: ["detal", "horeca", "minimercado", "distribuidor"],
+      business_type: ["detal", "horeca", "minimercado", "distribuidor", "casa"],
     },
   },
 } as const

@@ -12,6 +12,7 @@ import NotificationBanner from "@/components/surte/NotificationBanner";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Flame, Truck, Shield, Star } from "lucide-react";
+import { useAppSettings } from "@/hooks/useStore";
 
 const PromoSection = () => {
   const navigate = useNavigate();
@@ -77,20 +78,23 @@ const ValueStrip = () => (
 );
 
 const Index = () => {
+  const { data: settings } = useAppSettings();
+  const show = (key: string) => settings?.[key] !== "false";
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main>
         <HeroSection />
         <NotificationBanner />
-        <BannerCarousel />
+        {show("show_section_banners") && <BannerCarousel />}
         <CategoryGrid />
         <ValueStrip />
         <FeaturedProducts />
-        <PromoSection />
-        <BrandsSection />
-        <GallerySection />
-        <TestimonialsSection />
+        {show("show_section_promo") && <PromoSection />}
+        {show("show_section_brands") && <BrandsSection />}
+        {show("show_section_gallery") && <GallerySection />}
+        {show("show_section_testimonials") && <TestimonialsSection />}
       </main>
       <FloatingCart />
       <BottomNav />

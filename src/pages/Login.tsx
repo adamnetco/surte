@@ -1,15 +1,26 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone } from "lucide-react";
 import { toast } from "sonner";
 import surteLogo from "@/assets/surte-logo.png";
+
+type BusinessTypeOption = { value: string; label: string; icon: string };
+const BUSINESS_TYPES: BusinessTypeOption[] = [
+  { value: "casa", label: "Casa / Consumidor", icon: "🏠" },
+  { value: "detal", label: "Tienda Detal", icon: "🏪" },
+  { value: "minimercado", label: "Minimercado", icon: "🛒" },
+  { value: "horeca", label: "Restaurante / HORECA", icon: "🍽️" },
+  { value: "distribuidor", label: "Salsamentaria / Distribuidor", icon: "🚚" },
+];
 
 const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [businessType, setBusinessType] = useState("casa");
+  const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
@@ -20,7 +31,7 @@ const Login = () => {
     setLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email, password, fullName, businessType, phone);
         if (error) throw error;
         toast.success("¡Cuenta creada! Revisa tu email para confirmar.");
       } else {
@@ -52,17 +63,49 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
           {isSignUp && (
-            <div className="relative">
-              <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nombre completo"
-                className="w-full bg-muted rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                required
-              />
-            </div>
+            <>
+              <div className="relative">
+                <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Nombre completo"
+                  className="w-full bg-muted rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  required
+                />
+              </div>
+              <div className="relative">
+                <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="WhatsApp (ej: 3001234567)"
+                  className="w-full bg-muted rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2 ml-1">Tipo de negocio</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {BUSINESS_TYPES.map((bt) => (
+                    <button
+                      key={bt.value}
+                      type="button"
+                      onClick={() => setBusinessType(bt.value)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-sm transition-all border ${
+                        businessType === bt.value
+                          ? "border-accent bg-accent/10 text-foreground font-medium"
+                          : "border-border bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      <span>{bt.icon}</span>
+                      <span className="truncate">{bt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
           <div className="relative">
             <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
