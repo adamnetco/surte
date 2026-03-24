@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone } from "lucide-react";
 import { toast } from "sonner";
 import surteLogo from "@/assets/surte-logo.png";
 
