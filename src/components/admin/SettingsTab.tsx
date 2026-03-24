@@ -86,7 +86,16 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
     whatsapp_number: { label: "Número WhatsApp", icon: Phone, type: "text", description: "Con código de país: 573001234567" },
     min_order_amount: { label: "Pedido Mínimo (COP)", icon: DollarSign, type: "text", description: "Monto mínimo para realizar un pedido" },
     footer_text: { label: "Texto Legal Pie de Página", icon: Save, type: "text", description: "Texto legal que aparece en el footer" },
+    footer_nit: { label: "NIT Empresa", icon: Save, type: "text", description: "NIT de Conjuguémonos Grupo Empresarial" },
+    footer_email: { label: "Email de Contacto", icon: Save, type: "text", description: "Email público de la empresa" },
+    footer_address: { label: "Dirección Física", icon: Save, type: "text", description: "Dirección de la sede principal" },
     show_price_tiers: { label: "Mostrar Precios Escalonados", icon: Eye, type: "toggle", description: "Muestra precios Mayor y Distribuidor en el catálogo" },
+    show_section_offers: { label: "Sección de Ofertas", icon: Eye, type: "toggle", description: "Mostrar/ocultar la sección de ofertas relámpago en el Home" },
+    show_section_testimonials: { label: "Sección de Testimonios", icon: Eye, type: "toggle", description: "Mostrar/ocultar testimonios de clientes" },
+    show_section_gallery: { label: "Sección de Galería", icon: Eye, type: "toggle", description: "Mostrar/ocultar la galería de fotos" },
+    show_section_brands: { label: "Sección de Marcas Aliadas", icon: Eye, type: "toggle", description: "Mostrar/ocultar logos de marcas" },
+    show_section_promo: { label: "Sección Promocional", icon: Eye, type: "toggle", description: "Mostrar/ocultar la sección de salsas artesanales" },
+    show_section_banners: { label: "Carrusel de Banners", icon: Eye, type: "toggle", description: "Mostrar/ocultar los banners del Home" },
   };
 
   const textSettings = Object.entries(values).filter(([key]) => settingsMeta[key]?.type === "text");
