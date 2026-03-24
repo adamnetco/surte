@@ -23,7 +23,23 @@ const Carrito = () => {
   const meetsMinimum = totalPrice >= minOrder;
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", address: "", notes: "" });
+  const [form, setForm] = useState({ name: "", phone: "", address: "", notes: "", neighborhood_id: "" });
+  const [deliveryCost, setDeliveryCost] = useState(0);
+
+  const { data: shippingZones } = useQuery({
+    queryKey: ["shipping-zones"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("shipping_zones").select("*").eq("is_active", true).order("city").order("neighborhood");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleZoneChange = (zoneId: string) => {
+    setForm({ ...form, neighborhood_id: zoneId });
+    const zone = shippingZones?.find((z: any) => z.id === zoneId);
+    setDeliveryCost(zone ? Number(zone.delivery_price) : 0);
+  };
 
   const handleFinalize = () => {
     if (!meetsMinimum) return;
