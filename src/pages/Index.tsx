@@ -12,6 +12,7 @@ import NotificationBanner from "@/components/surte/NotificationBanner";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Flame, Truck, Shield, Star } from "lucide-react";
+import { useAppSettings } from "@/hooks/useStore";
 
 const PromoSection = () => {
   const navigate = useNavigate();
