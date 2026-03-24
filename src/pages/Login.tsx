@@ -5,11 +5,22 @@ import { Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import surteLogo from "@/assets/surte-logo.png";
 
+type BusinessTypeOption = { value: string; label: string; icon: string };
+const BUSINESS_TYPES: BusinessTypeOption[] = [
+  { value: "casa", label: "Casa / Consumidor", icon: "🏠" },
+  { value: "detal", label: "Tienda Detal", icon: "🏪" },
+  { value: "minimercado", label: "Minimercado", icon: "🛒" },
+  { value: "horeca", label: "Restaurante / HORECA", icon: "🍽️" },
+  { value: "distribuidor", label: "Salsamentaria / Distribuidor", icon: "🚚" },
+];
+
 const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [businessType, setBusinessType] = useState("casa");
+  const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
