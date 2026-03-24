@@ -227,9 +227,19 @@ const Carrito = () => {
 
       {items.length > 0 && !showForm && (
         <div className="fixed bottom-[68px] left-0 right-0 bg-card border-t border-border px-4 py-3 z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm text-muted-foreground">Subtotal</span>
+            <span className="text-sm font-medium text-foreground">{formatPrice(totalPrice)}</span>
+          </div>
+          {deliveryCost > 0 && (
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm text-muted-foreground">Domicilio</span>
+              <span className="text-sm font-medium text-foreground">{formatPrice(deliveryCost)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">Total</span>
-            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(totalPrice)}</span>
+            <span className="text-sm font-semibold text-foreground">Total</span>
+            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(totalPrice + deliveryCost)}</span>
           </div>
           <button
             onClick={handleFinalize}
