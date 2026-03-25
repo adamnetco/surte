@@ -12,6 +12,8 @@ import {
   Link,
   Preview,
   Text,
+  Hr,
+  Section,
 } from 'npm:@react-email/components@0.0.22'
 
 interface EmailChangeEmailProps {
@@ -27,32 +29,36 @@ export const EmailChangeEmail = ({
   newEmail,
   confirmationUrl,
 }: EmailChangeEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="es" dir="ltr">
     <Head />
-    <Preview>Confirm your email change for {siteName}</Preview>
+    <Preview>Confirma el cambio de correo en SURTÉ YA</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email change</Heading>
+        <Section style={header}>
+          <Heading style={brand}>SURTÉ YA</Heading>
+          <Text style={tagline}>Soluciones Alimenticias</Text>
+        </Section>
+        <Heading style={h1}>Cambio de correo ✉️</Heading>
         <Text style={text}>
-          You requested to change your email address for {siteName} from{' '}
-          <Link href={`mailto:${email}`} style={link}>
-            {email}
-          </Link>{' '}
-          to{' '}
-          <Link href={`mailto:${newEmail}`} style={link}>
-            {newEmail}
-          </Link>
-          .
+          Solicitaste cambiar tu correo en SURTÉ YA de{' '}
+          <Link href={`mailto:${email}`} style={link}>{email}</Link>{' '}
+          a{' '}
+          <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>.
         </Text>
         <Text style={text}>
-          Click the button below to confirm this change:
+          Haz clic en el botón para confirmar el cambio:
         </Text>
-        <Button style={button} href={confirmationUrl}>
-          Confirm Email Change
-        </Button>
+        <Section style={buttonContainer}>
+          <Button style={button} href={confirmationUrl}>
+            Confirmar cambio
+          </Button>
+        </Section>
+        <Hr style={divider} />
         <Text style={footer}>
-          If you didn't request this change, please secure your account
-          immediately.
+          Si no solicitaste este cambio, asegura tu cuenta de inmediato.
+        </Text>
+        <Text style={footerBrand}>
+          SURTÉ YA — Conjuguémonos Grupo Empresarial
         </Text>
       </Container>
     </Body>
@@ -61,27 +67,24 @@ export const EmailChangeEmail = ({
 
 export default EmailChangeEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const link = { color: 'inherit', textDecoration: 'underline' }
+const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Montserrat', Arial, sans-serif" }
+const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
+const header = { backgroundColor: '#0C4B83', padding: '24px 25px 16px', textAlign: 'center' as const, borderRadius: '12px 12px 0 0' }
+const brand = { fontSize: '26px', fontWeight: 'bold' as const, color: '#ffffff', margin: '0', letterSpacing: '1px' }
+const tagline = { fontSize: '11px', color: '#76B833', margin: '4px 0 0', textTransform: 'uppercase' as const, letterSpacing: '2px' }
+const divider = { borderColor: '#E6E6E6', margin: '24px 0 0' }
+const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#0C4B83', margin: '24px 25px 12px' }
+const text = { fontSize: '14px', color: '#55575d', lineHeight: '1.6', margin: '0 25px 16px' }
+const link = { color: '#0C4B83', textDecoration: 'underline' }
+const buttonContainer = { textAlign: 'center' as const, margin: '8px 0 24px' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#F37021',
   color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontSize: '15px',
+  fontWeight: 'bold' as const,
+  borderRadius: '10px',
+  padding: '14px 32px',
   textDecoration: 'none',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const footer = { fontSize: '12px', color: '#999999', margin: '16px 25px 8px' }
+const footerBrand = { fontSize: '11px', color: '#0C4B83', margin: '0 25px 24px', fontWeight: '600' as const }
