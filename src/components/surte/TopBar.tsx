@@ -3,12 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import surteLogo from "@/assets/surte-logo.png";
 
-const CITIES = [
-  "Bucaramanga",
-  "Floridablanca",
-  "Girón",
-  "Piedecuesta",
-] as const;
+const CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"] as const;
 
 interface TopBarProps {
   onSearch?: (query: string) => void;
@@ -57,7 +52,7 @@ const TopBar = ({ onSearch }: TopBarProps) => {
         <img
           src={surteLogo}
           alt="SURTÉ"
-          className="h-9 w-auto object-contain cursor-pointer"
+          className="h-12 w-auto object-contain cursor-pointer"
           onClick={() => navigate("/")}
         />
         <div className="flex items-center gap-2">
@@ -90,7 +85,10 @@ const TopBar = ({ onSearch }: TopBarProps) => {
         </button>
 
         {cityOpen && (
-          <div className="absolute left-4 right-4 top-full mt-1 bg-card border border-border rounded-xl overflow-hidden z-50" style={{ boxShadow: "var(--shadow-card-hover)" }}>
+          <div
+            className="absolute left-4 right-4 top-full mt-1 bg-card border border-border rounded-xl overflow-hidden z-50"
+            style={{ boxShadow: "var(--shadow-card-hover)" }}
+          >
             <p className="px-4 pt-3 pb-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Selecciona tu ciudad
             </p>
@@ -99,16 +97,12 @@ const TopBar = ({ onSearch }: TopBarProps) => {
                 key={city}
                 onClick={() => handleCitySelect(city)}
                 className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${
-                  selectedCity === city
-                    ? "bg-accent/10 text-accent font-medium"
-                    : "text-foreground hover:bg-muted"
+                  selectedCity === city ? "bg-accent/10 text-accent font-medium" : "text-foreground hover:bg-muted"
                 }`}
               >
                 <MapPin size={14} className={selectedCity === city ? "text-accent" : "text-muted-foreground"} />
                 {city}
-                {selectedCity === city && (
-                  <span className="ml-auto text-xs text-accent">✓</span>
-                )}
+                {selectedCity === city && <span className="ml-auto text-xs text-accent">✓</span>}
               </button>
             ))}
           </div>
