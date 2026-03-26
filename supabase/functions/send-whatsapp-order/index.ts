@@ -99,6 +99,32 @@ Deno.serve(async (req) => {
     // Update order with whatsapp ref
     await supabaseAdmin.from('orders').update({ whatsapp_ref: `msg_${order.order_number}` }).eq('id', order.id);
 
+    // Send order confirmation email if user has email
+    if (userId) {
+      const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(userId);
+      if (authUser?.email) {
+        try {
+          await supabaseAdmin.functions.invoke('send-transactional-email', {
+            body: {
+              templateName: 'order-confirmation',
+              recipientEmail: authUser.email,
+              idempotencyKey: `order-confirm-${order.id}`,
+              templateData: {
+                customerName: customer_name,
+                orderNumber: order.order_number,
+                items: items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price })),
+                total,
+                address: customer_address || undefined,
+              },
+            },
+          });
+        } catch (emailErr) {
+          console.error('Failed to send order confirmation email:', emailErr);
+          // Non-fatal — order was already created
+        }
+      }
+    }
+
     // Check if WhatsApp API token is configured
     const whatsappToken = Deno.env.get('WHATSAPP_API_TOKEN');
     const whatsappPhoneId = Deno.env.get('WHATSAPP_PHONE_ID');
