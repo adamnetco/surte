@@ -4,10 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAppSettings } from "@/hooks/useStore";
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
 const BannerCarousel = () => {
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
+  const { data: settings } = useAppSettings();
 
   const { data: banners } = useQuery({
     queryKey: ["banners"],
@@ -27,6 +32,15 @@ const BannerCarousel = () => {
   if (!banners?.length) return null;
   const banner = banners[current];
 
+  // Replace dynamic placeholders in subtitle
+  const resolveSubtitle = (subtitle: string | null) => {
+    if (!subtitle) return null;
+    const minOrder = Number(settings?.min_order_amount || 40000);
+    return subtitle
+      .replace(/\$[\d.,]+/g, formatPrice(minOrder))
+      .replace(/\{min_order\}/gi, formatPrice(minOrder));
+  };
+
   return (
     <section className="px-4 mt-3">
       <div className="relative rounded-2xl overflow-hidden" style={{ background: banner.image_url ? undefined : "var(--gradient-hero)" }}>
@@ -37,7 +51,11 @@ const BannerCarousel = () => {
           <AnimatePresence mode="wait">
             <motion.div key={banner.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
               <h2 className="text-xl font-heading font-extrabold text-primary-foreground leading-tight mb-2">{banner.title}</h2>
-              {banner.subtitle && <p className="text-primary-foreground/80 text-sm mb-4 max-w-[240px]">{banner.subtitle}</p>}
+              {banner.subtitle && (
+                <p className="text-primary-foreground/80 text-sm mb-4 max-w-[240px]">
+                  {resolveSubtitle(banner.subtitle)}
+                </p>
+              )}
               {banner.cta_text && (
                 <button onClick={() => navigate(banner.cta_link || "/catalogo")} className="btn-surte flex items-center gap-2 text-sm">
                   {banner.cta_text} <ArrowRight size={16} />
