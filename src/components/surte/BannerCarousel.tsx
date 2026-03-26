@@ -36,9 +36,7 @@ const BannerCarousel = () => {
   const resolveSubtitle = (subtitle: string | null) => {
     if (!subtitle) return null;
     const minOrder = Number(settings?.min_order_amount || 40000);
-    return subtitle
-      .replace(/\$[\d.,]+/g, formatPrice(minOrder))
-      .replace(/\{min_order\}/gi, formatPrice(minOrder));
+    return subtitle.replace(/\{min_order\}/gi, formatPrice(minOrder));
   };
 
   return (
