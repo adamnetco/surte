@@ -50,6 +50,7 @@ const App = () => (
               <Route path="/configuracion" element={<Configuracion />} />
               <Route path="/producto/:id" element={<ProductoDetalle />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/unsubscribe" element={<Unsubscribe />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <FloatingWhatsApp />
