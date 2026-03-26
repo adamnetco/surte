@@ -22,6 +22,7 @@ import Ayuda from "./pages/Ayuda";
 import Configuracion from "./pages/Configuracion";
 import ProductoDetalle from "./pages/ProductoDetalle";
 import NotFound from "./pages/NotFound";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
