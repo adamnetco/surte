@@ -34,10 +34,16 @@ const Login = () => {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
+      if (result.redirected) {
+        // User is being redirected to Google — don't reset loading
+        return;
+      }
       if (result.error) throw result.error;
+      // OAuth completed (session set via lovable module) — navigate home
+      toast.success("¡Bienvenido!");
+      navigate("/");
     } catch (err: any) {
       toast.error(err.message || "Error al iniciar con Google");
-    } finally {
       setGoogleLoading(false);
     }
   };
