@@ -45,7 +45,7 @@ const TopBar = ({ onSearch }: TopBarProps) => {
     <header className="sticky top-0 z-40 bg-card border-b border-border">
       {/* Promo banner */}
       <div className="bg-primary text-primary-foreground text-center text-xs font-medium py-1.5 px-4">
-        🚚 ENVÍO GRATIS EN COMPRAS DESDE $40.000
+        🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000
       </div>
 
       <div className="flex items-center justify-between px-4 py-2.5">
