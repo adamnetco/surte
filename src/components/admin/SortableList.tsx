@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useState } from "react";
+import { ReactNode, useCallback, useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -27,15 +27,11 @@ interface SortableListProps {
 }
 
 const SortableList = ({ items, table, queryKeys, queryClient, renderItem }: SortableListProps) => {
-  const [localItems, setLocalItems] = useState<any[] | null>(null);
-  const displayItems = localItems ?? items;
+  const [localItems, setLocalItems] = useState<any[]>(items || []);
 
-  // Reset local state when items change from outside
-  const [prevItems, setPrevItems] = useState(items);
-  if (items !== prevItems) {
-    setPrevItems(items);
-    setLocalItems(null);
-  }
+  useEffect(() => {
+    setLocalItems(items || []);
+  }, [items]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -47,40 +43,41 @@ const SortableList = ({ items, table, queryKeys, queryClient, renderItem }: Sort
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const currentItems = localItems ?? items;
-    const oldIndex = currentItems.findIndex((i) => i.id === active.id);
-    const newIndex = currentItems.findIndex((i) => i.id === over.id);
+    const oldIndex = localItems.findIndex((i) => i.id === active.id);
+    const newIndex = localItems.findIndex((i) => i.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
 
-    const reordered = arrayMove(currentItems, oldIndex, newIndex);
+    const reordered = arrayMove(localItems, oldIndex, newIndex);
 
     // Optimistic local update (immediate visual feedback)
     setLocalItems(reordered);
 
     try {
-      // Persist new sort_order values
-      const updates = reordered.map((item, idx) =>
-        supabase.from(table as any).update({ sort_order: idx } as any).eq("id", item.id)
-      );
-      await Promise.all(updates);
+      for (const [idx, item] of reordered.entries()) {
+        const { error } = await supabase
+          .from(table as any)
+          .update({ sort_order: idx } as any)
+          .eq("id", item.id);
+        if (error) throw error;
+      }
 
       // Invalidate queries to refetch from DB
       queryKeys.forEach((qk) => queryClient.invalidateQueries({ queryKey: [qk] }));
       toast.success("Orden actualizado");
     } catch (err) {
       // Revert on error
-      setLocalItems(null);
+      setLocalItems(items || []);
       toast.error("Error al actualizar el orden");
     }
-  }, [items, localItems, table, queryKeys, queryClient]);
+  }, [localItems, table, queryKeys, queryClient, items]);
 
-  if (!displayItems?.length) return null;
+  if (!localItems?.length) return null;
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={displayItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={localItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-2">
-          {displayItems.map((item) => (
+          {localItems.map((item) => (
             <SortableItem key={item.id} id={item.id}>
               {renderItem(item)}
             </SortableItem>
