@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 type AppRole = "superadmin" | "admin" | "editor" | "user";
-type BusinessType = "detal" | "horeca" | "minimercado" | "distribuidor";
+type BusinessType = "detal" | "horeca" | "minimercado" | "distribuidor" | "casa";
 
 const roleMeta: Record<AppRole, { label: string; color: string; icon: typeof Shield }> = {
   superadmin: { label: "Superadmin", color: "bg-destructive text-destructive-foreground", icon: ShieldAlert },
