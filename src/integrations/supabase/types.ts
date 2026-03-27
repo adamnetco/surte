@@ -344,10 +344,13 @@ export type Database = {
           customer_address: string | null
           customer_name: string
           customer_phone: string
+          delivery_price: number
+          delivery_zone_id: string | null
           id: string
           notes: string | null
           order_number: number
           status: string
+          subtotal: number
           total: number
           updated_at: string
           user_id: string | null
@@ -358,10 +361,13 @@ export type Database = {
           customer_address?: string | null
           customer_name: string
           customer_phone: string
+          delivery_price?: number
+          delivery_zone_id?: string | null
           id?: string
           notes?: string | null
           order_number?: number
           status?: string
+          subtotal?: number
           total: number
           updated_at?: string
           user_id?: string | null
@@ -372,16 +378,68 @@ export type Database = {
           customer_address?: string | null
           customer_name?: string
           customer_phone?: string
+          delivery_price?: number
+          delivery_zone_id?: string | null
           id?: string
           notes?: string | null
           order_number?: number
           status?: string
+          subtotal?: number
           total?: number
           updated_at?: string
           user_id?: string | null
           whatsapp_ref?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_delivery_zone_id_fkey"
+            columns: ["delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_media: {
+        Row: {
+          created_at: string
+          id: string
+          media_type: string
+          media_url: string
+          product_id: string
+          sort_order: number
+          thumbnail_url: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          media_type: string
+          media_url: string
+          product_id: string
+          sort_order?: number
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          media_type?: string
+          media_url?: string
+          product_id?: string
+          sort_order?: number
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
