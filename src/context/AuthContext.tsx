@@ -24,8 +24,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<AppRole>("user");
   const [loading, setLoading] = useState(true);
 
+  const resetAuthState = () => {
+    setSession(null);
+    setUser(null);
+    setIsAdmin(false);
+    setRole("user");
+  };
+
   const checkRole = async (userId: string) => {
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).single();
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      setRole("user");
+      setIsAdmin(false);
+      return;
+    }
+
     const userRole = (data?.role as AppRole) || "user";
     setRole(userRole);
     setIsAdmin(["superadmin", "admin"].includes(userRole));
@@ -38,17 +56,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         setTimeout(() => checkRole(session.user.id), 0);
       } else {
-        setIsAdmin(false);
-        setRole("user");
+        resetAuthState();
       }
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if ((error as any)?.code === "refresh_token_not_found") {
+        await supabase.auth.signOut();
+        resetAuthState();
+        setLoading(false);
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         checkRole(session.user.id);
+      } else {
+        resetAuthState();
       }
       setLoading(false);
     });
