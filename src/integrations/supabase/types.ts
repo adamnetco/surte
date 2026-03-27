@@ -344,10 +344,13 @@ export type Database = {
           customer_address: string | null
           customer_name: string
           customer_phone: string
+          delivery_price: number
+          delivery_zone_id: string | null
           id: string
           notes: string | null
           order_number: number
           status: string
+          subtotal: number
           total: number
           updated_at: string
           user_id: string | null
@@ -358,10 +361,13 @@ export type Database = {
           customer_address?: string | null
           customer_name: string
           customer_phone: string
+          delivery_price?: number
+          delivery_zone_id?: string | null
           id?: string
           notes?: string | null
           order_number?: number
           status?: string
+          subtotal?: number
           total: number
           updated_at?: string
           user_id?: string | null
@@ -372,16 +378,27 @@ export type Database = {
           customer_address?: string | null
           customer_name?: string
           customer_phone?: string
+          delivery_price?: number
+          delivery_zone_id?: string | null
           id?: string
           notes?: string | null
           order_number?: number
           status?: string
+          subtotal?: number
           total?: number
           updated_at?: string
           user_id?: string | null
           whatsapp_ref?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_delivery_zone_id_fkey"
+            columns: ["delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_zones"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_media: {
         Row: {
