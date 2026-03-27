@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 type AppRole = "superadmin" | "admin" | "editor" | "user";
-type BusinessType = "detal" | "horeca" | "minimercado" | "distribuidor";
+type BusinessType = "detal" | "horeca" | "minimercado" | "distribuidor" | "casa";
 
 const roleMeta: Record<AppRole, { label: string; color: string; icon: typeof Shield }> = {
   superadmin: { label: "Superadmin", color: "bg-destructive text-destructive-foreground", icon: ShieldAlert },
@@ -21,10 +21,11 @@ const roleMeta: Record<AppRole, { label: string; color: string; icon: typeof Shi
 };
 
 const businessMeta: Record<BusinessType, { label: string; color: string }> = {
-  detal: { label: "Detal", color: "bg-surte-naranja/20 text-surte-naranja" },
+  casa: { label: "Casa", color: "bg-muted text-muted-foreground" },
+  detal: { label: "Detal", color: "bg-secondary/20 text-secondary-foreground" },
   horeca: { label: "HORECA", color: "bg-primary/20 text-primary" },
-  minimercado: { label: "Minimercado", color: "bg-secondary/20 text-secondary-foreground" },
-  distribuidor: { label: "Distribuidor", color: "bg-accent/20 text-accent" },
+  minimercado: { label: "Minimercado", color: "bg-accent/20 text-accent" },
+  distribuidor: { label: "Distribuidor", color: "bg-destructive/10 text-destructive" },
 };
 
 const UsersTab = ({ queryClient }: { queryClient: any }) => {

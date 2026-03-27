@@ -4,10 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
-import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download } from "lucide-react";
 import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useProfile, getPriceForType } from "@/hooks/useProfile";
 
 const formatPrice = (price: number) =>
@@ -22,6 +22,9 @@ const ProductoDetalle = () => {
   const businessType = (profile as any)?.business_type;
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [activeMediaIdx, setActiveMediaIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"descripcion" | "ficha">("descripcion");
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
@@ -31,6 +34,20 @@ const ProductoDetalle = () => {
         .select("*, categories(name)")
         .eq("id", id!)
         .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const { data: media } = useQuery({
+    queryKey: ["product-media", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_media")
+        .select("*")
+        .eq("product_id", id!)
+        .order("sort_order");
       if (error) throw error;
       return data;
     },
@@ -59,11 +76,22 @@ const ProductoDetalle = () => {
     );
   }
 
+  // Build gallery: main image + product_media images/videos
+  const allMedia: { type: "image" | "video" | "pdf"; url: string; title?: string }[] = [];
+  if (product.image_url) allMedia.push({ type: "image", url: product.image_url, title: product.name });
+  media?.forEach((m: any) => {
+    if (m.media_type === "image") allMedia.push({ type: "image", url: m.media_url, title: m.title });
+    if (m.media_type === "video") allMedia.push({ type: "video", url: m.media_url, title: m.title });
+  });
+  if (allMedia.length === 0) allMedia.push({ type: "image", url: "", title: product.name });
+
+  const pdfFiles = media?.filter((m: any) => m.media_type === "pdf") || [];
+
+  const currentMedia = allMedia[activeMediaIdx] || allMedia[0];
   const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
   const discount = product.original_price
     ? Math.round(((product.original_price - userPrice) / product.original_price) * 100)
     : 0;
-
   const outOfStock = product.stock <= 0;
 
   const handleAdd = () => {
@@ -84,39 +112,90 @@ const ProductoDetalle = () => {
     }
   };
 
+  const goMedia = (dir: number) => {
+    setActiveMediaIdx((prev) => (prev + dir + allMedia.length) % allMedia.length);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-28">
-      {/* Image */}
-      <div className="relative aspect-square bg-muted flex items-center justify-center overflow-hidden">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-8xl opacity-15 font-heading font-bold text-muted-foreground">{product.name.charAt(0)}</span>
-        )}
-        <div className="absolute top-4 left-4 right-4 flex justify-between">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
+      {/* Hero Media */}
+      <div className="relative aspect-square bg-muted overflow-hidden" onClick={() => currentMedia.type === "image" && currentMedia.url && setLightboxOpen(true)}>
+        {currentMedia.type === "image" ? (
+          currentMedia.url ? (
+            <img src={currentMedia.url} alt={product.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center text-8xl opacity-15 font-heading font-bold text-muted-foreground">{product.name.charAt(0)}</span>
+          )
+        ) : currentMedia.type === "video" ? (
+          <video src={currentMedia.url} controls className="w-full h-full object-contain bg-foreground/5" playsInline />
+        ) : null}
+
+        {/* Nav overlay */}
+        <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
+          <button onClick={(e) => { e.stopPropagation(); navigate(-1); }} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <div className="flex gap-2">
-            <button onClick={handleShare} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
+            <button onClick={(e) => { e.stopPropagation(); handleShare(); }} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
               <Share2 size={18} className="text-foreground" />
             </button>
-            <button onClick={() => toggleFavorite(product.id)} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
+            <button onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
               <Heart size={20} className={isFavorite(product.id) ? "text-destructive fill-destructive" : "text-muted-foreground"} />
             </button>
           </div>
         </div>
+
+        {/* Arrows */}
+        {allMedia.length > 1 && (
+          <>
+            <button onClick={(e) => { e.stopPropagation(); goMedia(-1); }} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center z-10">
+              <ChevronLeft size={16} className="text-foreground" />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); goMedia(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center z-10">
+              <ChevronRight size={16} className="text-foreground" />
+            </button>
+          </>
+        )}
+
         {discount > 0 && (
-          <span className="absolute bottom-4 left-4 bg-destructive text-destructive-foreground text-xs font-bold px-2.5 py-1 rounded-full">-{discount}%</span>
+          <span className="absolute bottom-4 left-4 bg-destructive text-destructive-foreground text-xs font-bold px-2.5 py-1 rounded-full z-10">-{discount}%</span>
         )}
         {outOfStock && (
-          <div className="absolute inset-0 bg-foreground/30 flex items-center justify-center">
+          <div className="absolute inset-0 bg-foreground/30 flex items-center justify-center z-10">
             <span className="bg-card text-foreground text-sm font-heading font-bold px-4 py-1.5 rounded-full">Agotado</span>
+          </div>
+        )}
+
+        {/* Dot indicators */}
+        {allMedia.length > 1 && (
+          <div className="absolute bottom-4 right-4 flex gap-1.5 z-10">
+            {allMedia.map((m, i) => (
+              <button key={i} onClick={(e) => { e.stopPropagation(); setActiveMediaIdx(i); }}
+                className={`w-2 h-2 rounded-full transition-all ${i === activeMediaIdx ? "bg-accent w-5" : "bg-card/60"}`} />
+            ))}
           </div>
         )}
       </div>
 
-      {/* Info */}
+      {/* Thumbnails strip */}
+      {allMedia.length > 1 && (
+        <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
+          {allMedia.map((m, i) => (
+            <button key={i} onClick={() => setActiveMediaIdx(i)}
+              className={`relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-colors ${i === activeMediaIdx ? "border-accent" : "border-transparent"}`}>
+              {m.type === "image" ? (
+                <img src={m.url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <Play size={16} className="text-muted-foreground" />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Product Info */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -131,7 +210,7 @@ const ProductoDetalle = () => {
           )}
         </div>
 
-        <h1 className="text-xl font-heading font-bold text-foreground mb-1" style={{ textWrap: "balance" }}>{product.name}</h1>
+        <h1 className="text-xl font-heading font-bold text-foreground mb-1" style={{ textWrap: "balance" as any }}>{product.name}</h1>
         <p className="text-sm text-muted-foreground mb-3">{product.unit}</p>
 
         <div className="flex items-baseline gap-2 mb-1">
@@ -148,10 +227,41 @@ const ProductoDetalle = () => {
           <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} />
         </div>
 
-        {product.description && (
+        {/* Tabs: Descripción / Ficha Técnica */}
+        <div className="flex gap-1 mb-3 bg-muted rounded-lg p-1">
+          <button onClick={() => setActiveTab("descripcion")}
+            className={`flex-1 text-xs font-heading font-semibold py-2 rounded-md transition-colors ${activeTab === "descripcion" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}>
+            Descripción
+          </button>
+          {pdfFiles.length > 0 && (
+            <button onClick={() => setActiveTab("ficha")}
+              className={`flex-1 text-xs font-heading font-semibold py-2 rounded-md transition-colors flex items-center justify-center gap-1 ${activeTab === "ficha" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}>
+              <FileText size={12} /> Ficha Técnica
+            </button>
+          )}
+        </div>
+
+        {activeTab === "descripcion" && product.description && (
           <div className="mb-4">
-            <h3 className="text-sm font-heading font-semibold text-foreground mb-1">Descripción</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed" style={{ textWrap: "pretty" }}>{product.description}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed" style={{ textWrap: "pretty" as any }}>{product.description}</p>
+          </div>
+        )}
+
+        {activeTab === "ficha" && pdfFiles.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {pdfFiles.map((pdf: any) => (
+              <a key={pdf.id} href={pdf.media_url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border hover:border-accent transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                  <FileText size={18} className="text-destructive" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{pdf.title || "Ficha Técnica"}</p>
+                  <p className="text-[11px] text-muted-foreground">PDF · Toca para ver</p>
+                </div>
+                <Download size={16} className="text-muted-foreground flex-shrink-0" />
+              </a>
+            ))}
           </div>
         )}
 
@@ -189,18 +299,52 @@ const ProductoDetalle = () => {
           }`}
         >
           {added ? (
-            <>
-              <CheckCircle2 size={18} />
-              ¡Agregado!
-            </>
+            <><CheckCircle2 size={18} /> ¡Agregado!</>
           ) : (
-            <>
-              <ShoppingCart size={18} />
-              Agregar {formatPrice(userPrice * qty)}
-            </>
+            <><ShoppingCart size={18} /> Agregar {formatPrice(userPrice * qty)}</>
           )}
         </button>
       </div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-foreground/90 backdrop-blur-md flex items-center justify-center"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/90 flex items-center justify-center z-10" onClick={() => setLightboxOpen(false)}>
+              <X size={18} className="text-foreground" />
+            </button>
+            {allMedia.length > 1 && (
+              <>
+                <button onClick={(e) => { e.stopPropagation(); goMedia(-1); }} className="absolute left-3 w-10 h-10 rounded-full bg-card/80 flex items-center justify-center z-10">
+                  <ChevronLeft size={18} className="text-foreground" />
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); goMedia(1); }} className="absolute right-3 w-10 h-10 rounded-full bg-card/80 flex items-center justify-center z-10">
+                  <ChevronRight size={18} className="text-foreground" />
+                </button>
+              </>
+            )}
+            <motion.img
+              key={activeMediaIdx}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              src={currentMedia.url}
+              alt={product.name}
+              className="max-w-[95vw] max-h-[85vh] object-contain rounded-xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <p className="absolute bottom-6 text-xs text-primary-foreground/90 bg-foreground/40 px-3 py-1.5 rounded-full">
+              {activeMediaIdx + 1} / {allMedia.length}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
