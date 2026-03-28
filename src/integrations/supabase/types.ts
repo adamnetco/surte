@@ -257,6 +257,33 @@ export type Database = {
         }
         Relationships: []
       }
+      municipality_settings: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          is_active: boolean
+          min_order_amount: number
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          min_order_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          min_order_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_subscriptions: {
         Row: {
           created_at: string | null
@@ -346,6 +373,8 @@ export type Database = {
           customer_phone: string
           delivery_price: number
           delivery_zone_id: string | null
+          external_sync_sent_at: string | null
+          external_sync_status: string
           id: string
           notes: string | null
           order_number: number
@@ -363,6 +392,8 @@ export type Database = {
           customer_phone: string
           delivery_price?: number
           delivery_zone_id?: string | null
+          external_sync_sent_at?: string | null
+          external_sync_status?: string
           id?: string
           notes?: string | null
           order_number?: number
@@ -380,6 +411,8 @@ export type Database = {
           customer_phone?: string
           delivery_price?: number
           delivery_zone_id?: string | null
+          external_sync_sent_at?: string | null
+          external_sync_status?: string
           id?: string
           notes?: string | null
           order_number?: number
