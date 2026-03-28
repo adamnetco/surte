@@ -52,30 +52,36 @@ const PromoSection = () => {
   );
 };
 
-/* Trust/Value strip inspired by diezequis & todorapidas */
-const ValueStrip = () => (
-  <motion.section
-    initial={{ opacity: 0 }}
-    whileInView={{ opacity: 1 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.5 }}
-    className="px-4 py-3"
-  >
-    <div className="grid grid-cols-3 gap-2">
-      {[
-        { icon: Truck, label: "Envío Gratis", sub: "+$40.000" },
-        { icon: Shield, label: "Pago Seguro", sub: "Contraentrega" },
-        { icon: Star, label: "Calidad", sub: "Garantizada" },
-      ].map(({ icon: Icon, label, sub }) => (
-        <div key={label} className="bg-card rounded-xl p-3 text-center border border-border">
-          <Icon size={20} className="mx-auto text-accent mb-1" />
-          <p className="text-xs font-heading font-semibold text-foreground">{label}</p>
-          <p className="text-[10px] text-muted-foreground">{sub}</p>
-        </div>
-      ))}
-    </div>
-  </motion.section>
-);
+/* Trust/Value strip — dynamic from app_settings */
+const ValueStrip = () => {
+  const { data: settings } = useAppSettings();
+
+  const defaults = [
+    { icon: Truck, labelKey: "trust_badge_1_label", subKey: "trust_badge_1_sub", label: "Envío Gratis", sub: "+$40.000" },
+    { icon: Shield, labelKey: "trust_badge_2_label", subKey: "trust_badge_2_sub", label: "Pago Seguro", sub: "Contraentrega" },
+    { icon: Star, labelKey: "trust_badge_3_label", subKey: "trust_badge_3_sub", label: "Calidad", sub: "Garantizada" },
+  ];
+
+  return (
+    <motion.section
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5 }}
+      className="px-4 py-3"
+    >
+      <div className="grid grid-cols-3 gap-2">
+        {defaults.map(({ icon: Icon, labelKey, subKey, label, sub }) => (
+          <div key={labelKey} className="bg-card rounded-xl p-3 text-center border border-border">
+            <Icon size={20} className="mx-auto text-accent mb-1" />
+            <p className="text-xs font-heading font-semibold text-foreground">{settings?.[labelKey] || label}</p>
+            <p className="text-[10px] text-muted-foreground">{settings?.[subKey] || sub}</p>
+          </div>
+        ))}
+      </div>
+    </motion.section>
+  );
+};
 
 const Index = () => {
   const { data: settings } = useAppSettings();
