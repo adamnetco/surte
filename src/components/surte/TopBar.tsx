@@ -52,7 +52,7 @@ const TopBar = ({ onSearch }: TopBarProps) => {
         <img
           src={surteLogo}
           alt="SURTÉ"
-          className="h-20 w-auto object-contain cursor-pointer"
+          className="h-24 md:h-28 w-auto object-contain cursor-pointer"
           onClick={() => navigate("/")}
         />
         <div className="flex items-center gap-2">

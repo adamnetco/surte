@@ -35,6 +35,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <DynamicThemeInjector />
+          <CityPickerModal />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />

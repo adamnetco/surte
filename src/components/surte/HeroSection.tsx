@@ -55,7 +55,7 @@ const HeroSection = () => {
       >
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {[
-            { icon: Truck, text: "Envío gratis +$40K" },
+            { icon: Truck, text: "Envío gratis" },
             { icon: Clock, text: "Entrega 24-48h" },
             { icon: Shield, text: "Pago seguro" },
           ].map(({ icon: Icon, text }) => (
