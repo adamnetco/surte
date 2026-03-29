@@ -229,8 +229,10 @@ const GallerySection = ({ queryClient }: { queryClient: any }) => {
   };
 
   const del = async (id: string) => {
+    if (!confirm("¿Eliminar imagen?")) return;
     await supabase.from("gallery").delete().eq("id", id);
     queryClient.invalidateQueries({ queryKey: ["admin-gallery"] });
+    queryClient.invalidateQueries({ queryKey: ["gallery"] });
     toast.success("Eliminada");
   };
 
