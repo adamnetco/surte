@@ -35,6 +35,12 @@ const CityPickerModal = () => {
     setOpen(false);
   };
 
+  const handleClose = () => {
+    localStorage.setItem("surte_city", "Bucaramanga");
+    window.dispatchEvent(new Event("surte_city_change"));
+    setOpen(false);
+  };
+
   const cities = municipalities?.map((m) => m.city) ?? [
     "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta",
   ];
