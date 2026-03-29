@@ -22,18 +22,18 @@ const BrandsSection = () => {
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="py-8 px-4"
+      className="py-6 px-4"
     >
-      <div className="text-center mb-5">
+      <div className="text-center mb-4">
         <h2 className="text-lg font-heading font-bold text-foreground">Marcas Aliadas</h2>
-        <p className="text-sm text-muted-foreground mt-1">Trabajamos con los mejores proveedores de Santander</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Trabajamos con los mejores proveedores de Santander</p>
       </div>
 
       <div className="relative overflow-hidden">
         <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
         <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
         <motion.div
-          className="flex gap-5"
+          className="flex gap-4"
           animate={{ x: ["0%", "-50%"] }}
           transition={{ duration: Math.max(brands.length * 4, 16), repeat: Infinity, ease: "linear" }}
         >
@@ -43,18 +43,18 @@ const BrandsSection = () => {
               href={brand.website_url || "#"}
               target={brand.website_url ? "_blank" : undefined}
               rel="noopener noreferrer"
-              className="shrink-0 w-28 h-18 rounded-xl bg-card border border-border flex items-center justify-center p-3 transition-all duration-300 hover:border-accent/40 hover:-translate-y-0.5"
+              className="shrink-0 w-32 h-24 rounded-xl bg-card border border-border flex items-center justify-center p-2 transition-all duration-300 hover:border-accent/40 hover:-translate-y-0.5"
               style={{ boxShadow: "var(--shadow-card)" }}
               onClick={(e) => !brand.website_url && e.preventDefault()}
             >
               {brand.logo_url ? (
-                <img src={brand.logo_url} alt={brand.name} className="w-20 h-12 object-contain" />
+                <img src={brand.logo_url} alt={brand.name} className="w-full h-full object-contain" />
               ) : (
                 <div className="text-center">
-                  <span className="text-lg font-heading font-bold text-accent leading-none">
+                  <span className="text-xl font-heading font-bold text-accent leading-none">
                     {brand.name.substring(0, 2).toUpperCase()}
                   </span>
-                  <p className="text-[8px] text-muted-foreground font-medium mt-0.5 leading-none truncate max-w-[80px]">{brand.name}</p>
+                  <p className="text-[9px] text-muted-foreground font-medium mt-0.5 leading-none truncate max-w-[100px]">{brand.name}</p>
                 </div>
               )}
             </a>

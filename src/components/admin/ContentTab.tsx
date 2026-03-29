@@ -208,19 +208,31 @@ const GallerySection = ({ queryClient }: { queryClient: any }) => {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+    let successCount = 0;
     for (const file of Array.from(files)) {
       const url = await upload(file, "gallery");
       if (url) {
-        await supabase.from("gallery").insert({ image_url: url, caption: file.name.split(".")[0] });
+        const { error } = await supabase.from("gallery").insert({ image_url: url, caption: file.name.split(".")[0], is_active: true, sort_order: (gallery?.length || 0) + successCount });
+        if (error) {
+          console.error("Gallery insert error:", error);
+          toast.error(`Error guardando ${file.name}: ${error.message}`);
+        } else {
+          successCount++;
+        }
       }
     }
-    queryClient.invalidateQueries({ queryKey: ["admin-gallery"] });
-    toast.success("Imágenes subidas");
+    if (successCount > 0) {
+      queryClient.invalidateQueries({ queryKey: ["admin-gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["gallery"] });
+      toast.success(`${successCount} imagen(es) subida(s)`);
+    }
   };
 
   const del = async (id: string) => {
+    if (!confirm("¿Eliminar imagen?")) return;
     await supabase.from("gallery").delete().eq("id", id);
     queryClient.invalidateQueries({ queryKey: ["admin-gallery"] });
+    queryClient.invalidateQueries({ queryKey: ["gallery"] });
     toast.success("Eliminada");
   };
 
