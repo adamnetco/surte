@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, ChevronRight } from "lucide-react";
+import { MapPin, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
