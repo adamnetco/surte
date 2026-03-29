@@ -1,4 +1,4 @@
-import { Heart, ShoppingCart, Eye } from "lucide-react";
+import { Heart, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -6,21 +6,19 @@ import { toast } from "sonner";
 import PriceTiers from "./PriceTiers";
 import type { Tables } from "@/integrations/supabase/types";
 import { useProfile, getPriceForType } from "@/hooks/useProfile";
+import { useAppSettings } from "@/hooks/useStore";
 
 type Product = Tables<"products">;
-
-interface ProductCardProps {
-  product: Product;
-}
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
-const ProductCard = ({ product }: ProductCardProps) => {
+const ProductCard = ({ product }: { product: Product }) => {
   const { addItem } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const navigate = useNavigate();
   const { data: profile } = useProfile();
+  const { data: appSettings } = useAppSettings();
   const fav = isFavorite(product.id);
   const businessType = (profile as any)?.business_type;
   const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
@@ -32,11 +30,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const lowStock = product.stock > 0 && product.stock <= 10;
   const outOfStock = product.stock <= 0;
 
+  const imgSrc = product.image_url || appSettings?.default_product_image || "";
+
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (outOfStock) return;
     addItem(product);
-    toast.success(`${product.name} agregado al carrito`);
+    toast.success(`${product.name} agregado`);
   };
 
   const handleFav = (e: React.MouseEvent) => {
@@ -46,93 +46,82 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <div
-      className="card-product flex flex-col cursor-pointer group"
+      className="card-product flex flex-col cursor-pointer group rounded-xl overflow-hidden border border-border bg-card transition-shadow hover:shadow-md"
       onClick={() => navigate(`/producto/${product.id}`)}
     >
       {/* Image */}
       <div className="relative aspect-square bg-muted flex items-center justify-center overflow-hidden">
-        {product.image_url ? (
+        {imgSrc ? (
           <img
-            src={product.image_url}
+            src={imgSrc}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
-          <div className="text-4xl opacity-20 font-heading font-bold text-muted-foreground">
+          <div className="text-3xl opacity-20 font-heading font-bold text-muted-foreground">
             {product.name.charAt(0)}
           </div>
         )}
 
-        {/* Discount badge */}
         {discount > 0 && (
-          <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
             -{discount}%
           </span>
         )}
 
-        {/* Stock warning */}
         {outOfStock && (
           <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
-            <span className="bg-card text-foreground text-xs font-heading font-bold px-3 py-1 rounded-full">Agotado</span>
+            <span className="bg-card text-foreground text-[10px] font-heading font-bold px-2.5 py-1 rounded-full">Agotado</span>
           </div>
         )}
 
-        {/* Badges */}
-        <div className="absolute bottom-2 left-2 flex gap-1">
-          {product.is_fresh && <span className="badge-fresh text-[10px]">🌿 Fresco</span>}
-          {product.is_wholesale && <span className="badge-wholesale text-[10px]">💰 Mayor</span>}
+        <div className="absolute bottom-1.5 left-1.5 flex gap-1">
+          {product.is_fresh && <span className="badge-fresh text-[9px]">🌿 Fresco</span>}
+          {product.is_wholesale && <span className="badge-wholesale text-[9px]">💰 Mayor</span>}
           {lowStock && !outOfStock && (
-            <span className="bg-surte-naranja/90 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-md">
+            <span className="bg-surte-naranja/90 text-white text-[8px] font-semibold px-1.5 py-0.5 rounded-md">
               ¡Últimas {product.stock}!
             </span>
           )}
         </div>
 
-        {/* Favorite */}
         <button
           onClick={handleFav}
-          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center transition-all hover:scale-110 active:scale-95"
         >
-          <Heart size={15} className={fav ? "text-destructive fill-destructive" : "text-muted-foreground"} />
+          <Heart size={13} className={fav ? "text-destructive fill-destructive" : "text-muted-foreground"} />
         </button>
-
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors duration-300 flex items-center justify-center pointer-events-none">
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <Eye size={24} className="text-foreground/50" />
-          </div>
-        </div>
       </div>
 
       {/* Info */}
-      <div className="p-3 flex flex-col flex-1">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">{product.unit}</p>
-        <h3 className="text-sm font-medium text-foreground leading-tight mb-auto line-clamp-2">{product.name}</h3>
+      <div className="p-2.5 flex flex-col flex-1">
+        <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">{product.unit}</p>
+        <h3 className="text-[13px] font-medium text-foreground leading-tight mb-auto line-clamp-2">{product.name}</h3>
         <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} compact />
-        <div className="flex items-end justify-between pt-2 mt-1">
+        <div className="flex items-end justify-between pt-1.5 mt-1">
           <div>
-            <span className="text-base font-heading font-bold text-foreground">{formatPrice(userPrice)}</span>
+            <span className="text-[15px] font-heading font-bold text-foreground">{formatPrice(userPrice)}</span>
             {(product.original_price || userPrice < product.price) && (
-              <span className="block text-[11px] text-muted-foreground line-through">
+              <span className="block text-[10px] text-muted-foreground line-through">
                 {formatPrice(product.original_price || product.price)}
               </span>
             )}
             {businessType && businessType !== "detal" && userPrice < product.price && (
-              <span className="text-[9px] text-accent font-medium">Precio {businessType}</span>
+              <span className="text-[8px] text-accent font-medium">Precio {businessType}</span>
             )}
           </div>
           <button
             onClick={handleAdd}
             disabled={outOfStock}
-            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
               outOfStock
                 ? "bg-muted text-muted-foreground cursor-not-allowed"
                 : "bg-accent text-accent-foreground hover:opacity-90"
             }`}
             aria-label="Agregar al carrito"
           >
-            <ShoppingCart size={16} strokeWidth={2.5} />
+            <ShoppingCart size={14} strokeWidth={2.5} />
           </button>
         </div>
       </div>
