@@ -59,20 +59,22 @@ const GallerySection = () => {
       </motion.section>
 
       {activeIndex !== null && (
-        <div className="fixed inset-0 z-[90] bg-foreground/80 backdrop-blur-sm flex items-center justify-center px-3" role="dialog" aria-modal="true">
-          <button type="button" onClick={() => setActiveIndex(null)} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/90 text-foreground flex items-center justify-center" aria-label="Cerrar">
+        <div className="fixed inset-0 z-[90] bg-foreground/80 backdrop-blur-sm flex items-center justify-center px-3" role="dialog" aria-modal="true" onClick={() => setActiveIndex(null)}>
+          <button type="button" onClick={(e) => { e.stopPropagation(); setActiveIndex(null); }} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/90 text-foreground flex items-center justify-center" aria-label="Cerrar">
             <X size={18} />
           </button>
-          <button type="button" onClick={() => setActiveIndex((prev) => (prev === null ? 0 : (prev - 1 + gallery.length) % gallery.length))} className="absolute left-2 w-10 h-10 rounded-full bg-card/80 text-foreground flex items-center justify-center" aria-label="Anterior">
+          <button type="button" onClick={(e) => { e.stopPropagation(); setActiveIndex((prev) => (prev === null ? 0 : (prev - 1 + gallery.length) % gallery.length)); }} className="absolute left-2 w-10 h-10 rounded-full bg-card/80 text-foreground flex items-center justify-center" aria-label="Anterior">
             <ChevronLeft size={18} />
           </button>
-          <img src={gallery[activeIndex].image_url} alt={gallery[activeIndex].caption || "Imagen"} className="max-w-full max-h-[80vh] rounded-xl object-contain" />
-          <button type="button" onClick={() => setActiveIndex((prev) => (prev === null ? 0 : (prev + 1) % gallery.length))} className="absolute right-2 w-10 h-10 rounded-full bg-card/80 text-foreground flex items-center justify-center" aria-label="Siguiente">
+          <img src={gallery[activeIndex].image_url} alt={gallery[activeIndex].caption || "Imagen"} className="max-w-full max-h-[80vh] rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
+          <button type="button" onClick={(e) => { e.stopPropagation(); setActiveIndex((prev) => (prev === null ? 0 : (prev + 1) % gallery.length)); }} className="absolute right-2 w-10 h-10 rounded-full bg-card/80 text-foreground flex items-center justify-center" aria-label="Siguiente">
             <ChevronRight size={18} />
           </button>
-          <p className="absolute bottom-6 text-xs text-primary-foreground/90 bg-foreground/40 px-3 py-1 rounded-full">
-            {gallery[activeIndex].caption || "SURTÉ YA"}
-          </p>
+          {gallery[activeIndex].caption && gallery[activeIndex].caption.trim() !== "" && (
+            <p className="absolute bottom-6 text-xs text-primary-foreground/90 bg-foreground/40 px-3 py-1 rounded-full">
+              {gallery[activeIndex].caption}
+            </p>
+          )}
         </div>
       )}
     </>
