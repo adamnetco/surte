@@ -22,7 +22,11 @@ const CityPickerModal = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem("surte_city");
-    if (!saved) setOpen(true);
+    if (!saved) {
+      // Small delay to ensure the app is fully rendered before showing modal
+      const timer = setTimeout(() => setOpen(true), 300);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleSelect = (city: string) => {
