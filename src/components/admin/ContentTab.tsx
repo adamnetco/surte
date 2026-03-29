@@ -204,6 +204,8 @@ const GallerySection = ({ queryClient }: { queryClient: any }) => {
     },
   });
   const { upload, uploading } = useImageUpload();
+  const [editingCaption, setEditingCaption] = useState<string | null>(null);
+  const [captionText, setCaptionText] = useState("");
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -212,7 +214,7 @@ const GallerySection = ({ queryClient }: { queryClient: any }) => {
     for (const file of Array.from(files)) {
       const url = await upload(file, "gallery");
       if (url) {
-        const { error } = await supabase.from("gallery").insert({ image_url: url, caption: file.name.split(".")[0], is_active: true, sort_order: (gallery?.length || 0) + successCount });
+        const { error } = await supabase.from("gallery").insert({ image_url: url, caption: "", is_active: true, sort_order: (gallery?.length || 0) + successCount });
         if (error) {
           console.error("Gallery insert error:", error);
           toast.error(`Error guardando ${file.name}: ${error.message}`);
@@ -226,6 +228,14 @@ const GallerySection = ({ queryClient }: { queryClient: any }) => {
       queryClient.invalidateQueries({ queryKey: ["gallery"] });
       toast.success(`${successCount} imagen(es) subida(s)`);
     }
+  };
+
+  const saveCaption = async (id: string) => {
+    await supabase.from("gallery").update({ caption: captionText }).eq("id", id);
+    queryClient.invalidateQueries({ queryKey: ["admin-gallery"] });
+    queryClient.invalidateQueries({ queryKey: ["gallery"] });
+    setEditingCaption(null);
+    toast.success("Descripción actualizada");
   };
 
   const del = async (id: string) => {
@@ -245,10 +255,35 @@ const GallerySection = ({ queryClient }: { queryClient: any }) => {
           <input type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" disabled={uploading} />
         </label>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {gallery?.map((g: any) => (
-          <div key={g.id} className="relative group aspect-square rounded-xl overflow-hidden bg-muted">
-            <img src={g.image_url} alt={g.caption} className="w-full h-full object-cover" />
+          <div key={g.id} className="relative group rounded-xl overflow-hidden bg-muted">
+            <div className="aspect-square">
+              <img src={g.image_url} alt={g.caption || ""} className="w-full h-full object-cover" />
+            </div>
+            <div className="p-2">
+              {editingCaption === g.id ? (
+                <div className="flex gap-1">
+                  <input
+                    value={captionText}
+                    onChange={(e) => setCaptionText(e.target.value)}
+                    placeholder="Descripción corta..."
+                    className="flex-1 text-xs bg-muted rounded px-2 py-1 outline-none focus:ring-1 focus:ring-ring"
+                    maxLength={80}
+                    autoFocus
+                  />
+                  <button onClick={() => saveCaption(g.id)} className="text-accent"><Save size={14} /></button>
+                  <button onClick={() => setEditingCaption(null)} className="text-muted-foreground"><X size={14} /></button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setEditingCaption(g.id); setCaptionText(g.caption || ""); }}
+                  className="text-xs text-muted-foreground hover:text-foreground w-full text-left truncate"
+                >
+                  {g.caption || "＋ Añadir descripción"}
+                </button>
+              )}
+            </div>
             <button onClick={() => del(g.id)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive/80 text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <Trash2 size={12} />
             </button>
