@@ -61,7 +61,14 @@ const CityPickerModal = () => {
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="bg-card rounded-2xl w-full max-w-sm overflow-hidden border border-border shadow-2xl"
           >
-            <div className="p-6 text-center">
+            <div className="p-6 text-center relative">
+              <button
+                onClick={handleClose}
+                className="absolute top-3 right-3 w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Cerrar"
+              >
+                <X size={14} />
+              </button>
               <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
                 <MapPin size={28} className="text-accent" />
               </div>
