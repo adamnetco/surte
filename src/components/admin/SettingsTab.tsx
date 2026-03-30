@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Save, Eye, EyeOff, DollarSign, Phone, Store, Palette, RotateCcw,
   Upload, Loader2, Image as ImageIcon, Link2, Award, MessageSquare,
-  CheckCircle2,
+  CheckCircle2, Send, Wifi, WifiOff,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
