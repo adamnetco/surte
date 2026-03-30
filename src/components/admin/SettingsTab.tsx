@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Save, Eye, EyeOff, DollarSign, Phone, Store, Palette, RotateCcw,
   Upload, Loader2, Image as ImageIcon, Link2, Award, MessageSquare,
-  CheckCircle2,
+  CheckCircle2, Send, Wifi, WifiOff,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -59,6 +59,52 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const { upload, uploading } = useImageUpload();
+  const [testPhone, setTestPhone] = useState("");
+  const [testMessage, setTestMessage] = useState("🧪 Mensaje de prueba desde SURTÉ YA — ¡YCloud funciona correctamente!");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [checkingBalance, setCheckingBalance] = useState(false);
+  const [balance, setBalance] = useState<string | null>(null);
+
+  const sendTestWhatsApp = async () => {
+    if (!testPhone.trim()) { toast.error("Ingresa un número de teléfono"); return; }
+    const apiKey = values.ycloud_api_key;
+    const fromNumber = values.ycloud_from_number;
+    if (!apiKey || !fromNumber) {
+      toast.error("Configura primero la API Key y número remitente de YCloud, y guarda los cambios");
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-ycloud-whatsapp", {
+        body: { action: "send_text", to: testPhone.trim(), message: testMessage },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("✅ Mensaje enviado correctamente");
+    } catch (err: any) {
+      toast.error(err.message || "Error enviando mensaje de prueba");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  const checkYCloudBalance = async () => {
+    setCheckingBalance(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-ycloud-whatsapp", {
+        body: { action: "check_balance" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const amt = data?.balance ?? data?.amount ?? JSON.stringify(data);
+      setBalance(String(amt));
+      toast.success("Balance consultado");
+    } catch (err: any) {
+      toast.error(err.message || "Error consultando balance");
+    } finally {
+      setCheckingBalance(false);
+    }
+  };
 
   useEffect(() => {
     if (settings) {
@@ -229,7 +275,50 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
         );
       })}
 
-      {/* Colors */}
+
+      {/* YCloud Test Panel */}
+      {values.ycloud_api_key && values.ycloud_from_number && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold text-muted-foreground px-1">📲 Probar YCloud WhatsApp</p>
+          <div className="bg-card rounded-xl p-3 border border-border space-y-2">
+            <div className="flex items-center gap-2 text-xs">
+              <Wifi size={12} className="text-secondary" />
+              <span className="text-muted-foreground">Remitente: <span className="text-foreground font-medium">{values.ycloud_from_number}</span></span>
+              <button
+                onClick={checkYCloudBalance}
+                disabled={checkingBalance}
+                className="ml-auto text-[10px] bg-muted hover:bg-muted/80 px-2 py-1 rounded-lg flex items-center gap-1 transition-colors"
+              >
+                {checkingBalance ? <Loader2 size={10} className="animate-spin" /> : <DollarSign size={10} />}
+                Balance
+              </button>
+            </div>
+            {balance !== null && (
+              <p className="text-[10px] bg-secondary/10 text-secondary rounded-lg px-2 py-1 font-medium">Balance: {balance}</p>
+            )}
+            <input
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              placeholder="Número destino: 573001234567"
+              className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none"
+            />
+            <textarea
+              value={testMessage}
+              onChange={(e) => setTestMessage(e.target.value)}
+              rows={2}
+              className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none resize-none"
+            />
+            <button
+              onClick={sendTestWhatsApp}
+              disabled={sendingTest}
+              className="w-full bg-secondary text-secondary-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {sendingTest ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              Enviar Mensaje de Prueba
+            </button>
+          </div>
+        </div>
+      )}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between px-1">
           <p className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
