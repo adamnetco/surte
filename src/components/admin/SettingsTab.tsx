@@ -59,6 +59,52 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const { upload, uploading } = useImageUpload();
+  const [testPhone, setTestPhone] = useState("");
+  const [testMessage, setTestMessage] = useState("🧪 Mensaje de prueba desde SURTÉ YA — ¡YCloud funciona correctamente!");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [checkingBalance, setCheckingBalance] = useState(false);
+  const [balance, setBalance] = useState<string | null>(null);
+
+  const sendTestWhatsApp = async () => {
+    if (!testPhone.trim()) { toast.error("Ingresa un número de teléfono"); return; }
+    const apiKey = values.ycloud_api_key;
+    const fromNumber = values.ycloud_from_number;
+    if (!apiKey || !fromNumber) {
+      toast.error("Configura primero la API Key y número remitente de YCloud, y guarda los cambios");
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-ycloud-whatsapp", {
+        body: { action: "send_text", to: testPhone.trim(), message: testMessage },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("✅ Mensaje enviado correctamente");
+    } catch (err: any) {
+      toast.error(err.message || "Error enviando mensaje de prueba");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  const checkYCloudBalance = async () => {
+    setCheckingBalance(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-ycloud-whatsapp", {
+        body: { action: "check_balance" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const amt = data?.balance ?? data?.amount ?? JSON.stringify(data);
+      setBalance(String(amt));
+      toast.success("Balance consultado");
+    } catch (err: any) {
+      toast.error(err.message || "Error consultando balance");
+    } finally {
+      setCheckingBalance(false);
+    }
+  };
 
   useEffect(() => {
     if (settings) {
