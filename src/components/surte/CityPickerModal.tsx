@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, ChevronRight, X } from "lucide-react";
+import { MapPin, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +23,6 @@ const CityPickerModal = () => {
   useEffect(() => {
     const saved = localStorage.getItem("surte_city");
     if (!saved) {
-      // Small delay to ensure the app is fully rendered before showing modal
       const timer = setTimeout(() => setOpen(true), 300);
       return () => clearTimeout(timer);
     }
@@ -31,12 +30,6 @@ const CityPickerModal = () => {
 
   const handleSelect = (city: string) => {
     localStorage.setItem("surte_city", city);
-    window.dispatchEvent(new Event("surte_city_change"));
-    setOpen(false);
-  };
-
-  const handleClose = () => {
-    localStorage.setItem("surte_city", "Bucaramanga");
     window.dispatchEvent(new Event("surte_city_change"));
     setOpen(false);
   };
@@ -61,37 +54,30 @@ const CityPickerModal = () => {
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="bg-card rounded-2xl w-full max-w-sm overflow-hidden border border-border shadow-2xl"
           >
-            <div className="p-6 text-center relative">
-              <button
-                onClick={handleClose}
-                className="absolute top-3 right-3 w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Cerrar"
-              >
-                <X size={14} />
-              </button>
-              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
-                <MapPin size={28} className="text-accent" />
+            <div className="p-5 text-center">
+              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                <MapPin size={24} className="text-accent" />
               </div>
               <h2 className="text-lg font-heading font-bold text-foreground mb-1">
                 ¿Dónde te encuentras?
               </h2>
-              <p className="text-sm text-muted-foreground">
-                Selecciona tu municipio para ver precios de envío y disponibilidad
+              <p className="text-xs text-muted-foreground">
+                Selecciona tu municipio para ver precios y disponibilidad
               </p>
             </div>
 
-            <div className="px-4 pb-6 space-y-2">
+            <div className="px-4 pb-5 space-y-1.5">
               {cities.map((city) => (
                 <button
                   key={city}
                   onClick={() => handleSelect(city)}
-                  className="w-full flex items-center gap-3 bg-muted hover:bg-accent/10 rounded-xl px-4 py-3.5 transition-colors group"
+                  className="w-full flex items-center gap-3 bg-muted hover:bg-accent/10 rounded-xl px-4 py-3 transition-colors group"
                 >
-                  <MapPin size={18} className="text-accent shrink-0" />
+                  <MapPin size={16} className="text-accent shrink-0" />
                   <span className="text-sm font-medium text-foreground flex-1 text-left">
                     {city}
                   </span>
-                  <ChevronRight size={16} className="text-muted-foreground group-hover:text-accent transition-colors" />
+                  <ChevronRight size={14} className="text-muted-foreground group-hover:text-accent transition-colors" />
                 </button>
               ))}
             </div>
