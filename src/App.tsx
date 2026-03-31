@@ -24,6 +24,7 @@ import Configuracion from "./pages/Configuracion";
 import ProductoDetalle from "./pages/ProductoDetalle";
 import NotFound from "./pages/NotFound";
 import Unsubscribe from "./pages/Unsubscribe";
+import Hub from "./pages/Hub";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/producto/:id" element={<ProductoDetalle />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />
+              <Route path="/hub/:type/:slug" element={<Hub />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <FloatingWhatsApp />

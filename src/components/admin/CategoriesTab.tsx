@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import SortableList from "./SortableList";
+import CategoryIcon, { AVAILABLE_ICONS, isCustomSvgUrl } from "@/components/surte/CategoryIcon";
+import { useImageUpload } from "@/hooks/useImageUpload";
 
 const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50" });
+  const { upload, uploading } = useImageUpload();
 
   const resetForm = () => { setForm({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50" }); setEditing(null); };
 
@@ -41,6 +44,20 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
     queryClient.invalidateQueries({ queryKey: ["categories"] });
   };
 
+  const handleSvgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.includes("svg") && !file.name.endsWith(".svg")) {
+      toast.error("Solo se permiten archivos SVG");
+      return;
+    }
+    const url = await upload(file, "category-icons");
+    if (url) {
+      setForm({ ...form, icon: url });
+      toast.success("Icono SVG subido");
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -55,10 +72,49 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
           </div>
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") })} placeholder="Nombre *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
           <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="Slug" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
-          <div className="grid grid-cols-3 gap-2">
-            <input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="Icono" className="bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+
+          {/* Icon selector */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-foreground">Icono (Lucide React)</label>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center border border-border shrink-0">
+                <CategoryIcon icon={form.icon} size={22} color={form.color} />
+              </div>
+              {isCustomSvgUrl(form.icon) ? (
+                <span className="text-xs text-muted-foreground flex-1 truncate">SVG personalizado</span>
+              ) : (
+                <select
+                  value={form.icon}
+                  onChange={(e) => setForm({ ...form, icon: e.target.value })}
+                  className="flex-1 bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none"
+                >
+                  {AVAILABLE_ICONS.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              )}
+              <label className="flex items-center gap-1 cursor-pointer bg-accent/10 text-accent rounded-lg px-2.5 py-2 text-[11px] font-medium hover:bg-accent/20 transition-colors shrink-0">
+                {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                SVG
+                <input type="file" accept=".svg,image/svg+xml" onChange={handleSvgUpload} className="hidden" disabled={uploading} />
+              </label>
+              {isCustomSvgUrl(form.icon) && (
+                <button onClick={() => setForm({ ...form, icon: "Package" })} className="text-[10px] text-muted-foreground hover:text-destructive">
+                  Reset
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Librería: <strong>lucide-react</strong> — {AVAILABLE_ICONS.length} iconos disponibles. También puedes subir tu propio SVG.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
             <input value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} placeholder="Orden" type="number" className="bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
-            <input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} type="color" className="bg-muted rounded-lg h-[42px] cursor-pointer w-full" />
+            <div className="flex items-center gap-2">
+              <input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} type="color" className="bg-muted rounded-lg h-[42px] cursor-pointer w-14" />
+              <span className="text-xs text-muted-foreground">{form.color}</span>
+            </div>
           </div>
           <div className="flex gap-2">
             <button onClick={saveCategory} className="btn-surte flex-1 text-sm py-2.5 flex items-center justify-center gap-1"><Save size={14} /> Guardar</button>
@@ -74,8 +130,8 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
         queryClient={queryClient}
         renderItem={(c) => (
           <div className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${c.is_active ? "border-border" : "border-border opacity-50"}`}>
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white text-sm shrink-0" style={{ backgroundColor: c.color || "hsl(var(--muted))" }}>
-              {c.name.charAt(0)}
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${c.color || '#ccc'}18` }}>
+              <CategoryIcon icon={c.icon} size={20} color={c.color || undefined} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">{c.name}</p>

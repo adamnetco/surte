@@ -8,6 +8,7 @@ import TestimonialsSection from "@/components/surte/TestimonialsSection";
 import GallerySection from "@/components/surte/GallerySection";
 import BrandsSection from "@/components/surte/BrandsSection";
 import FloatingCart from "@/components/surte/FloatingCart";
+import StoreFooter from "@/components/surte/StoreFooter";
 import NotificationBanner from "@/components/surte/NotificationBanner";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -102,6 +103,7 @@ const Index = () => {
         {show("show_section_gallery") && <GallerySection />}
         {show("show_section_testimonials") && <TestimonialsSection />}
       </main>
+      <StoreFooter />
       <FloatingCart />
       <BottomNav />
     </div>
