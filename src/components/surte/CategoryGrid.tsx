@@ -1,11 +1,7 @@
 import { useCategories } from "@/hooks/useStore";
 import { useNavigate } from "react-router-dom";
-import { Drumstick, Cherry, Droplets, Flame, Croissant, Package, type LucideIcon } from "lucide-react";
+import CategoryIcon from "./CategoryIcon";
 import { motion } from "framer-motion";
-
-const iconMap: Record<string, LucideIcon> = {
-  Drumstick, Cherry, Droplets, Flame, Croissant, Package,
-};
 
 const CategoryGrid = () => {
   const navigate = useNavigate();
@@ -37,28 +33,25 @@ const CategoryGrid = () => {
     >
       <h2 className="text-lg font-heading font-bold text-foreground mb-3">Categorías</h2>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        {categories?.map((cat, i) => {
-          const Icon = iconMap[cat.icon || "Package"] || Package;
-          return (
-            <motion.button
-              key={cat.id}
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
-              onClick={() => navigate(`/catalogo?cat=${cat.slug}`)}
-              className="flex flex-col items-center gap-1.5 min-w-[72px] shrink-0 group"
+        {categories?.map((cat, i) => (
+          <motion.button
+            key={cat.id}
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+            onClick={() => navigate(`/hub/categoria/${cat.slug}`)}
+            className="flex flex-col items-center gap-1.5 min-w-[72px] shrink-0 group"
+          >
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-active:scale-95"
+              style={{ backgroundColor: `${cat.color}18` }}
             >
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-active:scale-95"
-                style={{ backgroundColor: `${cat.color}18` }}
-              >
-                <Icon size={26} style={{ color: cat.color || "hsl(var(--accent))" }} />
-              </div>
-              <span className="text-xs font-medium text-foreground text-center leading-tight">{cat.name}</span>
-            </motion.button>
-          );
-        })}
+              <CategoryIcon icon={cat.icon} size={26} color={cat.color || "hsl(var(--accent))"} />
+            </div>
+            <span className="text-xs font-medium text-foreground text-center leading-tight">{cat.name}</span>
+          </motion.button>
+        ))}
       </div>
     </motion.section>
   );
