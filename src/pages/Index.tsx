@@ -103,7 +103,7 @@ const Index = () => {
         {show("show_section_gallery") && <GallerySection />}
         {show("show_section_testimonials") && <TestimonialsSection />}
       </main>
-      <FloatingCart />
+      <StoreFooter />
       <BottomNav />
     </div>
   );
