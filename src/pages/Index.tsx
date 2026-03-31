@@ -104,6 +104,7 @@ const Index = () => {
         {show("show_section_testimonials") && <TestimonialsSection />}
       </main>
       <StoreFooter />
+      <FloatingCart />
       <BottomNav />
     </div>
   );
