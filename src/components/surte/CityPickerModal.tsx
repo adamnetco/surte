@@ -23,7 +23,7 @@ const CityPickerModal = () => {
   useEffect(() => {
     const saved = localStorage.getItem("surte_city");
     if (!saved) {
-      const timer = setTimeout(() => setOpen(true), 300);
+      const timer = setTimeout(() => setOpen(true), 600);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -34,9 +34,7 @@ const CityPickerModal = () => {
     setOpen(false);
   };
 
-  const cities = municipalities?.map((m) => m.city) ?? [
-    "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta",
-  ];
+  const cities = municipalities?.map((m) => m.city) ?? ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
 
   return (
     <AnimatePresence>
@@ -51,19 +49,15 @@ const CityPickerModal = () => {
             initial={{ y: 80, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 80, opacity: 0, scale: 0.95 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            transition={{ type: "spring", damping: 25, stiffness: 600 }}
             className="bg-card rounded-2xl w-full max-w-sm overflow-hidden border border-border shadow-2xl"
           >
             <div className="p-5 text-center">
               <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
                 <MapPin size={24} className="text-accent" />
               </div>
-              <h2 className="text-lg font-heading font-bold text-foreground mb-1">
-                ¿Dónde te encuentras?
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Selecciona tu municipio para ver precios y disponibilidad
-              </p>
+              <h2 className="text-lg font-heading font-bold text-foreground mb-1">¿Dónde te encuentras?</h2>
+              <p className="text-xs text-muted-foreground">Selecciona tu municipio para ver precios y disponibilidad</p>
             </div>
 
             <div className="px-4 pb-5 space-y-1.5">
@@ -74,9 +68,7 @@ const CityPickerModal = () => {
                   className="w-full flex items-center gap-3 bg-muted hover:bg-accent/10 rounded-xl px-4 py-3 transition-colors group"
                 >
                   <MapPin size={16} className="text-accent shrink-0" />
-                  <span className="text-sm font-medium text-foreground flex-1 text-left">
-                    {city}
-                  </span>
+                  <span className="text-sm font-medium text-foreground flex-1 text-left">{city}</span>
                   <ChevronRight size={14} className="text-muted-foreground group-hover:text-accent transition-colors" />
                 </button>
               ))}
