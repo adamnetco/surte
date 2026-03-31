@@ -125,46 +125,62 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check if WhatsApp API token is configured
-    const whatsappToken = Deno.env.get('WHATSAPP_API_TOKEN');
-    const whatsappPhoneId = Deno.env.get('WHATSAPP_PHONE_ID');
-    
+    // Try sending via YCloud
     let whatsappSent = false;
-    if (whatsappToken && whatsappPhoneId) {
-      // Send via WhatsApp Cloud API
+    let whatsappFallbackUrl: string | null = null;
+
+    // Get YCloud settings
+    const { data: ycloudSettings } = await supabaseAdmin
+      .from('app_settings')
+      .select('key, value')
+      .in('key', ['ycloud_api_key', 'ycloud_from_number', 'whatsapp_number']);
+
+    const settingsMap: Record<string, string> = {};
+    ycloudSettings?.forEach((r: any) => { settingsMap[r.key] = r.value; });
+
+    const ycloudApiKey = settingsMap.ycloud_api_key;
+    const ycloudFrom = settingsMap.ycloud_from_number;
+
+    if (ycloudApiKey && ycloudFrom) {
       try {
-        const adminPhone = Deno.env.get('ADMIN_WHATSAPP') || customer_phone;
-        const response = await fetch(`https://graph.facebook.com/v18.0/${whatsappPhoneId}/messages`, {
+        // Send to customer
+        const yRes = await fetch('https://api.ycloud.com/v2/whatsapp/messages', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${whatsappToken}`,
+            'X-API-Key': ycloudApiKey,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            to: adminPhone.replace(/\D/g, ''),
+            from: ycloudFrom,
+            to: customer_phone.replace(/\D/g, ''),
             type: 'text',
             text: { body: whatsappMessage },
           }),
         });
-        whatsappSent = response.ok;
+        const yData = await yRes.json();
+        whatsappSent = yRes.ok;
+        if (!yRes.ok) {
+          console.error('YCloud send error:', yData);
+        } else {
+          // Update order with YCloud message reference
+          await supabaseAdmin.from('orders').update({ whatsapp_ref: yData.id || `ycloud_${order.order_number}` }).eq('id', order.id);
+        }
       } catch (e) {
-        console.error('WhatsApp API error:', e);
+        console.error('YCloud API error:', e);
       }
     }
 
-    // Get settings for whatsapp number fallback
-    const { data: settingsData } = await supabaseAdmin.from('app_settings').select('value').eq('key', 'whatsapp_number').single();
-    const whatsappNumber = settingsData?.value || '573000000000';
+    if (!whatsappSent) {
+      const whatsappNumber = settingsMap.whatsapp_number || '573000000000';
+      whatsappFallbackUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+    }
 
     return new Response(JSON.stringify({
       success: true,
       order_id: order.id,
       order_number: order.order_number,
       whatsapp_sent: whatsappSent,
-      whatsapp_fallback_url: !whatsappSent
-        ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`
-        : null,
+      whatsapp_fallback_url: whatsappFallbackUrl,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

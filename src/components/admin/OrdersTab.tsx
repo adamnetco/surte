@@ -70,14 +70,29 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
         `Gracias por confiar en La Unión y *SURTÉ YA*. 🙏`,
       ].filter(Boolean).join("\n");
 
-      const phone = order.customer_phone.replace(/\D/g, "");
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+      // Send via YCloud edge function
+      const { data, error } = await supabase.functions.invoke("send-ycloud-whatsapp", {
+        body: {
+          action: "send_text",
+          to: order.customer_phone,
+          message,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        // Fallback to wa.me if YCloud not configured
+        const phone = order.customer_phone.replace(/\D/g, "");
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+        toast.info("YCloud no configurado, abriendo WhatsApp Web");
+      } else {
+        toast.success("WhatsApp enviado vía YCloud ✓");
+      }
 
       setSentWhatsApp((p) => ({ ...p, [order.id]: true }));
-      toast.success("WhatsApp preparado");
       setTimeout(() => setSentWhatsApp((p) => ({ ...p, [order.id]: false })), 3000);
-    } catch {
-      toast.error("Error al preparar WhatsApp");
+    } catch (err: any) {
+      toast.error("Error al enviar WhatsApp: " + (err.message || ""));
     } finally {
       setSendingWhatsApp((p) => ({ ...p, [order.id]: false }));
     }
