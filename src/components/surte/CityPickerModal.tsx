@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const CityPickerModal = () => {
   const [open, setOpen] = useState(false);
+  const [showSkip, setShowSkip] = useState(false);
 
   const { data: municipalities } = useQuery({
     queryKey: ["municipalities"],
@@ -24,6 +25,9 @@ const CityPickerModal = () => {
     const saved = localStorage.getItem("surte_city");
     if (!saved) {
       setOpen(true);
+      // Show skip option after 5 seconds so user isn't stuck forever
+      const skipTimer = setTimeout(() => setShowSkip(true), 5000);
+      return () => clearTimeout(skipTimer);
     }
   }, []);
 
@@ -31,6 +35,12 @@ const CityPickerModal = () => {
     localStorage.setItem("surte_city", city);
     window.dispatchEvent(new Event("surte_city_change"));
     setOpen(false);
+  };
+
+  const handleSkip = () => {
+    // Default to first city
+    const defaultCity = cities[0] || "Bucaramanga";
+    handleSelect(defaultCity);
   };
 
   const cities = municipalities?.map((m) => m.city) ?? ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
@@ -59,7 +69,7 @@ const CityPickerModal = () => {
               <p className="text-xs text-muted-foreground">Selecciona tu municipio para ver precios y disponibilidad</p>
             </div>
 
-            <div className="px-4 pb-5 space-y-1.5">
+            <div className="px-4 pb-4 space-y-1.5">
               {cities.map((city) => (
                 <button
                   key={city}
@@ -72,6 +82,24 @@ const CityPickerModal = () => {
                 </button>
               ))}
             </div>
+
+            {/* Skip appears after 5s so user isn't permanently blocked */}
+            <AnimatePresence>
+              {showSkip && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="px-4 pb-4"
+                >
+                  <button
+                    onClick={handleSkip}
+                    className="w-full text-center text-xs text-muted-foreground hover:text-foreground py-2 transition-colors"
+                  >
+                    Continuar sin seleccionar →
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </motion.div>
       )}
