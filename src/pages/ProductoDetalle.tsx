@@ -126,8 +126,26 @@ const ProductoDetalle = () => {
     setActiveMediaIdx((prev) => (prev + dir + allMedia.length) % allMedia.length);
   };
 
+  const settings = appSettings || {};
+  const productUrl = `https://surte.lovable.app/producto/${product.slug || product.id}`;
+  const breadcrumbs = [
+    { name: "Inicio", url: "https://surte.lovable.app" },
+    { name: "Catálogo", url: "https://surte.lovable.app/catalogo" },
+    ...(product.categories?.name ? [{ name: product.categories.name, url: `https://surte.lovable.app/hub/categoria/${product.categories.slug}` }] : []),
+    { name: product.name, url: productUrl },
+  ];
+
   return (
     <div className="min-h-screen bg-background pb-28">
+      <HeadMeta
+        title={product.meta_title || `${product.name} — SURTÉ YA`}
+        description={product.meta_description || product.description || `Compra ${product.name} al mejor precio en Bucaramanga`}
+        canonical={productUrl}
+        ogImage={product.image_url || settings.default_product_image}
+        ogType="product"
+      />
+      <JsonLd data={buildProductSchema(product, settings)} id={`product-${product.id}`} />
+      <JsonLd data={buildBreadcrumbSchema(breadcrumbs)} id="breadcrumb" />
       {/* Hero Media */}
       <div className="relative aspect-square bg-muted overflow-hidden" onClick={() => currentMedia.type === "image" && currentMedia.url && setLightboxOpen(true)}>
         {currentMedia.type === "image" ? (
