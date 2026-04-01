@@ -22,12 +22,16 @@ const ProductoDetalle = () => {
   const { addItem } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { data: profile } = useProfile();
+  const { data: appSettings } = useAppSettings();
   const businessType = (profile as any)?.business_type;
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [activeMediaIdx, setActiveMediaIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"descripcion" | "ficha">("descripcion");
+
+  // Support both UUID and slug
+  const isUuid = id && /^[0-9a-f]{8}-/.test(id);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
