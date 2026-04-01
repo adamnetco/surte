@@ -86,13 +86,32 @@ const Carrito = () => {
       if (error) throw error;
 
       toast.success(`¡Pedido #${data.order_number} creado!`);
+
+      // Build WhatsApp message for the user to send to official SURTÉ number
+      const whatsappNumber = settings?.whatsapp_number || "573000000000";
+      const orderLines = items.map(
+        (i) => `• ${i.quantity}x ${i.product.name} — ${formatPrice(i.product.price * i.quantity)}`
+      );
+      const whatsappMsg = [
+        `🛒 *Pedido SURTÉ #${data.order_number}*`,
+        "",
+        `👤 ${form.name}`,
+        `📱 ${form.phone}`,
+        form.address ? `📍 ${form.address}` : "",
+        form.notes ? `📝 ${form.notes}` : "",
+        "",
+        ...orderLines,
+        "",
+        `💰 *Total: ${formatPrice(totalPrice)}*`,
+      ].filter(Boolean).join("\n");
+
+      const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMsg)}`;
+      
       clearCart();
       setShowForm(false);
 
-      // If WhatsApp API wasn't configured, open fallback link
-      if (data.whatsapp_fallback_url) {
-        window.open(data.whatsapp_fallback_url, "_blank");
-      }
+      // Always open WhatsApp so user confirms with the store
+      window.open(waUrl, "_blank");
 
       navigate("/pedidos");
     } catch (err: any) {
