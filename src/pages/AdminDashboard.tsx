@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OverviewTab from "@/components/admin/OverviewTab";
@@ -17,6 +17,8 @@ import BrandsTab from "@/components/admin/BrandsTab";
 import NotificationsTab from "@/components/admin/NotificationsTab";
 import UsersTab from "@/components/admin/UsersTab";
 import ShippingTab from "@/components/admin/ShippingTab";
+import HeroSlidesTab from "@/components/admin/HeroSlidesTab";
+import SeoTab from "@/components/admin/SeoTab";
 
 // Tabs visible per role
 const allTabs = [
@@ -27,8 +29,10 @@ const allTabs = [
   { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "hero", label: "Hero", icon: Layers, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "shipping", label: "Logística", icon: Truck, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "notifications", label: "Alertas", icon: Bell, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "seo", label: "SEO", icon: Search, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
 
