@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProfile, getPriceForType } from "@/hooks/useProfile";
+import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
+import HeadMeta from "@/components/seo/HeadMeta";
+import { useAppSettings } from "@/hooks/useStore";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -19,6 +22,7 @@ const ProductoDetalle = () => {
   const { addItem } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { data: profile } = useProfile();
+  const { data: appSettings } = useAppSettings();
   const businessType = (profile as any)?.business_type;
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -26,32 +30,38 @@ const ProductoDetalle = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"descripcion" | "ficha">("descripcion");
 
+  // Support both UUID and slug
+  const isUuid = id && /^[0-9a-f]{8}-/.test(id);
+
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*, categories(name)")
-        .eq("id", id!)
-        .single();
+      let query = supabase.from("products").select("*, categories(name, slug)");
+      if (isUuid) {
+        query = query.eq("id", id!);
+      } else {
+        query = query.eq("slug", id!);
+      }
+      const { data, error } = await query.single();
       if (error) throw error;
       return data;
     },
     enabled: !!id,
   });
 
+  const productId = product?.id;
   const { data: media } = useQuery({
-    queryKey: ["product-media", id],
+    queryKey: ["product-media", productId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_media")
         .select("*")
-        .eq("product_id", id!)
+        .eq("product_id", productId!)
         .order("sort_order");
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!productId,
   });
 
   if (isLoading) {
@@ -116,8 +126,26 @@ const ProductoDetalle = () => {
     setActiveMediaIdx((prev) => (prev + dir + allMedia.length) % allMedia.length);
   };
 
+  const settings = appSettings || {};
+  const productUrl = `https://surte.lovable.app/producto/${product.slug || product.id}`;
+  const breadcrumbs = [
+    { name: "Inicio", url: "https://surte.lovable.app" },
+    { name: "Catálogo", url: "https://surte.lovable.app/catalogo" },
+    ...(product.categories?.name ? [{ name: product.categories.name, url: `https://surte.lovable.app/hub/categoria/${product.categories.slug}` }] : []),
+    { name: product.name, url: productUrl },
+  ];
+
   return (
     <div className="min-h-screen bg-background pb-28">
+      <HeadMeta
+        title={product.meta_title || `${product.name} — SURTÉ YA`}
+        description={product.meta_description || product.description || `Compra ${product.name} al mejor precio en Bucaramanga`}
+        canonical={productUrl}
+        ogImage={product.image_url || settings.default_product_image}
+        ogType="product"
+      />
+      <JsonLd data={buildProductSchema(product, settings)} id={`product-${product.id}`} />
+      <JsonLd data={buildBreadcrumbSchema(breadcrumbs)} id="breadcrumb" />
       {/* Hero Media */}
       <div className="relative aspect-square bg-muted overflow-hidden" onClick={() => currentMedia.type === "image" && currentMedia.url && setLightboxOpen(true)}>
         {currentMedia.type === "image" ? (

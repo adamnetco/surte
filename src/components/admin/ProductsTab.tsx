@@ -16,11 +16,12 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   const [form, setForm] = useState({
     name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "",
     cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "",
+    slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "",
   });
   const { upload, uploading } = useImageUpload();
 
   const resetForm = () => {
-    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "" });
+    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "", slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "" });
     setEditing(null);
   };
 
@@ -33,6 +34,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       cost_price: p.cost_price ? String(p.cost_price) : "",
       stock: String(p.stock), unit: p.unit || "unidad", category_id: p.category_id || "",
       is_fresh: p.is_fresh, is_wholesale: p.is_wholesale, is_active: p.is_active !== false, image_url: p.image_url || "",
+      slug: p.slug || "", meta_title: p.meta_title || "", meta_description: p.meta_description || "",
+      brand: p.brand || "", sku: p.sku || "", gtin: p.gtin || "", weight: p.weight || "",
     });
     setEditing(p.id);
   };
@@ -46,7 +49,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
   const saveProduct = async () => {
     if (!form.name || !form.price) { toast.error("Nombre y precio son obligatorios"); return; }
-    const payload = {
+    const autoSlug = form.slug || form.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const payload: any = {
       name: form.name, description: form.description, price: Number(form.price),
       original_price: form.original_price ? Number(form.original_price) : null,
       price_wholesale: form.price_wholesale ? Number(form.price_wholesale) : null,
@@ -54,6 +58,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       cost_price: form.cost_price ? Number(form.cost_price) : null,
       stock: Number(form.stock), unit: form.unit, category_id: form.category_id || null,
       is_fresh: form.is_fresh, is_wholesale: form.is_wholesale, is_active: form.is_active, image_url: form.image_url || null,
+      slug: autoSlug || null, meta_title: form.meta_title || null, meta_description: form.meta_description || null,
+      brand: form.brand || null, sku: form.sku || null, gtin: form.gtin || null, weight: form.weight || null,
     };
 
     if (editing && editing !== "new") {
@@ -227,6 +233,41 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.is_fresh} onChange={(e) => setForm({ ...form, is_fresh: e.target.checked })} className="rounded border-border" /> Fresco</label>
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.is_wholesale} onChange={(e) => setForm({ ...form, is_wholesale: e.target.checked })} className="rounded border-border" /> Mayorista</label>
+          </div>
+
+          {/* SEO Fields */}
+          <div className="space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">🔍 SEO & Indexación</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Slug URL</label>
+                <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto-generado" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Marca</label>
+                <input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="SURTÉ YA" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">SKU</label>
+                <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="SKU-001" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">GTIN / EAN</label>
+                <input value={form.gtin} onChange={(e) => setForm({ ...form, gtin: e.target.value })} placeholder="7701234567890" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block">Peso (ej: 500g, 1kg)</label>
+              <input value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} placeholder="500g" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block">Meta Título (SEO)</label>
+              <input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder="Título para Google (máx 60 chars)" maxLength={60} className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block">Meta Descripción (SEO)</label>
+              <textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} placeholder="Descripción para Google (máx 160 chars)" maxLength={160} rows={2} className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none resize-none" />
+            </div>
           </div>
 
           <div className="flex gap-2">
