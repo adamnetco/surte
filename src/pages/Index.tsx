@@ -14,6 +14,8 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Flame, Truck, Shield, Star } from "lucide-react";
 import { useAppSettings } from "@/hooks/useStore";
+import JsonLd, { buildLocalBusinessSchema, buildWebSiteSchema } from "@/components/seo/JsonLd";
+import HeadMeta from "@/components/seo/HeadMeta";
 
 const PromoSection = () => {
   const navigate = useNavigate();
