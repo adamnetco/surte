@@ -1,6 +1,7 @@
 import { Search, User, MapPin, ChevronDown, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAppSettings } from "@/hooks/useStore";
 import surteLogo from "@/assets/surte-logo.png";
 
 const CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"] as const;
@@ -18,6 +19,10 @@ const TopBar = ({ onSearch }: TopBarProps) => {
   });
   const navigate = useNavigate();
   const cityRef = useRef<HTMLDivElement>(null);
+  const { data: settings } = useAppSettings();
+
+  const showPromoBanner = settings?.show_promo_banner !== "false";
+  const promoBannerText = settings?.promo_banner_text || "🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000";
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,10 +48,12 @@ const TopBar = ({ onSearch }: TopBarProps) => {
 
   return (
     <header className="sticky top-0 z-40 bg-card border-b border-border">
-      {/* Promo banner */}
-      <div className="bg-primary text-primary-foreground text-center text-[11px] font-medium py-1 px-4">
-        🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000
-      </div>
+      {/* Promo banner — configurable */}
+      {showPromoBanner && (
+        <div className="bg-primary text-primary-foreground text-center text-[11px] font-medium py-1 px-4">
+          {promoBannerText}
+        </div>
+      )}
 
       <div className="flex items-center justify-between px-3 py-1.5">
         <img
