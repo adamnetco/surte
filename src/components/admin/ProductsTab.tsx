@@ -16,6 +16,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   const [form, setForm] = useState({
     name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "",
     cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "",
+    slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "",
   });
   const { upload, uploading } = useImageUpload();
 
