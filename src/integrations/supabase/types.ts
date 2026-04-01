@@ -257,6 +257,51 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_slides: {
+        Row: {
+          city: string | null
+          created_at: string
+          cta_link: string | null
+          cta_text: string | null
+          id: string
+          image_mobile_url: string | null
+          image_url: string | null
+          is_active: boolean | null
+          sort_order: number | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          id?: string
+          image_mobile_url?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          id?: string
+          image_mobile_url?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       municipality_settings: {
         Row: {
           city: string
@@ -476,61 +521,85 @@ export type Database = {
       }
       products: {
         Row: {
+          availability: string | null
+          brand: string | null
           category_id: string | null
           cost_price: number | null
           created_at: string
           description: string | null
+          gtin: string | null
           id: string
           image_url: string | null
           is_active: boolean | null
           is_fresh: boolean | null
           is_wholesale: boolean | null
+          meta_description: string | null
+          meta_title: string | null
           name: string
           original_price: number | null
           price: number
           price_distributor: number | null
           price_wholesale: number | null
+          sku: string | null
+          slug: string | null
           stock: number
           unit: string | null
           updated_at: string
+          weight: string | null
         }
         Insert: {
+          availability?: string | null
+          brand?: string | null
           category_id?: string | null
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          gtin?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
           is_fresh?: boolean | null
           is_wholesale?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
           name: string
           original_price?: number | null
           price: number
           price_distributor?: number | null
           price_wholesale?: number | null
+          sku?: string | null
+          slug?: string | null
           stock?: number
           unit?: string | null
           updated_at?: string
+          weight?: string | null
         }
         Update: {
+          availability?: string | null
+          brand?: string | null
           category_id?: string | null
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          gtin?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
           is_fresh?: boolean | null
           is_wholesale?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
           name?: string
           original_price?: number | null
           price?: number
           price_distributor?: number | null
           price_wholesale?: number | null
+          sku?: string | null
+          slug?: string | null
           stock?: number
           unit?: string | null
           updated_at?: string
+          weight?: string | null
         }
         Relationships: [
           {
