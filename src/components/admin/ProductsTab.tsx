@@ -235,7 +235,41 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.is_wholesale} onChange={(e) => setForm({ ...form, is_wholesale: e.target.checked })} className="rounded border-border" /> Mayorista</label>
           </div>
 
-          <div className="flex gap-2">
+          {/* SEO Fields */}
+          <div className="space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">🔍 SEO & Indexación</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Slug URL</label>
+                <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto-generado" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Marca</label>
+                <input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="SURTÉ YA" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">SKU</label>
+                <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="SKU-001" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">GTIN / EAN</label>
+                <input value={form.gtin} onChange={(e) => setForm({ ...form, gtin: e.target.value })} placeholder="7701234567890" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block">Peso (ej: 500g, 1kg)</label>
+              <input value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} placeholder="500g" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block">Meta Título (SEO)</label>
+              <input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder="Título para Google (máx 60 chars)" maxLength={60} className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block">Meta Descripción (SEO)</label>
+              <textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} placeholder="Descripción para Google (máx 160 chars)" maxLength={160} rows={2} className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none resize-none" />
+            </div>
+          </div>
+
             <button onClick={saveProduct} className="btn-surte flex-1 text-sm py-2.5 flex items-center justify-center gap-1">
               <Save size={14} /> Guardar
             </button>
