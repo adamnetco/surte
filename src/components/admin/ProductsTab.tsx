@@ -49,7 +49,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
   const saveProduct = async () => {
     if (!form.name || !form.price) { toast.error("Nombre y precio son obligatorios"); return; }
-    const payload = {
+    const autoSlug = form.slug || form.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const payload: any = {
       name: form.name, description: form.description, price: Number(form.price),
       original_price: form.original_price ? Number(form.original_price) : null,
       price_wholesale: form.price_wholesale ? Number(form.price_wholesale) : null,
@@ -57,6 +58,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       cost_price: form.cost_price ? Number(form.cost_price) : null,
       stock: Number(form.stock), unit: form.unit, category_id: form.category_id || null,
       is_fresh: form.is_fresh, is_wholesale: form.is_wholesale, is_active: form.is_active, image_url: form.image_url || null,
+      slug: autoSlug || null, meta_title: form.meta_title || null, meta_description: form.meta_description || null,
+      brand: form.brand || null, sku: form.sku || null, gtin: form.gtin || null, weight: form.weight || null,
     };
 
     if (editing && editing !== "new") {
