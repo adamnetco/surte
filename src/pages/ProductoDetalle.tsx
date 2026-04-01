@@ -49,18 +49,19 @@ const ProductoDetalle = () => {
     enabled: !!id,
   });
 
+  const productId = product?.id;
   const { data: media } = useQuery({
-    queryKey: ["product-media", id],
+    queryKey: ["product-media", productId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_media")
         .select("*")
-        .eq("product_id", id!)
+        .eq("product_id", productId!)
         .order("sort_order");
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!productId,
   });
 
   if (isLoading) {
