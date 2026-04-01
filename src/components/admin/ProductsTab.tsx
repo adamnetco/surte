@@ -270,6 +270,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             </div>
           </div>
 
+          <div className="flex gap-2">
             <button onClick={saveProduct} className="btn-surte flex-1 text-sm py-2.5 flex items-center justify-center gap-1">
               <Save size={14} /> Guardar
             </button>
