@@ -36,11 +36,13 @@ const ProductoDetalle = () => {
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*, categories(name)")
-        .eq("id", id!)
-        .single();
+      let query = supabase.from("products").select("*, categories(name, slug)");
+      if (isUuid) {
+        query = query.eq("id", id!);
+      } else {
+        query = query.eq("slug", id!);
+      }
+      const { data, error } = await query.single();
       if (error) throw error;
       return data;
     },
