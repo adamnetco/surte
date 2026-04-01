@@ -23,8 +23,7 @@ const CityPickerModal = () => {
   useEffect(() => {
     const saved = localStorage.getItem("surte_city");
     if (!saved) {
-      const timer = setTimeout(() => setOpen(true), 600);
-      return () => clearTimeout(timer);
+      setOpen(true);
     }
   }, []);
 
