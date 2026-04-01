@@ -90,8 +90,16 @@ const Index = () => {
   const { data: settings } = useAppSettings();
   const show = (key: string) => settings?.[key] !== "false";
 
-  return (
+    const s = settings || {};
+    return (
     <div className="min-h-screen bg-background pb-20">
+      <HeadMeta
+        title={s.seo_site_name || "SURTÉ YA — Soluciones Alimenticias"}
+        description={s.seo_default_description || "Salsas, cárnicos y pulpas al mayor en Bucaramanga."}
+        canonical="https://surte.lovable.app"
+      />
+      <JsonLd data={buildLocalBusinessSchema(s)} id="local-business" />
+      <JsonLd data={buildWebSiteSchema(s)} id="website" />
       <TopBar />
       <main>
         <HeroSection />
