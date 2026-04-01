@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProfile, getPriceForType } from "@/hooks/useProfile";
+import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
+import HeadMeta from "@/components/seo/HeadMeta";
+import { useAppSettings } from "@/hooks/useStore";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
