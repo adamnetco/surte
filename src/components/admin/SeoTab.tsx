@@ -6,6 +6,7 @@ import { toast } from "sonner";
 const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: string }[] = [
   { key: "seo_site_name", label: "Nombre del Sitio", placeholder: "SURTÉ YA - Soluciones Alimenticias", group: "general" },
   { key: "seo_default_description", label: "Meta Descripción Global", placeholder: "Salsas, cárnicos y pulpas al mayor...", group: "general" },
+  { key: "seo_ga4_measurement_id", label: "Google Analytics 4 (Measurement ID)", placeholder: "G-XXXXXXXXXX", group: "integraciones" },
   { key: "seo_google_merchant_id", label: "Google Merchant Center ID", placeholder: "123456789", group: "integraciones" },
   { key: "seo_facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "123456789", group: "integraciones" },
   { key: "seo_facebook_catalog_id", label: "Facebook Catalog ID", placeholder: "123456789", group: "integraciones" },
