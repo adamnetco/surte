@@ -65,6 +65,11 @@ const ProductoDetalle = () => {
     enabled: !!productId,
   });
 
+  // Track view
+  useEffect(() => {
+    if (product) trackViewProduct(product);
+  }, [product?.id]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -104,11 +109,6 @@ const ProductoDetalle = () => {
     ? Math.round(((product.original_price - userPrice) / product.original_price) * 100)
     : 0;
   const outOfStock = product.stock <= 0;
-
-  // Track view
-  useEffect(() => {
-    if (product) trackViewProduct(product);
-  }, [product?.id]);
 
   const handleAdd = () => {
     if (outOfStock) return;
