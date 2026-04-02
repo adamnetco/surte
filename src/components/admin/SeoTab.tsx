@@ -6,6 +6,7 @@ import { toast } from "sonner";
 const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: string }[] = [
   { key: "seo_site_name", label: "Nombre del Sitio", placeholder: "SURTÉ YA - Soluciones Alimenticias", group: "general" },
   { key: "seo_default_description", label: "Meta Descripción Global", placeholder: "Salsas, cárnicos y pulpas al mayor...", group: "general" },
+  { key: "seo_ga4_measurement_id", label: "Google Analytics 4 (Measurement ID)", placeholder: "G-XXXXXXXXXX", group: "integraciones" },
   { key: "seo_google_merchant_id", label: "Google Merchant Center ID", placeholder: "123456789", group: "integraciones" },
   { key: "seo_facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "123456789", group: "integraciones" },
   { key: "seo_facebook_catalog_id", label: "Facebook Catalog ID", placeholder: "123456789", group: "integraciones" },
@@ -112,6 +113,26 @@ const SeoTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }
         <p className="text-[10px] text-muted-foreground">
           Cada producto tiene campos SEO (slug, meta título, meta descripción, marca, SKU, GTIN, peso) editables desde la pestaña de Productos. 
           Estos datos alimentan automáticamente el schema.org/Product y las etiquetas Open Graph de cada página de producto.
+        </p>
+      </div>
+
+      {/* Sitemap info */}
+      <div className="bg-card rounded-xl p-3 border border-border">
+        <p className="text-xs font-medium text-foreground flex items-center gap-1.5 mb-1"><Globe size={12} /> Sitemap Dinámico</p>
+        <p className="text-[10px] text-muted-foreground mb-2">
+          El sitemap XML se genera automáticamente con todos los productos y categorías activos. Registra esta URL en Google Search Console.
+        </p>
+        <code className="text-[10px] bg-muted px-2 py-1 rounded block break-all">
+          {`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/sitemap`}
+        </code>
+      </div>
+
+      {/* Tracking page info */}
+      <div className="bg-card rounded-xl p-3 border border-border">
+        <p className="text-xs font-medium text-foreground flex items-center gap-1.5 mb-1"><BarChart3 size={12} /> Seguimiento de Pedidos</p>
+        <p className="text-[10px] text-muted-foreground">
+          Cada pedido genera un enlace público de seguimiento en tiempo real (ej: /pedido/1234). 
+          El cliente recibe este enlace en el mensaje de WhatsApp y puede consultar el estado de su compra.
         </p>
       </div>
     </div>

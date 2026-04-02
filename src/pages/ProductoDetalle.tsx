@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { useProfile, getPriceForType } from "@/hooks/useProfile";
 import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
 import HeadMeta from "@/components/seo/HeadMeta";
 import { useAppSettings } from "@/hooks/useStore";
+import { trackViewProduct, trackAddToCart } from "@/components/seo/Analytics";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -64,6 +65,11 @@ const ProductoDetalle = () => {
     enabled: !!productId,
   });
 
+  // Track view
+  useEffect(() => {
+    if (product) trackViewProduct(product);
+  }, [product?.id]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -107,6 +113,7 @@ const ProductoDetalle = () => {
   const handleAdd = () => {
     if (outOfStock) return;
     addItem(product, qty);
+    trackAddToCart(product, qty);
     setAdded(true);
     toast.success(`${product.name} agregado al carrito`);
     setTimeout(() => setAdded(false), 1500);

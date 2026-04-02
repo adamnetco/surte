@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://surte.lovable.app/sitemap.xml
+Sitemap: https://dimyhjzcwlgfczimqhet.supabase.co/functions/v1/sitemap

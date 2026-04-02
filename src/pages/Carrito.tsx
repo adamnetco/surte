@@ -7,9 +7,10 @@ import { useCart } from "@/context/CartContext";
 import { useAppSettings } from "@/hooks/useStore";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { trackPurchase } from "@/components/seo/Analytics";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -85,10 +86,14 @@ const Carrito = () => {
 
       if (error) throw error;
 
+      // Track purchase conversion
+      trackPurchase(data.order_number, totalPrice, payload.items);
+
       toast.success(`¡Pedido #${data.order_number} creado!`);
 
-      // Build WhatsApp message for the user to send to official SURTÉ number
+      // Build WhatsApp message
       const whatsappNumber = settings?.whatsapp_number || "573000000000";
+      const trackingUrl = `${window.location.origin}/pedido/${data.order_number}`;
       const orderLines = items.map(
         (i) => `• ${i.quantity}x ${i.product.name} — ${formatPrice(i.product.price * i.quantity)}`
       );
@@ -103,6 +108,8 @@ const Carrito = () => {
         ...orderLines,
         "",
         `💰 *Total: ${formatPrice(totalPrice)}*`,
+        "",
+        `📦 Seguimiento: ${trackingUrl}`,
       ].filter(Boolean).join("\n");
 
       const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMsg)}`;
@@ -110,10 +117,11 @@ const Carrito = () => {
       clearCart();
       setShowForm(false);
 
-      // Always open WhatsApp so user confirms with the store
+      // Open WhatsApp so customer confirms with the store
       window.open(waUrl, "_blank");
 
-      navigate("/pedidos");
+      // Navigate to tracking page
+      navigate(`/pedido/${data.order_number}`);
     } catch (err: any) {
       toast.error(err.message || "Error al crear pedido");
     } finally {
