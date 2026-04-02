@@ -86,10 +86,14 @@ const Carrito = () => {
 
       if (error) throw error;
 
+      // Track purchase conversion
+      trackPurchase(data.order_number, totalPrice, payload.items);
+
       toast.success(`¡Pedido #${data.order_number} creado!`);
 
-      // Build WhatsApp message for the user to send to official SURTÉ number
+      // Build WhatsApp message
       const whatsappNumber = settings?.whatsapp_number || "573000000000";
+      const trackingUrl = `${window.location.origin}/pedido/${data.order_number}`;
       const orderLines = items.map(
         (i) => `• ${i.quantity}x ${i.product.name} — ${formatPrice(i.product.price * i.quantity)}`
       );
@@ -104,6 +108,8 @@ const Carrito = () => {
         ...orderLines,
         "",
         `💰 *Total: ${formatPrice(totalPrice)}*`,
+        "",
+        `📦 Seguimiento: ${trackingUrl}`,
       ].filter(Boolean).join("\n");
 
       const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMsg)}`;
@@ -111,10 +117,11 @@ const Carrito = () => {
       clearCart();
       setShowForm(false);
 
-      // Always open WhatsApp so user confirms with the store
+      // Open WhatsApp so customer confirms with the store
       window.open(waUrl, "_blank");
 
-      navigate("/pedidos");
+      // Navigate to tracking page
+      navigate(`/pedido/${data.order_number}`);
     } catch (err: any) {
       toast.error(err.message || "Error al crear pedido");
     } finally {
