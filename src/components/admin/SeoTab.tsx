@@ -115,6 +115,26 @@ const SeoTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }
           Estos datos alimentan automáticamente el schema.org/Product y las etiquetas Open Graph de cada página de producto.
         </p>
       </div>
+
+      {/* Sitemap info */}
+      <div className="bg-card rounded-xl p-3 border border-border">
+        <p className="text-xs font-medium text-foreground flex items-center gap-1.5 mb-1"><Globe size={12} /> Sitemap Dinámico</p>
+        <p className="text-[10px] text-muted-foreground mb-2">
+          El sitemap XML se genera automáticamente con todos los productos y categorías activos. Registra esta URL en Google Search Console.
+        </p>
+        <code className="text-[10px] bg-muted px-2 py-1 rounded block break-all">
+          {`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/sitemap`}
+        </code>
+      </div>
+
+      {/* Tracking page info */}
+      <div className="bg-card rounded-xl p-3 border border-border">
+        <p className="text-xs font-medium text-foreground flex items-center gap-1.5 mb-1"><BarChart3 size={12} /> Seguimiento de Pedidos</p>
+        <p className="text-[10px] text-muted-foreground">
+          Cada pedido genera un enlace público de seguimiento en tiempo real (ej: /pedido/1234). 
+          El cliente recibe este enlace en el mensaje de WhatsApp y puede consultar el estado de su compra.
+        </p>
+      </div>
     </div>
   );
 };

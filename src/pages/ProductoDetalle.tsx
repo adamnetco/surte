@@ -105,9 +105,15 @@ const ProductoDetalle = () => {
     : 0;
   const outOfStock = product.stock <= 0;
 
+  // Track view
+  useEffect(() => {
+    if (product) trackViewProduct(product);
+  }, [product?.id]);
+
   const handleAdd = () => {
     if (outOfStock) return;
     addItem(product, qty);
+    trackAddToCart(product, qty);
     setAdded(true);
     toast.success(`${product.name} agregado al carrito`);
     setTimeout(() => setAdded(false), 1500);
