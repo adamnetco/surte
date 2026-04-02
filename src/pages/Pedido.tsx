@@ -27,7 +27,7 @@ const Pedido = () => {
   const { orderNumber } = useParams();
   const { data: settings } = useAppSettings();
 
-  const { data: order, isLoading, refetch } = useQuery({
+  const { data: order, isLoading, isError, refetch } = useQuery({
     queryKey: ["public-order", orderNumber],
     queryFn: async () => {
       const num = parseInt(orderNumber || "0");
@@ -35,11 +35,12 @@ const Pedido = () => {
         .from("orders")
         .select("*, order_items(*)")
         .eq("order_number", num)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
     enabled: !!orderNumber,
+    retry: false,
   });
 
   // Realtime updates
