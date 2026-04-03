@@ -27,6 +27,11 @@ const settingsMeta: Record<string, SettingMeta> = {
   footer_nit: { label: "NIT Empresa", icon: Save, type: "text", group: "legal" },
   footer_email: { label: "Email de Contacto", icon: Save, type: "text", group: "legal" },
   footer_address: { label: "Dirección Física", icon: Save, type: "text", group: "legal" },
+  google_maps_url: { label: "Google Maps URL", icon: Link2, type: "text", group: "legal", description: "Enlace de Google Mi Negocio (share link)" },
+  google_maps_embed: { label: "Google Maps Embed URL", icon: Link2, type: "text", group: "legal", description: "URL de embed del mapa (src del iframe)" },
+  social_facebook: { label: "Facebook URL", icon: Link2, type: "text", group: "redes", description: "https://facebook.com/..." },
+  social_instagram: { label: "Instagram URL", icon: Link2, type: "text", group: "redes", description: "https://instagram.com/..." },
+  social_tiktok: { label: "TikTok URL", icon: Link2, type: "text", group: "redes", description: "https://tiktok.com/@..." },
   external_sync_webhook_url: { label: "Webhook Sync Externa", icon: Link2, type: "text", group: "integraciones", description: "URL para enviar pedidos" },
   ycloud_api_key: { label: "YCloud API Key", icon: MessageSquare, type: "text", group: "integraciones", description: "API Key de YCloud para WhatsApp Business" },
   ycloud_from_number: { label: "YCloud Número Remitente", icon: Phone, type: "text", group: "integraciones", description: "Número de WhatsApp Business en YCloud" },
@@ -49,7 +54,8 @@ const settingsMeta: Record<string, SettingMeta> = {
 
 const GROUP_LABELS: Record<string, string> = {
   general: "🏪 General",
-  legal: "📄 Datos Legales",
+  legal: "📄 Datos Legales & Mapa",
+  redes: "📱 Redes Sociales",
   integraciones: "🔗 Integraciones",
   badges: "🏅 Trust Badges",
   visibilidad: "👁️ Visibilidad de Secciones",

@@ -27,6 +27,8 @@ import Pedido from "./pages/Pedido";
 import NotFound from "./pages/NotFound";
 import Unsubscribe from "./pages/Unsubscribe";
 import Hub from "./pages/Hub";
+import Politicas from "./pages/Politicas";
+import TratamientoDatos from "./pages/TratamientoDatos";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +62,9 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/unsubscribe" element={<Unsubscribe />} />
                 <Route path="/hub/:type/:slug" element={<Hub />} />
+                <Route path="/politicas" element={<Politicas />} />
+                <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
+                <Route path="*" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <FloatingWhatsApp />

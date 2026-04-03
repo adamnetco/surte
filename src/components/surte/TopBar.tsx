@@ -21,7 +21,7 @@ const TopBar = ({ onSearch }: TopBarProps) => {
   const cityRef = useRef<HTMLDivElement>(null);
   const { data: settings } = useAppSettings();
 
-  const showPromoBanner = settings?.show_promo_banner !== "false";
+  const showPromoBanner = settings?.show_promo_banner === "true";
   const promoBannerText = settings?.promo_banner_text || "🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000";
 
   const handleSearch = (e: React.FormEvent) => {
