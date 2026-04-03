@@ -63,6 +63,9 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/unsubscribe" element={<Unsubscribe />} />
                 <Route path="/hub/:type/:slug" element={<Hub />} />
+                <Route path="/politicas" element={<Politicas />} />
+                <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
+                <Route path="*" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <FloatingWhatsApp />
