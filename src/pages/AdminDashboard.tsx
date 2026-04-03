@@ -19,6 +19,7 @@ import UsersTab from "@/components/admin/UsersTab";
 import ShippingTab from "@/components/admin/ShippingTab";
 import HeroSlidesTab from "@/components/admin/HeroSlidesTab";
 import SeoTab from "@/components/admin/SeoTab";
+import InventoryTab from "@/components/admin/InventoryTab";
 
 // Tabs visible per role
 const allTabs = [
