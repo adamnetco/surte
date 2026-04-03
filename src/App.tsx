@@ -27,6 +27,9 @@ import Pedido from "./pages/Pedido";
 import NotFound from "./pages/NotFound";
 import Unsubscribe from "./pages/Unsubscribe";
 import Hub from "./pages/Hub";
+import Politicas from "./pages/Politicas";
+import TratamientoDatos from "./pages/TratamientoDatos";
+import Hub from "./pages/Hub";
 
 const queryClient = new QueryClient();
 
