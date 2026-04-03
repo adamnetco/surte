@@ -54,7 +54,8 @@ const settingsMeta: Record<string, SettingMeta> = {
 
 const GROUP_LABELS: Record<string, string> = {
   general: "🏪 General",
-  legal: "📄 Datos Legales",
+  legal: "📄 Datos Legales & Mapa",
+  redes: "📱 Redes Sociales",
   integraciones: "🔗 Integraciones",
   badges: "🏅 Trust Badges",
   visibilidad: "👁️ Visibilidad de Secciones",
