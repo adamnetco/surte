@@ -84,7 +84,8 @@ const Carrito = () => {
         body: payload,
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || "Error de conexión al procesar pedido");
+      if (data?.error) throw new Error(data.error);
 
       // Track purchase conversion
       trackPurchase(data.order_number, totalPrice, payload.items);
