@@ -35,6 +35,8 @@ const settingsMeta: Record<string, SettingMeta> = {
   external_sync_webhook_url: { label: "Webhook Sync Externa", icon: Link2, type: "text", group: "integraciones", description: "URL para enviar pedidos" },
   ycloud_api_key: { label: "YCloud API Key", icon: MessageSquare, type: "text", group: "integraciones", description: "API Key de YCloud para WhatsApp Business" },
   ycloud_from_number: { label: "YCloud Número Remitente", icon: Phone, type: "text", group: "integraciones", description: "Número de WhatsApp Business en YCloud" },
+  callmebot_api_key: { label: "CallMeBot API Key", icon: MessageSquare, type: "text", group: "integraciones", description: "API Key de CallMeBot para notificaciones WhatsApp" },
+  callmebot_phone: { label: "CallMeBot Teléfono", icon: Phone, type: "text", group: "integraciones", description: "Número para recibir notificaciones CallMeBot (con código de país)" },
   trust_badge_1_label: { label: "Badge 1 — Título", icon: Award, type: "text", group: "badges" },
   trust_badge_1_sub: { label: "Badge 1 — Subtítulo", icon: Award, type: "text", group: "badges" },
   trust_badge_2_label: { label: "Badge 2 — Título", icon: Award, type: "text", group: "badges" },
