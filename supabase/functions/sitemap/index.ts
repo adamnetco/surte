@@ -70,18 +70,18 @@ Deno.serve(async (req) => {
     return new Response(feed, { headers: corsHeaders });
   }
 
-  // Standard Sitemap
-  const { data: products } = await supabase
-    .from('products')
-    .select('slug, id, updated_at, image_url')
-    .eq('is_active', true)
-    .order('updated_at', { ascending: false });
+  // Standard Sitemap — fetch all data in parallel
+  const [productsRes, categoriesRes, brandsRes, landingRes] = await Promise.all([
+    supabase.from('products').select('slug, id, updated_at, image_url').eq('is_active', true).order('updated_at', { ascending: false }),
+    supabase.from('categories').select('slug, updated_at').eq('is_active', true),
+    supabase.from('brands').select('name, created_at').eq('is_active', true),
+    supabase.from('landing_pages').select('slug, updated_at').eq('is_active', true),
+  ]);
 
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('slug, updated_at')
-    .eq('is_active', true);
-
+  const products = productsRes.data;
+  const categories = categoriesRes.data;
+  const brands = brandsRes.data;
+  const landingPages = landingRes.data;
   const now = new Date().toISOString().split('T')[0];
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -124,6 +124,7 @@ Deno.serve(async (req) => {
     <priority>0.3</priority>
   </url>`;
 
+  // Category pages
   categories?.forEach((c: any) => {
     xml += `
   <url>
@@ -134,6 +135,42 @@ Deno.serve(async (req) => {
   </url>`;
   });
 
+  // Brand pages
+  brands?.forEach((b: any) => {
+    const slug = b.name.toLowerCase().replace(/\s+/g, '-');
+    xml += `
+  <url>
+    <loc>${baseUrl}/hub/marca/${slug}</loc>
+    <lastmod>${b.created_at?.split('T')[0] || now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+  });
+
+  // City pages
+  const cities = ['bucaramanga', 'floridablanca', 'giron', 'piedecuesta'];
+  cities.forEach(city => {
+    xml += `
+  <url>
+    <loc>${baseUrl}/hub/ciudad/${city}</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+  });
+
+  // Landing pages (SEO keyword pages)
+  landingPages?.forEach((lp: any) => {
+    xml += `
+  <url>
+    <loc>${baseUrl}/s/${lp.slug}</loc>
+    <lastmod>${lp.updated_at?.split('T')[0] || now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+  });
+
+  // Product pages
   products?.forEach((p: any) => {
     const slug = p.slug || p.id;
     const lastmod = p.updated_at?.split('T')[0] || now;
