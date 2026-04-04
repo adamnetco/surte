@@ -220,12 +220,15 @@ const InventoryTab = ({ products, categories, queryClient }: { products: any[]; 
           <Download size={16} className="text-accent" /> Exportar Inventario
         </h3>
         <p className="text-xs text-muted-foreground">{products?.length || 0} productos disponibles para exportar.</p>
-        <div className="flex gap-2">
-          <button onClick={downloadCSV} className="flex-1 bg-secondary text-secondary-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={downloadCSV} className="flex-1 min-w-[100px] bg-secondary text-secondary-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
             <FileSpreadsheet size={14} /> CSV
           </button>
-          <button onClick={downloadXLS} className="flex-1 bg-accent text-accent-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-            <FileSpreadsheet size={14} /> Excel (.xls)
+          <button onClick={downloadXLS} className="flex-1 min-w-[100px] bg-accent text-accent-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+            <FileSpreadsheet size={14} /> Excel
+          </button>
+          <button onClick={downloadGMC} className="flex-1 min-w-[100px] bg-primary text-primary-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+            <FileSpreadsheet size={14} /> Google Merchant
           </button>
         </div>
       </div>
