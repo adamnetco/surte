@@ -62,6 +62,7 @@ const Carrito = () => {
     }
     setSubmitting(true);
     try {
+      const grandTotal = totalPrice + deliveryCost;
       const payload = {
         items: items.map((i) => ({
           product_id: i.product.id,
@@ -73,6 +74,8 @@ const Carrito = () => {
         customer_phone: form.phone,
         customer_address: form.address,
         notes: form.notes,
+        delivery_price: deliveryCost,
+        delivery_zone_id: form.neighborhood_id || null,
       };
 
       const { data, error } = await supabase.functions.invoke("send-whatsapp-order", {
