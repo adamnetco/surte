@@ -69,6 +69,43 @@ const InventoryTab = ({ products, categories, queryClient }: { products: any[]; 
     toast.success(`${rows.length} productos exportados (Excel)`);
   };
 
+  const downloadGMC = () => {
+    const headers = [
+      "id", "title", "description", "link", "image_link", "availability", "price",
+      "sale_price", "brand", "condition", "product_type", "gtin", "mpn", "shipping_weight",
+    ];
+    const rows = (products || []).filter((p: any) => p.is_active !== false).map((p: any) => {
+      const slug = p.slug || p.id;
+      return [
+        p.id,
+        p.name,
+        p.description || p.name,
+        `https://surteya.com/producto/${slug}`,
+        p.image_url || "",
+        p.stock > 0 ? "in_stock" : "out_of_stock",
+        `${p.price} COP`,
+        p.original_price ? `${p.price} COP` : "",
+        p.brand || "SURTÉ YA",
+        "new",
+        categoryIdMap[p.category_id] || "Alimentos",
+        p.gtin || "",
+        p.sku || "",
+        p.weight || "",
+      ];
+    });
+
+    const tsvContent = [headers, ...rows].map((row) => row.map((v: any) => String(v).replace(/\t/g, " ")).join("\t")).join("\n");
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + tsvContent], { type: "text/tab-separated-values;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `google_merchant_surte_${new Date().toISOString().slice(0, 10)}.tsv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${rows.length} productos exportados para Google Merchant Center`);
+  };
+
   const downloadTemplate = () => {
     const headers = [
       "name", "description", "price", "original_price", "price_wholesale", "price_distributor",
@@ -220,12 +257,15 @@ const InventoryTab = ({ products, categories, queryClient }: { products: any[]; 
           <Download size={16} className="text-accent" /> Exportar Inventario
         </h3>
         <p className="text-xs text-muted-foreground">{products?.length || 0} productos disponibles para exportar.</p>
-        <div className="flex gap-2">
-          <button onClick={downloadCSV} className="flex-1 bg-secondary text-secondary-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={downloadCSV} className="flex-1 min-w-[100px] bg-secondary text-secondary-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
             <FileSpreadsheet size={14} /> CSV
           </button>
-          <button onClick={downloadXLS} className="flex-1 bg-accent text-accent-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-            <FileSpreadsheet size={14} /> Excel (.xls)
+          <button onClick={downloadXLS} className="flex-1 min-w-[100px] bg-accent text-accent-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+            <FileSpreadsheet size={14} /> Excel
+          </button>
+          <button onClick={downloadGMC} className="flex-1 min-w-[100px] bg-primary text-primary-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+            <FileSpreadsheet size={14} /> Google Merchant
           </button>
         </div>
       </div>

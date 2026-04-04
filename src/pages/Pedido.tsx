@@ -43,17 +43,35 @@ const Pedido = () => {
     retry: false,
   });
 
-  // Realtime updates
+  // Request notification permission
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Realtime updates with push notification
   useEffect(() => {
     if (!order?.id) return;
     const channel = supabase
       .channel(`order-${order.id}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${order.id}` }, () => {
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${order.id}` }, (payload) => {
         refetch();
+        const newStatus = payload.new?.status;
+        const conf = statusConfig[newStatus as string];
+        if (conf && "Notification" in window && Notification.permission === "granted") {
+          new Notification(`Pedido #${order.order_number}`, {
+            body: `Estado actualizado: ${conf.label}`,
+            icon: "/favicon.ico",
+          });
+        }
+        if (conf) {
+          toast.success(`Estado actualizado: ${conf.label}`);
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [order?.id, refetch]);
+  }, [order?.id, order?.order_number, refetch]);
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);

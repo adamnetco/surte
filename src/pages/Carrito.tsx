@@ -44,15 +44,10 @@ const Carrito = () => {
 
   const handleFinalize = () => {
     if (!meetsMinimum) return;
-    if (!user) {
-      toast.info("Inicia sesión para hacer tu pedido");
-      navigate("/login");
-      return;
-    }
-    // Pre-fill from user metadata
+    // Pre-fill from user metadata if logged in, otherwise empty
     setForm({
-      name: user.user_metadata?.full_name || "",
-      phone: user.user_metadata?.phone || "",
+      name: user?.user_metadata?.full_name || "",
+      phone: user?.user_metadata?.phone || "",
       address: "",
       notes: "",
       neighborhood_id: "",
@@ -67,6 +62,7 @@ const Carrito = () => {
     }
     setSubmitting(true);
     try {
+      const grandTotal = totalPrice + deliveryCost;
       const payload = {
         items: items.map((i) => ({
           product_id: i.product.id,
@@ -78,6 +74,8 @@ const Carrito = () => {
         customer_phone: form.phone,
         customer_address: form.address,
         notes: form.notes,
+        delivery_price: deliveryCost,
+        delivery_zone_id: form.neighborhood_id || null,
       };
 
       const { data, error } = await supabase.functions.invoke("send-whatsapp-order", {
@@ -88,7 +86,7 @@ const Carrito = () => {
       if (data?.error) throw new Error(data.error);
 
       // Track purchase conversion
-      trackPurchase(data.order_number, totalPrice, payload.items);
+      trackPurchase(data.order_number, grandTotal, payload.items);
 
       toast.success(`¡Pedido #${data.order_number} creado!`);
 
@@ -108,7 +106,9 @@ const Carrito = () => {
         "",
         ...orderLines,
         "",
-        `💰 *Total: ${formatPrice(totalPrice)}*`,
+        `💰 Subtotal: ${formatPrice(totalPrice)}`,
+        deliveryCost > 0 ? `🚚 Domicilio: ${formatPrice(deliveryCost)}` : "",
+        `💰 *Total: ${formatPrice(grandTotal)}*`,
         "",
         `📦 Seguimiento: ${trackingUrl}`,
       ].filter(Boolean).join("\n");
