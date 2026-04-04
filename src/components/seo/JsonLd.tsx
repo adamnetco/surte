@@ -35,7 +35,7 @@ export const buildLocalBusinessSchema = (settings: Record<string, string>) => ({
   "@id": "https://surteya.com/#business",
   name: settings.seo_site_name || settings.store_name || "SURTÉ YA",
   description: settings.seo_default_description || "",
-  url: "https://surte.lovable.app",
+  url: "https://surteya.com",
   telephone: settings.whatsapp_number ? `+${settings.whatsapp_number}` : undefined,
   email: settings.footer_email || undefined,
   address: {
