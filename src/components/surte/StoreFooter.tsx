@@ -42,7 +42,7 @@ const StoreFooter = () => {
   const facebook = settings?.social_facebook || "";
   const instagram = settings?.social_instagram || "";
   const tiktok = settings?.social_tiktok || "";
-  const reviewMaps = "https://search.google.com/local/writereview?placeid=ChIJXSgYyOY_aI4RWV7JI63w5W8";
+  const reviewMaps = "https://search.google.com/local/writereview";
 
   const navLinks = [
     { label: "Catálogo", path: "/catalogo" },
