@@ -27,6 +27,7 @@ import Pedido from "./pages/Pedido";
 import NotFound from "./pages/NotFound";
 import Unsubscribe from "./pages/Unsubscribe";
 import Hub from "./pages/Hub";
+import LandingPage from "./pages/LandingPage";
 import Politicas from "./pages/Politicas";
 import TratamientoDatos from "./pages/TratamientoDatos";
 
