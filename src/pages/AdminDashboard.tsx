@@ -36,6 +36,7 @@ const allTabs = [
   { id: "notifications", label: "Alertas", icon: Bell, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "seo", label: "SEO", icon: Search, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "landing", label: "SEO Pages", icon: Globe, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
 
