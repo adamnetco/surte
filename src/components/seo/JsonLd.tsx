@@ -32,7 +32,7 @@ export default JsonLd;
 export const buildLocalBusinessSchema = (settings: Record<string, string>) => ({
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
-  "@id": "https://surte.lovable.app/#business",
+  "@id": "https://surteya.com/#business",
   name: settings.seo_site_name || settings.store_name || "SURTÉ YA",
   description: settings.seo_default_description || "",
   url: "https://surte.lovable.app",
