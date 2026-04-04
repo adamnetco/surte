@@ -139,7 +139,7 @@ export const buildWebSiteSchema = (settings: Record<string, string>) => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: settings.seo_site_name || "SURTÉ YA",
-  url: "https://surte.lovable.app",
+  url: "https://surteya.com",
   potentialAction: {
     "@type": "SearchAction",
     target: {
