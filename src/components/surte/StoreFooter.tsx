@@ -181,7 +181,7 @@ const StoreFooter = () => {
               <ExternalLink size={14} /> Abrir en Google Maps
             </a>
             <a
-              href={`${reviewMaps}?action=review`}
+              href={`${reviewMaps}?placeid=ChIJXSgYyOY_aI4RWV7JI63w5W8`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-accent text-accent-foreground rounded-xl px-4 py-2.5 text-xs font-semibold hover:opacity-90 transition-opacity"
