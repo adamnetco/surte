@@ -166,7 +166,7 @@ export const buildProductListSchema = (
   itemListElement: products.slice(0, 50).map((p, i) => ({
     "@type": "ListItem",
     position: i + 1,
-    url: `https://surte.lovable.app/producto/${p.slug || p.id}`,
+    url: `https://surteya.com/producto/${p.slug || p.id}`,
     name: p.name,
   })),
 });
