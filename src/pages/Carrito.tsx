@@ -86,7 +86,7 @@ const Carrito = () => {
       if (data?.error) throw new Error(data.error);
 
       // Track purchase conversion
-      trackPurchase(data.order_number, totalPrice, payload.items);
+      trackPurchase(data.order_number, grandTotal, payload.items);
 
       toast.success(`¡Pedido #${data.order_number} creado!`);
 
