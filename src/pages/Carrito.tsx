@@ -44,15 +44,10 @@ const Carrito = () => {
 
   const handleFinalize = () => {
     if (!meetsMinimum) return;
-    if (!user) {
-      toast.info("Inicia sesión para hacer tu pedido");
-      navigate("/login");
-      return;
-    }
-    // Pre-fill from user metadata
+    // Pre-fill from user metadata if logged in, otherwise empty
     setForm({
-      name: user.user_metadata?.full_name || "",
-      phone: user.user_metadata?.phone || "",
+      name: user?.user_metadata?.full_name || "",
+      phone: user?.user_metadata?.phone || "",
       address: "",
       notes: "",
       neighborhood_id: "",

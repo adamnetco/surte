@@ -134,11 +134,12 @@ const ProductoDetalle = () => {
   };
 
   const settings = appSettings || {};
-  const productUrl = `https://surte.lovable.app/producto/${product.slug || product.id}`;
+  const baseUrl = "https://surteya.com";
+  const productUrl = `${baseUrl}/producto/${product.slug || product.id}`;
   const breadcrumbs = [
-    { name: "Inicio", url: "https://surte.lovable.app" },
-    { name: "Catálogo", url: "https://surte.lovable.app/catalogo" },
-    ...(product.categories?.name ? [{ name: product.categories.name, url: `https://surte.lovable.app/hub/categoria/${product.categories.slug}` }] : []),
+    { name: "Inicio", url: baseUrl },
+    { name: "Catálogo", url: `${baseUrl}/catalogo` },
+    ...(product.categories?.name ? [{ name: product.categories.name, url: `${baseUrl}/hub/categoria/${product.categories.slug}` }] : []),
     { name: product.name, url: productUrl },
   ];
 
