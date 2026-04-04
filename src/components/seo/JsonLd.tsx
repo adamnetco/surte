@@ -32,10 +32,10 @@ export default JsonLd;
 export const buildLocalBusinessSchema = (settings: Record<string, string>) => ({
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
-  "@id": "https://surte.lovable.app/#business",
+  "@id": "https://surteya.com/#business",
   name: settings.seo_site_name || settings.store_name || "SURTÉ YA",
   description: settings.seo_default_description || "",
-  url: "https://surte.lovable.app",
+  url: "https://surteya.com",
   telephone: settings.whatsapp_number ? `+${settings.whatsapp_number}` : undefined,
   email: settings.footer_email || undefined,
   address: {
@@ -78,7 +78,7 @@ export const buildProductSchema = (
   product: any,
   settings: Record<string, string>
 ) => {
-  const url = `https://surte.lovable.app/producto/${product.slug || product.id}`;
+  const url = `https://surteya.com/producto/${product.slug || product.id}`;
   const imageUrl = product.image_url || settings.default_product_image || "";
 
   return {
@@ -139,12 +139,12 @@ export const buildWebSiteSchema = (settings: Record<string, string>) => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: settings.seo_site_name || "SURTÉ YA",
-  url: "https://surte.lovable.app",
+  url: "https://surteya.com",
   potentialAction: {
     "@type": "SearchAction",
     target: {
       "@type": "EntryPoint",
-      urlTemplate: "https://surte.lovable.app/catalogo?search={search_term_string}",
+      urlTemplate: "https://surteya.com/catalogo?search={search_term_string}",
     },
     "query-input": "required name=search_term_string",
   },
@@ -166,7 +166,7 @@ export const buildProductListSchema = (
   itemListElement: products.slice(0, 50).map((p, i) => ({
     "@type": "ListItem",
     position: i + 1,
-    url: `https://surte.lovable.app/producto/${p.slug || p.id}`,
+    url: `https://surteya.com/producto/${p.slug || p.id}`,
     name: p.name,
   })),
 });

@@ -302,6 +302,57 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_pages: {
+        Row: {
+          body_html: string | null
+          city: string | null
+          created_at: string
+          heading: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          meta_description: string | null
+          meta_title: string | null
+          page_type: string
+          slug: string
+          sort_order: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string | null
+          city?: string | null
+          created_at?: string
+          heading?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
+          page_type?: string
+          slug: string
+          sort_order?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string | null
+          city?: string | null
+          created_at?: string
+          heading?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
+          page_type?: string
+          slug?: string
+          sort_order?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       municipality_settings: {
         Row: {
           city: string

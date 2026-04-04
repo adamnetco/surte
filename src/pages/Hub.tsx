@@ -5,18 +5,22 @@ import BottomNav from "@/components/surte/BottomNav";
 import ProductCard from "@/components/surte/ProductCard";
 import FloatingCart from "@/components/surte/FloatingCart";
 import StoreFooter from "@/components/surte/StoreFooter";
-import { useProducts, useCategories } from "@/hooks/useStore";
+import HeadMeta from "@/components/seo/HeadMeta";
+import JsonLd, { buildProductListSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
+import { useProducts, useCategories, useAppSettings } from "@/hooks/useStore";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowUpDown, Package } from "lucide-react";
 import { motion } from "framer-motion";
 
+const BASE_URL = "https://surteya.com";
+
 const Hub = () => {
   const { type, slug } = useParams<{ type: string; slug: string }>();
   const [searchParams] = useSearchParams();
-  const cityFilter = searchParams.get("city") || "";
   const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc">("default");
 
+  const { data: settings } = useAppSettings();
   const { data: categories } = useCategories();
   const { data: brands } = useQuery({
     queryKey: ["brands"],
@@ -27,47 +31,79 @@ const Hub = () => {
     },
   });
 
-  // Determine what we're filtering by
   const categorySlug = type === "categoria" ? slug : "";
   const { data: products, isLoading } = useProducts(categorySlug || undefined);
 
-  // Get the title
-  const title = useMemo(() => {
-    if (type === "categoria") {
-      return categories?.find((c) => c.slug === slug)?.name || slug || "Categoría";
-    }
+  // Filter by brand
+  const brandFilteredProducts = useMemo(() => {
+    if (!products) return [];
     if (type === "marca") {
-      return brands?.find((b) => b.name.toLowerCase().replace(/\s+/g, "-") === slug)?.name || slug || "Marca";
+      const brandName = brands?.find((b) => b.name.toLowerCase().replace(/\s+/g, "-") === slug)?.name;
+      if (brandName) return products.filter((p) => p.brand?.toLowerCase() === brandName.toLowerCase());
     }
-    if (type === "ciudad") {
-      return slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Ciudad";
-    }
+    return products;
+  }, [products, type, slug, brands]);
+
+  const title = useMemo(() => {
+    if (type === "categoria") return categories?.find((c) => c.slug === slug)?.name || slug || "Categoría";
+    if (type === "marca") return brands?.find((b) => b.name.toLowerCase().replace(/\s+/g, "-") === slug)?.name || slug || "Marca";
+    if (type === "ciudad") return slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Ciudad";
     return "Productos";
   }, [type, slug, categories, brands]);
 
   const subtitle = useMemo(() => {
-    if (type === "categoria") return "Explora todos los productos de esta categoría";
-    if (type === "marca") return "Productos de esta marca aliada";
-    if (type === "ciudad") return "Productos disponibles en tu ciudad";
+    if (type === "categoria") return `Explora todos los productos de ${title}`;
+    if (type === "marca") return `Productos de ${title} — marca aliada`;
+    if (type === "ciudad") return `Productos disponibles en ${title}`;
     return "";
-  }, [type]);
+  }, [type, title]);
 
   const sorted = useMemo(() => {
-    if (!products) return [];
-    let result = [...products];
+    const base = type === "marca" ? brandFilteredProducts : (products || []);
+    let result = [...base];
     if (sortBy === "price-asc") result.sort((a, b) => a.price - b.price);
     if (sortBy === "price-desc") result.sort((a, b) => b.price - a.price);
     return result;
-  }, [products, sortBy]);
+  }, [products, brandFilteredProducts, type, sortBy]);
 
   const cycleSortBy = () =>
     setSortBy(sortBy === "default" ? "price-asc" : sortBy === "price-asc" ? "price-desc" : "default");
 
+  const pageUrl = `${BASE_URL}/hub/${type}/${slug}`;
+  const storeName = settings?.store_name || "SURTÉ YA";
+  const metaTitle = `${title} — ${storeName} | Compra en línea`;
+  const metaDesc = subtitle
+    ? `${subtitle}. Compra al mejor precio en ${storeName}. Envíos a Bucaramanga, Floridablanca, Girón y Piedecuesta.`
+    : `Productos de ${title} en ${storeName}`;
+
+  const breadcrumbs = [
+    { name: "Inicio", url: BASE_URL },
+    { name: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : "Ciudades", url: `${BASE_URL}/categorias` },
+    { name: title, url: pageUrl },
+  ];
+
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: title,
+    description: metaDesc,
+    url: pageUrl,
+    isPartOf: { "@type": "WebSite", name: storeName, url: BASE_URL },
+    ...(type === "ciudad" && {
+      about: { "@type": "City", name: title, containedInPlace: { "@type": "AdministrativeArea", name: "Santander" } },
+    }),
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
+      <HeadMeta title={metaTitle} description={metaDesc} canonical={pageUrl} />
+      <JsonLd data={collectionSchema} id="collection" />
+      <JsonLd data={buildBreadcrumbSchema(breadcrumbs)} id="breadcrumb" />
+      {sorted.length > 0 && (
+        <JsonLd data={buildProductListSchema(sorted, title, pageUrl)} id="product-list" />
+      )}
       <TopBar />
       <main className="px-4 py-4">
-        {/* Header */}
         <div className="mb-4">
           <p className="text-[10px] uppercase tracking-widest text-accent font-semibold mb-1">
             {type === "categoria" ? "Categoría" : type === "marca" ? "Marca" : type === "ciudad" ? "Ciudad" : "Hub"}
@@ -76,14 +112,11 @@ const Hub = () => {
           {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
 
-        {/* Sort */}
         <div className="flex gap-2 mb-4">
           <button
             onClick={cycleSortBy}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition-colors active:scale-[0.97] ${
-              sortBy !== "default"
-                ? "border-accent text-accent bg-accent/5"
-                : "border-border text-muted-foreground"
+              sortBy !== "default" ? "border-accent text-accent bg-accent/5" : "border-border text-muted-foreground"
             }`}
           >
             <ArrowUpDown size={14} />
