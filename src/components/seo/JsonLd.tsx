@@ -78,7 +78,7 @@ export const buildProductSchema = (
   product: any,
   settings: Record<string, string>
 ) => {
-  const url = `https://surte.lovable.app/producto/${product.slug || product.id}`;
+  const url = `https://surteya.com/producto/${product.slug || product.id}`;
   const imageUrl = product.image_url || settings.default_product_image || "";
 
   return {
