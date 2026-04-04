@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       userId = user?.id || null;
     }
 
-    const { items, customer_name, customer_phone, customer_address, notes } = await req.json();
+    const { items, customer_name, customer_phone, customer_address, notes, delivery_price, delivery_zone_id } = await req.json();
 
     if (!items?.length || !customer_name || !customer_phone) {
       return new Response(JSON.stringify({ error: 'Datos incompletos' }), {
@@ -38,7 +38,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const total = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
+    const subtotal = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
+    const deliveryAmount = Number(delivery_price) || 0;
+    const total = subtotal + deliveryAmount;
 
     // Create order
     const { data: order, error: orderError } = await supabaseAdmin
