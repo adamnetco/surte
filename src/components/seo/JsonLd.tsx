@@ -144,7 +144,7 @@ export const buildWebSiteSchema = (settings: Record<string, string>) => ({
     "@type": "SearchAction",
     target: {
       "@type": "EntryPoint",
-      urlTemplate: "https://surte.lovable.app/catalogo?search={search_term_string}",
+      urlTemplate: "https://surteya.com/catalogo?search={search_term_string}",
     },
     "query-input": "required name=search_term_string",
   },
