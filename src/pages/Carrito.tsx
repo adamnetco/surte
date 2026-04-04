@@ -106,7 +106,9 @@ const Carrito = () => {
         "",
         ...orderLines,
         "",
-        `💰 *Total: ${formatPrice(totalPrice)}*`,
+        `💰 Subtotal: ${formatPrice(totalPrice)}`,
+        deliveryCost > 0 ? `🚚 Domicilio: ${formatPrice(deliveryCost)}` : "",
+        `💰 *Total: ${formatPrice(grandTotal)}*`,
         "",
         `📦 Seguimiento: ${trackingUrl}`,
       ].filter(Boolean).join("\n");
