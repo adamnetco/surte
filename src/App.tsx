@@ -63,6 +63,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/unsubscribe" element={<Unsubscribe />} />
                 <Route path="/hub/:type/:slug" element={<Hub />} />
+                <Route path="/s/:slug" element={<LandingPage />} />
                 <Route path="/politicas" element={<Politicas />} />
                 <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
                 <Route path="*" element={<NotFound />} />
