@@ -25,7 +25,7 @@ export const useProducts = (categorySlug?: string, search?: string) =>
     queryFn: async () => {
       let query = supabase.from("products").select("*, categories(slug, name)").eq("is_active", true);
       if (search) {
-        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,tags.cs.{${search.toLowerCase()}}`);
       }
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
