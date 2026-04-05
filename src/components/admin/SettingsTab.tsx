@@ -64,6 +64,7 @@ const GROUP_LABELS: Record<string, string> = {
   integraciones: "🔗 Integraciones",
   badges: "🏅 Trust Badges",
   visibilidad: "👁️ Visibilidad de Secciones",
+  destacados: "⭐ Etiquetas Destacados",
 };
 
 const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }) => {
