@@ -1,4 +1,4 @@
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart, ShoppingCart, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -36,7 +36,7 @@ const ProductCard = ({ product }: { product: Product }) => {
     e.stopPropagation();
     if (outOfStock) return;
     addItem(product);
-    toast.success(`${product.name} agregado`);
+    toast.success(`${product.name} agregado`, { duration: 1500 });
   };
 
   const handleFav = (e: React.MouseEvent) => {
@@ -47,7 +47,7 @@ const ProductCard = ({ product }: { product: Product }) => {
   return (
     <div
       className="card-product flex flex-col cursor-pointer group rounded-xl overflow-hidden border border-border bg-card transition-shadow hover:shadow-md"
-      onClick={() => navigate(`/producto/${product.id}`)}
+      onClick={() => navigate(`/producto/${product.slug || product.id}`)}
     >
       {/* Image */}
       <div className="relative aspect-square bg-muted flex items-center justify-center overflow-hidden">
@@ -64,27 +64,27 @@ const ProductCard = ({ product }: { product: Product }) => {
           </div>
         )}
 
-        {discount > 0 && (
-          <span className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-            -{discount}%
-          </span>
-        )}
+        {/* Badges TOP */}
+        <div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
+          {discount > 0 && (
+            <span className="bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+              -{discount}%
+            </span>
+          )}
+          {product.is_fresh && <span className="bg-secondary text-secondary-foreground text-[9px] font-semibold px-1.5 py-0.5 rounded-full">🌿 Fresco</span>}
+          {product.is_wholesale && <span className="bg-primary text-primary-foreground text-[9px] font-semibold px-1.5 py-0.5 rounded-full">💰 Mayor</span>}
+          {lowStock && !outOfStock && (
+            <span className="bg-accent text-accent-foreground text-[8px] font-semibold px-1.5 py-0.5 rounded-full">
+              ¡Últimas {product.stock}!
+            </span>
+          )}
+        </div>
 
         {outOfStock && (
           <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
             <span className="bg-card text-foreground text-[10px] font-heading font-bold px-2.5 py-1 rounded-full">Agotado</span>
           </div>
         )}
-
-        <div className="absolute bottom-1.5 left-1.5 flex gap-1">
-          {product.is_fresh && <span className="badge-fresh text-[9px]">🌿 Fresco</span>}
-          {product.is_wholesale && <span className="badge-wholesale text-[9px]">💰 Mayor</span>}
-          {lowStock && !outOfStock && (
-            <span className="bg-surte-naranja/90 text-white text-[8px] font-semibold px-1.5 py-0.5 rounded-md">
-              ¡Últimas {product.stock}!
-            </span>
-          )}
-        </div>
 
         <button
           onClick={handleFav}
@@ -114,14 +114,14 @@ const ProductCard = ({ product }: { product: Product }) => {
           <button
             onClick={handleAdd}
             disabled={outOfStock}
-            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
               outOfStock
                 ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-accent text-accent-foreground hover:opacity-90"
+                : "bg-accent text-accent-foreground hover:opacity-90 shadow-sm"
             }`}
             aria-label="Agregar al carrito"
           >
-            <ShoppingCart size={14} strokeWidth={2.5} />
+            <Plus size={18} strokeWidth={2.5} />
           </button>
         </div>
       </div>

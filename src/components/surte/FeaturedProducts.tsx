@@ -1,11 +1,11 @@
-import { useProducts } from "@/hooks/useStore";
+import { useProducts, useAppSettings } from "@/hooks/useStore";
 import ProductCard from "./ProductCard";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Flame, TrendingDown } from "lucide-react";
-import { useState } from "react";
+import { ChevronRight } from "lucide-react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 
-const tabs = [
+const defaultTabs = [
   { id: "ofertas", label: "🔥 Ofertas", filter: (p: any) => p.original_price && p.original_price > p.price },
   { id: "mayorista", label: "💰 Mayorista", filter: (p: any) => p.is_wholesale },
   { id: "frescos", label: "🌿 Frescos", filter: (p: any) => p.is_fresh },
@@ -14,7 +14,15 @@ const tabs = [
 const FeaturedProducts = () => {
   const navigate = useNavigate();
   const { data: products, isLoading } = useProducts();
+  const { data: settings } = useAppSettings();
   const [activeTab, setActiveTab] = useState("ofertas");
+
+  const tabs = useMemo(() => {
+    return defaultTabs.map((t) => ({
+      ...t,
+      label: settings?.[`featured_label_${t.id}`] || t.label,
+    }));
+  }, [settings]);
 
   const currentFilter = tabs.find((t) => t.id === activeTab)?.filter || (() => true);
   const filtered = products?.filter(currentFilter).slice(0, 6) ?? [];

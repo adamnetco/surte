@@ -594,6 +594,7 @@ export type Database = {
           sku: string | null
           slug: string | null
           stock: number
+          tags: string[] | null
           unit: string | null
           updated_at: string
           weight: string | null
@@ -621,6 +622,7 @@ export type Database = {
           sku?: string | null
           slug?: string | null
           stock?: number
+          tags?: string[] | null
           unit?: string | null
           updated_at?: string
           weight?: string | null
@@ -648,6 +650,7 @@ export type Database = {
           sku?: string | null
           slug?: string | null
           stock?: number
+          tags?: string[] | null
           unit?: string | null
           updated_at?: string
           weight?: string | null

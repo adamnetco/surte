@@ -15,6 +15,73 @@ import { trackPurchase } from "@/components/seo/Analytics";
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
+const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; selectedId: string; onSelect: (id: string) => void }) => {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const selectedZone = zones.find((z: any) => z.id === selectedId);
+  const selectedCity = localStorage.getItem("surte_city") || "Bucaramanga";
+
+  const filtered = zones.filter((z: any) => {
+    const matchCity = z.city === selectedCity;
+    const matchSearch = !search || z.neighborhood.toLowerCase().includes(search.toLowerCase());
+    return matchCity && matchSearch;
+  });
+
+  const otherCityZones = search ? zones.filter((z: any) => z.city !== selectedCity && z.neighborhood.toLowerCase().includes(search.toLowerCase())) : [];
+
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <MapPin size={14} className="text-accent" />
+        <span className="text-xs font-medium text-muted-foreground">Barrio de entrega</span>
+      </div>
+      <input
+        type="text"
+        value={search || (selectedZone ? `${selectedZone.neighborhood} (${selectedZone.city})` : "")}
+        onChange={(e) => { setSearch(e.target.value); setOpen(true); if (!e.target.value) onSelect(""); }}
+        onFocus={() => { setOpen(true); setSearch(""); }}
+        placeholder="Escribe tu barrio..."
+        className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+      />
+      {open && (filtered.length > 0 || otherCityZones.length > 0) && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl max-h-48 overflow-y-auto z-50 shadow-lg">
+          {filtered.length > 0 && (
+            <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-muted-foreground uppercase">{selectedCity}</p>
+          )}
+          {filtered.map((z: any) => (
+            <button
+              key={z.id}
+              onClick={() => { onSelect(z.id); setSearch(""); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors hover:bg-muted ${selectedId === z.id ? "bg-accent/10 text-accent font-medium" : "text-foreground"}`}
+            >
+              <span>{z.neighborhood}</span>
+              <span className="text-xs text-muted-foreground">{formatPrice(z.delivery_price)}</span>
+            </button>
+          ))}
+          {otherCityZones.length > 0 && (
+            <>
+              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-muted-foreground uppercase border-t border-border">Otros municipios</p>
+              {otherCityZones.slice(0, 10).map((z: any) => (
+                <button
+                  key={z.id}
+                  onClick={() => { onSelect(z.id); setSearch(""); setOpen(false); }}
+                  className="w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors hover:bg-muted text-foreground"
+                >
+                  <span>{z.neighborhood} <span className="text-muted-foreground text-xs">({z.city})</span></span>
+                  <span className="text-xs text-muted-foreground">{formatPrice(z.delivery_price)}</span>
+                </button>
+              ))}
+            </>
+          )}
+          {filtered.length === 0 && otherCityZones.length === 0 && search && (
+            <p className="px-3 py-3 text-sm text-muted-foreground text-center">No se encontró "{search}"</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Carrito = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
   const { data: settings } = useAppSettings();
@@ -212,31 +279,14 @@ const Carrito = () => {
                   <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="WhatsApp (ej: 573001234567) *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
                   <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
                   {shippingZones && shippingZones.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <MapPin size={14} className="text-accent" />
-                        <span className="text-xs font-medium text-muted-foreground">Zona de entrega</span>
-                      </div>
-                      <select value={form.neighborhood_id} onChange={(e) => handleZoneChange(e.target.value)} className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none">
-                        <option value="">Seleccionar barrio...</option>
-                        {["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"].map(city => {
-                          const cityZones = shippingZones.filter((z: any) => z.city === city);
-                          if (cityZones.length === 0) return null;
-                          return (
-                            <optgroup key={city} label={city}>
-                              {cityZones.map((z: any) => (
-                                <option key={z.id} value={z.id}>
-                                  {z.neighborhood} — {formatPrice(z.delivery_price)}
-                                </option>
-                              ))}
-                            </optgroup>
-                          );
-                        })}
-                      </select>
-                      {deliveryCost > 0 && (
-                        <p className="text-xs text-accent font-medium mt-1">Domicilio: {formatPrice(deliveryCost)}</p>
-                      )}
-                    </div>
+                    <NeighborhoodSearch
+                      zones={shippingZones}
+                      selectedId={form.neighborhood_id}
+                      onSelect={(zoneId) => handleZoneChange(zoneId)}
+                    />
+                  )}
+                  {deliveryCost > 0 && (
+                    <p className="text-xs text-accent font-medium">🚚 Domicilio: {formatPrice(deliveryCost)}</p>
                   )}
                   <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notas adicionales" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" rows={2} />
                   <div className="flex gap-2">

@@ -52,6 +52,9 @@ const settingsMeta: Record<string, SettingMeta> = {
   show_section_banners: { label: "Carrusel de Banners", icon: Eye, type: "toggle", group: "visibilidad" },
   show_promo_banner: { label: "Barra Superior Promocional", icon: Eye, type: "toggle", group: "visibilidad" },
   promo_banner_text: { label: "Texto Barra Promocional", icon: MessageSquare, type: "text", group: "general", description: "Ej: 🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000" },
+  featured_label_ofertas: { label: "Etiqueta Destacados: Ofertas", icon: Award, type: "text", group: "destacados", description: "Ej: 🔥 Ofertas" },
+  featured_label_mayorista: { label: "Etiqueta Destacados: Mayorista", icon: Award, type: "text", group: "destacados", description: "Ej: 💰 Mayorista" },
+  featured_label_frescos: { label: "Etiqueta Destacados: Frescos", icon: Award, type: "text", group: "destacados", description: "Ej: 🌿 Frescos" },
 };
 
 const GROUP_LABELS: Record<string, string> = {
@@ -61,6 +64,7 @@ const GROUP_LABELS: Record<string, string> = {
   integraciones: "🔗 Integraciones",
   badges: "🏅 Trust Badges",
   visibilidad: "👁️ Visibilidad de Secciones",
+  destacados: "⭐ Etiquetas Destacados",
 };
 
 const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }) => {
