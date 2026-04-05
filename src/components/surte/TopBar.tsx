@@ -55,7 +55,7 @@ const TopBar = ({ onSearch }: TopBarProps) => {
         </div>
       )}
 
-      <div className="flex items-center justify-between px-3 py-1.5">
+      <div className="flex items-center justify-between px-6 py-1.5">
         <img
           src={surteLogo}
           alt="SURTÉ YA"
