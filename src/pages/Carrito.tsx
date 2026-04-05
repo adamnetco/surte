@@ -212,31 +212,14 @@ const Carrito = () => {
                   <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="WhatsApp (ej: 573001234567) *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
                   <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
                   {shippingZones && shippingZones.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <MapPin size={14} className="text-accent" />
-                        <span className="text-xs font-medium text-muted-foreground">Zona de entrega</span>
-                      </div>
-                      <select value={form.neighborhood_id} onChange={(e) => handleZoneChange(e.target.value)} className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none">
-                        <option value="">Seleccionar barrio...</option>
-                        {["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"].map(city => {
-                          const cityZones = shippingZones.filter((z: any) => z.city === city);
-                          if (cityZones.length === 0) return null;
-                          return (
-                            <optgroup key={city} label={city}>
-                              {cityZones.map((z: any) => (
-                                <option key={z.id} value={z.id}>
-                                  {z.neighborhood} — {formatPrice(z.delivery_price)}
-                                </option>
-                              ))}
-                            </optgroup>
-                          );
-                        })}
-                      </select>
-                      {deliveryCost > 0 && (
-                        <p className="text-xs text-accent font-medium mt-1">Domicilio: {formatPrice(deliveryCost)}</p>
-                      )}
-                    </div>
+                    <NeighborhoodSearch
+                      zones={shippingZones}
+                      selectedId={form.neighborhood_id}
+                      onSelect={(zoneId) => handleZoneChange(zoneId)}
+                    />
+                  )}
+                  {deliveryCost > 0 && (
+                    <p className="text-xs text-accent font-medium">🚚 Domicilio: {formatPrice(deliveryCost)}</p>
                   )}
                   <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notas adicionales" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" rows={2} />
                   <div className="flex gap-2">
