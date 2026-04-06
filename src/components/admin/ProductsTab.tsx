@@ -17,11 +17,12 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "",
     cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "",
     slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "",
+    tags: "", unit_quantity: "", unit_measure: "", net_weight_grams: "",
   });
   const { upload, uploading } = useImageUpload();
 
   const resetForm = () => {
-    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "", slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "" });
+    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "", slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "", tags: "", unit_quantity: "", unit_measure: "", net_weight_grams: "" });
     setEditing(null);
   };
 
@@ -36,6 +37,10 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       is_fresh: p.is_fresh, is_wholesale: p.is_wholesale, is_active: p.is_active !== false, image_url: p.image_url || "",
       slug: p.slug || "", meta_title: p.meta_title || "", meta_description: p.meta_description || "",
       brand: p.brand || "", sku: p.sku || "", gtin: p.gtin || "", weight: p.weight || "",
+      tags: (p.tags || []).join(", "),
+      unit_quantity: p.unit_quantity ? String(p.unit_quantity) : "",
+      unit_measure: p.unit_measure || "",
+      net_weight_grams: p.net_weight_grams ? String(p.net_weight_grams) : "",
     });
     setEditing(p.id);
   };
@@ -50,6 +55,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   const saveProduct = async () => {
     if (!form.name || !form.price) { toast.error("Nombre y precio son obligatorios"); return; }
     const autoSlug = form.slug || form.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const tagsArray = form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : [];
     const payload: any = {
       name: form.name, description: form.description, price: Number(form.price),
       original_price: form.original_price ? Number(form.original_price) : null,
@@ -60,6 +66,10 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       is_fresh: form.is_fresh, is_wholesale: form.is_wholesale, is_active: form.is_active, image_url: form.image_url || null,
       slug: autoSlug || null, meta_title: form.meta_title || null, meta_description: form.meta_description || null,
       brand: form.brand || null, sku: form.sku || null, gtin: form.gtin || null, weight: form.weight || null,
+      tags: tagsArray,
+      unit_quantity: form.unit_quantity ? Number(form.unit_quantity) : null,
+      unit_measure: form.unit_measure || null,
+      net_weight_grams: form.net_weight_grams ? Number(form.net_weight_grams) : null,
     };
 
     if (editing && editing !== "new") {
@@ -233,6 +243,47 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.is_fresh} onChange={(e) => setForm({ ...form, is_fresh: e.target.checked })} className="rounded border-border" /> Fresco</label>
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.is_wholesale} onChange={(e) => setForm({ ...form, is_wholesale: e.target.checked })} className="rounded border-border" /> Mayorista</label>
+          </div>
+
+          {/* Unit details */}
+          <div className="space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📦 Unidad y Contenido</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Cantidad</label>
+                <input value={form.unit_quantity} onChange={(e) => setForm({ ...form, unit_quantity: e.target.value })} placeholder="500" type="number" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Medida</label>
+                <select value={form.unit_measure} onChange={(e) => setForm({ ...form, unit_measure: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none">
+                  <option value="">—</option>
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="ml">ml</option>
+                  <option value="L">L</option>
+                  <option value="oz">oz</option>
+                  <option value="lb">lb</option>
+                  <option value="unidad">unidad</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Peso neto (g)</label>
+                <input value={form.net_weight_grams} onChange={(e) => setForm({ ...form, net_weight_grams: e.target.value })} placeholder="500" type="number" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-0.5 block">🏷️ Etiquetas (separadas por coma)</label>
+            <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="salsa, artesanal, picante" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none" />
+            {form.tags && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {form.tags.split(",").map(t => t.trim()).filter(Boolean).map((tag, i) => (
+                  <span key={i} className="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">{tag}</span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* SEO Fields */}
