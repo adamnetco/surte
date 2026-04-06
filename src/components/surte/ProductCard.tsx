@@ -35,7 +35,7 @@ const ProductCard = ({ product }: { product: Product }) => {
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (outOfStock) return;
-    addItem(product);
+    addItem(product, 1, userPrice);
     toast.success(`${product.name} agregado`, { duration: 1500 });
   };
 
