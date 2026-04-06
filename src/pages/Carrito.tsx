@@ -233,9 +233,9 @@ const Carrito = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-medium text-foreground truncate">{item.product.name}</h3>
-                    <p className="text-xs text-muted-foreground">{item.product.unit}</p>
+                    <p className="text-xs text-muted-foreground">{item.product.unit} · {formatPrice(item.unitPrice)} c/u</p>
                     <p className="text-sm font-heading font-bold text-foreground mt-0.5">
-                      {formatPrice(item.product.price * item.quantity)}
+                      {formatPrice(item.unitPrice * item.quantity)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -243,7 +243,16 @@ const Carrito = () => {
                       <Minus size={14} />
                     </button>
                     <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="w-7 h-7 rounded-lg bg-accent text-accent-foreground flex items-center justify-center">
+                    <button
+                      onClick={() => {
+                        if (item.quantity < item.product.stock) {
+                          updateQuantity(item.product.id, item.quantity + 1);
+                        } else {
+                          toast.error(`Stock máximo: ${item.product.stock}`);
+                        }
+                      }}
+                      className="w-7 h-7 rounded-lg bg-accent text-accent-foreground flex items-center justify-center"
+                    >
                       <Plus size={14} />
                     </button>
                     <button onClick={() => removeItem(item.product.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1">
