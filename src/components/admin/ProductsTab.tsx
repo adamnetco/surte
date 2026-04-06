@@ -17,11 +17,12 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "",
     cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "",
     slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "",
+    unit_quantity: "", unit_measure: "", net_weight_grams: "",
   });
   const { upload, uploading } = useImageUpload();
 
   const resetForm = () => {
-    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "", slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "" });
+    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "", slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "", unit_quantity: "", unit_measure: "", net_weight_grams: "" });
     setEditing(null);
   };
 
@@ -36,6 +37,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       is_fresh: p.is_fresh, is_wholesale: p.is_wholesale, is_active: p.is_active !== false, image_url: p.image_url || "",
       slug: p.slug || "", meta_title: p.meta_title || "", meta_description: p.meta_description || "",
       brand: p.brand || "", sku: p.sku || "", gtin: p.gtin || "", weight: p.weight || "",
+      unit_quantity: p.unit_quantity ? String(p.unit_quantity) : "", unit_measure: p.unit_measure || "", net_weight_grams: p.net_weight_grams ? String(p.net_weight_grams) : "",
     });
     setEditing(p.id);
   };
@@ -60,6 +62,9 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       is_fresh: form.is_fresh, is_wholesale: form.is_wholesale, is_active: form.is_active, image_url: form.image_url || null,
       slug: autoSlug || null, meta_title: form.meta_title || null, meta_description: form.meta_description || null,
       brand: form.brand || null, sku: form.sku || null, gtin: form.gtin || null, weight: form.weight || null,
+      unit_quantity: form.unit_quantity ? Number(form.unit_quantity) : null,
+      unit_measure: form.unit_measure || null,
+      net_weight_grams: form.net_weight_grams ? Number(form.net_weight_grams) : null,
     };
 
     if (editing && editing !== "new") {
@@ -223,6 +228,46 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
               <label className="text-[11px] text-muted-foreground mb-0.5 block">Unidad</label>
               <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder="unidad" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
             </div>
+          </div>
+
+          {/* Unit Pricing */}
+          <div className="space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📦 Precio por Unidad</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Cant. x paquete</label>
+                <input value={form.unit_quantity} onChange={(e) => setForm({ ...form, unit_quantity: e.target.value })} placeholder="12" type="number" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Medida</label>
+                <select value={form.unit_measure} onChange={(e) => setForm({ ...form, unit_measure: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none">
+                  <option value="">—</option>
+                  <option value="g">Gramos (g)</option>
+                  <option value="kg">Kilogramos (kg)</option>
+                  <option value="ml">Mililitros (ml)</option>
+                  <option value="L">Litros (L)</option>
+                  <option value="unidad">Unidad</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Peso neto (g)</label>
+                <input value={form.net_weight_grams} onChange={(e) => setForm({ ...form, net_weight_grams: e.target.value })} placeholder="500" type="number" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+            </div>
+            {form.price && (form.unit_quantity || form.net_weight_grams) && (
+              <div className="bg-secondary/10 rounded-lg p-2.5 text-xs space-y-1">
+                {form.unit_quantity && Number(form.unit_quantity) > 0 && (
+                  <p className="text-secondary font-medium">
+                    💰 Precio/unidad: {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(Number(form.price) / Number(form.unit_quantity))}
+                  </p>
+                )}
+                {form.net_weight_grams && Number(form.net_weight_grams) > 0 && (
+                  <p className="text-secondary font-medium">
+                    ⚖️ Precio/100g: {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format((Number(form.price) / Number(form.net_weight_grams)) * 100)}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors">
