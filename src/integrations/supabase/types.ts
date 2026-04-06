@@ -587,7 +587,6 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           name: string
-          net_weight_grams: number | null
           original_price: number | null
           price: number
           price_distributor: number | null
@@ -597,8 +596,6 @@ export type Database = {
           stock: number
           tags: string[] | null
           unit: string | null
-          unit_measure: string | null
-          unit_quantity: number | null
           updated_at: string
           weight: string | null
         }
@@ -618,7 +615,6 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           name: string
-          net_weight_grams?: number | null
           original_price?: number | null
           price: number
           price_distributor?: number | null
@@ -628,8 +624,6 @@ export type Database = {
           stock?: number
           tags?: string[] | null
           unit?: string | null
-          unit_measure?: string | null
-          unit_quantity?: number | null
           updated_at?: string
           weight?: string | null
         }
@@ -649,7 +643,6 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           name?: string
-          net_weight_grams?: number | null
           original_price?: number | null
           price?: number
           price_distributor?: number | null
@@ -659,8 +652,6 @@ export type Database = {
           stock?: number
           tags?: string[] | null
           unit?: string | null
-          unit_measure?: string | null
-          unit_quantity?: number | null
           updated_at?: string
           weight?: string | null
         }

@@ -120,29 +120,11 @@ const SeoTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }
       <div className="bg-card rounded-xl p-3 border border-border">
         <p className="text-xs font-medium text-foreground flex items-center gap-1.5 mb-1"><Globe size={12} /> Sitemap Dinámico</p>
         <p className="text-[10px] text-muted-foreground mb-2">
-          El sitemap XML se genera automáticamente con todos los productos, categorías, marcas y páginas SEO activas. Registra esta URL en Google Search Console.
+          El sitemap XML se genera automáticamente con todos los productos y categorías activos. Registra esta URL en Google Search Console.
         </p>
-        <code className="text-[10px] bg-muted px-2 py-1 rounded block break-all mb-2">
-          https://surteya.com/sitemap.xml
+        <code className="text-[10px] bg-muted px-2 py-1 rounded block break-all">
+          {`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/sitemap`}
         </code>
-        <div className="flex gap-2">
-          <a
-            href={`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID || 'dimyhjzcwlgfczimqhet'}.supabase.co/functions/v1/sitemap`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] bg-accent text-accent-foreground px-3 py-1.5 rounded-lg font-medium hover:bg-accent/90 transition-colors"
-          >
-            🌐 Ver Sitemap
-          </a>
-          <a
-            href={`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID || 'dimyhjzcwlgfczimqhet'}.supabase.co/functions/v1/sitemap?format=gmc`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg font-medium hover:bg-secondary/90 transition-colors"
-          >
-            📦 Feed Google Merchant
-          </a>
-        </div>
       </div>
 
       {/* Tracking page info */}
