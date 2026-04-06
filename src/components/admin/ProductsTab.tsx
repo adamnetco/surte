@@ -230,6 +230,46 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             </div>
           </div>
 
+          {/* Unit Pricing */}
+          <div className="space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📦 Precio por Unidad</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Cant. x paquete</label>
+                <input value={form.unit_quantity} onChange={(e) => setForm({ ...form, unit_quantity: e.target.value })} placeholder="12" type="number" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Medida</label>
+                <select value={form.unit_measure} onChange={(e) => setForm({ ...form, unit_measure: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none">
+                  <option value="">—</option>
+                  <option value="g">Gramos (g)</option>
+                  <option value="kg">Kilogramos (kg)</option>
+                  <option value="ml">Mililitros (ml)</option>
+                  <option value="L">Litros (L)</option>
+                  <option value="unidad">Unidad</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Peso neto (g)</label>
+                <input value={form.net_weight_grams} onChange={(e) => setForm({ ...form, net_weight_grams: e.target.value })} placeholder="500" type="number" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+            </div>
+            {form.price && (form.unit_quantity || form.net_weight_grams) && (
+              <div className="bg-secondary/10 rounded-lg p-2.5 text-xs space-y-1">
+                {form.unit_quantity && Number(form.unit_quantity) > 0 && (
+                  <p className="text-secondary font-medium">
+                    💰 Precio/unidad: {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(Number(form.price) / Number(form.unit_quantity))}
+                  </p>
+                )}
+                {form.net_weight_grams && Number(form.net_weight_grams) > 0 && (
+                  <p className="text-secondary font-medium">
+                    ⚖️ Precio/100g: {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format((Number(form.price) / Number(form.net_weight_grams)) * 100)}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors">
             <option value="">Sin categoría</option>
             {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
