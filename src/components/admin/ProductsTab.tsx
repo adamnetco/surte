@@ -37,6 +37,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       is_fresh: p.is_fresh, is_wholesale: p.is_wholesale, is_active: p.is_active !== false, image_url: p.image_url || "",
       slug: p.slug || "", meta_title: p.meta_title || "", meta_description: p.meta_description || "",
       brand: p.brand || "", sku: p.sku || "", gtin: p.gtin || "", weight: p.weight || "",
+      unit_quantity: p.unit_quantity ? String(p.unit_quantity) : "", unit_measure: p.unit_measure || "", net_weight_grams: p.net_weight_grams ? String(p.net_weight_grams) : "",
     });
     setEditing(p.id);
   };
