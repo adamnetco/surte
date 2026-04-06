@@ -161,7 +161,7 @@ const Carrito = () => {
       const whatsappNumber = settings?.whatsapp_number || "573000000000";
       const trackingUrl = `${window.location.origin}/pedido/${data.order_number}`;
       const orderLines = items.map(
-        (i) => `• ${i.quantity}x ${i.product.name} — ${formatPrice(i.product.price * i.quantity)}`
+        (i) => `• ${i.quantity}x ${i.product.name} — ${formatPrice(i.unitPrice * i.quantity)}`
       );
       const whatsappMsg = [
         `🛒 *Pedido SURTÉ #${data.order_number}*`,
