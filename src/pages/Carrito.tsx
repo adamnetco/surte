@@ -134,7 +134,7 @@ const Carrito = () => {
         items: items.map((i) => ({
           product_id: i.product.id,
           name: i.product.name,
-          price: i.product.price,
+          price: i.unitPrice,
           quantity: i.quantity,
         })),
         customer_name: form.name,
