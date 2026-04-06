@@ -62,6 +62,9 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       is_fresh: form.is_fresh, is_wholesale: form.is_wholesale, is_active: form.is_active, image_url: form.image_url || null,
       slug: autoSlug || null, meta_title: form.meta_title || null, meta_description: form.meta_description || null,
       brand: form.brand || null, sku: form.sku || null, gtin: form.gtin || null, weight: form.weight || null,
+      unit_quantity: form.unit_quantity ? Number(form.unit_quantity) : null,
+      unit_measure: form.unit_measure || null,
+      net_weight_grams: form.net_weight_grams ? Number(form.net_weight_grams) : null,
     };
 
     if (editing && editing !== "new") {
