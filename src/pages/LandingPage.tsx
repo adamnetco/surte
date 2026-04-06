@@ -35,8 +35,22 @@ const LandingPage = () => {
 
   const { data: products } = useProducts();
 
-  // Filter products by city or page_type keyword if applicable
-  const filtered = products?.slice(0, 50) || [];
+  // Filter products relevant to the page keywords
+  const filtered = (() => {
+    if (!products || !page) return products?.slice(0, 50) || [];
+    const keywords = (page.title + " " + (page.heading || "") + " " + (page.meta_title || "")).toLowerCase();
+    // Try filtering by tags or name matching keywords
+    const relevant = products.filter((p: any) => {
+      const pName = p.name?.toLowerCase() || "";
+      const pDesc = p.description?.toLowerCase() || "";
+      const pBrand = p.brand?.toLowerCase() || "";
+      const pTags = (p.tags || []).join(" ").toLowerCase();
+      return keywords.split(" ").some((kw: string) => 
+        kw.length > 3 && (pName.includes(kw) || pDesc.includes(kw) || pBrand.includes(kw) || pTags.includes(kw))
+      );
+    });
+    return relevant.length > 0 ? relevant.slice(0, 50) : products.slice(0, 12);
+  })();
 
   const storeName = settings?.store_name || "SURTÉ YA";
   const pageUrl = `${BASE_URL}/s/${slug}`;
