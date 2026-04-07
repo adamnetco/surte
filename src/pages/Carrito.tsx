@@ -161,7 +161,7 @@ const Carrito = () => {
     }
     setSubmitting(true);
     try {
-      const grandTotal = totalPrice + deliveryCost;
+      const grandTotal = totalPrice + deliveryCost - couponDiscount;
       const payload = {
         items: items.map((i) => ({
           product_id: i.product.id,
