@@ -215,8 +215,14 @@ const Carrito = () => {
 
       const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMsg)}`;
       
+      // Increment coupon usage
+      if (appliedCoupon) {
+        await supabase.from("coupons").update({ current_uses: (appliedCoupon.current_uses || 0) + 1 }).eq("id", appliedCoupon.id);
+      }
+
       clearCart();
       setShowForm(false);
+      removeCoupon();
 
       // Open WhatsApp so customer confirms with the store
       window.open(waUrl, "_blank");
