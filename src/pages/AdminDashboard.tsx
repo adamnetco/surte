@@ -21,6 +21,9 @@ import HeroSlidesTab from "@/components/admin/HeroSlidesTab";
 import SeoTab from "@/components/admin/SeoTab";
 import InventoryTab from "@/components/admin/InventoryTab";
 import LandingPagesTab from "@/components/admin/LandingPagesTab";
+import ScriptsTab from "@/components/admin/ScriptsTab";
+import CouponsTab from "@/components/admin/CouponsTab";
+import PresentationsTab from "@/components/admin/PresentationsTab";
 
 // Tabs visible per role
 const allTabs = [
