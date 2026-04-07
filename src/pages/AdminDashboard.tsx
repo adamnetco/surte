@@ -40,6 +40,9 @@ const allTabs = [
   { id: "seo", label: "SEO", icon: Search, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "landing", label: "SEO Pages", icon: Globe, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "presentations", label: "Presentaciones", icon: Box, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "coupons", label: "Cupones", icon: Ticket, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
 
