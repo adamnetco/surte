@@ -93,6 +93,10 @@ const Carrito = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", address: "", notes: "", neighborhood_id: "" });
   const [deliveryCost, setDeliveryCost] = useState(0);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const { data: shippingZones } = useQuery({
     queryKey: ["shipping-zones"],
