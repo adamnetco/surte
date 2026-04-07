@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import FloatingWhatsApp from "@/components/surte/FloatingWhatsApp";
 import CityPickerModal from "@/components/surte/CityPickerModal";
 import DynamicThemeInjector from "@/components/DynamicThemeInjector";
+import CustomScriptInjector from "@/components/CustomScriptInjector";
 import Analytics from "@/components/seo/Analytics";
 import Index from "./pages/Index";
 import Catalogo from "./pages/Catalogo";
@@ -41,6 +42,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <DynamicThemeInjector />
+          <CustomScriptInjector />
           <CityPickerModal />
             <BrowserRouter>
               <Analytics />

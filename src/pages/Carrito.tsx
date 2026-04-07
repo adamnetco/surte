@@ -7,7 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useAppSettings } from "@/hooks/useStore";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink, Ticket, X, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { trackPurchase } from "@/components/seo/Analytics";
@@ -93,6 +93,10 @@ const Carrito = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", address: "", notes: "", neighborhood_id: "" });
   const [deliveryCost, setDeliveryCost] = useState(0);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const { data: shippingZones } = useQuery({
     queryKey: ["shipping-zones"],
@@ -109,9 +113,37 @@ const Carrito = () => {
     setDeliveryCost(zone ? Number(zone.delivery_price) : 0);
   };
 
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setValidatingCoupon(true);
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("code", couponCode.toUpperCase().trim())
+        .eq("is_active", true)
+        .single();
+      if (error || !data) { toast.error("Cupón no válido"); setValidatingCoupon(false); return; }
+      if (data.expires_at && new Date(data.expires_at) < new Date()) { toast.error("Cupón expirado"); setValidatingCoupon(false); return; }
+      if (data.max_uses && data.current_uses >= data.max_uses) { toast.error("Cupón agotado"); setValidatingCoupon(false); return; }
+      if (data.min_order_amount && totalPrice < Number(data.min_order_amount)) {
+        toast.error(`Pedido mínimo de ${formatPrice(Number(data.min_order_amount))} para este cupón`);
+        setValidatingCoupon(false); return;
+      }
+      const disc = data.discount_type === "percentage"
+        ? Math.round(totalPrice * Number(data.discount_value) / 100)
+        : Number(data.discount_value);
+      setCouponDiscount(disc);
+      setAppliedCoupon(data);
+      toast.success(`Cupón aplicado: -${formatPrice(disc)}`);
+    } catch { toast.error("Error validando cupón"); }
+    setValidatingCoupon(false);
+  };
+
+  const removeCoupon = () => { setCouponDiscount(0); setAppliedCoupon(null); setCouponCode(""); };
+
   const handleFinalize = () => {
     if (!meetsMinimum) return;
-    // Pre-fill from user metadata if logged in, otherwise empty
     setForm({
       name: user?.user_metadata?.full_name || "",
       phone: user?.user_metadata?.phone || "",
@@ -129,7 +161,7 @@ const Carrito = () => {
     }
     setSubmitting(true);
     try {
-      const grandTotal = totalPrice + deliveryCost;
+      const grandTotal = totalPrice + deliveryCost - couponDiscount;
       const payload = {
         items: items.map((i) => ({
           product_id: i.product.id,
@@ -174,6 +206,7 @@ const Carrito = () => {
         ...orderLines,
         "",
         `💰 Subtotal: ${formatPrice(totalPrice)}`,
+        couponDiscount > 0 ? `🎟️ Cupón (${appliedCoupon?.code}): -${formatPrice(couponDiscount)}` : "",
         deliveryCost > 0 ? `🚚 Domicilio: ${formatPrice(deliveryCost)}` : "",
         `💰 *Total: ${formatPrice(grandTotal)}*`,
         "",
@@ -182,8 +215,14 @@ const Carrito = () => {
 
       const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMsg)}`;
       
+      // Increment coupon usage
+      if (appliedCoupon) {
+        await supabase.from("coupons").update({ current_uses: (appliedCoupon.current_uses || 0) + 1 }).eq("id", appliedCoupon.id);
+      }
+
       clearCart();
       setShowForm(false);
+      removeCoupon();
 
       // Open WhatsApp so customer confirms with the store
       window.open(waUrl, "_blank");
@@ -314,10 +353,47 @@ const Carrito = () => {
 
       {items.length > 0 && !showForm && (
         <div className="fixed bottom-[68px] left-0 right-0 bg-card border-t border-border px-4 py-3 z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
+          {/* Coupon input */}
+          <div className="flex items-center gap-2 mb-2">
+            {appliedCoupon ? (
+              <div className="flex-1 flex items-center gap-1.5 bg-secondary/10 rounded-lg px-3 py-2">
+                <CheckCircle2 size={14} className="text-secondary" />
+                <span className="text-xs font-medium text-secondary">{appliedCoupon.code}</span>
+                <span className="text-xs text-secondary">-{formatPrice(couponDiscount)}</span>
+                <button onClick={removeCoupon} className="ml-auto"><X size={14} className="text-muted-foreground" /></button>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 flex items-center gap-1.5 bg-muted rounded-lg px-3 py-2">
+                  <Ticket size={14} className="text-muted-foreground" />
+                  <input
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="Código cupón"
+                    className="flex-1 bg-transparent text-sm outline-none font-mono uppercase"
+                  />
+                </div>
+                <button
+                  onClick={applyCoupon}
+                  disabled={validatingCoupon || !couponCode.trim()}
+                  className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-50"
+                >
+                  {validatingCoupon ? <Loader2 size={14} className="animate-spin" /> : "Aplicar"}
+                </button>
+              </>
+            )}
+          </div>
+
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm text-muted-foreground">Subtotal</span>
             <span className="text-sm font-medium text-foreground">{formatPrice(totalPrice)}</span>
           </div>
+          {couponDiscount > 0 && (
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm text-secondary">Cupón</span>
+              <span className="text-sm font-medium text-secondary">-{formatPrice(couponDiscount)}</span>
+            </div>
+          )}
           {deliveryCost > 0 && (
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm text-muted-foreground">Domicilio</span>
@@ -326,7 +402,7 @@ const Carrito = () => {
           )}
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-semibold text-foreground">Total</span>
-            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(totalPrice + deliveryCost)}</span>
+            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(Math.max(0, totalPrice + deliveryCost - couponDiscount))}</span>
           </div>
           <button
             onClick={handleFinalize}

@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OverviewTab from "@/components/admin/OverviewTab";
@@ -21,6 +21,9 @@ import HeroSlidesTab from "@/components/admin/HeroSlidesTab";
 import SeoTab from "@/components/admin/SeoTab";
 import InventoryTab from "@/components/admin/InventoryTab";
 import LandingPagesTab from "@/components/admin/LandingPagesTab";
+import ScriptsTab from "@/components/admin/ScriptsTab";
+import CouponsTab from "@/components/admin/CouponsTab";
+import PresentationsTab from "@/components/admin/PresentationsTab";
 
 // Tabs visible per role
 const allTabs = [
@@ -37,6 +40,9 @@ const allTabs = [
   { id: "seo", label: "SEO", icon: Search, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "landing", label: "SEO Pages", icon: Globe, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "presentations", label: "Presentaciones", icon: Box, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "coupons", label: "Cupones", icon: Ticket, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
 
@@ -165,6 +171,9 @@ const AdminDashboard = () => {
         {activeTab === "seo" && <SeoTab settings={settings} queryClient={queryClient} />}
         {activeTab === "inventory" && <InventoryTab products={products} categories={categories} queryClient={queryClient} />}
         {activeTab === "landing" && <LandingPagesTab />}
+        {activeTab === "presentations" && <PresentationsTab queryClient={queryClient} />}
+        {activeTab === "coupons" && <CouponsTab queryClient={queryClient} />}
+        {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </main>
     </div>
