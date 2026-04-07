@@ -140,6 +140,81 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          current_uses: number
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          min_order_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_uses?: number
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_uses?: number
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      custom_scripts: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          position: string
+          script_content: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          position?: string
+          script_content: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          position?: string
+          script_content?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -570,9 +645,57 @@ export type Database = {
           },
         ]
       }
+      product_presentations: {
+        Row: {
+          conversion_factor: number
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          product_id: string
+          sort_order: number
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          conversion_factor?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          product_id: string
+          sort_order?: number
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          conversion_factor?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          product_id?: string
+          sort_order?: number
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_presentations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           availability: string | null
+          base_unit: string | null
           brand: string | null
           category_id: string | null
           cost_price: number | null
@@ -604,6 +727,7 @@ export type Database = {
         }
         Insert: {
           availability?: string | null
+          base_unit?: string | null
           brand?: string | null
           category_id?: string | null
           cost_price?: number | null
@@ -635,6 +759,7 @@ export type Database = {
         }
         Update: {
           availability?: string | null
+          base_unit?: string | null
           brand?: string | null
           category_id?: string | null
           cost_price?: number | null
