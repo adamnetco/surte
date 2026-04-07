@@ -7,7 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useAppSettings } from "@/hooks/useStore";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink, Ticket, X, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { trackPurchase } from "@/components/seo/Analytics";
