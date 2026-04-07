@@ -206,6 +206,7 @@ const Carrito = () => {
         ...orderLines,
         "",
         `💰 Subtotal: ${formatPrice(totalPrice)}`,
+        couponDiscount > 0 ? `🎟️ Cupón (${appliedCoupon?.code}): -${formatPrice(couponDiscount)}` : "",
         deliveryCost > 0 ? `🚚 Domicilio: ${formatPrice(deliveryCost)}` : "",
         `💰 *Total: ${formatPrice(grandTotal)}*`,
         "",
