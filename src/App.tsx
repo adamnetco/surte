@@ -42,6 +42,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <DynamicThemeInjector />
+          <CustomScriptInjector />
           <CityPickerModal />
             <BrowserRouter>
               <Analytics />
