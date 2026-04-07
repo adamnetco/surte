@@ -113,9 +113,37 @@ const Carrito = () => {
     setDeliveryCost(zone ? Number(zone.delivery_price) : 0);
   };
 
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setValidatingCoupon(true);
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("code", couponCode.toUpperCase().trim())
+        .eq("is_active", true)
+        .single();
+      if (error || !data) { toast.error("Cupón no válido"); setValidatingCoupon(false); return; }
+      if (data.expires_at && new Date(data.expires_at) < new Date()) { toast.error("Cupón expirado"); setValidatingCoupon(false); return; }
+      if (data.max_uses && data.current_uses >= data.max_uses) { toast.error("Cupón agotado"); setValidatingCoupon(false); return; }
+      if (data.min_order_amount && totalPrice < Number(data.min_order_amount)) {
+        toast.error(`Pedido mínimo de ${formatPrice(Number(data.min_order_amount))} para este cupón`);
+        setValidatingCoupon(false); return;
+      }
+      const disc = data.discount_type === "percentage"
+        ? Math.round(totalPrice * Number(data.discount_value) / 100)
+        : Number(data.discount_value);
+      setCouponDiscount(disc);
+      setAppliedCoupon(data);
+      toast.success(`Cupón aplicado: -${formatPrice(disc)}`);
+    } catch { toast.error("Error validando cupón"); }
+    setValidatingCoupon(false);
+  };
+
+  const removeCoupon = () => { setCouponDiscount(0); setAppliedCoupon(null); setCouponCode(""); };
+
   const handleFinalize = () => {
     if (!meetsMinimum) return;
-    // Pre-fill from user metadata if logged in, otherwise empty
     setForm({
       name: user?.user_metadata?.full_name || "",
       phone: user?.user_metadata?.phone || "",
