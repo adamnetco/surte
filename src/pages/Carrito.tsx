@@ -353,10 +353,47 @@ const Carrito = () => {
 
       {items.length > 0 && !showForm && (
         <div className="fixed bottom-[68px] left-0 right-0 bg-card border-t border-border px-4 py-3 z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
+          {/* Coupon input */}
+          <div className="flex items-center gap-2 mb-2">
+            {appliedCoupon ? (
+              <div className="flex-1 flex items-center gap-1.5 bg-secondary/10 rounded-lg px-3 py-2">
+                <CheckCircle2 size={14} className="text-secondary" />
+                <span className="text-xs font-medium text-secondary">{appliedCoupon.code}</span>
+                <span className="text-xs text-secondary">-{formatPrice(couponDiscount)}</span>
+                <button onClick={removeCoupon} className="ml-auto"><X size={14} className="text-muted-foreground" /></button>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 flex items-center gap-1.5 bg-muted rounded-lg px-3 py-2">
+                  <Ticket size={14} className="text-muted-foreground" />
+                  <input
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="Código cupón"
+                    className="flex-1 bg-transparent text-sm outline-none font-mono uppercase"
+                  />
+                </div>
+                <button
+                  onClick={applyCoupon}
+                  disabled={validatingCoupon || !couponCode.trim()}
+                  className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-50"
+                >
+                  {validatingCoupon ? <Loader2 size={14} className="animate-spin" /> : "Aplicar"}
+                </button>
+              </>
+            )}
+          </div>
+
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm text-muted-foreground">Subtotal</span>
             <span className="text-sm font-medium text-foreground">{formatPrice(totalPrice)}</span>
           </div>
+          {couponDiscount > 0 && (
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm text-secondary">Cupón</span>
+              <span className="text-sm font-medium text-secondary">-{formatPrice(couponDiscount)}</span>
+            </div>
+          )}
           {deliveryCost > 0 && (
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm text-muted-foreground">Domicilio</span>
@@ -365,7 +402,7 @@ const Carrito = () => {
           )}
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-semibold text-foreground">Total</span>
-            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(totalPrice + deliveryCost)}</span>
+            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(Math.max(0, totalPrice + deliveryCost - couponDiscount))}</span>
           </div>
           <button
             onClick={handleFinalize}
