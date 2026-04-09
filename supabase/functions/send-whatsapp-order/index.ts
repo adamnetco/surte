@@ -90,22 +90,22 @@ Deno.serve(async (req) => {
     );
 
     const whatsappMessage = [
-      `🛒 *Nuevo Pedido SURTÉ #${order.order_number}*`,
+      `*Nuevo Pedido SURTE #${order.order_number}*`,
       '',
-      `👤 ${customer_name}`,
-      `📱 ${customer_phone}`,
-      customer_address ? `📍 ${customer_address}` : '',
-      geo_location ? `🗺️ https://www.google.com/maps?q=${geo_location}` : '',
-      notes ? `📝 ${notes}` : '',
+      `Nombre: ${customer_name}`,
+      `Tel: ${customer_phone}`,
+      customer_address ? `Dir: ${customer_address}` : '',
+      geo_location ? `Mapa: https://www.google.com/maps?q=${geo_location}` : '',
+      notes ? `Notas: ${notes}` : '',
       '',
       ...orderLines,
       '',
-      `💰 *Total: ${formatPrice(total)}*`,
+      `*Total: ${formatPrice(total)}*`,
       '',
-      preferred_delivery_date ? `📅 Entrega preferida: ${preferred_delivery_date}${preferred_time_slot ? ` (${preferred_time_slot === 'mañana' ? '8am-12pm' : '2pm-6pm'})` : ''}` : '',
-      `💳 Pago: ${payment_method === 'transferencia' ? 'Transferencia' : 'Efectivo'}`,
+      preferred_delivery_date ? `Entrega: ${preferred_delivery_date}${preferred_time_slot ? ` (${preferred_time_slot === 'manana' ? '8am-12pm' : '2pm-6pm'})` : ''}` : '',
+      `Pago: ${payment_method === 'transferencia' ? 'Transferencia' : 'Efectivo'}`,
       '',
-      `📦 Estado: Pendiente`,
+      `Estado: Pendiente`,
     ].filter(Boolean).join('\n');
 
     // Update order with whatsapp ref
