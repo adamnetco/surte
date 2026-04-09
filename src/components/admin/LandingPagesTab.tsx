@@ -5,7 +5,7 @@ import {
   Plus, Pencil, Trash2, Globe, Eye, EyeOff, Loader2, ExternalLink,
   Copy, Search, FileDown, FileUp, CheckCircle2, AlertTriangle, Type,
   Image, List, Code, LayoutTemplate, ChevronDown, ChevronUp, Sparkles,
-  Download, Upload, X, Check, FileText, Zap
+  Download, Upload, X, Check, FileText, Zap, Package
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
