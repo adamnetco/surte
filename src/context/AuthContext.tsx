@@ -24,6 +24,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<AppRole>("user");
   const [loading, setLoading] = useState(true);
 
+  const applyRole = (nextRole: AppRole) => {
+    setRole(nextRole);
+    setIsAdmin(["superadmin", "admin"].includes(nextRole));
+  };
+
   const resetAuthState = () => {
     setSession(null);
     setUser(null);
@@ -35,30 +40,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data, error } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .maybeSingle();
+      .eq("user_id", userId);
 
     if (error) {
-      setRole("user");
-      setIsAdmin(false);
+      applyRole("user");
       return;
     }
 
-    const userRole = (data?.role as AppRole) || "user";
-    setRole(userRole);
-    setIsAdmin(["superadmin", "admin"].includes(userRole));
+    const priority: AppRole[] = ["superadmin", "admin", "editor", "user"];
+    const assignedRoles = (data ?? []).map(({ role }) => role as AppRole);
+    const userRole = priority.find((candidate) => assignedRoles.includes(candidate)) || "user";
+
+    applyRole(userRole);
+  };
+
+  const syncAuthState = async (nextSession: Session | null) => {
+    setLoading(true);
+    setSession(nextSession);
+    setUser(nextSession?.user ?? null);
+
+    if (nextSession?.user) {
+      await checkRole(nextSession.user.id);
+    } else {
+      resetAuthState();
+    }
+
+    setLoading(false);
   };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => checkRole(session.user.id), 0);
-      } else {
-        resetAuthState();
-      }
-      setLoading(false);
+      void syncAuthState(session);
     });
 
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
@@ -69,14 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkRole(session.user.id);
-      } else {
-        resetAuthState();
-      }
-      setLoading(false);
+      await syncAuthState(session);
     });
 
     return () => subscription.unsubscribe();
