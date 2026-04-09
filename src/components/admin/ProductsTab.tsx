@@ -150,6 +150,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   };
 
   const duplicateProduct = (p: any) => {
+    if (!confirm(`¿Duplicar el producto "${p.name}"?\nSe abrirá el formulario con los datos copiados para que lo edites antes de guardar.`)) return;
     setForm({
       name: `${p.name} (copia)`, description: p.description || "", price: String(p.price),
       original_price: p.original_price ? String(p.original_price) : "",
