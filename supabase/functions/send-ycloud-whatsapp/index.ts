@@ -53,23 +53,23 @@ Deno.serve(async (req) => {
 
       // Build message
       const itemLines = (items || [])
-        .map((i: any) => `• ${i.quantity}x ${i.product_name} — $${Number(i.total_price).toLocaleString("es-CO")}`)
+        .map((i: any) => `- ${i.quantity}x ${i.product_name} $${Number(i.total_price).toLocaleString("es-CO")}`)
         .join("\n");
 
       const message = [
-        `🧾 *SURTÉ YA — Pedido #${order_number}*`,
+        `*SURTE YA - Pedido #${order_number}*`,
         ``,
-        `Hola ${customer_name || "Cliente"} 👋`,
+        `Hola ${customer_name || "Cliente"}`,
         `Tu pedido ha sido recibido:`,
         ``,
         itemLines,
         ``,
         `Subtotal: $${Number(subtotal || 0).toLocaleString("es-CO")}`,
-        `Envío: $${Number(delivery_price || 0).toLocaleString("es-CO")}`,
+        `Envio: $${Number(delivery_price || 0).toLocaleString("es-CO")}`,
         `*Total: $${Number(total).toLocaleString("es-CO")}*`,
-        notes ? `\n📝 Notas: ${notes}` : "",
+        notes ? `\nNotas: ${notes}` : "",
         ``,
-        `Gracias por tu compra 🛒`,
+        `Gracias por tu compra`,
       ].filter(Boolean).join("\n");
 
       const yRes = await fetch(`${YCLOUD_API}/whatsapp/messages`, {
