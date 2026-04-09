@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       userId = user?.id || null;
     }
 
-    const { items, customer_name, customer_phone, customer_address, notes, delivery_price, delivery_zone_id } = await req.json();
+    const { items, customer_name, customer_phone, customer_address, notes, delivery_price, delivery_zone_id, preferred_delivery_date, preferred_time_slot, payment_method } = await req.json();
 
     if (!items?.length || !customer_name || !customer_phone) {
       return new Response(JSON.stringify({ error: 'Datos incompletos' }), {
@@ -56,6 +56,9 @@ Deno.serve(async (req) => {
         total,
         user_id: userId,
         status: 'pendiente',
+        preferred_delivery_date: preferred_delivery_date || null,
+        preferred_time_slot: preferred_time_slot || null,
+        payment_method: payment_method || 'efectivo',
       })
       .select()
       .single();
@@ -97,6 +100,9 @@ Deno.serve(async (req) => {
       ...orderLines,
       '',
       `💰 *Total: ${formatPrice(total)}*`,
+      '',
+      preferred_delivery_date ? `📅 Entrega preferida: ${preferred_delivery_date}${preferred_time_slot ? ` (${preferred_time_slot === 'mañana' ? '8am-12pm' : '2pm-6pm'})` : ''}` : '',
+      `💳 Pago: ${payment_method === 'transferencia' ? 'Transferencia' : 'Efectivo'}`,
       '',
       `📦 Estado: Pendiente`,
     ].filter(Boolean).join('\n');

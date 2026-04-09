@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { format, addDays, isWeekend } from "date-fns";
+import { es } from "date-fns/locale";
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { useCart } from "@/context/CartContext";
 import { useAppSettings } from "@/hooks/useStore";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink, Ticket, X, CheckCircle2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink, Ticket, X, CheckCircle2, CalendarIcon, Clock, Banknote, CreditCard, Truck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { trackPurchase } from "@/components/seo/Analytics";
 
@@ -97,6 +102,23 @@ const Carrito = () => {
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [preferredDate, setPreferredDate] = useState<Date | undefined>();
+  const [timeSlot, setTimeSlot] = useState<"mañana" | "tarde">("mañana");
+  const [paymentMethod, setPaymentMethod] = useState<"efectivo" | "transferencia">("efectivo");
+
+  const estimatedDays = settings?.estimated_delivery_days || "1-2";
+
+  // Compute min delivery date (skip weekends)
+  const getMinDeliveryDate = () => {
+    const minDaysNum = parseInt(estimatedDays) || 1;
+    let date = new Date();
+    let added = 0;
+    while (added < minDaysNum) {
+      date = addDays(date, 1);
+      if (!isWeekend(date)) added++;
+    }
+    return date;
+  };
 
   const { data: shippingZones } = useQuery({
     queryKey: ["shipping-zones"],
@@ -175,6 +197,9 @@ const Carrito = () => {
         notes: form.notes,
         delivery_price: deliveryCost,
         delivery_zone_id: form.neighborhood_id || null,
+        preferred_delivery_date: preferredDate ? format(preferredDate, "yyyy-MM-dd") : null,
+        preferred_time_slot: timeSlot,
+        payment_method: paymentMethod,
       };
 
       const { data, error } = await supabase.functions.invoke("send-whatsapp-order", {
@@ -209,6 +234,9 @@ const Carrito = () => {
         couponDiscount > 0 ? `🎟️ Cupón (${appliedCoupon?.code}): -${formatPrice(couponDiscount)}` : "",
         deliveryCost > 0 ? `🚚 Domicilio: ${formatPrice(deliveryCost)}` : "",
         `💰 *Total: ${formatPrice(grandTotal)}*`,
+        "",
+        preferredDate ? `📅 Entrega: ${format(preferredDate, "EEEE d MMM", { locale: es })} (${timeSlot === "mañana" ? "8am-12pm" : "2pm-6pm"})` : "",
+        `💳 Pago: ${paymentMethod === "efectivo" ? "Efectivo" : "Transferencia"}`,
         "",
         `📦 Seguimiento: ${trackingUrl}`,
       ].filter(Boolean).join("\n");
@@ -337,6 +365,83 @@ const Carrito = () => {
                     <p className="text-xs text-accent font-medium">🚚 Domicilio: {formatPrice(deliveryCost)}</p>
                   )}
                   <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notas adicionales" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" rows={2} />
+
+                  {/* Delivery estimate badge */}
+                  <div className="flex items-center gap-2 bg-accent/10 rounded-lg px-3 py-2">
+                    <Truck size={14} className="text-accent" />
+                    <span className="text-xs font-medium text-foreground">Entrega en {estimatedDays} días hábiles</span>
+                  </div>
+
+                  {/* Preferred delivery date */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <CalendarIcon size={14} className="text-accent" />
+                      <span className="text-xs font-medium text-muted-foreground">Fecha preferida de entrega</span>
+                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className={cn("w-full bg-muted rounded-lg px-3 py-2.5 text-sm text-left flex items-center justify-between", !preferredDate && "text-muted-foreground")}>
+                          {preferredDate ? format(preferredDate, "EEEE d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
+                          <CalendarIcon size={14} className="text-muted-foreground" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={preferredDate}
+                          onSelect={setPreferredDate}
+                          disabled={(date) => date < getMinDeliveryDate() || isWeekend(date)}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Time slot */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Clock size={14} className="text-accent" />
+                      <span className="text-xs font-medium text-muted-foreground">Horario preferido</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setTimeSlot("mañana")}
+                        className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "mañana" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+                      >
+                        ☀️ Mañana (8-12)
+                      </button>
+                      <button
+                        onClick={() => setTimeSlot("tarde")}
+                        className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "tarde" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+                      >
+                        🌙 Tarde (2-6)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Payment method */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Banknote size={14} className="text-accent" />
+                      <span className="text-xs font-medium text-muted-foreground">Método de pago</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setPaymentMethod("efectivo")}
+                        className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "efectivo" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+                      >
+                        <Banknote size={14} /> Efectivo
+                      </button>
+                      <button
+                        onClick={() => setPaymentMethod("transferencia")}
+                        className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "transferencia" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+                      >
+                        <CreditCard size={14} /> Transferencia
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="flex gap-2">
                     <button onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-2.5 text-sm text-muted-foreground font-medium">Cancelar</button>
                     <button onClick={handleSubmitOrder} disabled={submitting} className="flex-1 btn-surte py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-50">

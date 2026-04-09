@@ -23,6 +23,7 @@ const settingsMeta: Record<string, SettingMeta> = {
   store_name: { label: "Nombre de la Tienda", icon: Store, type: "text", group: "general" },
   whatsapp_number: { label: "Número WhatsApp", icon: Phone, type: "text", group: "general", description: "Con código de país: 573001234567" },
   min_order_amount: { label: "Pedido Mínimo (COP)", icon: DollarSign, type: "text", group: "general", description: "Monto mínimo para realizar un pedido" },
+  estimated_delivery_days: { label: "Tiempo de Entrega", icon: Save, type: "text", group: "general", description: "Ej: 1-2, 24h, Mismo día. Se muestra al cliente en el checkout" },
   footer_text: { label: "Texto Legal", icon: Save, type: "text", group: "legal" },
   footer_nit: { label: "NIT Empresa", icon: Save, type: "text", group: "legal" },
   footer_email: { label: "Email de Contacto", icon: Save, type: "text", group: "legal" },
