@@ -585,6 +585,9 @@ export type Database = {
           id: string
           notes: string | null
           order_number: number
+          payment_method: string | null
+          preferred_delivery_date: string | null
+          preferred_time_slot: string | null
           status: string
           subtotal: number
           total: number
@@ -604,6 +607,9 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number?: number
+          payment_method?: string | null
+          preferred_delivery_date?: string | null
+          preferred_time_slot?: string | null
           status?: string
           subtotal?: number
           total: number
@@ -623,6 +629,9 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number?: number
+          payment_method?: string | null
+          preferred_delivery_date?: string | null
+          preferred_time_slot?: string | null
           status?: string
           subtotal?: number
           total?: number
