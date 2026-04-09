@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter } from "lucide-react";
+import { useQuery, useQueryClient as useQC } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images } from "lucide-react";
 import MarginCalculator from "./MarginCalculator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
