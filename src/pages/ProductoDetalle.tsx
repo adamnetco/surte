@@ -121,18 +121,24 @@ const ProductoDetalle = () => {
 
   const currentMedia = allMedia[activeMediaIdx] || allMedia[0];
   const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
+
+  // Presentation-aware pricing
+  const activePres = presentations?.find((p: any) => p.id === selectedPresentation);
+  const displayPrice = activePres ? Number(activePres.price) : userPrice;
+
   const discount = product.original_price
-    ? Math.round(((product.original_price - userPrice) / product.original_price) * 100)
+    ? Math.round(((product.original_price - displayPrice) / product.original_price) * 100)
     : 0;
   const outOfStock = product.stock <= 0;
 
   const handleAdd = () => {
     if (outOfStock) return;
     const maxQty = Math.min(qty, product.stock);
-    addItem(product, maxQty, userPrice);
+    const presentation = activePres ? { id: activePres.id, name: activePres.name } : undefined;
+    addItem(product, maxQty, displayPrice, presentation);
     trackAddToCart(product, maxQty);
     setAdded(true);
-    toast.success(`${product.name} agregado al carrito`);
+    toast.success(`${product.name}${activePres ? ` (${activePres.name})` : ""} agregado al carrito`);
     setTimeout(() => setAdded(false), 1500);
   };
 
