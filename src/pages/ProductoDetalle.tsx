@@ -201,12 +201,32 @@ const ProductoDetalle = () => {
         {/* Compact Image */}
         <div
           className="relative w-full bg-muted overflow-hidden"
-          style={{ height: "40vw", maxHeight: "240px", minHeight: "160px" }}
+          style={{ height: "50vw", maxHeight: "280px", minHeight: "180px" }}
           onClick={() => currentMedia.type === "image" && currentMedia.url && setLightboxOpen(true)}
+          onTouchStart={(e) => {
+            setTouchStart(e.touches[0].clientX);
+            setTouchDelta(0);
+          }}
+          onTouchMove={(e) => {
+            if (touchStart !== null) setTouchDelta(e.touches[0].clientX - touchStart);
+          }}
+          onTouchEnd={() => {
+            if (Math.abs(touchDelta) > 50 && allMedia.length > 1) {
+              if (touchDelta < 0) goMedia(1);
+              else goMedia(-1);
+            }
+            setTouchStart(null);
+            setTouchDelta(0);
+          }}
         >
           {currentMedia.type === "image" ? (
             currentMedia.url ? (
-              <img src={currentMedia.url} alt={product.name} className="w-full h-full object-cover" />
+              <img
+                src={currentMedia.url}
+                alt={product.name}
+                className="w-full h-full object-cover transition-transform duration-200"
+                style={{ transform: touchStart !== null ? `translateX(${touchDelta * 0.4}px)` : undefined }}
+              />
             ) : (
               <span className="absolute inset-0 flex items-center justify-center text-6xl opacity-15 font-heading font-bold text-muted-foreground">{product.name.charAt(0)}</span>
             )
