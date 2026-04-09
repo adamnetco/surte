@@ -248,7 +248,11 @@ const ProductoDetalle = () => {
         </div>
 
         <h1 className="text-xl font-heading font-bold text-foreground mb-1" style={{ textWrap: "balance" as any }}>{product.name}</h1>
-        <p className="text-sm text-muted-foreground mb-3">{product.unit}</p>
+        <p className="text-sm text-muted-foreground mb-1">
+          {product.unit_quantity && product.unit_measure
+            ? `${product.unit_quantity} ${product.unit_measure}`
+            : product.unit}
+        </p>
 
         <div className="flex items-baseline gap-2 mb-1">
           <span className="text-2xl font-heading font-bold text-foreground">{formatPrice(userPrice)}</span>
@@ -256,6 +260,15 @@ const ProductoDetalle = () => {
             <span className="text-base text-muted-foreground line-through">{formatPrice(product.original_price || product.price)}</span>
           )}
         </div>
+        {/* Price per gram */}
+        {product.net_weight_grams && product.net_weight_grams > 0 && (
+          <p className="text-xs text-muted-foreground mb-1">
+            {formatPrice(Math.round(userPrice / product.net_weight_grams))}/g
+            {product.net_weight_grams >= 1000
+              ? ` · ${formatPrice(Math.round((userPrice / product.net_weight_grams) * 1000))}/kg`
+              : null}
+          </p>
+        )}
         {businessType && businessType !== "detal" && userPrice < product.price && (
           <p className="text-xs text-accent font-medium mb-3">Precio {businessType.toUpperCase()}</p>
         )}
