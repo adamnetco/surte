@@ -277,22 +277,53 @@ const ProductoDetalle = () => {
         </p>
 
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-2xl font-heading font-bold text-foreground">{formatPrice(userPrice)}</span>
-          {(product.original_price || userPrice < product.price) && (
+          <span className="text-2xl font-heading font-bold text-foreground">{formatPrice(displayPrice)}</span>
+          {(product.original_price || displayPrice < product.price) && (
             <span className="text-base text-muted-foreground line-through">{formatPrice(product.original_price || product.price)}</span>
           )}
         </div>
         {/* Price per gram */}
-        {product.net_weight_grams && product.net_weight_grams > 0 && (
+        {product.net_weight_grams && product.net_weight_grams > 0 && !activePres && (
           <p className="text-xs text-muted-foreground mb-1">
-            {formatPrice(Math.round(userPrice / product.net_weight_grams))}/g
+            {formatPrice(Math.round(displayPrice / product.net_weight_grams))}/g
             {product.net_weight_grams >= 1000
-              ? ` · ${formatPrice(Math.round((userPrice / product.net_weight_grams) * 1000))}/kg`
+              ? ` · ${formatPrice(Math.round((displayPrice / product.net_weight_grams) * 1000))}/kg`
               : null}
           </p>
         )}
-        {businessType && businessType !== "detal" && userPrice < product.price && (
+        {activePres && activePres.weight_kg && (
+          <p className="text-xs text-muted-foreground mb-1">
+            {activePres.weight_kg} kg · ×{activePres.conversion_factor} unidades
+          </p>
+        )}
+        {businessType && businessType !== "detal" && displayPrice < product.price && !activePres && (
           <p className="text-xs text-accent font-medium mb-3">Precio {businessType.toUpperCase()}</p>
+        )}
+
+        {/* Presentation selector */}
+        {presentations && presentations.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+              <Box size={12} /> Presentación de venta
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedPresentation(null)}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors border ${!selectedPresentation ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+              >
+                {product.base_unit || "Unidad"} · {formatPrice(userPrice)}
+              </button>
+              {presentations.map((p: any) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedPresentation(p.id)}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors border ${selectedPresentation === p.id ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+                >
+                  {p.name} · {formatPrice(p.price)}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="mb-4">
