@@ -166,6 +166,26 @@ const Carrito = () => {
 
   const removeCoupon = () => { setCouponDiscount(0); setAppliedCoupon(null); setCouponCode(""); };
 
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Tu navegador no soporta geolocalización");
+      return;
+    }
+    setLoadingGeo(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeoLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLoadingGeo(false);
+        toast.success("Ubicación capturada");
+      },
+      (err) => {
+        setLoadingGeo(false);
+        toast.error("No se pudo obtener la ubicación. Activa los permisos de ubicación.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleFinalize = () => {
     if (!meetsMinimum) return;
     setForm({
@@ -175,6 +195,7 @@ const Carrito = () => {
       notes: "",
       neighborhood_id: "",
     });
+    setGeoLocation(null);
     setShowForm(true);
   };
 
