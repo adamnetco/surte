@@ -40,9 +40,11 @@ const CartDrawer = ({ children }: CartDrawerProps) => {
             </div>
           ) : (
             <AnimatePresence>
-              {items.map((item) => (
+              {items.map((item) => {
+                const lineId = `${item.product.id}${item.presentationId ? `__${item.presentationId}` : ""}`;
+                return (
                 <motion.div
-                  key={item.product.id}
+                  key={lineId}
                   layout
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -60,27 +62,29 @@ const CartDrawer = ({ children }: CartDrawerProps) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-foreground truncate">{item.product.name}</h4>
-                    <p className="text-xs text-muted-foreground">{item.product.unit}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.presentationName || item.product.unit}
+                    </p>
                     <div className="flex items-center justify-between mt-1.5">
                       <span className="text-sm font-heading font-bold text-foreground">
                         {formatPrice(item.unitPrice * item.quantity)}
                       </span>
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.presentationId)}
                           className="w-6 h-6 rounded-md bg-muted flex items-center justify-center text-foreground"
                         >
                           <Minus size={12} />
                         </button>
                         <span className="text-xs font-semibold w-4 text-center">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.presentationId)}
                           className="w-6 h-6 rounded-md bg-accent text-accent-foreground flex items-center justify-center"
                         >
                           <Plus size={12} />
                         </button>
                         <button
-                          onClick={() => removeItem(item.product.id)}
+                          onClick={() => removeItem(item.product.id, item.presentationId)}
                           className="w-6 h-6 rounded-md flex items-center justify-center text-destructive ml-0.5"
                         >
                           <Trash2 size={12} />
@@ -89,7 +93,8 @@ const CartDrawer = ({ children }: CartDrawerProps) => {
                     </div>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </AnimatePresence>
           )}
         </div>
