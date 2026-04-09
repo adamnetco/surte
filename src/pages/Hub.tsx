@@ -31,33 +31,74 @@ const Hub = () => {
     },
   });
 
+  const { data: featuredSections } = useQuery({
+    queryKey: ["featured_sections"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("featured_sections").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const categorySlug = type === "categoria" ? slug : "";
   const { data: products, isLoading } = useProducts(categorySlug || undefined);
+
+  // Resolve the current featured section (for etiqueta type) to determine filtering logic
+  const currentSection = useMemo(() => {
+    if (type !== "etiqueta" || !slug || !featuredSections) return null;
+    // Find a section whose filter_value matches slug, or whose filter_type matches known slugs
+    return featuredSections.find(s => {
+      if (s.filter_type === "tag" && s.filter_value === slug) return true;
+      if (s.filter_type === "fresh" && slug === "fresco") return true;
+      if (s.filter_type === "wholesale" && slug === "mayorista") return true;
+      return false;
+    }) || null;
+  }, [featuredSections, type, slug]);
 
   // Filter by brand or tag
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     if (type === "marca") {
-      const brandName = brands?.find((b) => b.name.toLowerCase().replace(/\s+/g, "-") === slug)?.name;
+      const brandSlug = slug;
+      const brandName = brands?.find((b: any) => (b.slug || b.name.toLowerCase().replace(/\s+/g, "-")) === brandSlug)?.name;
       if (brandName) return products.filter((p) => p.brand?.toLowerCase() === brandName.toLowerCase());
     }
     if (type === "etiqueta" && slug) {
-      return products.filter((p) => {
-        if (slug === "fresco") return p.is_fresh;
-        if (slug === "mayorista") return p.is_wholesale;
-        return p.tags?.some(t => t.toLowerCase() === slug.toLowerCase());
-      });
+      // Use featured section filter_type to determine what to filter
+      const filterType = currentSection?.filter_type;
+      if (filterType === "fresh") return products.filter((p) => p.is_fresh);
+      if (filterType === "wholesale") return products.filter((p) => p.is_wholesale);
+      if (filterType === "offers") return products.filter((p) => p.original_price && p.original_price > p.price);
+      // Default: match against tags array
+      return products.filter((p) => p.tags?.some(t => t.toLowerCase() === slug.toLowerCase()));
     }
     return products;
-  }, [products, type, slug, brands]);
+  }, [products, type, slug, brands, currentSection]);
+
+  // Get entity-level SEO data
+  const entitySeo = useMemo(() => {
+    if (type === "categoria" && categories) {
+      const cat = categories.find((c: any) => c.slug === slug);
+      return cat ? { meta_title: (cat as any).meta_title, meta_description: (cat as any).meta_description, og_image_url: (cat as any).og_image_url } : null;
+    }
+    if (type === "marca" && brands) {
+      const brand = brands.find((b: any) => (b.slug || b.name.toLowerCase().replace(/\s+/g, "-")) === slug);
+      return brand ? { meta_title: (brand as any).meta_title, meta_description: (brand as any).meta_description, og_image_url: (brand as any).og_image_url } : null;
+    }
+    return null;
+  }, [type, slug, categories, brands]);
 
   const title = useMemo(() => {
     if (type === "categoria") return categories?.find((c) => c.slug === slug)?.name || slug || "Categoría";
-    if (type === "marca") return brands?.find((b) => b.name.toLowerCase().replace(/\s+/g, "-") === slug)?.name || slug || "Marca";
-    if (type === "etiqueta") return slug ? slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, " ") : "Etiqueta";
+    if (type === "marca") return brands?.find((b: any) => (b.slug || b.name.toLowerCase().replace(/\s+/g, "-")) === slug)?.name || slug || "Marca";
+    if (type === "etiqueta") {
+      // Use the section label if available
+      if (currentSection) return currentSection.label;
+      return slug ? slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, " ") : "Etiqueta";
+    }
     if (type === "ciudad") return slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Ciudad";
     return "Productos";
-  }, [type, slug, categories, brands]);
+  }, [type, slug, categories, brands, currentSection]);
 
   const subtitle = useMemo(() => {
     if (type === "categoria") return `Explora todos los productos de ${title}`;
@@ -80,10 +121,11 @@ const Hub = () => {
 
   const pageUrl = `${BASE_URL}/hub/${type}/${slug}`;
   const storeName = settings?.store_name || "SURTÉ YA";
-  const metaTitle = `${title} — ${storeName} | Compra en línea`;
-  const metaDesc = subtitle
+  const metaTitle = entitySeo?.meta_title || `${title} — ${storeName} | Compra en línea`;
+  const metaDesc = entitySeo?.meta_description || (subtitle
     ? `${subtitle}. Compra al mejor precio en ${storeName}. Envíos a Bucaramanga, Floridablanca, Girón y Piedecuesta.`
-    : `Productos de ${title} en ${storeName}`;
+    : `Productos de ${title} en ${storeName}`);
+  const ogImage = entitySeo?.og_image_url || undefined;
 
   const breadcrumbs = [
     { name: "Inicio", url: BASE_URL },
@@ -105,7 +147,7 @@ const Hub = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <HeadMeta title={metaTitle} description={metaDesc} canonical={pageUrl} />
+      <HeadMeta title={metaTitle} description={metaDesc} canonical={pageUrl} ogImage={ogImage} />
       <JsonLd data={collectionSchema} id="collection" />
       <JsonLd data={buildBreadcrumbSchema(breadcrumbs)} id="breadcrumb" />
       {sorted.length > 0 && (

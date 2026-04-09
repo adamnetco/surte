@@ -9,14 +9,14 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 
 const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50", meta_title: "", meta_description: "", image_url: "" });
+  const [form, setForm] = useState({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50", meta_title: "", meta_description: "", og_image_url: "" });
   const { upload, uploading } = useImageUpload();
 
-  const resetForm = () => { setForm({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50", meta_title: "", meta_description: "", image_url: "" }); setEditing(null); };
+  const resetForm = () => { setForm({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50", meta_title: "", meta_description: "", og_image_url: "" }); setEditing(null); };
 
   const saveCategory = async () => {
     if (!form.name) { toast.error("El nombre es obligatorio"); return; }
-    const payload = { name: form.name, slug: form.slug, icon: form.icon, sort_order: Number(form.sort_order), color: form.color };
+    const payload: any = { name: form.name, slug: form.slug, icon: form.icon, sort_order: Number(form.sort_order), color: form.color, meta_title: form.meta_title || null, meta_description: form.meta_description || null, og_image_url: form.og_image_url || null };
     if (editing && editing !== "new") {
       const { error } = await supabase.from("categories").update(payload).eq("id", editing);
       if (error) { toast.error(error.message); return; }
@@ -58,6 +58,16 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
     if (url) {
       setForm({ ...form, icon: url });
       toast.success("Icono SVG subido");
+    }
+  };
+
+  const handleOgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await upload(file, "seo-images");
+    if (url) {
+      setForm({ ...form, og_image_url: url });
+      toast.success("Imagen OG subida");
     }
   };
 
@@ -130,6 +140,21 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
             </div>
           </div>
 
+          {/* SEO Fields */}
+          <div className="border-t border-border pt-3 space-y-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">🔍 SEO Avanzado</p>
+            <input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder="Meta Título (ej: Salsas al por mayor)" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+            <textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} placeholder="Meta Descripción (máx. 160 caracteres)" rows={2} className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors resize-none" />
+            <div className="flex items-center gap-2">
+              {form.og_image_url && <img src={form.og_image_url} alt="OG" className="w-16 h-10 object-cover rounded border border-border" />}
+              <label className="flex items-center gap-1 cursor-pointer bg-accent/10 text-accent rounded-lg px-2.5 py-2 text-[11px] font-medium hover:bg-accent/20 transition-colors">
+                {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                {form.og_image_url ? "Cambiar imagen OG" : "Subir imagen OG"}
+                <input type="file" accept="image/*" onChange={handleOgImageUpload} className="hidden" disabled={uploading} />
+              </label>
+            </div>
+          </div>
+
           <div className="flex gap-2">
             <button onClick={saveCategory} className="btn-surte flex-1 text-sm py-2.5 flex items-center justify-center gap-1"><Save size={14} /> Guardar</button>
             <button onClick={resetForm} className="bg-muted rounded-xl px-4 py-2.5 text-sm text-muted-foreground font-medium hover:bg-muted/80 transition-colors">Cancelar</button>
@@ -161,7 +186,7 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
             <a href={`/hub/categoria/${c.slug}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Ver página">
               <ExternalLink size={14} />
             </a>
-            <button onClick={() => { setForm({ name: c.name, slug: c.slug, icon: c.icon || "Package", sort_order: String(c.sort_order || 0), color: c.color || "#5D7B50", meta_title: "", meta_description: "", image_url: "" }); setEditing(c.id); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
+            <button onClick={() => { setForm({ name: c.name, slug: c.slug, icon: c.icon || "Package", sort_order: String(c.sort_order || 0), color: c.color || "#5D7B50", meta_title: (c as any).meta_title || "", meta_description: (c as any).meta_description || "", og_image_url: (c as any).og_image_url || "" }); setEditing(c.id); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
             <button onClick={() => deleteCategory(c.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
         )}

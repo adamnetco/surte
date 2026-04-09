@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, ExternalLink, Link as LinkIcon, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import SortableList from "./SortableList";
@@ -18,11 +18,11 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
   });
 
   const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", logo_url: "", website_url: "", sort_order: "0", is_active: true });
+  const [form, setForm] = useState({ name: "", logo_url: "", website_url: "", sort_order: "0", is_active: true, slug: "", meta_title: "", meta_description: "", og_image_url: "" });
   const { upload, uploading } = useImageUpload();
 
   const resetForm = () => {
-    setForm({ name: "", logo_url: "", website_url: "", sort_order: "0", is_active: true });
+    setForm({ name: "", logo_url: "", website_url: "", sort_order: "0", is_active: true, slug: "", meta_title: "", meta_description: "", og_image_url: "" });
     setEditing(null);
   };
 
@@ -33,14 +33,26 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
     if (url) setForm({ ...form, logo_url: url });
   };
 
+  const handleOgImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await upload(file, "seo-images");
+    if (url) setForm({ ...form, og_image_url: url });
+  };
+
   const save = async () => {
     if (!form.name) { toast.error("El nombre es obligatorio"); return; }
-    const payload = {
+    const autoSlug = form.slug || form.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const payload: any = {
       name: form.name,
       logo_url: form.logo_url || null,
       website_url: form.website_url || null,
       sort_order: Number(form.sort_order),
       is_active: form.is_active,
+      slug: autoSlug,
+      meta_title: form.meta_title || null,
+      meta_description: form.meta_description || null,
+      og_image_url: form.og_image_url || null,
     };
 
     if (editing && editing !== "new") {
@@ -74,10 +86,10 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
     queryClient.invalidateQueries({ queryKey: ["brands"] });
   };
 
-  const getBrandSlug = (name: string) => name.toLowerCase().replace(/\s+/g, "-");
+  const getBrandSlug = (b: any) => b.slug || b.name.toLowerCase().replace(/\s+/g, "-");
 
-  const copyUrl = (name: string) => {
-    navigator.clipboard.writeText(`https://surteya.com/hub/marca/${getBrandSlug(name)}`);
+  const copyUrl = (b: any) => {
+    navigator.clipboard.writeText(`https://surteya.com/hub/marca/${getBrandSlug(b)}`);
     toast.success("URL copiada");
   };
 
@@ -121,7 +133,8 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
               <p className="text-[11px] text-muted-foreground mt-1">PNG transparente recomendado</p>
             </div>
           </div>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre de la marca *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") })} placeholder="Nombre de la marca *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+          <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="Slug (auto-generado)" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
           <input value={form.website_url} onChange={(e) => setForm({ ...form, website_url: e.target.value })} placeholder="URL del sitio web (opcional)" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
           <div className="grid grid-cols-2 gap-2">
             <input value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} placeholder="Orden" type="number" className="bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
@@ -130,6 +143,22 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
               <span className="text-sm text-foreground">{form.is_active ? "Activa" : "Inactiva"}</span>
             </div>
           </div>
+
+          {/* SEO Fields */}
+          <div className="border-t border-border pt-3 space-y-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">🔍 SEO Avanzado</p>
+            <input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder="Meta Título (ej: Productos La Unión)" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
+            <textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} placeholder="Meta Descripción (máx. 160 caracteres)" rows={2} className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors resize-none" />
+            <div className="flex items-center gap-2">
+              {form.og_image_url && <img src={form.og_image_url} alt="OG" className="w-16 h-10 object-cover rounded border border-border" />}
+              <label className="flex items-center gap-1 cursor-pointer bg-accent/10 text-accent rounded-lg px-2.5 py-2 text-[11px] font-medium hover:bg-accent/20 transition-colors">
+                {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                {form.og_image_url ? "Cambiar imagen OG" : "Subir imagen OG"}
+                <input type="file" accept="image/*" onChange={handleOgImage} className="hidden" disabled={uploading} />
+              </label>
+            </div>
+          </div>
+
           <div className="flex gap-2">
             <button onClick={save} className="btn-surte flex-1 text-sm py-2.5 flex items-center justify-center gap-1">
               <Save size={14} /> Guardar
@@ -168,16 +197,16 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
                 <p className="text-sm font-medium text-foreground truncate">{b.name}</p>
                 {!b.is_active && <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium">OCULTA</span>}
               </div>
-              <p className="text-[11px] text-muted-foreground truncate">/hub/marca/{getBrandSlug(b.name)}</p>
+              <p className="text-[11px] text-muted-foreground truncate">/hub/marca/{getBrandSlug(b)}</p>
             </div>
             <Switch checked={b.is_active} onCheckedChange={() => toggleActive(b.id, b.is_active)} />
-            <button onClick={() => copyUrl(b.name)} className="text-muted-foreground hover:text-primary transition-colors" title="Copiar URL">
+            <button onClick={() => copyUrl(b)} className="text-muted-foreground hover:text-primary transition-colors" title="Copiar URL">
               <LinkIcon size={14} />
             </button>
-            <a href={`/hub/marca/${getBrandSlug(b.name)}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Ver página">
+            <a href={`/hub/marca/${getBrandSlug(b)}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Ver página">
               <ExternalLink size={14} />
             </a>
-            <button onClick={() => { setForm({ name: b.name, logo_url: b.logo_url || "", website_url: b.website_url || "", sort_order: String(b.sort_order || 0), is_active: b.is_active }); setEditing(b.id); }} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={() => { setForm({ name: b.name, logo_url: b.logo_url || "", website_url: b.website_url || "", sort_order: String(b.sort_order || 0), is_active: b.is_active, slug: b.slug || "", meta_title: b.meta_title || "", meta_description: b.meta_description || "", og_image_url: b.og_image_url || "" }); setEditing(b.id); }} className="text-muted-foreground hover:text-foreground transition-colors">
               <Pencil size={15} />
             </button>
             <button onClick={() => del(b.id)} className="text-muted-foreground hover:text-destructive transition-colors">
