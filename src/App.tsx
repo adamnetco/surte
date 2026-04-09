@@ -10,6 +10,7 @@ import CityPickerModal from "@/components/surte/CityPickerModal";
 import DynamicThemeInjector from "@/components/DynamicThemeInjector";
 import CustomScriptInjector from "@/components/CustomScriptInjector";
 import Analytics from "@/components/seo/Analytics";
+import CartNavigationGuard from "@/components/CartNavigationGuard";
 import Index from "./pages/Index";
 import Catalogo from "./pages/Catalogo";
 import Carrito from "./pages/Carrito";
@@ -46,6 +47,7 @@ const App = () => (
           <CityPickerModal />
             <BrowserRouter>
               <Analytics />
+              <CartNavigationGuard />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/catalogo" element={<Catalogo />} />
