@@ -5,7 +5,7 @@ import {
   Plus, Pencil, Trash2, Globe, Eye, EyeOff, Loader2, ExternalLink,
   Copy, Search, FileDown, FileUp, CheckCircle2, AlertTriangle, Type,
   Image, List, Code, LayoutTemplate, ChevronDown, ChevronUp, Sparkles,
-  Download, Upload, X, Check, FileText, Zap
+  Download, Upload, X, Check, FileText, Zap, Package
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -159,6 +159,59 @@ const LandingPagesTab = () => {
   // Template wizard
   const [templateWizard, setTemplateWizard] = useState<{ type: number; input: string } | null>(null);
 
+  // Product linking
+  const [productSearch, setProductSearch] = useState("");
+  const [linkedProducts, setLinkedProducts] = useState<string[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  const { data: allProducts } = useQuery({
+    queryKey: ["all_products_for_linking"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, image_url, price, slug")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Load linked products when editing a page
+  const loadLinkedProducts = useCallback(async (pageId: string) => {
+    setLoadingProducts(true);
+    const { data } = await supabase
+      .from("landing_page_products")
+      .select("product_id")
+      .eq("landing_page_id", pageId)
+      .order("sort_order");
+    setLinkedProducts(data?.map((r: any) => r.product_id) || []);
+    setLoadingProducts(false);
+  }, []);
+
+  const toggleProduct = useCallback((productId: string) => {
+    setLinkedProducts(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  }, []);
+
+  const saveLinkedProducts = useCallback(async (pageId: string) => {
+    // Delete existing links
+    await supabase.from("landing_page_products").delete().eq("landing_page_id", pageId);
+    // Insert new links
+    if (linkedProducts.length > 0) {
+      const rows = linkedProducts.map((product_id, i) => ({
+        landing_page_id: pageId,
+        product_id,
+        sort_order: i,
+      }));
+      await supabase.from("landing_page_products").insert(rows);
+    }
+    queryClient.invalidateQueries({ queryKey: ["landing_page_products"] });
+  }, [linkedProducts, queryClient]);
+
   const { data: pages, isLoading } = useQuery({
     queryKey: ["landing_pages"],
     queryFn: async () => {
@@ -193,15 +246,20 @@ const LandingPagesTab = () => {
         image_url: editing.image_url || null,
         is_active: editing.is_active ?? true,
       };
+      let pageId = editing.id;
       if (editing.id) {
         const { error } = await supabase.from("landing_pages").update(payload).eq("id", editing.id);
         if (error) throw error;
-        toast.success("Pagina actualizada");
       } else {
-        const { error } = await supabase.from("landing_pages").insert(payload);
+        const { data: inserted, error } = await supabase.from("landing_pages").insert(payload).select("id").single();
         if (error) throw error;
-        toast.success("Pagina creada");
+        pageId = inserted.id;
       }
+      // Save linked products
+      if (pageId) {
+        await saveLinkedProducts(pageId);
+      }
+      toast.success(editing.id ? "Pagina actualizada" : "Pagina creada");
       queryClient.invalidateQueries({ queryKey: ["landing_pages"] });
       setEditing(null);
     } catch (e: any) {
@@ -663,7 +721,7 @@ const LandingPagesTab = () => {
                   <button onClick={() => handleDuplicate(p)} className="p-1.5 hover:bg-muted rounded-lg" title="Duplicar">
                     <Copy size={14} />
                   </button>
-                  <button onClick={() => setEditing(p)} className="p-1.5 hover:bg-muted rounded-lg">
+                  <button onClick={() => { setEditing(p); loadLinkedProducts(p.id); }} className="p-1.5 hover:bg-muted rounded-lg">
                     <Pencil size={14} />
                   </button>
                   <button onClick={() => handleDelete(p.id)} className="p-1.5 hover:bg-destructive/10 text-destructive rounded-lg">
@@ -847,7 +905,68 @@ const LandingPagesTab = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
+              {/* Product Linking */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Package size={12} /> Productos relacionados ({linkedProducts.length})
+                </label>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={productSearch}
+                    onChange={e => setProductSearch(e.target.value)}
+                    placeholder="Buscar productos para vincular..."
+                    className="pl-9 h-8 text-xs"
+                  />
+                </div>
+                {loadingProducts ? (
+                  <div className="text-center py-3"><Loader2 size={16} className="animate-spin mx-auto text-muted-foreground" /></div>
+                ) : (
+                  <>
+                    {/* Selected products */}
+                    {linkedProducts.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-1">
+                        {linkedProducts.map(id => {
+                          const prod = allProducts?.find(p => p.id === id);
+                          if (!prod) return null;
+                          return (
+                            <span key={id} className="inline-flex items-center gap-1 bg-accent/10 text-accent text-[10px] font-medium px-2 py-1 rounded-lg">
+                              {prod.name.slice(0, 25)}{prod.name.length > 25 ? "…" : ""}
+                              <button onClick={() => toggleProduct(id)} className="hover:text-destructive"><X size={10} /></button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {/* Product search results */}
+                    {productSearch.trim() && (
+                      <div className="max-h-40 overflow-y-auto border border-border rounded-lg divide-y divide-border">
+                        {allProducts
+                          ?.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.slug?.toLowerCase().includes(productSearch.toLowerCase()))
+                          .slice(0, 20)
+                          .map(p => (
+                            <button
+                              key={p.id}
+                              onClick={() => toggleProduct(p.id)}
+                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-xs hover:bg-muted transition-colors ${linkedProducts.includes(p.id) ? "bg-accent/5" : ""}`}
+                            >
+                              {p.image_url ? (
+                                <img src={p.image_url} alt="" className="w-7 h-7 rounded object-cover shrink-0" />
+                              ) : (
+                                <div className="w-7 h-7 bg-muted rounded shrink-0" />
+                              )}
+                              <span className="flex-1 truncate">{p.name}</span>
+                              {linkedProducts.includes(p.id) ? (
+                                <CheckCircle2 size={14} className="text-accent shrink-0" />
+                              ) : (
+                                <Plus size={14} className="text-muted-foreground shrink-0" />
+                              )}
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </>
+                )}
                 <div className="flex items-center gap-2">
                   <Switch checked={editing.is_active ?? true} onCheckedChange={c => setEditing({ ...editing, is_active: c })} />
                   <span className="text-sm">Activa</span>
