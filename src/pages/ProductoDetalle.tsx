@@ -421,7 +421,7 @@ const ProductoDetalle = () => {
             {added ? (
               <><CheckCircle2 size={18} /> ¡Agregado!</>
             ) : (
-              <><ShoppingCart size={18} /> Agregar {formatPrice(userPrice * qty)}</>
+              <><ShoppingCart size={18} /> Agregar {formatPrice(displayPrice * qty)}</>
             )}
           </button>
         </div>
