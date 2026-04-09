@@ -905,7 +905,68 @@ const LandingPagesTab = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
+              {/* Product Linking */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Package size={12} /> Productos relacionados ({linkedProducts.length})
+                </label>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={productSearch}
+                    onChange={e => setProductSearch(e.target.value)}
+                    placeholder="Buscar productos para vincular..."
+                    className="pl-9 h-8 text-xs"
+                  />
+                </div>
+                {loadingProducts ? (
+                  <div className="text-center py-3"><Loader2 size={16} className="animate-spin mx-auto text-muted-foreground" /></div>
+                ) : (
+                  <>
+                    {/* Selected products */}
+                    {linkedProducts.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-1">
+                        {linkedProducts.map(id => {
+                          const prod = allProducts?.find(p => p.id === id);
+                          if (!prod) return null;
+                          return (
+                            <span key={id} className="inline-flex items-center gap-1 bg-accent/10 text-accent text-[10px] font-medium px-2 py-1 rounded-lg">
+                              {prod.name.slice(0, 25)}{prod.name.length > 25 ? "…" : ""}
+                              <button onClick={() => toggleProduct(id)} className="hover:text-destructive"><X size={10} /></button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {/* Product search results */}
+                    {productSearch.trim() && (
+                      <div className="max-h-40 overflow-y-auto border border-border rounded-lg divide-y divide-border">
+                        {allProducts
+                          ?.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.slug?.toLowerCase().includes(productSearch.toLowerCase()))
+                          .slice(0, 20)
+                          .map(p => (
+                            <button
+                              key={p.id}
+                              onClick={() => toggleProduct(p.id)}
+                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-xs hover:bg-muted transition-colors ${linkedProducts.includes(p.id) ? "bg-accent/5" : ""}`}
+                            >
+                              {p.image_url ? (
+                                <img src={p.image_url} alt="" className="w-7 h-7 rounded object-cover shrink-0" />
+                              ) : (
+                                <div className="w-7 h-7 bg-muted rounded shrink-0" />
+                              )}
+                              <span className="flex-1 truncate">{p.name}</span>
+                              {linkedProducts.includes(p.id) ? (
+                                <CheckCircle2 size={14} className="text-accent shrink-0" />
+                              ) : (
+                                <Plus size={14} className="text-muted-foreground shrink-0" />
+                              )}
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </>
+                )}
                 <div className="flex items-center gap-2">
                   <Switch checked={editing.is_active ?? true} onCheckedChange={c => setEditing({ ...editing, is_active: c })} />
                   <span className="text-sm">Activa</span>
