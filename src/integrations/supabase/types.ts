@@ -302,6 +302,42 @@ export type Database = {
         }
         Relationships: []
       }
+      featured_sections: {
+        Row: {
+          created_at: string
+          emoji: string | null
+          filter_type: string
+          filter_value: string | null
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string | null
+          filter_type?: string
+          filter_value?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string | null
+          filter_type?: string
+          filter_value?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gallery: {
         Row: {
           caption: string | null
