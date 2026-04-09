@@ -1,34 +1,44 @@
-## Plan de Implementación
 
-### 1. Migración de Base de Datos
-Crear tablas nuevas:
-- `coupons` — códigos promocionales con descuento %, monto fijo, fecha de expiración, uso máximo
-- `product_presentations` — presentaciones de venta (unidad, pack, caja) con factor de conversión y precio
-- `custom_scripts` — scripts de terceros inyectables en header/body/footer
 
-### 2. Panel de Código de Terceros (Admin → Ajustes)
-- Sección en SettingsTab para gestionar scripts personalizados (header, body, footer)
-- Componente `CustomScriptInjector` que lee de `app_settings` e inyecta los scripts dinámicamente
-- Soporte para Google Merchant Widget y Google Customer Reviews
+## Plan: Checkout Avanzado para Comerciales y Clientes
 
-### 3. Google Merchant Center + Reviews
-- Integrar el widget de insignias de Merchant Center (merchant_id: 5758181755)
-- Integrar Google Customer Reviews opt-in en la página de confirmación de pedido
-- Mostrar comentarios de Google Maps en la tienda (embed de reseñas)
+### Contexto
+Transformar el checkout actual en una herramienta dual: catálogo digital para comerciales en campo + sistema de pedidos programados para clientes. Agregar campos de logística avanzada al flujo de compra.
 
-### 4. Presentaciones de Producto
-- UI en admin para crear presentaciones (Unidad, Pack x10, Caja x40) con precio y peso
-- Selector en ProductCard y ProductoDetalle para elegir presentación
-- CartContext actualizado para guardar `presentation_id`
-- Vista de picking/desglose de inventario en admin
+### Cambios
 
-### 5. Cupones de Descuento
-- CRUD en admin para gestionar cupones
-- Campo de cupón en checkout con validación en tiempo real
-- Descuento aplicado al total antes de enviar pedido
+#### 1. Migración de Base de Datos
+Agregar columnas a la tabla `orders`:
+- `preferred_delivery_date` (date) — fecha ideal de entrega
+- `preferred_time_slot` (text) — "mañana" o "tarde"
+- `payment_method` (text) — "efectivo" o "transferencia"
 
-### Orden de ejecución:
-1. Migración DB (todas las tablas juntas)
-2. Panel de scripts + Google integrations
-3. Presentaciones de producto
-4. Cupones
+Agregar a `app_settings` una clave `estimated_delivery_days` (valor por defecto "1-2") para gestionar dinámicamente el tiempo de entrega estimado desde el admin.
+
+#### 2. Checkout Mejorado (Carrito.tsx)
+Después de los campos actuales (nombre, teléfono, dirección, barrio, notas), agregar:
+- **Tiempo estimado de entrega**: badge dinámico que lee `estimated_delivery_days` de `app_settings` (ej: "Entrega en 1-2 días hábiles")
+- **Fecha preferida de entrega**: selector de fecha (solo días hábiles futuros, mín. según estimado)
+- **Horario preferido**: selector "Mañana (8am-12pm)" / "Tarde (2pm-6pm)"
+- **Método de pago**: botones "Efectivo" / "Transferencia"
+
+#### 3. Edge Function (send-whatsapp-order)
+Actualizar para recibir y guardar los nuevos campos (`preferred_delivery_date`, `preferred_time_slot`, `payment_method`) en la orden. Incluirlos en el mensaje de WhatsApp.
+
+#### 4. Admin — Gestión de Tiempo de Entrega
+En `SettingsTab.tsx`, agregar campo editable para `estimated_delivery_days` (texto libre, ej: "1-2", "24h", "Mismo día").
+
+#### 5. Admin — Pedidos (OrdersTab.tsx)
+Mostrar en cada tarjeta de pedido: fecha preferida, horario y método de pago con iconos claros.
+
+#### 6. Modo Catálogo / Compartir
+Agregar botón "Compartir producto" en `ProductoDetalle.tsx` usando `navigator.share()` o copiando URL al portapapeles. Esto permite a comerciales enviar enlaces directos por WhatsApp.
+
+### Archivos a Modificar
+- Nueva migración SQL (3 columnas en `orders` + setting)
+- `src/pages/Carrito.tsx` — formulario de checkout ampliado
+- `supabase/functions/send-whatsapp-order/index.ts` — nuevos campos
+- `src/components/admin/SettingsTab.tsx` — campo delivery time
+- `src/components/admin/OrdersTab.tsx` — mostrar nuevos datos
+- `src/pages/ProductoDetalle.tsx` — botón compartir
+
