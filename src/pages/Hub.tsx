@@ -34,12 +34,19 @@ const Hub = () => {
   const categorySlug = type === "categoria" ? slug : "";
   const { data: products, isLoading } = useProducts(categorySlug || undefined);
 
-  // Filter by brand
-  const brandFilteredProducts = useMemo(() => {
+  // Filter by brand or tag
+  const filteredProducts = useMemo(() => {
     if (!products) return [];
     if (type === "marca") {
       const brandName = brands?.find((b) => b.name.toLowerCase().replace(/\s+/g, "-") === slug)?.name;
       if (brandName) return products.filter((p) => p.brand?.toLowerCase() === brandName.toLowerCase());
+    }
+    if (type === "etiqueta" && slug) {
+      return products.filter((p) => {
+        if (slug === "fresco") return p.is_fresh;
+        if (slug === "mayorista") return p.is_wholesale;
+        return p.tags?.some(t => t.toLowerCase() === slug.toLowerCase());
+      });
     }
     return products;
   }, [products, type, slug, brands]);
@@ -47,6 +54,7 @@ const Hub = () => {
   const title = useMemo(() => {
     if (type === "categoria") return categories?.find((c) => c.slug === slug)?.name || slug || "Categoría";
     if (type === "marca") return brands?.find((b) => b.name.toLowerCase().replace(/\s+/g, "-") === slug)?.name || slug || "Marca";
+    if (type === "etiqueta") return slug ? slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, " ") : "Etiqueta";
     if (type === "ciudad") return slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Ciudad";
     return "Productos";
   }, [type, slug, categories, brands]);
@@ -54,17 +62,18 @@ const Hub = () => {
   const subtitle = useMemo(() => {
     if (type === "categoria") return `Explora todos los productos de ${title}`;
     if (type === "marca") return `Productos de ${title} — marca aliada`;
+    if (type === "etiqueta") return `Productos destacados: ${title}`;
     if (type === "ciudad") return `Productos disponibles en ${title}`;
     return "";
   }, [type, title]);
 
   const sorted = useMemo(() => {
-    const base = type === "marca" ? brandFilteredProducts : (products || []);
+    const base = (type === "marca" || type === "etiqueta") ? filteredProducts : (products || []);
     let result = [...base];
     if (sortBy === "price-asc") result.sort((a, b) => a.price - b.price);
     if (sortBy === "price-desc") result.sort((a, b) => b.price - a.price);
     return result;
-  }, [products, brandFilteredProducts, type, sortBy]);
+  }, [products, filteredProducts, type, sortBy]);
 
   const cycleSortBy = () =>
     setSortBy(sortBy === "default" ? "price-asc" : sortBy === "price-asc" ? "price-desc" : "default");
@@ -78,7 +87,7 @@ const Hub = () => {
 
   const breadcrumbs = [
     { name: "Inicio", url: BASE_URL },
-    { name: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : "Ciudades", url: `${BASE_URL}/categorias` },
+    { name: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : type === "etiqueta" ? "Destacados" : "Ciudades", url: `${BASE_URL}/categorias` },
     { name: title, url: pageUrl },
   ];
 
@@ -106,7 +115,7 @@ const Hub = () => {
       <main className="px-4 py-4">
         <div className="mb-4">
           <p className="text-[10px] uppercase tracking-widest text-accent font-semibold mb-1">
-            {type === "categoria" ? "Categoría" : type === "marca" ? "Marca" : type === "ciudad" ? "Ciudad" : "Hub"}
+            {type === "categoria" ? "Categoría" : type === "marca" ? "Marca" : type === "etiqueta" ? "Destacados" : type === "ciudad" ? "Ciudad" : "Hub"}
           </p>
           <h1 className="text-2xl font-heading font-bold text-foreground">{title}</h1>
           {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}

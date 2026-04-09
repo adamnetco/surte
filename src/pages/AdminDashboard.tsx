@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OverviewTab from "@/components/admin/OverviewTab";
@@ -25,6 +25,7 @@ import ScriptsTab from "@/components/admin/ScriptsTab";
 import CouponsTab from "@/components/admin/CouponsTab";
 import PresentationsTab from "@/components/admin/PresentationsTab";
 import FeaturedSectionsTab from "@/components/admin/FeaturedSectionsTab";
+import MunicipalitiesTab from "@/components/admin/MunicipalitiesTab";
 
 // Tabs visible per role
 const allTabs = [
@@ -36,6 +37,7 @@ const allTabs = [
   { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "hero", label: "Hero", icon: Layers, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "municipalities", label: "Ciudades", icon: MapPin, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "shipping", label: "Logística", icon: Truck, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "notifications", label: "Alertas", icon: Bell, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "seo", label: "SEO", icon: Search, roles: ["superadmin", "admin"] as AppRole[] },
@@ -168,6 +170,7 @@ const AdminDashboard = () => {
         {activeTab === "users" && <UsersTab queryClient={queryClient} />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
         {activeTab === "hero" && <HeroSlidesTab queryClient={queryClient} />}
+        {activeTab === "municipalities" && <MunicipalitiesTab queryClient={queryClient} />}
         {activeTab === "shipping" && <ShippingTab queryClient={queryClient} />}
         {activeTab === "notifications" && <NotificationsTab queryClient={queryClient} />}
         {activeTab === "seo" && <SeoTab settings={settings} queryClient={queryClient} />}

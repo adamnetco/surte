@@ -4,9 +4,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, Save, X, MapPin, Upload, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
-const CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
+const useCities = () => useQuery({
+  queryKey: ["municipalities"],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("municipality_settings").select("city").eq("is_active", true).order("city");
+    if (error) throw error;
+    return data.map(m => m.city);
+  },
+});
 
 const ShippingTab = ({ queryClient }: { queryClient: any }) => {
+  const { data: cities = [] } = useCities();
+  const CITIES = cities.length > 0 ? cities : ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
+  
   const { data: zones, isLoading } = useQuery({
     queryKey: ["admin-shipping-zones"],
     queryFn: async () => {

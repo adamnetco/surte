@@ -33,8 +33,10 @@ const EMOJI_PRESETS = ["🔥", "💰", "🌿", "📦", "🍽️", "🍔", "🏠"
 
 const getHubUrl = (s: FeaturedSection) => {
   if (s.filter_type === "category" && s.filter_value) return `/hub/categoria/${s.filter_value}`;
-  if (s.filter_type === "tag" && s.filter_value) return `/hub/categoria/${s.filter_value}`;
+  if (s.filter_type === "tag" && s.filter_value) return `/hub/etiqueta/${s.filter_value}`;
   if (s.filter_type === "offers") return `/ofertas`;
+  if (s.filter_type === "fresh") return `/hub/etiqueta/fresco`;
+  if (s.filter_type === "wholesale") return `/hub/etiqueta/mayorista`;
   return null;
 };
 
@@ -98,10 +100,17 @@ const FeaturedSectionsTab = ({ queryClient }: { queryClient: QueryClient }) => {
   };
 
   const toggleActive = async (id: string, current: boolean) => {
+    // Optimistic update
+    queryClient.setQueryData(["featured_sections"], (old: FeaturedSection[] | undefined) =>
+      old?.map(s => s.id === id ? { ...s, is_active: !current } : s)
+    );
     const { error } = await supabase.from("featured_sections").update({ is_active: !current }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      queryClient.invalidateQueries({ queryKey: ["featured_sections"] });
+      return;
+    }
     toast.success(!current ? "Sección visible" : "Sección oculta");
-    queryClient.invalidateQueries({ queryKey: ["featured_sections"] });
   };
 
   const copyUrl = (s: FeaturedSection) => {
