@@ -32,7 +32,6 @@ const ProductoDetalle = () => {
   const [activeTab, setActiveTab] = useState<"descripcion" | "ficha">("descripcion");
   const [selectedPresentation, setSelectedPresentation] = useState<string | null>(null);
 
-  // Support both UUID and slug
   const isUuid = id && /^[0-9a-f]{8}-/.test(id);
 
   const { data: product, isLoading } = useQuery({
@@ -81,16 +80,16 @@ const ProductoDetalle = () => {
     enabled: !!productId,
   });
 
-  // Track view
   useEffect(() => {
     if (product) trackViewProduct(product);
   }, [product?.id]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="aspect-square bg-muted animate-pulse" />
-        <div className="p-4 space-y-3">
+      <div className="h-[100dvh] bg-background flex flex-col">
+        <div className="h-12 bg-muted animate-pulse" />
+        <div className="h-56 bg-muted animate-pulse" />
+        <div className="p-4 space-y-3 flex-1">
           <div className="h-4 bg-muted animate-pulse rounded w-1/3" />
           <div className="h-6 bg-muted animate-pulse rounded w-2/3" />
           <div className="h-8 bg-muted animate-pulse rounded w-1/4" />
@@ -101,14 +100,13 @@ const ProductoDetalle = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+      <div className="h-[100dvh] bg-background flex flex-col items-center justify-center px-6">
         <p className="font-heading font-bold text-lg text-foreground mb-2">Producto no encontrado</p>
         <button onClick={() => navigate("/catalogo")} className="btn-surte px-6 py-2 text-sm">Ver Catálogo</button>
       </div>
     );
   }
 
-  // Build gallery: main image + product_media images/videos
   const allMedia: { type: "image" | "video" | "pdf"; url: string; title?: string }[] = [];
   if (product.image_url) allMedia.push({ type: "image", url: product.image_url, title: product.name });
   media?.forEach((m: any) => {
@@ -118,11 +116,9 @@ const ProductoDetalle = () => {
   if (allMedia.length === 0) allMedia.push({ type: "image", url: "", title: product.name });
 
   const pdfFiles = media?.filter((m: any) => m.media_type === "pdf") || [];
-
   const currentMedia = allMedia[activeMediaIdx] || allMedia[0];
   const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
 
-  // Presentation-aware pricing
   const activePres = presentations?.find((p: any) => p.id === selectedPresentation);
   const displayPrice = activePres ? Number(activePres.price) : userPrice;
 
@@ -167,7 +163,7 @@ const ProductoDetalle = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
       <HeadMeta
         title={product.meta_title || `${product.name} — SURTÉ YA`}
         description={product.meta_description || product.description || `Compra ${product.name} al mejor precio en Bucaramanga`}
@@ -177,240 +173,251 @@ const ProductoDetalle = () => {
       />
       <JsonLd data={buildProductSchema(product, settings)} id={`product-${product.id}`} />
       <JsonLd data={buildBreadcrumbSchema(breadcrumbs)} id="breadcrumb" />
-      {/* Hero Media */}
-      <div className="relative aspect-square bg-muted overflow-hidden" onClick={() => currentMedia.type === "image" && currentMedia.url && setLightboxOpen(true)}>
-        {currentMedia.type === "image" ? (
-          currentMedia.url ? (
-            <img src={currentMedia.url} alt={product.name} className="w-full h-full object-cover" />
-          ) : (
-            <span className="absolute inset-0 flex items-center justify-center text-8xl opacity-15 font-heading font-bold text-muted-foreground">{product.name.charAt(0)}</span>
-          )
-        ) : currentMedia.type === "video" ? (
-          <video src={currentMedia.url} controls className="w-full h-full object-contain bg-foreground/5" playsInline />
-        ) : null}
 
-        {/* Nav overlay */}
-        <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
-          <button onClick={(e) => { e.stopPropagation(); navigate(-1); }} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
-            <ArrowLeft size={20} className="text-foreground" />
+      {/* Sticky Top Bar */}
+      <div className="flex-shrink-0 sticky top-0 z-40 bg-card/95 backdrop-blur-md border-b border-border">
+        <div className="flex items-center justify-between px-3 py-2">
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
+            <ArrowLeft size={18} className="text-foreground" />
           </button>
-          <div className="flex gap-2">
-            <button onClick={(e) => { e.stopPropagation(); handleShare(); }} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
-              <Share2 size={18} className="text-foreground" />
+          <h2 className="flex-1 mx-3 text-sm font-heading font-semibold text-foreground truncate text-center">
+            {product.name}
+          </h2>
+          <div className="flex gap-1.5">
+            <button onClick={handleShare} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
+              <Share2 size={16} className="text-foreground" />
             </button>
-            <button onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
-              <Heart size={20} className={isFavorite(product.id) ? "text-destructive fill-destructive" : "text-muted-foreground"} />
+            <button onClick={() => toggleFavorite(product.id)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
+              <Heart size={16} className={isFavorite(product.id) ? "text-destructive fill-destructive" : "text-muted-foreground"} />
             </button>
           </div>
         </div>
-
-        {/* Arrows */}
-        {allMedia.length > 1 && (
-          <>
-            <button onClick={(e) => { e.stopPropagation(); goMedia(-1); }} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center z-10">
-              <ChevronLeft size={16} className="text-foreground" />
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); goMedia(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center z-10">
-              <ChevronRight size={16} className="text-foreground" />
-            </button>
-          </>
-        )}
-
-        {discount > 0 && (
-          <span className="absolute bottom-4 left-4 bg-destructive text-destructive-foreground text-xs font-bold px-2.5 py-1 rounded-full z-10">-{discount}%</span>
-        )}
-        {outOfStock && (
-          <div className="absolute inset-0 bg-foreground/30 flex items-center justify-center z-10">
-            <span className="bg-card text-foreground text-sm font-heading font-bold px-4 py-1.5 rounded-full">Agotado</span>
-          </div>
-        )}
-
-        {/* Dot indicators */}
-        {allMedia.length > 1 && (
-          <div className="absolute bottom-4 right-4 flex gap-1.5 z-10">
-            {allMedia.map((m, i) => (
-              <button key={i} onClick={(e) => { e.stopPropagation(); setActiveMediaIdx(i); }}
-                className={`w-2 h-2 rounded-full transition-all ${i === activeMediaIdx ? "bg-accent w-5" : "bg-card/60"}`} />
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Thumbnails strip */}
-      {allMedia.length > 1 && (
-        <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
-          {allMedia.map((m, i) => (
-            <button key={i} onClick={() => setActiveMediaIdx(i)}
-              className={`relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-colors ${i === activeMediaIdx ? "border-accent" : "border-transparent"}`}>
-              {m.type === "image" ? (
-                <img src={m.url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <Play size={16} className="text-muted-foreground" />
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        {/* Compact Image */}
+        <div
+          className="relative w-full bg-muted overflow-hidden"
+          style={{ height: "40vw", maxHeight: "240px", minHeight: "160px" }}
+          onClick={() => currentMedia.type === "image" && currentMedia.url && setLightboxOpen(true)}
+        >
+          {currentMedia.type === "image" ? (
+            currentMedia.url ? (
+              <img src={currentMedia.url} alt={product.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="absolute inset-0 flex items-center justify-center text-6xl opacity-15 font-heading font-bold text-muted-foreground">{product.name.charAt(0)}</span>
+            )
+          ) : currentMedia.type === "video" ? (
+            <video src={currentMedia.url} controls className="w-full h-full object-contain bg-foreground/5" playsInline />
+          ) : null}
 
-      {/* Product Info */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="px-4 py-4"
-      >
-        <div className="flex flex-wrap gap-2 mb-2">
-          {product.is_fresh && <span className="badge-fresh">🌿 Fresco</span>}
-          {product.is_wholesale && <span className="badge-wholesale">💰 Mayorista</span>}
-          {(product as any).categories?.name && (
-            <span className="text-xs bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">{(product as any).categories.name}</span>
-          )}
-        </div>
-
-        <h1 className="text-xl font-heading font-bold text-foreground mb-1" style={{ textWrap: "balance" as any }}>{product.name}</h1>
-        <p className="text-sm text-muted-foreground mb-1">
-          {product.unit_quantity && product.unit_measure
-            ? `${product.unit_quantity} ${product.unit_measure}`
-            : product.unit}
-        </p>
-
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-2xl font-heading font-bold text-foreground">{formatPrice(displayPrice)}</span>
-          {(product.original_price || displayPrice < product.price) && (
-            <span className="text-base text-muted-foreground line-through">{formatPrice(product.original_price || product.price)}</span>
-          )}
-        </div>
-        {/* Price per gram */}
-        {product.net_weight_grams && product.net_weight_grams > 0 && !activePres && (
-          <p className="text-xs text-muted-foreground mb-1">
-            {formatPrice(Math.round(displayPrice / product.net_weight_grams))}/g
-            {product.net_weight_grams >= 1000
-              ? ` · ${formatPrice(Math.round((displayPrice / product.net_weight_grams) * 1000))}/kg`
-              : null}
-          </p>
-        )}
-        {activePres && activePres.weight_kg && (
-          <p className="text-xs text-muted-foreground mb-1">
-            {activePres.weight_kg} kg · ×{activePres.conversion_factor} unidades
-          </p>
-        )}
-        {businessType && businessType !== "detal" && displayPrice < product.price && !activePres && (
-          <p className="text-xs text-accent font-medium mb-3">Precio {businessType.toUpperCase()}</p>
-        )}
-
-        {/* Presentation selector */}
-        {presentations && presentations.length > 0 && (
-          <div className="mb-4">
-            <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
-              <Box size={12} /> Presentación de venta
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedPresentation(null)}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors border ${!selectedPresentation ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
-              >
-                {product.base_unit || "Unidad"} · {formatPrice(userPrice)}
+          {/* Arrows */}
+          {allMedia.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); goMedia(-1); }} className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center z-10">
+                <ChevronLeft size={14} className="text-foreground" />
               </button>
-              {presentations.map((p: any) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedPresentation(p.id)}
-                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors border ${selectedPresentation === p.id ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
-                >
-                  {p.name} · {formatPrice(p.price)}
-                </button>
+              <button onClick={(e) => { e.stopPropagation(); goMedia(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center z-10">
+                <ChevronRight size={14} className="text-foreground" />
+              </button>
+            </>
+          )}
+
+          {discount > 0 && (
+            <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full z-10">-{discount}%</span>
+          )}
+          {outOfStock && (
+            <div className="absolute inset-0 bg-foreground/30 flex items-center justify-center z-10">
+              <span className="bg-card text-foreground text-xs font-heading font-bold px-3 py-1 rounded-full">Agotado</span>
+            </div>
+          )}
+
+          {/* Dots */}
+          {allMedia.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+              {allMedia.map((_, i) => (
+                <button key={i} onClick={(e) => { e.stopPropagation(); setActiveMediaIdx(i); }}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${i === activeMediaIdx ? "bg-accent w-4" : "bg-card/60"}`} />
               ))}
             </div>
-          </div>
-        )}
-
-        <div className="mb-4">
-          <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} />
-        </div>
-
-        {/* Tabs: Descripción / Ficha Técnica */}
-        <div className="flex gap-1 mb-3 bg-muted rounded-lg p-1">
-          <button onClick={() => setActiveTab("descripcion")}
-            className={`flex-1 text-xs font-heading font-semibold py-2 rounded-md transition-colors ${activeTab === "descripcion" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}>
-            Descripción
-          </button>
-          {pdfFiles.length > 0 && (
-            <button onClick={() => setActiveTab("ficha")}
-              className={`flex-1 text-xs font-heading font-semibold py-2 rounded-md transition-colors flex items-center justify-center gap-1 ${activeTab === "ficha" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}>
-              <FileText size={12} /> Ficha Técnica
-            </button>
           )}
         </div>
 
-        {activeTab === "descripcion" && product.description && (
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground leading-relaxed" style={{ textWrap: "pretty" as any }}>{product.description}</p>
-          </div>
-        )}
-
-        {activeTab === "ficha" && pdfFiles.length > 0 && (
-          <div className="mb-4 space-y-2">
-            {pdfFiles.map((pdf: any) => (
-              <a key={pdf.id} href={pdf.media_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border hover:border-accent transition-colors">
-                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                  <FileText size={18} className="text-destructive" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{pdf.title || "Ficha Técnica"}</p>
-                  <p className="text-[11px] text-muted-foreground">PDF · Toca para ver</p>
-                </div>
-                <Download size={16} className="text-muted-foreground flex-shrink-0" />
-              </a>
+        {/* Thumbnails */}
+        {allMedia.length > 1 && (
+          <div className="flex gap-1.5 px-3 py-2 overflow-x-auto scrollbar-hide">
+            {allMedia.map((m, i) => (
+              <button key={i} onClick={() => setActiveMediaIdx(i)}
+                className={`relative w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-colors ${i === activeMediaIdx ? "border-accent" : "border-transparent"}`}>
+                {m.type === "image" ? (
+                  <img src={m.url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <Play size={12} className="text-muted-foreground" />
+                  </div>
+                )}
+              </button>
             ))}
           </div>
         )}
 
-        <div className="bg-card rounded-xl p-3 flex items-center justify-between" style={{ boxShadow: "var(--shadow-card)" }}>
-          <span className="text-sm text-muted-foreground">
-            {outOfStock ? (
-              <span className="text-destructive font-medium">Sin stock disponible</span>
-            ) : (
-              <>Stock: <span className="font-medium text-foreground">{product.stock} disponibles</span></>
+        {/* Product Info */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="px-4 pt-3 pb-4"
+        >
+          {/* Badges */}
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {product.is_fresh && <span className="badge-fresh text-[10px]">🌿 Fresco</span>}
+            {product.is_wholesale && <span className="badge-wholesale text-[10px]">💰 Mayorista</span>}
+            {(product as any).categories?.name && (
+              <span className="text-[10px] bg-muted text-muted-foreground rounded-full px-2 py-0.5">{(product as any).categories.name}</span>
             )}
-          </span>
-        </div>
-      </motion.div>
+          </div>
 
-      {/* Bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
-        {/* Cart summary strip */}
+          <h1 className="text-lg font-heading font-bold text-foreground leading-tight mb-0.5" style={{ textWrap: "balance" as any }}>{product.name}</h1>
+          <p className="text-xs text-muted-foreground mb-1">
+            {product.unit_quantity && product.unit_measure
+              ? `${product.unit_quantity} ${product.unit_measure}`
+              : product.unit}
+          </p>
+
+          {/* Price row */}
+          <div className="flex items-baseline gap-2 mb-0.5">
+            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(displayPrice)}</span>
+            {(product.original_price || displayPrice < product.price) && (
+              <span className="text-sm text-muted-foreground line-through">{formatPrice(product.original_price || product.price)}</span>
+            )}
+          </div>
+
+          {product.net_weight_grams && product.net_weight_grams > 0 && !activePres && (
+            <p className="text-[11px] text-muted-foreground mb-0.5">
+              {formatPrice(Math.round(displayPrice / product.net_weight_grams))}/g
+              {product.net_weight_grams >= 1000
+                ? ` · ${formatPrice(Math.round((displayPrice / product.net_weight_grams) * 1000))}/kg`
+                : null}
+            </p>
+          )}
+          {activePres && activePres.weight_kg && (
+            <p className="text-[11px] text-muted-foreground mb-0.5">
+              {activePres.weight_kg} kg · ×{activePres.conversion_factor} unidades
+            </p>
+          )}
+          {businessType && businessType !== "detal" && displayPrice < product.price && !activePres && (
+            <p className="text-[11px] text-accent font-medium mb-2">Precio {businessType.toUpperCase()}</p>
+          )}
+
+          {/* Presentations */}
+          {presentations && presentations.length > 0 && (
+            <div className="mb-3">
+              <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
+                <Box size={11} /> Presentación
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setSelectedPresentation(null)}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors border ${!selectedPresentation ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+                >
+                  {product.base_unit || "Unidad"} · {formatPrice(userPrice)}
+                </button>
+                {presentations.map((p: any) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedPresentation(p.id)}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors border ${selectedPresentation === p.id ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+                  >
+                    {p.name} · {formatPrice(p.price)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} />
+
+          {/* Tabs */}
+          <div className="flex gap-1 mt-3 mb-2 bg-muted rounded-lg p-0.5">
+            <button onClick={() => setActiveTab("descripcion")}
+              className={`flex-1 text-[11px] font-heading font-semibold py-1.5 rounded-md transition-colors ${activeTab === "descripcion" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}>
+              Descripción
+            </button>
+            {pdfFiles.length > 0 && (
+              <button onClick={() => setActiveTab("ficha")}
+                className={`flex-1 text-[11px] font-heading font-semibold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1 ${activeTab === "ficha" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}>
+                <FileText size={11} /> Ficha
+              </button>
+            )}
+          </div>
+
+          {activeTab === "descripcion" && product.description && (
+            <p className="text-xs text-muted-foreground leading-relaxed mb-3" style={{ textWrap: "pretty" as any }}>{product.description}</p>
+          )}
+
+          {activeTab === "ficha" && pdfFiles.length > 0 && (
+            <div className="mb-3 space-y-1.5">
+              {pdfFiles.map((pdf: any) => (
+                <a key={pdf.id} href={pdf.media_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-card rounded-lg p-2.5 border border-border hover:border-accent transition-colors">
+                  <div className="w-8 h-8 rounded-md bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                    <FileText size={14} className="text-destructive" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate">{pdf.title || "Ficha Técnica"}</p>
+                    <p className="text-[10px] text-muted-foreground">PDF</p>
+                  </div>
+                  <Download size={14} className="text-muted-foreground flex-shrink-0" />
+                </a>
+              ))}
+            </div>
+          )}
+
+          {/* Stock */}
+          <div className="bg-muted/50 rounded-lg px-3 py-2 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {outOfStock ? (
+                <span className="text-destructive font-medium">Sin stock</span>
+              ) : (
+                <>Stock: <span className="font-medium text-foreground">{product.stock}</span></>
+              )}
+            </span>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Fixed Bottom Bar */}
+      <div className="flex-shrink-0 bg-card border-t border-border z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
         {totalItems > 0 && (
-          <div className="bg-accent/10 border-b border-accent/20 px-4 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <ShoppingCart size={14} className="text-accent" />
-              <span className="text-muted-foreground">{totalItems} {totalItems === 1 ? "producto" : "productos"}</span>
+          <div className="bg-accent/10 border-b border-accent/20 px-4 py-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs">
+              <ShoppingCart size={12} className="text-accent" />
+              <span className="text-muted-foreground">{totalItems} {totalItems === 1 ? "item" : "items"}</span>
               <span className="font-heading font-bold text-foreground">{formatPrice(totalPrice)}</span>
             </div>
             <button
               onClick={() => navigate("/carrito")}
-              className="text-xs font-semibold text-accent flex items-center gap-1 active:scale-95 transition-transform"
+              className="text-[11px] font-semibold text-accent flex items-center gap-1 active:scale-95 transition-transform"
             >
-              <Eye size={14} /> Ver Carrito
+              <Eye size={12} /> Ver
             </button>
           </div>
         )}
-        <div className="px-4 py-3 flex items-center gap-3">
-          <div className="flex items-center gap-3 bg-muted rounded-xl px-2">
-            <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-9 h-9 flex items-center justify-center text-foreground active:scale-90 transition-transform">
-              <Minus size={16} />
+        <div className="px-3 py-2.5 flex items-center gap-2.5">
+          <div className="flex items-center gap-2 bg-muted rounded-xl px-1.5">
+            <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-8 h-8 flex items-center justify-center text-foreground active:scale-90 transition-transform">
+              <Minus size={14} />
             </button>
-            <span className="text-sm font-semibold w-6 text-center tabular-nums">{qty}</span>
-            <button onClick={() => setQty((prev) => Math.min(prev + 1, product.stock || 999))} className="w-9 h-9 flex items-center justify-center text-foreground active:scale-90 transition-transform">
-              <Plus size={16} />
+            <span className="text-sm font-semibold w-5 text-center tabular-nums">{qty}</span>
+            <button onClick={() => setQty((prev) => Math.min(prev + 1, product.stock || 999))} className="w-8 h-8 flex items-center justify-center text-foreground active:scale-90 transition-transform">
+              <Plus size={14} />
             </button>
           </div>
           <button
             onClick={handleAdd}
             disabled={outOfStock}
-            className={`flex-1 py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-heading font-semibold transition-all active:scale-[0.97] ${
+            className={`flex-1 py-2.5 text-sm flex items-center justify-center gap-2 rounded-xl font-heading font-semibold transition-all active:scale-[0.97] ${
               added
                 ? "bg-accent text-accent-foreground"
                 : outOfStock
@@ -419,9 +426,9 @@ const ProductoDetalle = () => {
             }`}
           >
             {added ? (
-              <><CheckCircle2 size={18} /> ¡Agregado!</>
+              <><CheckCircle2 size={16} /> ¡Agregado!</>
             ) : (
-              <><ShoppingCart size={18} /> Agregar {formatPrice(displayPrice * qty)}</>
+              <><ShoppingCart size={16} /> Agregar {formatPrice(displayPrice * qty)}</>
             )}
           </button>
         </div>
