@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { useQuery, useQueryClient as useQC } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy } from "lucide-react";
 import MarginCalculator from "./MarginCalculator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -147,6 +147,26 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       net_weight_grams: p.net_weight_grams ? String(p.net_weight_grams) : "",
     });
     setEditing(p.id);
+  };
+
+  const duplicateProduct = (p: any) => {
+    setForm({
+      name: `${p.name} (copia)`, description: p.description || "", price: String(p.price),
+      original_price: p.original_price ? String(p.original_price) : "",
+      price_wholesale: p.price_wholesale ? String(p.price_wholesale) : "",
+      price_distributor: p.price_distributor ? String(p.price_distributor) : "",
+      cost_price: p.cost_price ? String(p.cost_price) : "",
+      stock: String(p.stock), unit: p.unit || "unidad", category_id: p.category_id || "",
+      is_fresh: p.is_fresh, is_wholesale: p.is_wholesale, is_active: true, image_url: p.image_url || "",
+      slug: "", meta_title: "", meta_description: "",
+      brand: p.brand || "", sku: "", gtin: "", weight: p.weight || "",
+      tags: (p.tags || []).join(", "),
+      unit_quantity: p.unit_quantity ? String(p.unit_quantity) : "",
+      unit_measure: p.unit_measure || "",
+      net_weight_grams: p.net_weight_grams ? String(p.net_weight_grams) : "",
+    });
+    setEditing("new");
+    toast.info("Producto duplicado — edita y guarda");
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -349,9 +369,23 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
 
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.is_fresh} onChange={(e) => setForm({ ...form, is_fresh: e.target.checked })} className="rounded border-border" /> Fresco</label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.is_wholesale} onChange={(e) => setForm({ ...form, is_wholesale: e.target.checked })} className="rounded border-border" /> Mayorista</label>
+          {/* Product attributes as switches */}
+          <div className="space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Atributos</p>
+            <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🌿</span>
+                <span className="text-sm">Producto Fresco</span>
+              </div>
+              <Switch checked={form.is_fresh} onCheckedChange={(v) => setForm({ ...form, is_fresh: v })} />
+            </div>
+            <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base">📦</span>
+                <span className="text-sm">Mayorista</span>
+              </div>
+              <Switch checked={form.is_wholesale} onCheckedChange={(v) => setForm({ ...form, is_wholesale: v })} />
+            </div>
           </div>
 
           {/* Unit details */}
@@ -468,6 +502,9 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
               checked={p.is_active !== false}
               onCheckedChange={() => toggleVisibility(p.id, p.is_active !== false)}
             />
+            <button onClick={() => duplicateProduct(p)} className="text-muted-foreground hover:text-secondary transition-colors" title="Duplicar">
+              <Copy size={15} />
+            </button>
             <button onClick={() => editProduct(p)} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
             <button onClick={() => deleteProduct(p.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
