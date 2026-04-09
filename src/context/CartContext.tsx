@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Product = Tables<"products">;
@@ -6,9 +6,7 @@ type Product = Tables<"products">;
 export interface CartItem {
   product: Product;
   quantity: number;
-  /** The resolved price per unit (accounts for user tier or presentation) */
   unitPrice: number;
-  /** Optional presentation info */
   presentationId?: string;
   presentationName?: string;
 }
@@ -27,15 +25,61 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const STORAGE_KEY = "surteya_cart";
+const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 /** Unique key for a cart line */
 const lineKey = (productId: string, presentationId?: string) =>
   presentationId ? `${productId}__${presentationId}` : productId;
 
 const getLineKey = (item: CartItem) => lineKey(item.product.id, item.presentationId);
 
+/* ── persistence helpers ── */
+function saveCart(items: CartItem[]) {
+  try {
+    const payload = { items, ts: Date.now() };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch { /* quota exceeded – ignore */ }
+}
+
+function loadCart(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const { items, ts } = JSON.parse(raw) as { items: CartItem[]; ts: number };
+    if (Date.now() - ts > TTL_MS) {
+      localStorage.removeItem(STORAGE_KEY);
+      return [];
+    }
+    return items ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => loadCart());
   const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
+  // Persist whenever items change
+  useEffect(() => {
+    saveCart(items);
+  }, [items]);
+
+  // Warn before leaving the page when cart has items
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (itemsRef.current.length > 0) {
+        e.preventDefault();
+        // Most browsers show a generic message; setting returnValue is required
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
 
   const addItem = useCallback((product: Product, quantity = 1, unitPrice?: number, presentation?: { id: string; name: string }) => {
     const price = unitPrice ?? product.price;
@@ -76,7 +120,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }, []);
 
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(() => {
+    setItems([]);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
