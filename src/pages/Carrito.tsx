@@ -225,6 +225,7 @@ const Carrito = () => {
         preferred_delivery_date: preferredDate ? format(preferredDate, "yyyy-MM-dd") : null,
         preferred_time_slot: timeSlot,
         payment_method: paymentMethod,
+        geo_location: geoLocation ? `${geoLocation.lat},${geoLocation.lng}` : null,
       };
 
       const { data, error } = await supabase.functions.invoke("send-whatsapp-order", {
