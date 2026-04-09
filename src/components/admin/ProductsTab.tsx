@@ -10,6 +10,109 @@ import { toast } from "sonner";
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
+/* ── Multi-image gallery manager per product ── */
+const ProductMediaGallery = ({ productId, queryClient }: { productId: string; queryClient: any }) => {
+  const { upload, uploading } = useImageUpload();
+  const { data: mediaItems, isLoading } = useQuery({
+    queryKey: ["product-media-admin", productId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_media")
+        .select("*")
+        .eq("product_id", productId)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!productId,
+  });
+
+  const handleUploadMultiple = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const currentMax = mediaItems?.length || 0;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const url = await upload(file, "products");
+      if (url) {
+        await supabase.from("product_media").insert({
+          product_id: productId,
+          media_type: "image",
+          media_url: url,
+          sort_order: currentMax + i,
+        });
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["product-media-admin", productId] });
+    queryClient.invalidateQueries({ queryKey: ["product-media", productId] });
+    toast.success("Imágenes agregadas");
+    e.target.value = "";
+  };
+
+  const deleteMedia = async (mediaId: string) => {
+    await supabase.from("product_media").delete().eq("id", mediaId);
+    queryClient.invalidateQueries({ queryKey: ["product-media-admin", productId] });
+    queryClient.invalidateQueries({ queryKey: ["product-media", productId] });
+    toast.success("Imagen eliminada");
+  };
+
+  const moveMedia = async (mediaId: string, direction: "up" | "down") => {
+    if (!mediaItems) return;
+    const idx = mediaItems.findIndex((m: any) => m.id === mediaId);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= mediaItems.length) return;
+    const current = mediaItems[idx];
+    const swap = mediaItems[swapIdx];
+    await Promise.all([
+      supabase.from("product_media").update({ sort_order: swap.sort_order }).eq("id", current.id),
+      supabase.from("product_media").update({ sort_order: current.sort_order }).eq("id", swap.id),
+    ]);
+    queryClient.invalidateQueries({ queryKey: ["product-media-admin", productId] });
+  };
+
+  return (
+    <div className="space-y-2 border-t border-border pt-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+          <Images size={13} /> Galería de Imágenes
+        </p>
+        <label className="flex items-center gap-1 cursor-pointer text-xs text-accent font-medium hover:underline">
+          {uploading ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+          Agregar
+          <input type="file" accept="image/*" multiple onChange={handleUploadMultiple} className="hidden" disabled={uploading} />
+        </label>
+      </div>
+      {isLoading ? (
+        <div className="flex gap-2">
+          {[1, 2, 3].map((i) => <div key={i} className="w-16 h-16 rounded-lg bg-muted animate-pulse" />)}
+        </div>
+      ) : mediaItems && mediaItems.length > 0 ? (
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {mediaItems.map((m: any, i: number) => (
+            <div key={m.id} className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border group">
+              <img src={m.media_url} alt={m.title || ""} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                {i > 0 && (
+                  <button onClick={() => moveMedia(m.id, "up")} className="w-5 h-5 rounded bg-card/80 flex items-center justify-center text-[10px]">◀</button>
+                )}
+                <button onClick={() => deleteMedia(m.id)} className="w-5 h-5 rounded bg-destructive/80 flex items-center justify-center">
+                  <X size={10} className="text-destructive-foreground" />
+                </button>
+                {i < mediaItems.length - 1 && (
+                  <button onClick={() => moveMedia(m.id, "down")} className="w-5 h-5 rounded bg-card/80 flex items-center justify-center text-[10px]">▶</button>
+                )}
+              </div>
+              <span className="absolute bottom-0.5 left-0.5 text-[8px] bg-card/70 text-foreground px-1 rounded font-mono">{i + 1}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[11px] text-muted-foreground">Sin imágenes adicionales. Agrega fotos para la galería del producto.</p>
+      )}
+    </div>
+  );
+};
+
 const ProductsTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
