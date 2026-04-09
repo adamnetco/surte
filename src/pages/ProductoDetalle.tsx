@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
-import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download } from "lucide-react";
+import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye } from "lucide-react";
 import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
 import { motion, AnimatePresence } from "framer-motion";
@@ -327,33 +327,51 @@ const ProductoDetalle = () => {
       </motion.div>
 
       {/* Bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 z-40 flex items-center gap-3" style={{ boxShadow: "var(--shadow-nav)" }}>
-        <div className="flex items-center gap-3 bg-muted rounded-xl px-2">
-          <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-9 h-9 flex items-center justify-center text-foreground active:scale-90 transition-transform">
-            <Minus size={16} />
-          </button>
-          <span className="text-sm font-semibold w-6 text-center tabular-nums">{qty}</span>
-          <button onClick={() => setQty((prev) => Math.min(prev + 1, product.stock || 999))} className="w-9 h-9 flex items-center justify-center text-foreground active:scale-90 transition-transform">
-            <Plus size={16} />
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
+        {/* Cart summary strip */}
+        {totalItems > 0 && (
+          <div className="bg-accent/10 border-b border-accent/20 px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <ShoppingCart size={14} className="text-accent" />
+              <span className="text-muted-foreground">{totalItems} {totalItems === 1 ? "producto" : "productos"}</span>
+              <span className="font-heading font-bold text-foreground">{formatPrice(totalPrice)}</span>
+            </div>
+            <button
+              onClick={() => navigate("/carrito")}
+              className="text-xs font-semibold text-accent flex items-center gap-1 active:scale-95 transition-transform"
+            >
+              <Eye size={14} /> Ver Carrito
+            </button>
+          </div>
+        )}
+        <div className="px-4 py-3 flex items-center gap-3">
+          <div className="flex items-center gap-3 bg-muted rounded-xl px-2">
+            <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-9 h-9 flex items-center justify-center text-foreground active:scale-90 transition-transform">
+              <Minus size={16} />
+            </button>
+            <span className="text-sm font-semibold w-6 text-center tabular-nums">{qty}</span>
+            <button onClick={() => setQty((prev) => Math.min(prev + 1, product.stock || 999))} className="w-9 h-9 flex items-center justify-center text-foreground active:scale-90 transition-transform">
+              <Plus size={16} />
+            </button>
+          </div>
+          <button
+            onClick={handleAdd}
+            disabled={outOfStock}
+            className={`flex-1 py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-heading font-semibold transition-all active:scale-[0.97] ${
+              added
+                ? "bg-accent text-accent-foreground"
+                : outOfStock
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : "btn-surte"
+            }`}
+          >
+            {added ? (
+              <><CheckCircle2 size={18} /> ¡Agregado!</>
+            ) : (
+              <><ShoppingCart size={18} /> Agregar {formatPrice(userPrice * qty)}</>
+            )}
           </button>
         </div>
-        <button
-          onClick={handleAdd}
-          disabled={outOfStock}
-          className={`flex-1 py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-heading font-semibold transition-all active:scale-[0.97] ${
-            added
-              ? "bg-accent text-accent-foreground"
-              : outOfStock
-              ? "bg-muted text-muted-foreground cursor-not-allowed"
-              : "btn-surte"
-          }`}
-        >
-          {added ? (
-            <><CheckCircle2 size={18} /> ¡Agregado!</>
-          ) : (
-            <><ShoppingCart size={18} /> Agregar {formatPrice(userPrice * qty)}</>
-          )}
-        </button>
       </div>
 
       {/* Lightbox */}
