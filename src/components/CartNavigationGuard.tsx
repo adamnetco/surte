@@ -1,5 +1,5 @@
-import { useEffect, useCallback, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useCallback, useRef, useState } from "react";
+import { useLocation, useNavigate, UNSAFE_NavigationContext } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import {
   AlertDialog,
@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import React, { useContext } from "react";
 
 const ALLOWED_PATHS = ["/carrito", "/pedido"];
 
@@ -21,9 +21,41 @@ const CartNavigationGuard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [pendingPath, setPendingPath] = useState<string | null>(null);
-  const originalPush = useRef<typeof navigate | null>(null);
+  const navContext = useContext(UNSAFE_NavigationContext);
+  const totalItemsRef = useRef(totalItems);
+  totalItemsRef.current = totalItems;
+  const locationRef = useRef(location.pathname);
+  locationRef.current = location.pathname;
 
-  // Intercept link clicks to show confirmation
+  // Intercept programmatic navigation (navigate() calls)
+  useEffect(() => {
+    const navigator = navContext.navigator as any;
+    const originalPush = navigator.push.bind(navigator);
+    const originalReplace = navigator.replace.bind(navigator);
+
+    const intercept = (original: Function, to: any, ...args: any[]) => {
+      const path = typeof to === "string" ? to : to?.pathname || "";
+      if (
+        totalItemsRef.current > 0 &&
+        path !== locationRef.current &&
+        !ALLOWED_PATHS.some((p) => path.startsWith(p))
+      ) {
+        setPendingPath(path);
+        return;
+      }
+      return original(to, ...args);
+    };
+
+    navigator.push = (to: any, ...args: any[]) => intercept(originalPush, to, ...args);
+    navigator.replace = (to: any, ...args: any[]) => intercept(originalReplace, to, ...args);
+
+    return () => {
+      navigator.push = originalPush;
+      navigator.replace = originalReplace;
+    };
+  }, [navContext]);
+
+  // Also intercept <a> link clicks
   useEffect(() => {
     if (totalItems === 0) return;
 
@@ -46,8 +78,10 @@ const CartNavigationGuard = () => {
 
   const handleProceed = useCallback(() => {
     if (pendingPath) {
-      navigate(pendingPath);
+      const path = pendingPath;
       setPendingPath(null);
+      // Use setTimeout to ensure state is cleared before navigating
+      setTimeout(() => navigate(path), 0);
     }
   }, [pendingPath, navigate]);
 
