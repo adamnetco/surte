@@ -20,7 +20,7 @@ const formatPrice = (price: number) =>
 const ProductoDetalle = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const { addItem, totalItems, totalPrice } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { data: profile } = useProfile();
   const { data: appSettings } = useAppSettings();
