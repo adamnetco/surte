@@ -12,7 +12,7 @@ import { useProducts, useAppSettings } from "@/hooks/useStore";
 import { Package } from "lucide-react";
 import { motion } from "framer-motion";
 
-const BASE_URL = "https://surteya.com";
+const BASE_URL = "https://surteya.lovable.app";
 
 const LandingPage = () => {
   const { slug } = useParams<{ slug: string }>();

@@ -1,4 +1,4 @@
-import { Heart, ShoppingCart, Plus } from "lucide-react";
+import { Heart, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -32,11 +32,21 @@ const ProductCard = ({ product }: { product: Product }) => {
 
   const imgSrc = product.image_url || appSettings?.default_product_image || "";
 
+  // Calculate price per gram if net_weight_grams is available
+  const pricePerGram = product.net_weight_grams && product.net_weight_grams > 0
+    ? userPrice / product.net_weight_grams
+    : null;
+
+  // Unit info display
+  const unitInfo = product.unit_quantity && product.unit_measure
+    ? `${product.unit_quantity} ${product.unit_measure}`
+    : product.unit;
+
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (outOfStock) return;
     addItem(product, 1, userPrice);
-    toast.success(`${product.name} agregado`, { duration: 1500 });
+    toast.success(`${product.name} agregado`);
   };
 
   const handleFav = (e: React.MouseEvent) => {
@@ -96,7 +106,7 @@ const ProductCard = ({ product }: { product: Product }) => {
 
       {/* Info */}
       <div className="p-2.5 flex flex-col flex-1">
-        <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">{product.unit}</p>
+        <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">{unitInfo}</p>
         <h3 className="text-[13px] font-medium text-foreground leading-tight mb-auto line-clamp-2">{product.name}</h3>
         <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} compact />
         <div className="flex items-end justify-between pt-1.5 mt-1">
@@ -105,6 +115,11 @@ const ProductCard = ({ product }: { product: Product }) => {
             {(product.original_price || userPrice < product.price) && (
               <span className="block text-[10px] text-muted-foreground line-through">
                 {formatPrice(product.original_price || product.price)}
+              </span>
+            )}
+            {pricePerGram && (
+              <span className="block text-[9px] text-muted-foreground">
+                {formatPrice(Math.round(pricePerGram))}/g
               </span>
             )}
             {businessType && businessType !== "detal" && userPrice < product.price && (
