@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useBlocker } from "react-router-dom";
+import { useEffect, useCallback, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import {
   AlertDialog,
@@ -12,31 +12,51 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ShoppingCart } from "lucide-react";
+import { useState } from "react";
 
-/** Pages where we never block navigation (user is completing the purchase flow) */
 const ALLOWED_PATHS = ["/carrito", "/pedido"];
 
 const CartNavigationGuard = () => {
   const { totalItems } = useCart();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const originalPush = useRef<typeof navigate | null>(null);
 
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
-    if (totalItems === 0) return false;
-    // Don't block if going to checkout-related pages
-    if (ALLOWED_PATHS.some((p) => nextLocation.pathname.startsWith(p))) return false;
-    // Don't block same-page hash/search changes
-    if (currentLocation.pathname === nextLocation.pathname) return false;
-    return true;
-  });
-
-  // Reset blocker if items become 0 while dialog is open
+  // Intercept link clicks to show confirmation
   useEffect(() => {
-    if (totalItems === 0 && blocker.state === "blocked") {
-      blocker.proceed?.();
+    if (totalItems === 0) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest("a[href]");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("http") || href.startsWith("mailto") || href.startsWith("tel")) return;
+      if (ALLOWED_PATHS.some((p) => href.startsWith(p))) return;
+      if (href === location.pathname) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingPath(href);
+    };
+
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
+  }, [totalItems, location.pathname]);
+
+  const handleProceed = useCallback(() => {
+    if (pendingPath) {
+      navigate(pendingPath);
+      setPendingPath(null);
     }
-  }, [totalItems, blocker]);
+  }, [pendingPath, navigate]);
+
+  const handleCancel = useCallback(() => {
+    setPendingPath(null);
+  }, []);
 
   return (
-    <AlertDialog open={blocker.state === "blocked"}>
+    <AlertDialog open={!!pendingPath}>
       <AlertDialogContent className="max-w-[90vw] rounded-xl sm:max-w-sm">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-base font-heading">
@@ -44,18 +64,15 @@ const CartNavigationGuard = () => {
             Tienes {totalItems} {totalItems === 1 ? "producto" : "productos"} en el carrito
           </AlertDialogTitle>
           <AlertDialogDescription className="text-sm">
-            Si sales de esta página tu carrito se conservará por 24 horas, pero ¿seguro que deseas salir?
+            Tu carrito se conservará por 24 horas. ¿Seguro que deseas salir de esta página?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-row gap-2">
-          <AlertDialogCancel
-            onClick={() => blocker.reset?.()}
-            className="flex-1 mt-0"
-          >
+          <AlertDialogCancel onClick={handleCancel} className="flex-1 mt-0">
             Quedarme
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => blocker.proceed?.()}
+            onClick={handleProceed}
             className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
           >
             Salir
