@@ -66,6 +66,21 @@ const ProductoDetalle = () => {
     enabled: !!productId,
   });
 
+  const { data: presentations } = useQuery({
+    queryKey: ["product-presentations", productId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_presentations")
+        .select("*")
+        .eq("product_id", productId!)
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!productId,
+  });
+
   // Track view
   useEffect(() => {
     if (product) trackViewProduct(product);
