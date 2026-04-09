@@ -434,7 +434,7 @@ const LandingPagesTab = () => {
               {/* HTML Content Editor */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-medium text-muted-foreground">Contenido HTML</label>
+                  <label className="text-xs font-medium text-muted-foreground">Contenido</label>
                   <div className="flex gap-1">
                     <button
                       onClick={() => setShowSnippets(!showSnippets)}
@@ -443,10 +443,10 @@ const LandingPagesTab = () => {
                       <LayoutTemplate size={12} /> Snippets {showSnippets ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
                     </button>
                     <button
-                      onClick={() => setPreviewHtml(!previewHtml)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-colors ${previewHtml ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setEditorTab(editorTab === "visual" ? "code" : "visual")}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-colors ${editorTab === "code" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
                     >
-                      <Eye size={12} /> {previewHtml ? "Código" : "Preview"}
+                      <Code size={12} /> {editorTab === "code" ? "Visual" : "HTML"}
                     </button>
                   </div>
                 </div>
@@ -467,10 +467,11 @@ const LandingPagesTab = () => {
                   </div>
                 )}
 
-                {previewHtml ? (
-                  <div
-                    className="prose prose-sm max-w-none border border-border rounded-xl p-4 min-h-[200px] bg-background"
-                    dangerouslySetInnerHTML={{ __html: editing.body_html || "<p class='text-muted-foreground'>Sin contenido...</p>" }}
+                {editorTab === "visual" ? (
+                  <TiptapEditor
+                    content={editing.body_html || ""}
+                    onChange={(html) => setEditing(prev => prev ? { ...prev, body_html: html } : prev)}
+                    placeholder="Escribe tu contenido SEO aquí..."
                   />
                 ) : (
                   <Textarea
