@@ -279,9 +279,11 @@ const Carrito = () => {
         ) : (
           <>
             <AnimatePresence>
-              {items.map((item) => (
+              {items.map((item) => {
+                const lineId = `${item.product.id}${item.presentationId ? `__${item.presentationId}` : ""}`;
+                return (
                 <motion.div
-                  key={item.product.id}
+                  key={lineId}
                   layout
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -300,20 +302,22 @@ const Carrito = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-medium text-foreground truncate">{item.product.name}</h3>
-                    <p className="text-xs text-muted-foreground">{item.product.unit} · {formatPrice(item.unitPrice)} c/u</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.presentationName || item.product.unit} · {formatPrice(item.unitPrice)} c/u
+                    </p>
                     <p className="text-sm font-heading font-bold text-foreground mt-0.5">
                       {formatPrice(item.unitPrice * item.quantity)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground">
+                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.presentationId)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground">
                       <Minus size={14} />
                     </button>
                     <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
                     <button
                       onClick={() => {
                         if (item.quantity < item.product.stock) {
-                          updateQuantity(item.product.id, item.quantity + 1);
+                          updateQuantity(item.product.id, item.quantity + 1, item.presentationId);
                         } else {
                           toast.error(`Stock máximo: ${item.product.stock}`);
                         }
@@ -322,12 +326,13 @@ const Carrito = () => {
                     >
                       <Plus size={14} />
                     </button>
-                    <button onClick={() => removeItem(item.product.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1">
+                    <button onClick={() => removeItem(item.product.id, item.presentationId)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1">
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </AnimatePresence>
 
             {!meetsMinimum && (
