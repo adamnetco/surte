@@ -716,7 +716,7 @@ const LandingPagesTab = () => {
                   <button onClick={() => handleDuplicate(p)} className="p-1.5 hover:bg-muted rounded-lg" title="Duplicar">
                     <Copy size={14} />
                   </button>
-                  <button onClick={() => setEditing(p)} className="p-1.5 hover:bg-muted rounded-lg">
+                  <button onClick={() => { setEditing(p); loadLinkedProducts(p.id); }} className="p-1.5 hover:bg-muted rounded-lg">
                     <Pencil size={14} />
                   </button>
                   <button onClick={() => handleDelete(p.id)} className="p-1.5 hover:bg-destructive/10 text-destructive rounded-lg">
