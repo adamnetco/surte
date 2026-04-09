@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
-import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye } from "lucide-react";
+import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye, Box } from "lucide-react";
 import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,6 +30,7 @@ const ProductoDetalle = () => {
   const [activeMediaIdx, setActiveMediaIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"descripcion" | "ficha">("descripcion");
+  const [selectedPresentation, setSelectedPresentation] = useState<string | null>(null);
 
   // Support both UUID and slug
   const isUuid = id && /^[0-9a-f]{8}-/.test(id);
@@ -58,6 +59,21 @@ const ProductoDetalle = () => {
         .from("product_media")
         .select("*")
         .eq("product_id", productId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!productId,
+  });
+
+  const { data: presentations } = useQuery({
+    queryKey: ["product-presentations", productId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_presentations")
+        .select("*")
+        .eq("product_id", productId!)
+        .eq("is_active", true)
         .order("sort_order");
       if (error) throw error;
       return data;
@@ -105,18 +121,24 @@ const ProductoDetalle = () => {
 
   const currentMedia = allMedia[activeMediaIdx] || allMedia[0];
   const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
+
+  // Presentation-aware pricing
+  const activePres = presentations?.find((p: any) => p.id === selectedPresentation);
+  const displayPrice = activePres ? Number(activePres.price) : userPrice;
+
   const discount = product.original_price
-    ? Math.round(((product.original_price - userPrice) / product.original_price) * 100)
+    ? Math.round(((product.original_price - displayPrice) / product.original_price) * 100)
     : 0;
   const outOfStock = product.stock <= 0;
 
   const handleAdd = () => {
     if (outOfStock) return;
     const maxQty = Math.min(qty, product.stock);
-    addItem(product, maxQty, userPrice);
+    const presentation = activePres ? { id: activePres.id, name: activePres.name } : undefined;
+    addItem(product, maxQty, displayPrice, presentation);
     trackAddToCart(product, maxQty);
     setAdded(true);
-    toast.success(`${product.name} agregado al carrito`);
+    toast.success(`${product.name}${activePres ? ` (${activePres.name})` : ""} agregado al carrito`);
     setTimeout(() => setAdded(false), 1500);
   };
 
@@ -255,22 +277,53 @@ const ProductoDetalle = () => {
         </p>
 
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-2xl font-heading font-bold text-foreground">{formatPrice(userPrice)}</span>
-          {(product.original_price || userPrice < product.price) && (
+          <span className="text-2xl font-heading font-bold text-foreground">{formatPrice(displayPrice)}</span>
+          {(product.original_price || displayPrice < product.price) && (
             <span className="text-base text-muted-foreground line-through">{formatPrice(product.original_price || product.price)}</span>
           )}
         </div>
         {/* Price per gram */}
-        {product.net_weight_grams && product.net_weight_grams > 0 && (
+        {product.net_weight_grams && product.net_weight_grams > 0 && !activePres && (
           <p className="text-xs text-muted-foreground mb-1">
-            {formatPrice(Math.round(userPrice / product.net_weight_grams))}/g
+            {formatPrice(Math.round(displayPrice / product.net_weight_grams))}/g
             {product.net_weight_grams >= 1000
-              ? ` · ${formatPrice(Math.round((userPrice / product.net_weight_grams) * 1000))}/kg`
+              ? ` · ${formatPrice(Math.round((displayPrice / product.net_weight_grams) * 1000))}/kg`
               : null}
           </p>
         )}
-        {businessType && businessType !== "detal" && userPrice < product.price && (
+        {activePres && activePres.weight_kg && (
+          <p className="text-xs text-muted-foreground mb-1">
+            {activePres.weight_kg} kg · ×{activePres.conversion_factor} unidades
+          </p>
+        )}
+        {businessType && businessType !== "detal" && displayPrice < product.price && !activePres && (
           <p className="text-xs text-accent font-medium mb-3">Precio {businessType.toUpperCase()}</p>
+        )}
+
+        {/* Presentation selector */}
+        {presentations && presentations.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+              <Box size={12} /> Presentación de venta
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedPresentation(null)}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors border ${!selectedPresentation ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+              >
+                {product.base_unit || "Unidad"} · {formatPrice(userPrice)}
+              </button>
+              {presentations.map((p: any) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedPresentation(p.id)}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors border ${selectedPresentation === p.id ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+                >
+                  {p.name} · {formatPrice(p.price)}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="mb-4">
@@ -368,7 +421,7 @@ const ProductoDetalle = () => {
             {added ? (
               <><CheckCircle2 size={18} /> ¡Agregado!</>
             ) : (
-              <><ShoppingCart size={18} /> Agregar {formatPrice(userPrice * qty)}</>
+              <><ShoppingCart size={18} /> Agregar {formatPrice(displayPrice * qty)}</>
             )}
           </button>
         </div>

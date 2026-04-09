@@ -11,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink, Ticket, X, CheckCircle2, CalendarIcon, Clock, Banknote, CreditCard, Truck } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink, Ticket, X, CheckCircle2, CalendarIcon, Clock, Banknote, CreditCard, Truck, Navigation } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -105,6 +105,8 @@ const Carrito = () => {
   const [preferredDate, setPreferredDate] = useState<Date | undefined>();
   const [timeSlot, setTimeSlot] = useState<"mañana" | "tarde">("mañana");
   const [paymentMethod, setPaymentMethod] = useState<"efectivo" | "transferencia">("efectivo");
+  const [geoLocation, setGeoLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [loadingGeo, setLoadingGeo] = useState(false);
 
   const estimatedDays = settings?.estimated_delivery_days || "1-2";
 
@@ -164,6 +166,26 @@ const Carrito = () => {
 
   const removeCoupon = () => { setCouponDiscount(0); setAppliedCoupon(null); setCouponCode(""); };
 
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Tu navegador no soporta geolocalización");
+      return;
+    }
+    setLoadingGeo(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeoLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLoadingGeo(false);
+        toast.success("Ubicación capturada");
+      },
+      (err) => {
+        setLoadingGeo(false);
+        toast.error("No se pudo obtener la ubicación. Activa los permisos de ubicación.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleFinalize = () => {
     if (!meetsMinimum) return;
     setForm({
@@ -173,6 +195,7 @@ const Carrito = () => {
       notes: "",
       neighborhood_id: "",
     });
+    setGeoLocation(null);
     setShowForm(true);
   };
 
@@ -187,9 +210,11 @@ const Carrito = () => {
       const payload = {
         items: items.map((i) => ({
           product_id: i.product.id,
-          name: i.product.name,
+          name: i.presentationName ? `${i.product.name} (${i.presentationName})` : i.product.name,
           price: i.unitPrice,
           quantity: i.quantity,
+          presentation_id: i.presentationId || null,
+          presentation_name: i.presentationName || null,
         })),
         customer_name: form.name,
         customer_phone: form.phone,
@@ -200,6 +225,7 @@ const Carrito = () => {
         preferred_delivery_date: preferredDate ? format(preferredDate, "yyyy-MM-dd") : null,
         preferred_time_slot: timeSlot,
         payment_method: paymentMethod,
+        geo_location: geoLocation ? `${geoLocation.lat},${geoLocation.lng}` : null,
       };
 
       const { data, error } = await supabase.functions.invoke("send-whatsapp-order", {
@@ -279,9 +305,11 @@ const Carrito = () => {
         ) : (
           <>
             <AnimatePresence>
-              {items.map((item) => (
+              {items.map((item) => {
+                const lineId = `${item.product.id}${item.presentationId ? `__${item.presentationId}` : ""}`;
+                return (
                 <motion.div
-                  key={item.product.id}
+                  key={lineId}
                   layout
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -300,20 +328,22 @@ const Carrito = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-medium text-foreground truncate">{item.product.name}</h3>
-                    <p className="text-xs text-muted-foreground">{item.product.unit} · {formatPrice(item.unitPrice)} c/u</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.presentationName || item.product.unit} · {formatPrice(item.unitPrice)} c/u
+                    </p>
                     <p className="text-sm font-heading font-bold text-foreground mt-0.5">
                       {formatPrice(item.unitPrice * item.quantity)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground">
+                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.presentationId)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground">
                       <Minus size={14} />
                     </button>
                     <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
                     <button
                       onClick={() => {
                         if (item.quantity < item.product.stock) {
-                          updateQuantity(item.product.id, item.quantity + 1);
+                          updateQuantity(item.product.id, item.quantity + 1, item.presentationId);
                         } else {
                           toast.error(`Stock máximo: ${item.product.stock}`);
                         }
@@ -322,12 +352,13 @@ const Carrito = () => {
                     >
                       <Plus size={14} />
                     </button>
-                    <button onClick={() => removeItem(item.product.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1">
+                    <button onClick={() => removeItem(item.product.id, item.presentationId)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1">
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </AnimatePresence>
 
             {!meetsMinimum && (
@@ -354,6 +385,34 @@ const Carrito = () => {
                   <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
                   <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="WhatsApp (ej: 573001234567) *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
                   <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
+                  
+                  {/* Geolocation */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleGetLocation}
+                      disabled={loadingGeo}
+                      className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
+                    >
+                      {loadingGeo ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
+                      {geoLocation ? "Actualizar ubicación" : "Añadir ubicación actual"}
+                    </button>
+                    {geoLocation && (
+                      <a
+                        href={`https://www.google.com/maps?q=${geoLocation.lat},${geoLocation.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-accent font-medium hover:underline"
+                      >
+                        <MapPin size={12} /> Ver en mapa <ExternalLink size={10} />
+                      </a>
+                    )}
+                  </div>
+                  {geoLocation && (
+                    <p className="text-[10px] text-secondary font-medium bg-secondary/10 rounded-lg px-2 py-1">
+                      📍 Ubicación capturada: {geoLocation.lat.toFixed(6)}, {geoLocation.lng.toFixed(6)}
+                    </p>
+                  )}
+
                   {shippingZones && shippingZones.length > 0 && (
                     <NeighborhoodSearch
                       zones={shippingZones}
