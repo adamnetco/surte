@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, Loader2, CheckCircle2, Search, Globe, Tag, BarChart3 } from "lucide-react";
+import { Save, Loader2, CheckCircle2, Search, Globe, Tag, BarChart3, Upload, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useImageUpload } from "@/hooks/useImageUpload";
 
 const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: string; description?: string }[] = [
   { key: "seo_site_name", label: "Nombre del Sitio", placeholder: "SURTÉ YA - Soluciones Alimenticias", group: "general" },
@@ -17,6 +18,7 @@ const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: st
 ];
 
 const SeoTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }) => {
+  const { upload, uploading } = useImageUpload();
   const [values, setValues] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
