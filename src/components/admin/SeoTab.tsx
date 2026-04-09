@@ -99,12 +99,41 @@ const SeoTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }
           {SEO_SETTINGS.filter((s) => s.group === key).map((s) => (
             <div key={s.key} className={`rounded-xl p-2.5 border transition-colors ${dirty.has(s.key) ? "border-accent/50 bg-accent/5" : "border-border bg-card"}`}>
               <label className="text-xs font-medium text-foreground mb-0.5 block">{s.label}</label>
-              <input
-                value={values[s.key] || ""}
-                onChange={(e) => updateValue(s.key, e.target.value)}
-                placeholder={s.placeholder}
-                className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none"
-              />
+              {s.description && <p className="text-[10px] text-muted-foreground mb-1">{s.description}</p>}
+              {s.key === "seo_default_og_image" ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-dashed border-border shrink-0">
+                    {values[s.key] ? (
+                      <img src={values[s.key]} alt="OG" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon size={14} className="text-muted-foreground/40" />
+                    )}
+                  </div>
+                  <input
+                    value={values[s.key] || ""}
+                    onChange={(e) => updateValue(s.key, e.target.value)}
+                    placeholder={s.placeholder}
+                    className="flex-1 bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none"
+                  />
+                  <label className="cursor-pointer bg-accent text-accent-foreground rounded-lg px-2.5 py-1.5 text-[10px] font-medium hover:opacity-90 transition-opacity shrink-0 flex items-center gap-1">
+                    {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                    Subir
+                    <input type="file" accept="image/*" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const url = await upload(file, "seo");
+                      if (url) { updateValue(s.key, url); toast.success("Imagen OG subida"); }
+                    }} className="hidden" disabled={uploading} />
+                  </label>
+                </div>
+              ) : (
+                <input
+                  value={values[s.key] || ""}
+                  onChange={(e) => updateValue(s.key, e.target.value)}
+                  placeholder={s.placeholder}
+                  className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none"
+                />
+              )}
             </div>
           ))}
         </div>
