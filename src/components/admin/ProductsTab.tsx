@@ -179,12 +179,17 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             <div className="flex-1">
               <label className="flex items-center gap-2 cursor-pointer btn-surte text-xs px-3 py-2 w-fit">
                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                {uploading ? "Subiendo..." : "Subir imagen"}
+                {uploading ? "Subiendo..." : "Imagen principal"}
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
               </label>
               <p className="text-[11px] text-muted-foreground mt-1">JPG, PNG, WebP. Máx 5MB</p>
             </div>
           </div>
+
+          {/* Multi-image Gallery Manager */}
+          {editing && editing !== "new" && (
+            <ProductMediaGallery productId={editing} queryClient={queryClient} />
+          )}
 
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descripción" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" rows={2} />
