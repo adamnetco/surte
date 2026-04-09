@@ -491,7 +491,11 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          meta_description: string | null
+          meta_title: string | null
           min_order_amount: number
+          og_image_url: string | null
+          slug: string | null
           updated_at: string
         }
         Insert: {
@@ -499,7 +503,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           min_order_amount?: number
+          og_image_url?: string | null
+          slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -507,7 +515,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           min_order_amount?: number
+          og_image_url?: string | null
+          slug?: string | null
           updated_at?: string
         }
         Relationships: []
