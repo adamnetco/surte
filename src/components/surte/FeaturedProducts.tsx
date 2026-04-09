@@ -1,38 +1,84 @@
-import { useProducts, useAppSettings } from "@/hooks/useStore";
+import { useProducts } from "@/hooks/useStore";
 import ProductCard from "./ProductCard";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-const defaultTabs = [
-  { id: "ofertas", label: "🔥 Ofertas", filter: (p: any) => p.original_price && p.original_price > p.price },
-  { id: "mayorista", label: "💰 Mayorista", filter: (p: any) => p.is_wholesale },
-  { id: "frescos", label: "🌿 Frescos", filter: (p: any) => p.is_fresh },
-];
+interface FeaturedSection {
+  id: string;
+  label: string;
+  emoji: string;
+  filter_type: string;
+  filter_value: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+const useFeaturedSections = () =>
+  useQuery({
+    queryKey: ["featured_sections"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("featured_sections")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data as FeaturedSection[];
+    },
+  });
+
+const applyFilter = (products: any[], section: FeaturedSection) => {
+  switch (section.filter_type) {
+    case "offers":
+      return products.filter((p) => p.original_price && p.original_price > p.price);
+    case "wholesale":
+      return products.filter((p) => p.is_wholesale);
+    case "fresh":
+      return products.filter((p) => p.is_fresh);
+    case "category":
+      return products.filter((p) => p.categories?.slug === section.filter_value);
+    case "tag":
+      return products.filter((p) => p.tags?.some((t: string) => t.toLowerCase() === section.filter_value?.toLowerCase()));
+    case "combo":
+      return products.filter((p) => p.tags?.some((t: string) => ["combo", "pack", "kit"].includes(t.toLowerCase())));
+    default:
+      return products;
+  }
+};
 
 const FeaturedProducts = () => {
   const navigate = useNavigate();
-  const { data: products, isLoading } = useProducts();
-  const { data: settings } = useAppSettings();
-  const [activeTab, setActiveTab] = useState("ofertas");
+  const { data: products, isLoading: productsLoading } = useProducts();
+  const { data: sections = [], isLoading: sectionsLoading } = useFeaturedSections();
+  const [activeTab, setActiveTab] = useState<string | null>(null);
 
-  const tabs = useMemo(() => {
-    return defaultTabs.map((t) => ({
-      ...t,
-      label: settings?.[`featured_label_${t.id}`] || t.label,
-    }));
-  }, [settings]);
+  // Set first tab as default when sections load
+  const effectiveTab = activeTab || sections[0]?.id || null;
 
-  const currentFilter = tabs.find((t) => t.id === activeTab)?.filter || (() => true);
-  const filtered = products?.filter(currentFilter).slice(0, 6) ?? [];
-  const allProducts = products?.slice(0, 6) ?? [];
-  const displayProducts = filtered.length > 0 ? filtered : allProducts;
+  const currentSection = sections.find((s) => s.id === effectiveTab);
+
+  const filtered = useMemo(() => {
+    if (!products || !currentSection) return [];
+    return applyFilter(products, currentSection).slice(0, 8);
+  }, [products, currentSection]);
+
+  const displayProducts = filtered.length > 0 ? filtered : (products?.slice(0, 6) ?? []);
+
+  const isLoading = productsLoading || sectionsLoading;
 
   if (isLoading) {
     return (
       <section className="px-4 py-6">
         <div className="h-6 bg-muted animate-pulse rounded w-32 mb-4" />
+        <div className="flex gap-2 mb-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-8 w-24 bg-muted animate-pulse rounded-full shrink-0" />
+          ))}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="card-product">
@@ -47,6 +93,8 @@ const FeaturedProducts = () => {
       </section>
     );
   }
+
+  if (sections.length === 0) return null;
 
   return (
     <motion.section
@@ -66,38 +114,49 @@ const FeaturedProducts = () => {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
-        {tabs.map((tab) => (
+      {/* Dynamic tabs */}
+      <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-hide pb-0.5">
+        {sections.map((section) => (
           <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors active:scale-[0.97] ${
-              activeTab === tab.id
-                ? "bg-primary text-primary-foreground"
+            key={section.id}
+            onClick={() => setActiveTab(section.id)}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-[0.97] flex items-center gap-1 ${
+              effectiveTab === section.id
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
-            {tab.label}
+            <span className="text-sm leading-none">{section.emoji}</span>
+            {section.label}
           </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {displayProducts.map((p, i) => (
-          <motion.div
-            key={p.id}
-            initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <ProductCard product={p} />
-          </motion.div>
-        ))}
-      </div>
+      {/* Products grid */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={effectiveTab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="grid grid-cols-2 md:grid-cols-3 gap-3"
+        >
+          {displayProducts.map((p, i) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.5, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <ProductCard product={p} />
+            </motion.div>
+          ))}
+        </motion.div>
+      </AnimatePresence>
 
-      {displayProducts.length === 0 && (
+      {filtered.length === 0 && currentSection && (
         <div className="text-center py-8 text-muted-foreground">
           <p className="text-sm">Próximamente productos en esta categoría</p>
         </div>
