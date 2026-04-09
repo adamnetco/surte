@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, ExternalLink, Link as LinkIcon, Eye, EyeOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import SortableList from "./SortableList";
@@ -9,10 +9,10 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 
 const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50" });
+  const [form, setForm] = useState({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50", meta_title: "", meta_description: "", image_url: "" });
   const { upload, uploading } = useImageUpload();
 
-  const resetForm = () => { setForm({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50" }); setEditing(null); };
+  const resetForm = () => { setForm({ name: "", slug: "", icon: "Package", sort_order: "0", color: "#5D7B50", meta_title: "", meta_description: "", image_url: "" }); setEditing(null); };
 
   const saveCategory = async () => {
     if (!form.name) { toast.error("El nombre es obligatorio"); return; }
@@ -40,6 +40,7 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
 
   const toggleActive = async (id: string, current: boolean) => {
     await supabase.from("categories").update({ is_active: !current }).eq("id", id);
+    toast.success(!current ? "Categoría visible" : "Categoría oculta");
     queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     queryClient.invalidateQueries({ queryKey: ["categories"] });
   };
@@ -58,10 +59,23 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
     }
   };
 
+  const copyUrl = (slug: string) => {
+    navigator.clipboard.writeText(`https://surteya.com/hub/categoria/${slug}`);
+    toast.success("URL copiada");
+  };
+
+  const activeCount = categories?.filter((c: any) => c.is_active !== false).length || 0;
+  const inactiveCount = (categories?.length || 0) - activeCount;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-heading font-bold text-lg text-foreground">Categorías ({categories?.length || 0})</h2>
+        <div>
+          <h2 className="font-heading font-bold text-lg text-foreground">Categorías ({categories?.length || 0})</h2>
+          <p className="text-[11px] text-muted-foreground">
+            <span className="text-accent">{activeCount} activas</span> · {inactiveCount} ocultas
+          </p>
+        </div>
         <button onClick={() => { resetForm(); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1"><Plus size={14} /> Nueva</button>
       </div>
       {editing && (
@@ -104,9 +118,6 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
                 </button>
               )}
             </div>
-            <p className="text-[10px] text-muted-foreground">
-              Librería: <strong>lucide-react</strong> — {AVAILABLE_ICONS.length} iconos disponibles. También puedes subir tu propio SVG.
-            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -116,6 +127,7 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
               <span className="text-xs text-muted-foreground">{form.color}</span>
             </div>
           </div>
+
           <div className="flex gap-2">
             <button onClick={saveCategory} className="btn-surte flex-1 text-sm py-2.5 flex items-center justify-center gap-1"><Save size={14} /> Guardar</button>
             <button onClick={resetForm} className="bg-muted rounded-xl px-4 py-2.5 text-sm text-muted-foreground font-medium hover:bg-muted/80 transition-colors">Cancelar</button>
@@ -129,16 +141,25 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
         queryKeys={["admin-categories", "categories"]}
         queryClient={queryClient}
         renderItem={(c) => (
-          <div className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${c.is_active ? "border-border" : "border-border opacity-50"}`}>
+          <div className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-all ${c.is_active ? "border-border" : "border-border opacity-50"}`}>
             <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${c.color || '#ccc'}18` }}>
               <CategoryIcon icon={c.icon} size={20} color={c.color || undefined} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">{c.name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-medium text-foreground">{c.name}</p>
+                {!c.is_active && <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium">OCULTA</span>}
+              </div>
               <p className="text-[11px] text-muted-foreground">/{c.slug}</p>
             </div>
             <Switch checked={c.is_active} onCheckedChange={() => toggleActive(c.id, c.is_active)} />
-            <button onClick={() => { setForm({ name: c.name, slug: c.slug, icon: c.icon || "Package", sort_order: String(c.sort_order || 0), color: c.color || "#5D7B50" }); setEditing(c.id); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
+            <button onClick={() => copyUrl(c.slug)} className="text-muted-foreground hover:text-primary transition-colors" title="Copiar URL">
+              <LinkIcon size={14} />
+            </button>
+            <a href={`/hub/categoria/${c.slug}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Ver página">
+              <ExternalLink size={14} />
+            </a>
+            <button onClick={() => { setForm({ name: c.name, slug: c.slug, icon: c.icon || "Package", sort_order: String(c.sort_order || 0), color: c.color || "#5D7B50", meta_title: "", meta_description: "", image_url: "" }); setEditing(c.id); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
             <button onClick={() => deleteCategory(c.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
         )}

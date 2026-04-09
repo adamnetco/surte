@@ -70,20 +70,37 @@ Deno.serve(async (req) => {
     return new Response(feed, { headers: corsHeaders });
   }
 
-  // Standard Sitemap — fetch all data in parallel
-  const [productsRes, categoriesRes, brandsRes, landingRes] = await Promise.all([
-    supabase.from('products').select('slug, id, updated_at, image_url').eq('is_active', true).order('updated_at', { ascending: false }),
-    supabase.from('categories').select('slug, updated_at').eq('is_active', true),
-    supabase.from('brands').select('name, created_at').eq('is_active', true),
-    supabase.from('landing_pages').select('slug, updated_at').eq('is_active', true),
+  // Sitemap Index — returns a sitemap index pointing to sub-sitemaps
+  if (format === 'index') {
+    const now = new Date().toISOString().split('T')[0];
+    const sitemapIndex = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>${baseUrl}/sitemap.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${baseUrl}/sitemap-products.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${baseUrl}/sitemap-categories.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${baseUrl}/sitemap-brands.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${baseUrl}/sitemap-pages.xml</loc><lastmod>${now}</lastmod></sitemap>
+</sitemapindex>`;
+    return new Response(sitemapIndex, { headers: corsHeaders });
+  }
+
+  // Fetch all data in parallel for all sitemap types
+  const [productsRes, categoriesRes, brandsRes, landingRes, featuredRes] = await Promise.all([
+    supabase.from('products').select('slug, id, updated_at, image_url, name, description, price, brand, categories(name)').eq('is_active', true).order('updated_at', { ascending: false }),
+    supabase.from('categories').select('slug, name, updated_at, icon, color').eq('is_active', true).order('sort_order'),
+    supabase.from('brands').select('name, logo_url, created_at').eq('is_active', true).order('sort_order'),
+    supabase.from('landing_pages').select('slug, updated_at, meta_title, image_url').eq('is_active', true),
+    supabase.from('featured_sections').select('label, emoji, filter_type, filter_value, updated_at').eq('is_active', true).order('sort_order'),
   ]);
 
-  const products = productsRes.data;
-  const categories = categoriesRes.data;
-  const brands = brandsRes.data;
-  const landingPages = landingRes.data;
+  const products = productsRes.data || [];
+  const categories = categoriesRes.data || [];
+  const brands = brandsRes.data || [];
+  const landingPages = landingRes.data || [];
+  const featuredSections = featuredRes.data || [];
   const now = new Date().toISOString().split('T')[0];
 
+  // Build standard sitemap (default)
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
@@ -125,7 +142,7 @@ Deno.serve(async (req) => {
   </url>`;
 
   // Category pages
-  categories?.forEach((c: any) => {
+  categories.forEach((c: any) => {
     xml += `
   <url>
     <loc>${baseUrl}/hub/categoria/${c.slug}</loc>
@@ -136,14 +153,18 @@ Deno.serve(async (req) => {
   });
 
   // Brand pages
-  brands?.forEach((b: any) => {
+  brands.forEach((b: any) => {
     const slug = b.name.toLowerCase().replace(/\s+/g, '-');
     xml += `
   <url>
     <loc>${baseUrl}/hub/marca/${slug}</loc>
     <lastmod>${b.created_at?.split('T')[0] || now}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.7</priority>${b.logo_url ? `
+    <image:image>
+      <image:loc>${b.logo_url}</image:loc>
+      <image:title>${escapeXml(b.name)}</image:title>
+    </image:image>` : ''}
   </url>`;
   });
 
@@ -159,19 +180,38 @@ Deno.serve(async (req) => {
   </url>`;
   });
 
+  // Featured section hub pages (tag-based)
+  featuredSections.forEach((fs: any) => {
+    if (fs.filter_type === 'category' && fs.filter_value) {
+      // Already covered by categories loop
+    } else if (fs.filter_type === 'tag' && fs.filter_value) {
+      xml += `
+  <url>
+    <loc>${baseUrl}/hub/categoria/${fs.filter_value}</loc>
+    <lastmod>${fs.updated_at?.split('T')[0] || now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+    }
+  });
+
   // Landing pages (SEO keyword pages)
-  landingPages?.forEach((lp: any) => {
+  landingPages.forEach((lp: any) => {
     xml += `
   <url>
     <loc>${baseUrl}/s/${lp.slug}</loc>
     <lastmod>${lp.updated_at?.split('T')[0] || now}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.8</priority>${lp.image_url ? `
+    <image:image>
+      <image:loc>${lp.image_url}</image:loc>
+      <image:title>${escapeXml(lp.meta_title || lp.slug)}</image:title>
+    </image:image>` : ''}
   </url>`;
   });
 
   // Product pages
-  products?.forEach((p: any) => {
+  products.forEach((p: any) => {
     const slug = p.slug || p.id;
     const lastmod = p.updated_at?.split('T')[0] || now;
     xml += `
@@ -182,6 +222,7 @@ Deno.serve(async (req) => {
     <priority>0.7</priority>${p.image_url ? `
     <image:image>
       <image:loc>${p.image_url}</image:loc>
+      <image:title>${escapeXml(p.name)}</image:title>
     </image:image>` : ''}
   </url>`;
   });
@@ -191,3 +232,12 @@ Deno.serve(async (req) => {
 
   return new Response(xml, { headers: corsHeaders });
 });
+
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
