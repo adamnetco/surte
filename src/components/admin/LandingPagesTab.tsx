@@ -92,7 +92,6 @@ const LandingPagesTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [showSnippets, setShowSnippets] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState(false);
   const [editorTab, setEditorTab] = useState<"visual" | "code">("visual");
 
   const { data: pages, isLoading } = useQuery({
