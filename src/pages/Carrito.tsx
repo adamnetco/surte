@@ -187,9 +187,11 @@ const Carrito = () => {
       const payload = {
         items: items.map((i) => ({
           product_id: i.product.id,
-          name: i.product.name,
+          name: i.presentationName ? `${i.product.name} (${i.presentationName})` : i.product.name,
           price: i.unitPrice,
           quantity: i.quantity,
+          presentation_id: i.presentationId || null,
+          presentation_name: i.presentationName || null,
         })),
         customer_name: form.name,
         customer_phone: form.phone,
