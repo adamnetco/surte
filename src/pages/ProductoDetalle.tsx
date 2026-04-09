@@ -28,6 +28,8 @@ const ProductoDetalle = () => {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [activeMediaIdx, setActiveMediaIdx] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchDelta, setTouchDelta] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"descripcion" | "ficha">("descripcion");
   const [selectedPresentation, setSelectedPresentation] = useState<string | null>(null);
