@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Phone, MapPin, Clock, MessageCircle, Loader2, CheckCircle2, ChevronDown, Filter } from "lucide-react";
+import { Phone, MapPin, Clock, MessageCircle, Loader2, CheckCircle2, ChevronDown, Filter, CalendarIcon, Banknote, CreditCard, Sun, Moon } from "lucide-react";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -173,6 +173,30 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
               </div>
 
               {o.notes && <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-lg px-3 py-2">📝 {o.notes}</p>}
+
+              {/* Delivery & payment info */}
+              {(o.preferred_delivery_date || o.payment_method) && (
+                <div className="flex flex-wrap gap-1.5">
+                  {o.preferred_delivery_date && (
+                    <span className="text-[11px] bg-accent/10 text-accent rounded-lg px-2 py-1 font-medium flex items-center gap-1">
+                      <CalendarIcon size={10} />
+                      {new Date(o.preferred_delivery_date + "T12:00:00").toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "short" })}
+                    </span>
+                  )}
+                  {o.preferred_time_slot && (
+                    <span className="text-[11px] bg-muted rounded-lg px-2 py-1 font-medium flex items-center gap-1">
+                      {o.preferred_time_slot === "mañana" ? <Sun size={10} /> : <Moon size={10} />}
+                      {o.preferred_time_slot === "mañana" ? "8-12pm" : "2-6pm"}
+                    </span>
+                  )}
+                  {o.payment_method && (
+                    <span className="text-[11px] bg-muted rounded-lg px-2 py-1 font-medium flex items-center gap-1">
+                      {o.payment_method === "transferencia" ? <CreditCard size={10} /> : <Banknote size={10} />}
+                      {o.payment_method === "transferencia" ? "Transferencia" : "Efectivo"}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Actions */}
               <div className="flex gap-2">
