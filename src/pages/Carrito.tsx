@@ -105,6 +105,8 @@ const Carrito = () => {
   const [preferredDate, setPreferredDate] = useState<Date | undefined>();
   const [timeSlot, setTimeSlot] = useState<"mañana" | "tarde">("mañana");
   const [paymentMethod, setPaymentMethod] = useState<"efectivo" | "transferencia">("efectivo");
+  const [geoLocation, setGeoLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [loadingGeo, setLoadingGeo] = useState(false);
 
   const estimatedDays = settings?.estimated_delivery_days || "1-2";
 
