@@ -246,15 +246,20 @@ const LandingPagesTab = () => {
         image_url: editing.image_url || null,
         is_active: editing.is_active ?? true,
       };
+      let pageId = editing.id;
       if (editing.id) {
         const { error } = await supabase.from("landing_pages").update(payload).eq("id", editing.id);
         if (error) throw error;
-        toast.success("Pagina actualizada");
       } else {
-        const { error } = await supabase.from("landing_pages").insert(payload);
+        const { data: inserted, error } = await supabase.from("landing_pages").insert(payload).select("id").single();
         if (error) throw error;
-        toast.success("Pagina creada");
+        pageId = inserted.id;
       }
+      // Save linked products
+      if (pageId) {
+        await saveLinkedProducts(pageId);
+      }
+      toast.success(editing.id ? "Pagina actualizada" : "Pagina creada");
       queryClient.invalidateQueries({ queryKey: ["landing_pages"] });
       setEditing(null);
     } catch (e: any) {
