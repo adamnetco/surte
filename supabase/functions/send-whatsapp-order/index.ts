@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
       new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(p);
 
     const orderLines = items.map(
-      (i: any) => `• ${i.quantity}x ${i.name} — ${formatPrice(i.price * i.quantity)}`
+      (i: any) => `- ${i.quantity}x ${i.name} ${formatPrice(i.price * i.quantity)}`
     );
 
     const whatsappMessage = [

@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
 
       // Build message
       const itemLines = (items || [])
-        .map((i: any) => `• ${i.quantity}x ${i.product_name} — $${Number(i.total_price).toLocaleString("es-CO")}`)
+        .map((i: any) => `- ${i.quantity}x ${i.product_name} $${Number(i.total_price).toLocaleString("es-CO")}`)
         .join("\n");
 
       const message = [
