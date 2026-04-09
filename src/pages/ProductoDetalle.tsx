@@ -135,7 +135,7 @@ const ProductoDetalle = () => {
   };
 
   const settings = appSettings || {};
-  const baseUrl = "https://surteya.lovable.app";
+  const baseUrl = "https://surteya.com";
   const productUrl = `${baseUrl}/producto/${product.slug || product.id}`;
   const breadcrumbs = [
     { name: "Inicio", url: baseUrl },
