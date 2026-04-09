@@ -35,8 +35,25 @@ const LandingPage = () => {
 
   const { data: products } = useProducts();
 
-  // Filter products by city or page_type keyword if applicable
-  const filtered = products?.slice(0, 50) || [];
+  // Fetch linked products for this landing page
+  const { data: linkedProductIds } = useQuery({
+    queryKey: ["landing_page_products", page?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("landing_page_products")
+        .select("product_id")
+        .eq("landing_page_id", page!.id)
+        .order("sort_order");
+      if (error) throw error;
+      return data.map((r: any) => r.product_id);
+    },
+    enabled: !!page?.id,
+  });
+
+  // Show linked products if any, otherwise fallback to first 50
+  const filtered = linkedProductIds?.length
+    ? (products?.filter(p => linkedProductIds.includes(p.id)).sort((a, b) => linkedProductIds.indexOf(a.id) - linkedProductIds.indexOf(b.id)) || [])
+    : (products?.slice(0, 50) || []);
 
   const storeName = settings?.store_name || "SURTÉ YA";
   const pageUrl = `${BASE_URL}/s/${slug}`;

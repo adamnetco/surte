@@ -159,6 +159,59 @@ const LandingPagesTab = () => {
   // Template wizard
   const [templateWizard, setTemplateWizard] = useState<{ type: number; input: string } | null>(null);
 
+  // Product linking
+  const [productSearch, setProductSearch] = useState("");
+  const [linkedProducts, setLinkedProducts] = useState<string[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  const { data: allProducts } = useQuery({
+    queryKey: ["all_products_for_linking"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, image_url, price, slug")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Load linked products when editing a page
+  const loadLinkedProducts = useCallback(async (pageId: string) => {
+    setLoadingProducts(true);
+    const { data } = await supabase
+      .from("landing_page_products")
+      .select("product_id")
+      .eq("landing_page_id", pageId)
+      .order("sort_order");
+    setLinkedProducts(data?.map((r: any) => r.product_id) || []);
+    setLoadingProducts(false);
+  }, []);
+
+  const toggleProduct = useCallback((productId: string) => {
+    setLinkedProducts(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  }, []);
+
+  const saveLinkedProducts = useCallback(async (pageId: string) => {
+    // Delete existing links
+    await supabase.from("landing_page_products").delete().eq("landing_page_id", pageId);
+    // Insert new links
+    if (linkedProducts.length > 0) {
+      const rows = linkedProducts.map((product_id, i) => ({
+        landing_page_id: pageId,
+        product_id,
+        sort_order: i,
+      }));
+      await supabase.from("landing_page_products").insert(rows);
+    }
+    queryClient.invalidateQueries({ queryKey: ["landing_page_products"] });
+  }, [linkedProducts, queryClient]);
+
   const { data: pages, isLoading } = useQuery({
     queryKey: ["landing_pages"],
     queryFn: async () => {
