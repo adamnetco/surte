@@ -66,9 +66,11 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
   };
 
   const toggleActive = async (id: string, current: boolean) => {
+    queryClient.setQueryData(["admin-brands"], (old: any[] | undefined) =>
+      old?.map((b: any) => b.id === id ? { ...b, is_active: !current } : b)
+    );
     await supabase.from("brands").update({ is_active: !current }).eq("id", id);
     toast.success(!current ? "Marca visible" : "Marca oculta");
-    queryClient.invalidateQueries({ queryKey: ["admin-brands"] });
     queryClient.invalidateQueries({ queryKey: ["brands"] });
   };
 

@@ -39,9 +39,11 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
   };
 
   const toggleActive = async (id: string, current: boolean) => {
+    queryClient.setQueryData(["admin-categories"], (old: any[] | undefined) =>
+      old?.map((c: any) => c.id === id ? { ...c, is_active: !current } : c)
+    );
     await supabase.from("categories").update({ is_active: !current }).eq("id", id);
     toast.success(!current ? "Categoría visible" : "Categoría oculta");
-    queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     queryClient.invalidateQueries({ queryKey: ["categories"] });
   };
 
