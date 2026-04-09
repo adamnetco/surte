@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, Loader2, CheckCircle2, Search, Globe, Tag, BarChart3 } from "lucide-react";
+import { Save, Loader2, CheckCircle2, Search, Globe, Tag, BarChart3, Upload, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useImageUpload } from "@/hooks/useImageUpload";
 
-const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: string }[] = [
+const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: string; description?: string }[] = [
   { key: "seo_site_name", label: "Nombre del Sitio", placeholder: "SURTÉ YA - Soluciones Alimenticias", group: "general" },
   { key: "seo_default_description", label: "Meta Descripción Global", placeholder: "Salsas, cárnicos y pulpas al mayor...", group: "general" },
+  { key: "seo_default_og_image", label: "Imagen OG Predeterminada", placeholder: "https://surteya.com/og-default.jpg", group: "general", description: "Imagen por defecto para Schema.org y Open Graph (1200×630px). Se usa en todas las páginas que no tengan imagen propia." },
   { key: "seo_ga4_measurement_id", label: "Google Analytics 4 (Measurement ID)", placeholder: "G-XXXXXXXXXX", group: "integraciones" },
   { key: "seo_google_merchant_id", label: "Google Merchant Center ID", placeholder: "123456789", group: "integraciones" },
   { key: "seo_facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "123456789", group: "integraciones" },
@@ -16,6 +18,7 @@ const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: st
 ];
 
 const SeoTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }) => {
+  const { upload, uploading } = useImageUpload();
   const [values, setValues] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -96,12 +99,41 @@ const SeoTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }
           {SEO_SETTINGS.filter((s) => s.group === key).map((s) => (
             <div key={s.key} className={`rounded-xl p-2.5 border transition-colors ${dirty.has(s.key) ? "border-accent/50 bg-accent/5" : "border-border bg-card"}`}>
               <label className="text-xs font-medium text-foreground mb-0.5 block">{s.label}</label>
-              <input
-                value={values[s.key] || ""}
-                onChange={(e) => updateValue(s.key, e.target.value)}
-                placeholder={s.placeholder}
-                className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none"
-              />
+              {s.description && <p className="text-[10px] text-muted-foreground mb-1">{s.description}</p>}
+              {s.key === "seo_default_og_image" ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-dashed border-border shrink-0">
+                    {values[s.key] ? (
+                      <img src={values[s.key]} alt="OG" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon size={14} className="text-muted-foreground/40" />
+                    )}
+                  </div>
+                  <input
+                    value={values[s.key] || ""}
+                    onChange={(e) => updateValue(s.key, e.target.value)}
+                    placeholder={s.placeholder}
+                    className="flex-1 bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none"
+                  />
+                  <label className="cursor-pointer bg-accent text-accent-foreground rounded-lg px-2.5 py-1.5 text-[10px] font-medium hover:opacity-90 transition-opacity shrink-0 flex items-center gap-1">
+                    {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                    Subir
+                    <input type="file" accept="image/*" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const url = await upload(file, "seo");
+                      if (url) { updateValue(s.key, url); toast.success("Imagen OG subida"); }
+                    }} className="hidden" disabled={uploading} />
+                  </label>
+                </div>
+              ) : (
+                <input
+                  value={values[s.key] || ""}
+                  onChange={(e) => updateValue(s.key, e.target.value)}
+                  placeholder={s.placeholder}
+                  className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none"
+                />
+              )}
             </div>
           ))}
         </div>
