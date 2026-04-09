@@ -286,6 +286,7 @@ const LandingPagesTab = () => {
   };
 
   const handleDuplicate = async (page: LandingPage) => {
+    if (!confirm(`¿Duplicar la página "${page.title}"?\nSe creará una copia con slug: ${page.slug}-copia`)) return;
     const { id, ...rest } = page;
     const newSlug = `${rest.slug}-copia`;
     const { error } = await supabase.from("landing_pages").insert({ ...rest, slug: newSlug, title: `${rest.title} (Copia)` });
