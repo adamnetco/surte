@@ -80,7 +80,11 @@ export type Database = {
           id: string
           is_active: boolean | null
           logo_url: string | null
+          meta_description: string | null
+          meta_title: string | null
           name: string
+          og_image_url: string | null
+          slug: string | null
           sort_order: number | null
           website_url: string | null
         }
@@ -89,7 +93,11 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
           name: string
+          og_image_url?: string | null
+          slug?: string | null
           sort_order?: number | null
           website_url?: string | null
         }
@@ -98,7 +106,11 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
           name?: string
+          og_image_url?: string | null
+          slug?: string | null
           sort_order?: number | null
           website_url?: string | null
         }
@@ -111,7 +123,10 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean | null
+          meta_description: string | null
+          meta_title: string | null
           name: string
+          og_image_url: string | null
           slug: string
           sort_order: number | null
           updated_at: string
@@ -122,7 +137,10 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
           name: string
+          og_image_url?: string | null
           slug: string
           sort_order?: number | null
           updated_at?: string
@@ -133,7 +151,10 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
           name?: string
+          og_image_url?: string | null
           slug?: string
           sort_order?: number | null
           updated_at?: string
