@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
-import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye } from "lucide-react";
+import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye, Box } from "lucide-react";
 import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,6 +30,7 @@ const ProductoDetalle = () => {
   const [activeMediaIdx, setActiveMediaIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"descripcion" | "ficha">("descripcion");
+  const [selectedPresentation, setSelectedPresentation] = useState<string | null>(null);
 
   // Support both UUID and slug
   const isUuid = id && /^[0-9a-f]{8}-/.test(id);
