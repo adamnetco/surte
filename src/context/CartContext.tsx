@@ -18,12 +18,15 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  isDrawerOpen: boolean;
+  setDrawerOpen: (open: boolean) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
 
   const addItem = useCallback((product: Product, quantity = 1, unitPrice?: number) => {
     const price = unitPrice ?? product.price;
@@ -38,6 +41,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return [...prev, { product, quantity, unitPrice: price }];
     });
+    // Auto-open cart drawer after adding
+    setDrawerOpen(true);
   }, []);
 
   const removeItem = useCallback((productId: string) => {
@@ -60,7 +65,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const totalPrice = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, isDrawerOpen, setDrawerOpen }}>
       {children}
     </CartContext.Provider>
   );

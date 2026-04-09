@@ -12,23 +12,12 @@ interface CartDrawerProps {
 }
 
 const CartDrawer = ({ children }: CartDrawerProps) => {
-  const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice, totalItems, isDrawerOpen, setDrawerOpen } = useCart();
   const navigate = useNavigate();
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        {children || (
-          <button className="relative w-10 h-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-lg">
-            <ShoppingCart size={20} />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-surte-naranja text-primary-foreground text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
-                {totalItems}
-              </span>
-            )}
-          </button>
-        )}
-      </SheetTrigger>
+    <Sheet open={isDrawerOpen} onOpenChange={setDrawerOpen}>
+      {children && <SheetTrigger asChild>{children}</SheetTrigger>}
       <SheetContent className="w-[340px] sm:w-[400px] flex flex-col p-0">
         <SheetHeader className="px-4 pt-4 pb-3 border-b border-border">
           <SheetTitle className="font-heading text-lg flex items-center gap-2">
@@ -74,7 +63,7 @@ const CartDrawer = ({ children }: CartDrawerProps) => {
                     <p className="text-xs text-muted-foreground">{item.product.unit}</p>
                     <div className="flex items-center justify-between mt-1.5">
                       <span className="text-sm font-heading font-bold text-foreground">
-                        {formatPrice(item.product.price * item.quantity)}
+                        {formatPrice(item.unitPrice * item.quantity)}
                       </span>
                       <div className="flex items-center gap-1.5">
                         <button
@@ -111,15 +100,13 @@ const CartDrawer = ({ children }: CartDrawerProps) => {
               <span className="text-sm text-muted-foreground">Subtotal</span>
               <span className="text-lg font-heading font-bold text-foreground">{formatPrice(totalPrice)}</span>
             </div>
-            <SheetTrigger asChild>
-              <button
-                onClick={() => navigate("/carrito")}
-                className="w-full btn-surte py-3 text-sm flex items-center justify-center gap-2"
-              >
-                Ir al Carrito
-                <ArrowRight size={16} />
-              </button>
-            </SheetTrigger>
+            <button
+              onClick={() => { setDrawerOpen(false); navigate("/carrito"); }}
+              className="w-full btn-surte py-3 text-sm flex items-center justify-center gap-2"
+            >
+              Ir al Carrito
+              <ArrowRight size={16} />
+            </button>
           </div>
         )}
       </SheetContent>
