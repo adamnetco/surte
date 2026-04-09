@@ -385,6 +385,34 @@ const Carrito = () => {
                   <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
                   <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="WhatsApp (ej: 573001234567) *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
                   <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
+                  
+                  {/* Geolocation */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleGetLocation}
+                      disabled={loadingGeo}
+                      className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
+                    >
+                      {loadingGeo ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
+                      {geoLocation ? "Actualizar ubicación" : "Añadir ubicación actual"}
+                    </button>
+                    {geoLocation && (
+                      <a
+                        href={`https://www.google.com/maps?q=${geoLocation.lat},${geoLocation.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-accent font-medium hover:underline"
+                      >
+                        <MapPin size={12} /> Ver en mapa <ExternalLink size={10} />
+                      </a>
+                    )}
+                  </div>
+                  {geoLocation && (
+                    <p className="text-[10px] text-secondary font-medium bg-secondary/10 rounded-lg px-2 py-1">
+                      📍 Ubicación capturada: {geoLocation.lat.toFixed(6)}, {geoLocation.lng.toFixed(6)}
+                    </p>
+                  )}
+
                   {shippingZones && shippingZones.length > 0 && (
                     <NeighborhoodSearch
                       zones={shippingZones}
