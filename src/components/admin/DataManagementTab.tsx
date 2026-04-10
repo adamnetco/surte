@@ -178,13 +178,25 @@ const DataManagementTab = () => {
             Gestión de Datos
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Exporta e importa todos los datos de la plataforma en formato CSV
+            Exporta e importa datos en formato CSV o Excel (XLSX)
           </p>
         </div>
-        <Button onClick={handleBulkExport} disabled={bulkExporting} className="btn-surte gap-2">
-          {bulkExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-          Exportar Todo
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button disabled={bulkExporting} className="btn-surte gap-2">
+              {bulkExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Exportar Todo
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleBulkExport("csv")}>
+              <FileSpreadsheet size={14} className="mr-2" /> CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleBulkExport("xlsx")}>
+              <FileDown size={14} className="mr-2" /> Excel (XLSX)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Table grid */}
