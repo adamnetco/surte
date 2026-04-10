@@ -8,6 +8,7 @@ import StoreFooter from "@/components/surte/StoreFooter";
 import ProductCard from "@/components/surte/ProductCard";
 import HeadMeta from "@/components/seo/HeadMeta";
 import JsonLd, { buildBreadcrumbSchema } from "@/components/seo/JsonLd";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useProducts, useAppSettings } from "@/hooks/useStore";
 import { Package } from "lucide-react";
 import { motion } from "framer-motion";

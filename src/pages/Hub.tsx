@@ -7,6 +7,7 @@ import FloatingCart from "@/components/surte/FloatingCart";
 import StoreFooter from "@/components/surte/StoreFooter";
 import HeadMeta from "@/components/seo/HeadMeta";
 import JsonLd, { buildProductListSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useProducts, useCategories, useAppSettings } from "@/hooks/useStore";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
