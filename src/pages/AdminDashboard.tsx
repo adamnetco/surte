@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Component, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
@@ -53,6 +53,25 @@ const allTabs = [
   { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
+
+// Error Boundary for admin tabs
+class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
+  constructor(props: any) { super(props); this.state = { hasError: false, error: "" }; }
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error: error.message }; }
+  componentDidCatch(error: Error) { console.error(`[Admin Tab Error]`, error); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive font-heading font-semibold">Error al cargar "{this.props.tabName}"</p>
+          <p className="text-sm text-muted-foreground">{this.state.error}</p>
+          <button onClick={() => this.setState({ hasError: false, error: "" })} className="btn-surte text-sm px-4 py-2">Reintentar</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const AdminDashboard = () => {
   const { user, isAdmin, role, loading } = useAuth();
@@ -166,6 +185,7 @@ const AdminDashboard = () => {
       </div>
 
       <main className="p-4 pb-8">
+        <TabErrorBoundary tabName={tabs.find(t => t.id === activeTab)?.label || activeTab} key={activeTab}>
         {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
         {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
         {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
@@ -187,6 +207,7 @@ const AdminDashboard = () => {
         {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
         {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
+        </TabErrorBoundary>
       </main>
     </div>
   );
