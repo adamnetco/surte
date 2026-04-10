@@ -170,6 +170,7 @@ const AdminDashboard = () => {
       {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
       {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
       {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
+      {activeTab === "data" && <DataManagementTab />}
       {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
     </TabErrorBoundary>
   );
