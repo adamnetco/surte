@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { trackPurchase } from "@/components/seo/Analytics";
+import { mailService } from "@/utils/mailService";
+import { orderConfirmationTemplate } from "@/utils/emailTemplates";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -245,6 +247,35 @@ const Carrito = () => {
 
       // Track purchase conversion
       trackPurchase(data.order_number, grandTotal, payload.items);
+
+      // Send order confirmation email
+      if (form.email) {
+        const trackingUrl = `${window.location.origin}/pedido/${data.order_number}`;
+        const emailHtml = orderConfirmationTemplate({
+          orderNumber: data.order_number,
+          customerName: form.name,
+          items: items.map((i) => ({
+            name: i.presentationName ? `${i.product.name} (${i.presentationName})` : i.product.name,
+            quantity: i.quantity,
+            price: i.unitPrice,
+          })),
+          subtotal: totalPrice,
+          deliveryCost,
+          couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+          couponCode: appliedCoupon?.code,
+          total: grandTotal,
+          trackingUrl,
+          deliveryDate: preferredDate ? format(preferredDate, "EEEE d 'de' MMMM", { locale: es }) : undefined,
+          timeSlot,
+          paymentMethod,
+          address: form.address || undefined,
+        });
+        mailService.send({
+          to: form.email,
+          subject: `✅ Pedido #${data.order_number} confirmado — SURTÉ YA`,
+          html: emailHtml,
+        }).catch((err) => console.warn("Email confirmation failed:", err));
+      }
 
       toast.success(`¡Pedido #${data.order_number} creado!`);
 
