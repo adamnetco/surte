@@ -266,7 +266,7 @@ const DataManagementTab = () => {
                 <input
                   ref={(el) => { fileInputRefs.current[def.name] = el; }}
                   type="file"
-                  accept=".csv"
+                  accept=".csv,.xlsx,.xls"
                   className="hidden"
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
