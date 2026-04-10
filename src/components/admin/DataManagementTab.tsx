@@ -29,10 +29,16 @@ import {
   EXPORTABLE_TABLES,
   jsonToCsv,
   downloadCsv,
-  parseCsv,
   readFileAsText,
   type TableDef,
 } from "@/utils/csvUtils";
+import {
+  analyzeImportRows,
+  buildImportMutationPlan,
+  cleanImportedRows,
+  normalizeImportedHeaders,
+  type ImportPreviewAnalysis,
+} from "@/utils/dataImportUtils";
 import * as XLSX from "xlsx";
 
 type Status = "idle" | "loading" | "success" | "error";
@@ -58,6 +64,15 @@ interface ImportPreview {
   file: File;
   rows: Record<string, any>[];
   columns: string[];
+  analysis: ImportPreviewAnalysis;
+}
+
+interface ImportProgressState {
+  current: number;
+  total: number;
+  table: string;
+  phase: string;
+  detail: string;
 }
 
 const DataManagementTab = () => {
@@ -70,7 +85,7 @@ const DataManagementTab = () => {
   const [backups, setBackups] = useState<BackupEntry[]>([]);
   const [showBackups, setShowBackups] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
-  const [importProgress, setImportProgress] = useState<{ current: number; total: number; table: string } | null>(null);
+  const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -205,72 +220,49 @@ const DataManagementTab = () => {
 
   // ── Parse file for preview ─────────────────────────────
   const parseFile = async (file: File): Promise<Record<string, any>[]> => {
-    if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-      const buffer = await file.arrayBuffer();
-      const wb = XLSX.read(buffer, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      return XLSX.utils.sheet_to_json(ws, { defval: "" });
-    } else {
-      const text = await readFileAsText(file);
-      return parseCsv(text);
-    }
-  };
+    const lowerName = file.name.toLowerCase();
 
-  // ── Clean row values (FIX: handle non-string values) ──
-  const cleanRows = (rows: Record<string, any>[], def: TableDef): Record<string, any>[] => {
-    return rows.map((row) => {
-      const cleaned: Record<string, any> = {};
-      for (const [key, rawValue] of Object.entries(row)) {
-        if (def.skipOnImport?.includes(key)) continue;
-
-        // Coerce to string for safe checks
-        const value = rawValue === null || rawValue === undefined ? "" : String(rawValue);
-
-        if (value === "" || rawValue === null || rawValue === undefined) {
-          cleaned[key] = null;
-        } else if (typeof rawValue === "boolean") {
-          cleaned[key] = rawValue;
-        } else if (typeof rawValue === "number") {
-          cleaned[key] = rawValue;
-        } else if (value === "true") {
-          cleaned[key] = true;
-        } else if (value === "false") {
-          cleaned[key] = false;
-        } else if (value.startsWith("[") || value.startsWith("{")) {
-          try {
-            cleaned[key] = JSON.parse(value);
-          } catch {
-            cleaned[key] = value;
-          }
-        } else if (
-          !isNaN(Number(value)) &&
-          value.trim() !== "" &&
-          !key.includes("phone") &&
-          !key.includes("gtin") &&
-          !key.includes("sku") &&
-          key !== "code" &&
-          key !== "order_number"
-        ) {
-          cleaned[key] = Number(value);
-        } else {
-          cleaned[key] = value;
-        }
+    try {
+      if (lowerName.endsWith(".csv")) {
+        const text = await readFileAsText(file);
+        const wb = XLSX.read(text, { type: "string", cellDates: true, raw: false });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        return normalizeImportedHeaders(XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }));
       }
-      return cleaned;
-    });
+
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array", cellDates: true, raw: false });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      return normalizeImportedHeaders(XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }));
+    } catch {
+      const text = await readFileAsText(file);
+      const wb = XLSX.read(text, { type: "string", cellDates: true, raw: false });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      return normalizeImportedHeaders(XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }));
+    }
   };
 
   // ── Handle file selection → show preview ───────────────
   const handleFileSelected = useCallback(async (def: TableDef, file: File) => {
     try {
+      setImportProgress({
+        current: 0,
+        total: 1,
+        table: def.label,
+        phase: "Analizando archivo",
+        detail: `Leyendo ${file.name} para validar columnas y filas antes de cargar.`,
+      });
       const rows = await parseFile(file);
       if (!rows.length) {
+        setImportProgress(null);
         toast.error("El archivo está vacío o no tiene formato válido");
         return;
       }
       const columns = Object.keys(rows[0]);
-      setImportPreview({ def, file, rows, columns });
+      setImportPreview({ def, file, rows, columns, analysis: analyzeImportRows(rows) });
+      setImportProgress(null);
     } catch (err: any) {
+      setImportProgress(null);
       toast.error(`Error leyendo archivo: ${err.message}`);
     }
   }, []);
@@ -284,23 +276,77 @@ const DataManagementTab = () => {
 
     try {
       // Create backup first
+      setImportProgress({
+        current: 0,
+        total: rawRows.length || 1,
+        table: def.label,
+        phase: "Creando punto de reversión",
+        detail: `Respaldando el estado actual de ${def.label} antes de modificar datos.`,
+      });
       toast.info(`Creando backup de "${def.label}" antes de importar...`);
       await createBackup(def);
 
       // Clean rows
-      const rows = cleanRows(rawRows, def);
+      const rows = cleanImportedRows(rawRows, def);
+      const { rowsWithId, rowsWithoutId, totalRows } = buildImportMutationPlan(rows);
 
-      // Upsert in batches with progress
+      if (!totalRows) {
+        throw new Error("No se detectaron filas válidas para importar.");
+      }
+
       const batchSize = 100;
       let imported = 0;
-      setImportProgress({ current: 0, total: rows.length, table: def.label });
+      let updated = 0;
+      let created = 0;
 
-      for (let i = 0; i < rows.length; i += batchSize) {
-        const batch = rows.slice(i, i + batchSize);
-        const { error } = await supabase.from(def.table as any).upsert(batch as any, { onConflict: "id" });
-        if (error) throw error;
-        imported += batch.length;
-        setImportProgress({ current: imported, total: rows.length, table: def.label });
+      if (rowsWithId.length > 0) {
+        setImportProgress({
+          current: 0,
+          total: totalRows,
+          table: def.label,
+          phase: "Actualizando registros existentes",
+          detail: `${rowsWithId.length} filas con ID se subirán como actualización o inserción controlada.`,
+        });
+
+        for (let i = 0; i < rowsWithId.length; i += batchSize) {
+          const batch = rowsWithId.slice(i, i + batchSize);
+          const { error } = await supabase.from(def.table as any).upsert(batch as any, { onConflict: "id" });
+          if (error) throw error;
+          imported += batch.length;
+          updated += batch.length;
+          setImportProgress({
+            current: imported,
+            total: totalRows,
+            table: def.label,
+            phase: "Actualizando registros existentes",
+            detail: `Subiendo lote ${Math.floor(i / batchSize) + 1} de ${Math.ceil(rowsWithId.length / batchSize)} con filas identificadas por ID.`,
+          });
+        }
+      }
+
+      if (rowsWithoutId.length > 0) {
+        setImportProgress({
+          current: imported,
+          total: totalRows,
+          table: def.label,
+          phase: "Creando registros nuevos",
+          detail: `${rowsWithoutId.length} filas sin ID se crearán como nuevos registros.`,
+        });
+
+        for (let i = 0; i < rowsWithoutId.length; i += batchSize) {
+          const batch = rowsWithoutId.slice(i, i + batchSize);
+          const { error } = await supabase.from(def.table as any).insert(batch as any);
+          if (error) throw error;
+          imported += batch.length;
+          created += batch.length;
+          setImportProgress({
+            current: imported,
+            total: totalRows,
+            table: def.label,
+            phase: "Creando registros nuevos",
+            detail: `Subiendo lote ${Math.floor(i / batchSize) + 1} de ${Math.ceil(rowsWithoutId.length / batchSize)} con filas nuevas.`,
+          });
+        }
       }
 
       setImportProgress(null);
@@ -308,7 +354,7 @@ const DataManagementTab = () => {
         ...s,
         [def.name]: { status: "success", count: imported, timestamp: new Date().toLocaleString("es-CO") },
       }));
-      toast.success(`${def.label}: ${imported} registros importados con backup de reversión`);
+      toast.success(`${def.label}: ${imported} registros procesados (${updated} actualizados, ${created} nuevos)`);
     } catch (err: any) {
       setImportProgress(null);
       setImportStatus((s) => ({ ...s, [def.name]: { status: "error", error: err.message } }));
@@ -417,10 +463,11 @@ const DataManagementTab = () => {
         <Card className="border-secondary/30 bg-secondary/5 animate-pulse">
           <CardContent className="py-3 px-4">
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="font-medium">Importando {importProgress.table}...</span>
+              <span className="font-medium">{importProgress.phase}: {importProgress.table}</span>
               <span className="text-muted-foreground">{importProgress.current}/{importProgress.total}</span>
             </div>
             <Progress value={(importProgress.current / importProgress.total) * 100} className="h-1.5" />
+            <p className="text-[11px] text-muted-foreground mt-2">{importProgress.detail}</p>
           </CardContent>
         </Card>
       )}
@@ -488,6 +535,11 @@ const DataManagementTab = () => {
                 </div>
                 <StatusBadge tableStatus={exp} type="export" />
                 <StatusBadge tableStatus={imp} type="import" />
+                {syncCount !== undefined && (
+                  <p className={`text-[10px] mt-1 ${isEmpty ? "text-destructive" : hasData ? "text-secondary" : "text-muted-foreground"}`}>
+                    {isEmpty ? "Sin sincronizar en este entorno" : hasData ? "Con datos listos para actualizar" : "Estado pendiente de validar"}
+                  </p>
+                )}
               </CardHeader>
               <CardContent className="px-3 pb-2.5 pt-0 flex gap-1.5">
                 <DropdownMenu>
@@ -515,7 +567,7 @@ const DataManagementTab = () => {
                 <input
                   ref={(el) => { fileInputRefs.current[def.name] = el; }}
                   type="file"
-                  accept=".csv,.xlsx,.xls"
+                  accept=".csv,text/csv,application/csv,.xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   className="hidden"
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
@@ -556,6 +608,24 @@ const DataManagementTab = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="rounded-lg border border-border bg-background p-3">
+                  <p className="text-muted-foreground">Filas con ID</p>
+                  <p className="font-semibold">{importPreview.analysis.rowsWithId}</p>
+                  <p className="text-muted-foreground mt-1">Se actualizarán si ya existen.</p>
+                </div>
+                <div className="rounded-lg border border-border bg-background p-3">
+                  <p className="text-muted-foreground">Filas nuevas</p>
+                  <p className="font-semibold">{importPreview.analysis.rowsWithoutId}</p>
+                  <p className="text-muted-foreground mt-1">Se crearán como registros nuevos.</p>
+                </div>
+                <div className="rounded-lg border border-border bg-background p-3">
+                  <p className="text-muted-foreground">IDs vacíos</p>
+                  <p className="font-semibold">{importPreview.analysis.blankIdRows}</p>
+                  <p className="text-muted-foreground mt-1">Se tratarán como registros nuevos.</p>
+                </div>
+              </div>
+
               <div>
                 <p className="text-xs font-medium mb-1.5">Columnas detectadas ({importPreview.columns.length}):</p>
                 <div className="flex flex-wrap gap-1">
@@ -573,7 +643,7 @@ const DataManagementTab = () => {
                   <AlertCircle size={14} /> Operación UPSERT
                 </p>
                 <p className="text-muted-foreground">
-                  Los registros con el mismo ID serán actualizados. Los nuevos serán insertados. Se creará backup automático.
+                  Las filas con ID actualizarán registros existentes; las filas sin ID crearán registros nuevos. Se creará backup automático antes de cargar.
                 </p>
               </div>
             </div>
