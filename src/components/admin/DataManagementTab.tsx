@@ -568,11 +568,11 @@ const DataManagementTab = () => {
                 </div>
               </div>
 
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs">
-                <p className="font-medium text-amber-800 dark:text-amber-300 flex items-center gap-1.5 mb-1">
+              <div className="bg-accent/10 border border-accent/30 rounded-lg p-3 text-xs">
+                <p className="font-medium text-accent-foreground flex items-center gap-1.5 mb-1">
                   <AlertCircle size={14} /> Operación UPSERT
                 </p>
-                <p className="text-amber-700 dark:text-amber-400">
+                <p className="text-muted-foreground">
                   Los registros con el mismo ID serán actualizados. Los nuevos serán insertados. Se creará backup automático.
                 </p>
               </div>
