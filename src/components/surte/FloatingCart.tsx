@@ -21,7 +21,7 @@ const FloatingCart = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-[68px] left-0 right-0 z-40 px-3 pb-1"
+            className="fixed bottom-[68px] md:bottom-6 left-0 right-0 z-40 px-3 pb-1 md:left-auto md:right-6 md:max-w-sm"
           >
             <div className="bg-accent rounded-2xl px-4 py-2.5 flex items-center justify-between shadow-lg">
               <button

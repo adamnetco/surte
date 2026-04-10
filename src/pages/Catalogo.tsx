@@ -5,7 +5,7 @@ import BottomNav from "@/components/surte/BottomNav";
 import ProductCard from "@/components/surte/ProductCard";
 import { useProducts, useCategories } from "@/hooks/useStore";
 import FloatingCart from "@/components/surte/FloatingCart";
-import { SlidersHorizontal, ArrowUpDown, Package } from "lucide-react";
+import { ArrowUpDown, Package } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Catalogo = () => {
@@ -30,11 +30,11 @@ const Catalogo = () => {
     setSortBy(sortBy === "default" ? "price-asc" : sortBy === "price-asc" ? "price-desc" : "default");
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <TopBar />
-      <main className="px-4 py-4">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-4">
         <div className="flex items-baseline justify-between mb-1">
-          <h1 className="text-xl font-heading font-bold text-foreground">
+          <h1 className="text-xl md:text-2xl font-heading font-bold text-foreground">
             {activeCategory
               ? categories?.find((c) => c.slug === activeCategory)?.name || "Catálogo"
               : "Catálogo"}
@@ -74,7 +74,7 @@ const Catalogo = () => {
           ))}
         </div>
 
-        {/* Sort & filter */}
+        {/* Sort */}
         <div className="flex gap-2 mb-4">
           <button
             onClick={cycleSortBy}
@@ -90,8 +90,8 @@ const Catalogo = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div key={i} className="card-product">
                 <div className="aspect-square bg-muted animate-pulse" />
                 <div className="p-3 space-y-2">
@@ -102,7 +102,7 @@ const Catalogo = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
             {sorted.map((p, i) => (
               <motion.div
                 key={p.id}

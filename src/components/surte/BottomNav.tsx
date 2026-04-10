@@ -16,7 +16,7 @@ const BottomNav = () => {
   const { totalItems } = useCart();
 
   return (
-    <nav className="nav-bottom">
+    <nav className="nav-bottom md:hidden">
       <div className="flex items-center justify-around py-2">
         {navItems.map(({ icon: Icon, label, path }) => {
           const isActive = location.pathname === path;
@@ -34,7 +34,7 @@ const BottomNav = () => {
               <div className="relative">
                 <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
                 {isCart && totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2.5 bg-surte-naranja text-primary-foreground text-[10px] font-bold w-4.5 h-4.5 flex items-center justify-center rounded-full min-w-[18px] h-[18px]">
+                  <span className="absolute -top-2 -right-2.5 bg-surte-naranja text-primary-foreground text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
                     {totalItems}
                   </span>
                 )}
@@ -44,7 +44,6 @@ const BottomNav = () => {
           );
         })}
       </div>
-      {/* Safe area for iOS */}
       <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   );

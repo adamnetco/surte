@@ -56,30 +56,27 @@ const FeaturedProducts = () => {
   const { data: sections = [], isLoading: sectionsLoading } = useFeaturedSections();
   const [activeTab, setActiveTab] = useState<string | null>(null);
 
-  // Set first tab as default when sections load
   const effectiveTab = activeTab || sections[0]?.id || null;
-
   const currentSection = sections.find((s) => s.id === effectiveTab);
 
   const filtered = useMemo(() => {
     if (!products || !currentSection) return [];
-    return applyFilter(products, currentSection).slice(0, 8);
+    return applyFilter(products, currentSection).slice(0, 12);
   }, [products, currentSection]);
 
-  const displayProducts = filtered.length > 0 ? filtered : (products?.slice(0, 6) ?? []);
-
+  const displayProducts = filtered.length > 0 ? filtered : (products?.slice(0, 8) ?? []);
   const isLoading = productsLoading || sectionsLoading;
 
   if (isLoading) {
     return (
-      <section className="px-4 py-6">
+      <section className="px-4 py-6 max-w-7xl mx-auto">
         <div className="h-6 bg-muted animate-pulse rounded w-32 mb-4" />
         <div className="flex gap-2 mb-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-8 w-24 bg-muted animate-pulse rounded-full shrink-0" />
           ))}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="card-product">
               <div className="aspect-square bg-muted animate-pulse" />
@@ -102,10 +99,10 @@ const FeaturedProducts = () => {
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="px-4 py-6"
+      className="px-4 py-6 max-w-7xl mx-auto"
     >
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-heading font-bold text-foreground">Destacados</h2>
+        <h2 className="text-lg md:text-xl font-heading font-bold text-foreground">Destacados</h2>
         <button
           onClick={() => navigate("/catalogo")}
           className="text-sm text-accent font-medium flex items-center gap-0.5 hover:gap-1.5 transition-all active:scale-95"
@@ -140,7 +137,7 @@ const FeaturedProducts = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="grid grid-cols-2 md:grid-cols-3 gap-3"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4"
         >
           {displayProducts.map((p, i) => (
             <motion.div
