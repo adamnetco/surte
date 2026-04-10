@@ -51,6 +51,7 @@ const allTabs = [
   { id: "reviews", label: "Comentarios", icon: MessageSquare, roles: ["superadmin", "admin", "editor"] as AppRole[] },
   { id: "google-reviews", label: "Google", icon: Map, roles: ["superadmin", "admin", "editor"] as AppRole[] },
   { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "data", label: "Datos", icon: Database, roles: ["superadmin"] as AppRole[] },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
 
