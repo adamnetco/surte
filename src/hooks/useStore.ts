@@ -5,6 +5,21 @@ import type { Tables } from "@/integrations/supabase/types";
 export type Product = Tables<"products">;
 export type Category = Tables<"categories">;
 
+/** Returns a Set of inactive brand names (lowercased) to filter products */
+export const useInactiveBrands = () =>
+  useQuery({
+    queryKey: ["inactive-brands"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("brands")
+        .select("name")
+        .eq("is_active", false);
+      if (error) throw error;
+      return new Set((data ?? []).map((b) => b.name.toLowerCase()));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
 export const useCategories = () =>
   useQuery({
     queryKey: ["categories"],
@@ -19,9 +34,11 @@ export const useCategories = () =>
     },
   });
 
-export const useProducts = (categorySlug?: string, search?: string) =>
-  useQuery({
-    queryKey: ["products", categorySlug, search],
+export const useProducts = (categorySlug?: string, search?: string) => {
+  const { data: inactiveBrands } = useInactiveBrands();
+
+  return useQuery({
+    queryKey: ["products", categorySlug, search, inactiveBrands ? Array.from(inactiveBrands) : []],
     queryFn: async () => {
       let query = supabase.from("products").select("*, categories(slug, name)").eq("is_active", true);
       if (search) {
@@ -30,12 +47,18 @@ export const useProducts = (categorySlug?: string, search?: string) =>
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       let result = data;
+      // Filter out products from inactive brands
+      if (inactiveBrands && inactiveBrands.size > 0) {
+        result = result.filter((p: any) => !p.brand || !inactiveBrands.has(p.brand.toLowerCase()));
+      }
       if (categorySlug) {
-        result = data.filter((p: any) => p.categories?.slug === categorySlug);
+        result = result.filter((p: any) => p.categories?.slug === categorySlug);
       }
       return result as (Product & { categories: { slug: string; name: string } | null })[];
     },
+    enabled: inactiveBrands !== undefined,
   });
+};
 
 export const useAppSettings = () =>
   useQuery({
