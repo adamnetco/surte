@@ -50,9 +50,14 @@ const LandingPage = () => {
     enabled: !!page?.id,
   });
 
-  // Show linked products if any, otherwise fallback to first 50
-  const filtered = linkedProductIds?.length
+  // Linked products (curated for this page)
+  const linkedProducts = linkedProductIds?.length
     ? (products?.filter(p => linkedProductIds.includes(p.id)).sort((a, b) => linkedProductIds.indexOf(a.id) - linkedProductIds.indexOf(b.id)) || [])
+    : [];
+
+  // Other products (excluding linked ones)
+  const otherProducts = linkedProductIds?.length
+    ? (products?.filter(p => !linkedProductIds.includes(p.id)).slice(0, 20) || [])
     : (products?.slice(0, 50) || []);
 
   const storeName = settings?.store_name || "SURTÉ YA";
@@ -128,11 +133,31 @@ const LandingPage = () => {
           />
         )}
 
-        {filtered.length > 0 && (
-          <section>
+        {linkedProducts.length > 0 && (
+          <section className="mb-6">
             <h2 className="text-lg font-heading font-bold text-foreground mb-3">Productos destacados</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {filtered.map((p, i) => (
+              {linkedProducts.map((p, i) => (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.4) }}
+                >
+                  <ProductCard product={p} />
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {otherProducts.length > 0 && (
+          <section>
+            <h2 className="text-lg font-heading font-bold text-foreground mb-3">
+              {linkedProducts.length > 0 ? "Otros productos" : "Productos destacados"}
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {otherProducts.map((p, i) => (
                 <motion.div
                   key={p.id}
                   initial={{ opacity: 0, y: 12 }}
