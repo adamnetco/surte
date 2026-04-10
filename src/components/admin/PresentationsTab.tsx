@@ -203,7 +203,7 @@ const PresentationsTab = ({ queryClient }: { queryClient: any }) => {
   return (
     <div className="space-y-4 pb-32">
       <div>
-        <h2 className="font-heading font-bold text-base text-foreground">Presentaciones de Producto</h2>
+        <h2 className="font-heading font-bold text-lg text-foreground">Presentaciones de Producto</h2>
         <p className="text-xs text-muted-foreground">Define opciones de venta: Unidad, Pack, Caja</p>
       </div>
 
@@ -231,21 +231,21 @@ const PresentationsTab = ({ queryClient }: { queryClient: any }) => {
         </div>
         {!selectedProduct && (
           <div className="space-y-1">
-            <div className="max-h-60 overflow-y-auto space-y-1">
-              {filteredProducts?.slice(0, showAllProducts ? undefined : 20).map((p) => (
+            <div className="max-h-[70vh] overflow-y-auto space-y-1">
+              {filteredProducts?.slice(0, showAllProducts ? undefined : 8).map((p) => (
                 <button
                   key={p.id}
                   onClick={() => { setSelectedProduct(p.id); setSearch(""); resetForm(); }}
-                  className="w-full text-left bg-card border border-border rounded-lg px-3 py-2 text-sm hover:border-accent/40 transition-colors"
+                  className="w-full text-left bg-card border border-border rounded-lg px-3 py-2.5 text-sm hover:border-accent/40 transition-colors flex items-center justify-between gap-2"
                 >
-                  <span className="font-medium text-foreground">{p.name}</span>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    {formatPrice(p.price)} · Stock: {p.stock} {p.base_unit || "uds"}
+                  <span className="font-medium text-foreground truncate">{p.name}</span>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    {formatPrice(p.price)} · {p.stock} {p.base_unit || "uds"}
                   </span>
                 </button>
               ))}
             </div>
-            {filteredProducts && filteredProducts.length > 20 && !showAllProducts && (
+            {filteredProducts && filteredProducts.length > 8 && !showAllProducts && (
               <button onClick={() => setShowAllProducts(true)} className="w-full text-center text-xs text-accent font-medium py-2 flex items-center justify-center gap-1">
                 <ChevronDown size={12} /> Ver todos ({filteredProducts.length} productos)
               </button>
