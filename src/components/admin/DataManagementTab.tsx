@@ -1,10 +1,16 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Download, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Database } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Database, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   EXPORTABLE_TABLES,
   jsonToCsv,
@@ -13,6 +19,7 @@ import {
   readFileAsText,
   type TableDef,
 } from "@/utils/csvUtils";
+import * as XLSX from "xlsx";
 
 type Status = "idle" | "loading" | "success" | "error";
 
