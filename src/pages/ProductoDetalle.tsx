@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useProfile, getPriceForType } from "@/hooks/useProfile";
 import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
 import HeadMeta from "@/components/seo/HeadMeta";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings, useInactiveBrands } from "@/hooks/useStore";
 import { trackViewProduct, trackAddToCart } from "@/components/seo/Analytics";
 
 const formatPrice = (price: number) =>
@@ -73,9 +73,14 @@ const ProductoDetalle = () => {
     enabled: !!productId,
   });
 
+  const { data: inactiveBrands } = useInactiveBrands();
+
   useEffect(() => {
     if (product) trackViewProduct(product);
   }, [product?.id]);
+
+  // Check if product's brand is inactive
+  const isBrandHidden = product?.brand && inactiveBrands?.has(product.brand.toLowerCase());
 
   if (isLoading) {
     return (
@@ -94,7 +99,7 @@ const ProductoDetalle = () => {
     );
   }
 
-  if (!product) {
+  if (!product || isBrandHidden) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
         <p className="font-heading font-bold text-lg text-foreground mb-2">Producto no encontrado</p>
