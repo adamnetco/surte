@@ -298,11 +298,330 @@ const Carrito = () => {
     }
   };
 
+  const grandTotal = Math.max(0, totalPrice + deliveryCost - couponDiscount);
+
+  // Summary/CTA block (reused in mobile fixed bar and desktop sidebar)
+  const SummaryBlock = ({ className = "" }: { className?: string }) => (
+    <div className={className}>
+      {/* Coupon input */}
+      <div className="flex items-center gap-2 mb-3">
+        {appliedCoupon ? (
+          <div className="flex-1 flex items-center gap-1.5 bg-secondary/10 rounded-lg px-3 py-2">
+            <CheckCircle2 size={14} className="text-secondary" />
+            <span className="text-xs font-medium text-secondary">{appliedCoupon.code}</span>
+            <span className="text-xs text-secondary">-{formatPrice(couponDiscount)}</span>
+            <button onClick={removeCoupon} className="ml-auto"><X size={14} className="text-muted-foreground" /></button>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 flex items-center gap-1.5 bg-muted rounded-lg px-3 py-2">
+              <Ticket size={14} className="text-muted-foreground" />
+              <input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="Código cupón"
+                className="flex-1 bg-transparent text-sm outline-none font-mono uppercase"
+              />
+            </div>
+            <button
+              onClick={applyCoupon}
+              disabled={validatingCoupon || !couponCode.trim()}
+              className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-50"
+            >
+              {validatingCoupon ? <Loader2 size={14} className="animate-spin" /> : "Aplicar"}
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm text-muted-foreground">Subtotal</span>
+        <span className="text-sm font-medium text-foreground">{formatPrice(totalPrice)}</span>
+      </div>
+      {couponDiscount > 0 && (
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm text-secondary">Cupón</span>
+          <span className="text-sm font-medium text-secondary">-{formatPrice(couponDiscount)}</span>
+        </div>
+      )}
+      {deliveryCost > 0 && (
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm text-muted-foreground">Domicilio</span>
+          <span className="text-sm font-medium text-foreground">{formatPrice(deliveryCost)}</span>
+        </div>
+      )}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-foreground">Total</span>
+        <span className="text-xl font-heading font-bold text-foreground">{formatPrice(grandTotal)}</span>
+      </div>
+      <button
+        onClick={handleFinalize}
+        disabled={!meetsMinimum}
+        className={`w-full flex items-center justify-center gap-2 font-heading font-semibold py-3.5 rounded-xl text-sm transition-all ${
+          meetsMinimum ? "btn-surte" : "bg-muted text-muted-foreground cursor-not-allowed"
+        }`}
+      >
+        <MessageCircle size={18} />
+        Finalizar Pedido por WhatsApp
+      </button>
+    </div>
+  );
+
+  // Order form block
+  const OrderFormBlock = () => (
+    <AnimatePresence>
+      {showForm && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          className="bg-card rounded-xl p-4 mb-4 space-y-3"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <h3 className="font-heading font-semibold text-sm text-foreground">Datos del Pedido</h3>
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
+          
+          {/* Email */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-xs font-medium text-muted-foreground">📧 Correo electrónico</span>
+            </div>
+            <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tucorreo@email.com" type="email" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
+            <p className="text-[10px] text-muted-foreground mt-0.5">Para confirmación y seguimiento de tu pedido</p>
+          </div>
+
+          {/* Phone with country code */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-xs font-medium text-muted-foreground">📱 WhatsApp *</span>
+            </div>
+            <div className="flex gap-1.5">
+              <select
+                value={form.countryCode}
+                onChange={(e) => setForm({ ...form, countryCode: e.target.value })}
+                className="bg-muted rounded-lg px-2 py-2.5 text-sm outline-none w-[100px] shrink-0"
+              >
+                <option value="+57">🇨🇴 +57</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+58">🇻🇪 +58</option>
+                <option value="+52">🇲🇽 +52</option>
+                <option value="+51">🇵🇪 +51</option>
+                <option value="+56">🇨🇱 +56</option>
+                <option value="+54">🇦🇷 +54</option>
+                <option value="+593">🇪🇨 +593</option>
+                <option value="+507">🇵🇦 +507</option>
+                <option value="+34">🇪🇸 +34</option>
+              </select>
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/[^\d]/g, "") })} placeholder="3001234567" className="flex-1 bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required inputMode="tel" />
+            </div>
+          </div>
+
+          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
+          
+          {/* Geolocation */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleGetLocation}
+              disabled={loadingGeo}
+              className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
+            >
+              {loadingGeo ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
+              {geoLocation ? "Actualizar ubicación" : "Añadir ubicación actual"}
+            </button>
+            {geoLocation && (
+              <a
+                href={`https://www.google.com/maps?q=${geoLocation.lat},${geoLocation.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-accent font-medium hover:underline"
+              >
+                <MapPin size={12} /> Ver en mapa <ExternalLink size={10} />
+              </a>
+            )}
+          </div>
+          {geoLocation && (
+            <p className="text-[10px] text-secondary font-medium bg-secondary/10 rounded-lg px-2 py-1">
+              📍 Ubicación capturada: {geoLocation.lat.toFixed(6)}, {geoLocation.lng.toFixed(6)}
+            </p>
+          )}
+
+          {shippingZones && shippingZones.length > 0 && (
+            <NeighborhoodSearch
+              zones={shippingZones}
+              selectedId={form.neighborhood_id}
+              onSelect={(zoneId) => handleZoneChange(zoneId)}
+            />
+          )}
+          {deliveryCost > 0 && (
+            <p className="text-xs text-accent font-medium">🚚 Domicilio: {formatPrice(deliveryCost)}</p>
+          )}
+          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notas adicionales" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" rows={2} />
+
+          {/* Delivery estimate badge */}
+          <div className="flex items-center gap-2 bg-accent/10 rounded-lg px-3 py-2">
+            <Truck size={14} className="text-accent" />
+            <span className="text-xs font-medium text-foreground">Entrega en {estimatedDays} días hábiles</span>
+          </div>
+
+          {/* Preferred delivery date */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <CalendarIcon size={14} className="text-accent" />
+              <span className="text-xs font-medium text-muted-foreground">Fecha preferida de entrega</span>
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className={cn("w-full bg-muted rounded-lg px-3 py-2.5 text-sm text-left flex items-center justify-between", !preferredDate && "text-muted-foreground")}>
+                  {preferredDate ? format(preferredDate, "EEEE d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
+                  <CalendarIcon size={14} className="text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={preferredDate}
+                  onSelect={setPreferredDate}
+                  disabled={(date) => date < getMinDeliveryDate() || isWeekend(date)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Time slot */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Clock size={14} className="text-accent" />
+              <span className="text-xs font-medium text-muted-foreground">Horario preferido</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setTimeSlot("mañana")}
+                className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "mañana" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+              >
+                ☀️ Mañana (8-12)
+              </button>
+              <button
+                onClick={() => setTimeSlot("tarde")}
+                className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "tarde" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+              >
+                🌙 Tarde (2-6)
+              </button>
+            </div>
+          </div>
+
+          {/* Payment method */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Banknote size={14} className="text-accent" />
+              <span className="text-xs font-medium text-muted-foreground">Método de pago</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setPaymentMethod("efectivo")}
+                className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "efectivo" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+              >
+                <Banknote size={14} /> Efectivo
+              </button>
+              <button
+                onClick={() => setPaymentMethod("transferencia")}
+                className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "transferencia" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+              >
+                <CreditCard size={14} /> Transferencia
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-2.5 text-sm text-muted-foreground font-medium">Cancelar</button>
+            <button onClick={handleSubmitOrder} disabled={submitting} className="flex-1 btn-surte py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
+              {submitting ? "Enviando..." : "Confirmar"}
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  // Product list block
+  const ProductListBlock = () => (
+    <>
+      <AnimatePresence>
+        {items.map((item) => {
+          const lineId = `${item.product.id}${item.presentationId ? `__${item.presentationId}` : ""}`;
+          return (
+            <motion.div
+              key={lineId}
+              layout
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="flex items-center gap-3 bg-card rounded-xl p-3 mb-3"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                {item.product.image_url ? (
+                  <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl font-heading font-bold text-muted-foreground/40">
+                    {item.product.name.charAt(0)}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-foreground truncate">{item.product.name}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {item.presentationName || item.product.unit} · {formatPrice(item.unitPrice)} c/u
+                </p>
+                <p className="text-sm font-heading font-bold text-foreground mt-0.5">
+                  {formatPrice(item.unitPrice * item.quantity)}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.presentationId)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground">
+                  <Minus size={14} />
+                </button>
+                <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
+                <button
+                  onClick={() => {
+                    if (item.quantity < item.product.stock) {
+                      updateQuantity(item.product.id, item.quantity + 1, item.presentationId);
+                    } else {
+                      toast.error(`Stock máximo: ${item.product.stock}`);
+                    }
+                  }}
+                  className="w-7 h-7 rounded-lg bg-accent text-accent-foreground flex items-center justify-center"
+                >
+                  <Plus size={14} />
+                </button>
+                <button onClick={() => removeItem(item.product.id, item.presentationId)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+
+      {!meetsMinimum && (
+        <div className="flex items-start gap-2 bg-surte-naranja/10 border border-surte-naranja/30 rounded-xl p-3 mb-4">
+          <AlertTriangle size={18} className="text-surte-naranja shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Pedido mínimo: {formatPrice(minOrder)}</p>
+            <p className="text-xs text-muted-foreground">Te faltan {formatPrice(minOrder - totalPrice)}</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
-    <div className="min-h-screen bg-background pb-40">
+    <div className="min-h-screen bg-background pb-24 lg:pb-8">
       <TopBar />
-      <main className="px-4 py-4">
-        <h1 className="text-xl font-heading font-bold text-foreground mb-4">Tu Carrito</h1>
+      <main className="px-4 py-4 max-w-7xl mx-auto">
+        <h1 className="text-xl lg:text-2xl font-heading font-bold text-foreground mb-4">Tu Carrito</h1>
 
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -312,315 +631,35 @@ const Carrito = () => {
           </div>
         ) : (
           <>
-            <AnimatePresence>
-              {items.map((item) => {
-                const lineId = `${item.product.id}${item.presentationId ? `__${item.presentationId}` : ""}`;
-                return (
-                <motion.div
-                  key={lineId}
-                  layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  className="flex items-center gap-3 bg-card rounded-xl p-3 mb-3"
-                  style={{ boxShadow: "var(--shadow-card)" }}
-                >
-                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                    {item.product.image_url ? (
-                      <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xl font-heading font-bold text-muted-foreground/40">
-                        {item.product.name.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-foreground truncate">{item.product.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {item.presentationName || item.product.unit} · {formatPrice(item.unitPrice)} c/u
-                    </p>
-                    <p className="text-sm font-heading font-bold text-foreground mt-0.5">
-                      {formatPrice(item.unitPrice * item.quantity)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.presentationId)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground">
-                      <Minus size={14} />
-                    </button>
-                    <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => {
-                        if (item.quantity < item.product.stock) {
-                          updateQuantity(item.product.id, item.quantity + 1, item.presentationId);
-                        } else {
-                          toast.error(`Stock máximo: ${item.product.stock}`);
-                        }
-                      }}
-                      className="w-7 h-7 rounded-lg bg-accent text-accent-foreground flex items-center justify-center"
-                    >
-                      <Plus size={14} />
-                    </button>
-                    <button onClick={() => removeItem(item.product.id, item.presentationId)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </motion.div>
-                );
-              })}
-            </AnimatePresence>
+            {/* Desktop: two-column layout */}
+            <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-6">
+              {/* Left: products + form */}
+              <div className="min-w-0">
+                <ProductListBlock />
+                <OrderFormBlock />
+              </div>
 
-            {!meetsMinimum && (
-              <div className="flex items-start gap-2 bg-surte-naranja/10 border border-surte-naranja/30 rounded-xl p-3 mb-4">
-                <AlertTriangle size={18} className="text-surte-naranja shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">Pedido mínimo: {formatPrice(minOrder)}</p>
-                  <p className="text-xs text-muted-foreground">Te faltan {formatPrice(minOrder - totalPrice)}</p>
+              {/* Right: sticky summary (desktop only) */}
+              <div className="hidden lg:block">
+                <div className="sticky top-24">
+                  <div className="bg-card rounded-xl p-5 border border-border" style={{ boxShadow: "var(--shadow-card)" }}>
+                    <h3 className="font-heading font-semibold text-base mb-4 flex items-center gap-2">
+                      <ShoppingCart size={18} className="text-accent" />
+                      Resumen ({items.length} {items.length === 1 ? "producto" : "productos"})
+                    </h3>
+                    <SummaryBlock />
+                  </div>
                 </div>
               </div>
-            )}
-
-            {/* Order Form */}
-            <AnimatePresence>
-              {showForm && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="bg-card rounded-xl p-4 mb-4 space-y-3"
-                  style={{ boxShadow: "var(--shadow-card)" }}
-                >
-                  <h3 className="font-heading font-semibold text-sm text-foreground">Datos del Pedido</h3>
-                  <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
-                  
-                  {/* Email */}
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs font-medium text-muted-foreground">📧 Correo electrónico</span>
-                    </div>
-                    <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tucorreo@email.com" type="email" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Para confirmación y seguimiento de tu pedido</p>
-                  </div>
-
-                  {/* Phone with country code */}
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs font-medium text-muted-foreground">📱 WhatsApp *</span>
-                    </div>
-                    <div className="flex gap-1.5">
-                      <select
-                        value={form.countryCode}
-                        onChange={(e) => setForm({ ...form, countryCode: e.target.value })}
-                        className="bg-muted rounded-lg px-2 py-2.5 text-sm outline-none w-[100px] shrink-0"
-                      >
-                        <option value="+57">🇨🇴 +57</option>
-                        <option value="+1">🇺🇸 +1</option>
-                        <option value="+58">🇻🇪 +58</option>
-                        <option value="+52">🇲🇽 +52</option>
-                        <option value="+51">🇵🇪 +51</option>
-                        <option value="+56">🇨🇱 +56</option>
-                        <option value="+54">🇦🇷 +54</option>
-                        <option value="+593">🇪🇨 +593</option>
-                        <option value="+507">🇵🇦 +507</option>
-                        <option value="+34">🇪🇸 +34</option>
-                      </select>
-                      <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/[^\d]/g, "") })} placeholder="3001234567" className="flex-1 bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required inputMode="tel" />
-                    </div>
-                  </div>
-
-                  <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
-                  
-                  {/* Geolocation */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleGetLocation}
-                      disabled={loadingGeo}
-                      className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
-                    >
-                      {loadingGeo ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
-                      {geoLocation ? "Actualizar ubicación" : "Añadir ubicación actual"}
-                    </button>
-                    {geoLocation && (
-                      <a
-                        href={`https://www.google.com/maps?q=${geoLocation.lat},${geoLocation.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs text-accent font-medium hover:underline"
-                      >
-                        <MapPin size={12} /> Ver en mapa <ExternalLink size={10} />
-                      </a>
-                    )}
-                  </div>
-                  {geoLocation && (
-                    <p className="text-[10px] text-secondary font-medium bg-secondary/10 rounded-lg px-2 py-1">
-                      📍 Ubicación capturada: {geoLocation.lat.toFixed(6)}, {geoLocation.lng.toFixed(6)}
-                    </p>
-                  )}
-
-                  {shippingZones && shippingZones.length > 0 && (
-                    <NeighborhoodSearch
-                      zones={shippingZones}
-                      selectedId={form.neighborhood_id}
-                      onSelect={(zoneId) => handleZoneChange(zoneId)}
-                    />
-                  )}
-                  {deliveryCost > 0 && (
-                    <p className="text-xs text-accent font-medium">🚚 Domicilio: {formatPrice(deliveryCost)}</p>
-                  )}
-                  <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notas adicionales" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" rows={2} />
-
-                  {/* Delivery estimate badge */}
-                  <div className="flex items-center gap-2 bg-accent/10 rounded-lg px-3 py-2">
-                    <Truck size={14} className="text-accent" />
-                    <span className="text-xs font-medium text-foreground">Entrega en {estimatedDays} días hábiles</span>
-                  </div>
-
-                  {/* Preferred delivery date */}
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <CalendarIcon size={14} className="text-accent" />
-                      <span className="text-xs font-medium text-muted-foreground">Fecha preferida de entrega</span>
-                    </div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className={cn("w-full bg-muted rounded-lg px-3 py-2.5 text-sm text-left flex items-center justify-between", !preferredDate && "text-muted-foreground")}>
-                          {preferredDate ? format(preferredDate, "EEEE d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
-                          <CalendarIcon size={14} className="text-muted-foreground" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={preferredDate}
-                          onSelect={setPreferredDate}
-                          disabled={(date) => date < getMinDeliveryDate() || isWeekend(date)}
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {/* Time slot */}
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <Clock size={14} className="text-accent" />
-                      <span className="text-xs font-medium text-muted-foreground">Horario preferido</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setTimeSlot("mañana")}
-                        className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "mañana" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-                      >
-                        ☀️ Mañana (8-12)
-                      </button>
-                      <button
-                        onClick={() => setTimeSlot("tarde")}
-                        className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "tarde" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-                      >
-                        🌙 Tarde (2-6)
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Payment method */}
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <Banknote size={14} className="text-accent" />
-                      <span className="text-xs font-medium text-muted-foreground">Método de pago</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setPaymentMethod("efectivo")}
-                        className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "efectivo" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-                      >
-                        <Banknote size={14} /> Efectivo
-                      </button>
-                      <button
-                        onClick={() => setPaymentMethod("transferencia")}
-                        className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "transferencia" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-                      >
-                        <CreditCard size={14} /> Transferencia
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-2.5 text-sm text-muted-foreground font-medium">Cancelar</button>
-                    <button onClick={handleSubmitOrder} disabled={submitting} className="flex-1 btn-surte py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-50">
-                      {submitting ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
-                      {submitting ? "Enviando..." : "Confirmar"}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            </div>
           </>
         )}
       </main>
 
+      {/* Mobile: fixed bottom bar (hidden on lg+) */}
       {items.length > 0 && !showForm && (
-        <div className="fixed bottom-[68px] left-0 right-0 bg-card border-t border-border px-4 py-3 z-40" style={{ boxShadow: "var(--shadow-nav)" }}>
-          {/* Coupon input */}
-          <div className="flex items-center gap-2 mb-2">
-            {appliedCoupon ? (
-              <div className="flex-1 flex items-center gap-1.5 bg-secondary/10 rounded-lg px-3 py-2">
-                <CheckCircle2 size={14} className="text-secondary" />
-                <span className="text-xs font-medium text-secondary">{appliedCoupon.code}</span>
-                <span className="text-xs text-secondary">-{formatPrice(couponDiscount)}</span>
-                <button onClick={removeCoupon} className="ml-auto"><X size={14} className="text-muted-foreground" /></button>
-              </div>
-            ) : (
-              <>
-                <div className="flex-1 flex items-center gap-1.5 bg-muted rounded-lg px-3 py-2">
-                  <Ticket size={14} className="text-muted-foreground" />
-                  <input
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="Código cupón"
-                    className="flex-1 bg-transparent text-sm outline-none font-mono uppercase"
-                  />
-                </div>
-                <button
-                  onClick={applyCoupon}
-                  disabled={validatingCoupon || !couponCode.trim()}
-                  className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-50"
-                >
-                  {validatingCoupon ? <Loader2 size={14} className="animate-spin" /> : "Aplicar"}
-                </button>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm text-muted-foreground">Subtotal</span>
-            <span className="text-sm font-medium text-foreground">{formatPrice(totalPrice)}</span>
-          </div>
-          {couponDiscount > 0 && (
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-secondary">Cupón</span>
-              <span className="text-sm font-medium text-secondary">-{formatPrice(couponDiscount)}</span>
-            </div>
-          )}
-          {deliveryCost > 0 && (
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-muted-foreground">Domicilio</span>
-              <span className="text-sm font-medium text-foreground">{formatPrice(deliveryCost)}</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-foreground">Total</span>
-            <span className="text-xl font-heading font-bold text-foreground">{formatPrice(Math.max(0, totalPrice + deliveryCost - couponDiscount))}</span>
-          </div>
-          <button
-            onClick={handleFinalize}
-            disabled={!meetsMinimum}
-            className={`w-full flex items-center justify-center gap-2 font-heading font-semibold py-3.5 rounded-xl text-sm transition-all ${
-              meetsMinimum ? "btn-surte" : "bg-muted text-muted-foreground cursor-not-allowed"
-            }`}
-          >
-            <MessageCircle size={18} />
-            Finalizar Pedido por WhatsApp
-          </button>
+        <div className="fixed bottom-[68px] left-0 right-0 bg-card border-t border-border px-4 py-3 z-40 lg:hidden" style={{ boxShadow: "var(--shadow-nav)" }}>
+          <SummaryBlock />
         </div>
       )}
       <BottomNav />
