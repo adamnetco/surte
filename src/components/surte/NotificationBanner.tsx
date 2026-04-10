@@ -49,7 +49,7 @@ const NotificationBanner = () => {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className="mx-4 mt-3"
+        className="mx-4 mt-3 max-w-7xl md:mx-auto"
       >
         <div className="bg-accent/10 border border-accent/20 rounded-2xl p-4 relative">
           <button onClick={dismiss} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground">
