@@ -7,6 +7,7 @@ import FloatingCart from "@/components/surte/FloatingCart";
 import StoreFooter from "@/components/surte/StoreFooter";
 import HeadMeta from "@/components/seo/HeadMeta";
 import JsonLd, { buildProductListSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useProducts, useCategories, useAppSettings } from "@/hooks/useStore";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,6 +156,13 @@ const Hub = () => {
       )}
       <TopBar />
       <main className="px-4 py-4">
+        <SeoBreadcrumbs
+          items={[
+            { label: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : type === "etiqueta" ? "Destacados" : "Ciudades", href: type === "categoria" ? "/categorias" : undefined },
+            { label: title },
+          ]}
+          className="mb-2"
+        />
         <div className="mb-4">
           <p className="text-[10px] uppercase tracking-widest text-accent font-semibold mb-1">
             {type === "categoria" ? "Categoría" : type === "marca" ? "Marca" : type === "etiqueta" ? "Destacados" : type === "ciudad" ? "Ciudad" : "Hub"}

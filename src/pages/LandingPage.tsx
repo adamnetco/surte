@@ -8,6 +8,7 @@ import StoreFooter from "@/components/surte/StoreFooter";
 import ProductCard from "@/components/surte/ProductCard";
 import HeadMeta from "@/components/seo/HeadMeta";
 import JsonLd, { buildBreadcrumbSchema } from "@/components/seo/JsonLd";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useProducts, useAppSettings } from "@/hooks/useStore";
 import { Package } from "lucide-react";
 import { motion } from "framer-motion";
@@ -118,6 +119,7 @@ const LandingPage = () => {
       <TopBar />
 
       <main className="px-4 py-4">
+        <SeoBreadcrumbs items={[{ label: page.title || slug || "Página" }]} className="mb-2" />
         {page.image_url && (
           <div className="rounded-2xl overflow-hidden mb-4">
             <img src={page.image_url} alt={page.title} className="w-full h-48 object-cover" loading="lazy" />

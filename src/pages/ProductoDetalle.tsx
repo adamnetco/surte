@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useProfile, getPriceForType } from "@/hooks/useProfile";
 import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
 import HeadMeta from "@/components/seo/HeadMeta";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useAppSettings, useInactiveBrands } from "@/hooks/useStore";
 import { trackViewProduct, trackAddToCart } from "@/components/seo/Analytics";
 
@@ -427,6 +428,13 @@ const ProductoDetalle = () => {
 
         <div className="flex-1 overflow-y-auto overscroll-contain">
           <MediaGallery />
+          <div className="px-4 pt-1">
+            <SeoBreadcrumbs items={[
+              { label: "Catálogo", href: "/catalogo" },
+              ...(product.categories?.name ? [{ label: product.categories.name, href: `/hub/categoria/${product.categories.slug}` }] : []),
+              { label: product.name },
+            ]} className="mb-1" />
+          </div>
           <div className="px-4 pt-3 pb-4">
             <ProductInfo />
           </div>
@@ -439,6 +447,11 @@ const ProductoDetalle = () => {
       <div className="hidden md:block min-h-screen bg-background pb-0">
         <TopBar />
         <div className="max-w-6xl mx-auto px-6 py-6">
+          <SeoBreadcrumbs items={[
+            { label: "Catálogo", href: "/catalogo" },
+            ...(product.categories?.name ? [{ label: product.categories.name, href: `/hub/categoria/${product.categories.slug}` }] : []),
+            { label: product.name },
+          ]} className="mb-3" />
           {/* Back + actions */}
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">

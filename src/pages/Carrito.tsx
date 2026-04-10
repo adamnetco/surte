@@ -13,6 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink, Ticket, X, CheckCircle2, CalendarIcon, Clock, Banknote, CreditCard, Truck, Navigation } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { trackPurchase } from "@/components/seo/Analytics";
@@ -652,6 +653,7 @@ const Carrito = () => {
     <div className="min-h-screen bg-background pb-24 lg:pb-8">
       <TopBar />
       <main className="px-4 py-4 max-w-7xl mx-auto">
+        <SeoBreadcrumbs items={[{ label: "Carrito" }]} className="mb-2" />
         <h1 className="text-xl lg:text-2xl font-heading font-bold text-foreground mb-4">Tu Carrito</h1>
 
         {items.length === 0 ? (

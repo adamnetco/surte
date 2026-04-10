@@ -7,6 +7,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { Package, Clock, CheckCircle, Truck, XCircle, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -21,6 +22,8 @@ const statusConfig: Record<string, { label: string; icon: any; color: string }> 
 };
 
 const statusSteps = ["pendiente", "confirmado", "en_preparacion", "enviado", "entregado"];
+
+import HeadMeta from "@/components/seo/HeadMeta";
 
 const MisPedidos = () => {
   const { user, loading: authLoading } = useAuth();
@@ -75,6 +78,7 @@ const MisPedidos = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4">
+        <SeoBreadcrumbs items={[{ label: "Mis Pedidos" }]} className="mb-2" />
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => navigate(-1)} className="text-foreground"><ArrowLeft size={20} /></button>
           <h1 className="text-xl font-heading font-bold text-foreground">Mis Pedidos</h1>

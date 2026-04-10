@@ -2,6 +2,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import StoreFooter from "@/components/surte/StoreFooter";
 import HeadMeta from "@/components/seo/HeadMeta";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useAppSettings } from "@/hooks/useStore";
 
 const Politicas = () => {
@@ -13,6 +14,7 @@ const Politicas = () => {
       <HeadMeta title={`Políticas — ${storeName}`} description={`Políticas de privacidad, devoluciones y envíos de ${storeName}.`} />
       <TopBar />
       <main className="px-4 py-6 max-w-3xl mx-auto space-y-6">
+        <SeoBreadcrumbs items={[{ label: "Políticas" }]} className="mb-2" />
         <h1 className="text-xl font-heading font-bold text-foreground">Políticas</h1>
 
         <section className="space-y-2">

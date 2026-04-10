@@ -5,6 +5,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { Package, Clock, CheckCircle, Truck, XCircle, MessageCircle, Copy } from "lucide-react";
 import { motion } from "framer-motion";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { toast } from "sonner";
 import { useAppSettings } from "@/hooks/useStore";
 import { useEffect } from "react";
@@ -114,6 +115,7 @@ const Pedido = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4 max-w-lg mx-auto">
+        <SeoBreadcrumbs items={[{ label: "Pedidos", href: "/pedidos" }, { label: `Pedido #${order.order_number}` }]} className="mb-2" />
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}

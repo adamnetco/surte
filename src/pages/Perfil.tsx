@@ -7,6 +7,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { ArrowLeft, Save, User, Phone, MapPin, Building2, Loader2, Store } from "lucide-react";
 import { toast } from "sonner";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import type { BusinessType } from "@/hooks/useProfile";
 
 const businessTypes: { value: BusinessType; label: string; desc: string }[] = [
@@ -104,6 +105,7 @@ const Perfil = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4">
+        <SeoBreadcrumbs items={[{ label: "Mi Perfil" }]} className="mb-2" />
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => navigate(-1)} className="text-foreground"><ArrowLeft size={20} /></button>
           <h1 className="text-xl font-heading font-bold text-foreground">Mi Perfil</h1>
