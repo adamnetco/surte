@@ -38,6 +38,13 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
     if (error) { toast.error(error.message); return; }
     toast.success(`Estado actualizado: ${statusConfig[status]?.label || status}`);
     queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+
+    // Auto-send WhatsApp on key status changes
+    const order = orders?.find((o: any) => o.id === orderId);
+    if (order && ["confirmado", "enviado", "entregado"].includes(status)) {
+      const updatedOrder = { ...order, status };
+      sendWhatsAppUpdate(updatedOrder);
+    }
   };
 
   const sendWhatsAppUpdate = async (order: any) => {

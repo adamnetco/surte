@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       userId = user?.id || null;
     }
 
-    const { items, customer_name, customer_phone, customer_address, notes, delivery_price, delivery_zone_id, preferred_delivery_date, preferred_time_slot, payment_method, geo_location } = await req.json();
+    const { items, customer_name, customer_phone, customer_email, customer_address, notes, delivery_price, delivery_zone_id, preferred_delivery_date, preferred_time_slot, payment_method, geo_location } = await req.json();
 
     if (!items?.length || !customer_name || !customer_phone) {
       return new Response(JSON.stringify({ error: 'Datos incompletos' }), {
@@ -48,6 +48,7 @@ Deno.serve(async (req) => {
       .insert({
         customer_name,
         customer_phone,
+        customer_email: customer_email || null,
         customer_address: customer_address || null,
         notes: notes || null,
         subtotal,
