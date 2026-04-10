@@ -1,10 +1,16 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Download, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Database } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Database, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   EXPORTABLE_TABLES,
   jsonToCsv,
@@ -13,6 +19,7 @@ import {
   readFileAsText,
   type TableDef,
 } from "@/utils/csvUtils";
+import * as XLSX from "xlsx";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -28,30 +35,43 @@ const DataManagementTab = () => {
   const [bulkExporting, setBulkExporting] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
+  // ── Fetch all rows from a table ──────────────────────────
+  const fetchAllRows = async (def: TableDef): Promise<any[]> => {
+    let query = supabase.from(def.table as any).select("*");
+    if (def.orderBy) query = query.order(def.orderBy.column, { ascending: def.orderBy.ascending });
+
+    let allData: any[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await query.range(from, from + pageSize - 1);
+      if (error) throw error;
+      if (data && data.length > 0) {
+        allData = [...allData, ...data];
+        from += pageSize;
+        hasMore = data.length === pageSize;
+      } else {
+        hasMore = false;
+      }
+    }
+    return allData;
+  };
+
+  // ── Download as XLSX ──────────────────────────────────────
+  const downloadXlsx = (rows: Record<string, any>[], filename: string) => {
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    XLSX.writeFile(wb, filename);
+  };
+
   // ── Single table export ──────────────────────────────────
-  const handleExport = async (def: TableDef) => {
+  const handleExport = async (def: TableDef, format: "csv" | "xlsx" = "csv") => {
     setExportStatus((s) => ({ ...s, [def.name]: { status: "loading" } }));
     try {
-      let query = supabase.from(def.table as any).select("*");
-      if (def.orderBy) query = query.order(def.orderBy.column, { ascending: def.orderBy.ascending });
-
-      // Handle pagination for large tables (>1000 rows)
-      let allData: any[] = [];
-      let from = 0;
-      const pageSize = 1000;
-      let hasMore = true;
-
-      while (hasMore) {
-        const { data, error } = await query.range(from, from + pageSize - 1);
-        if (error) throw error;
-        if (data && data.length > 0) {
-          allData = [...allData, ...data];
-          from += pageSize;
-          hasMore = data.length === pageSize;
-        } else {
-          hasMore = false;
-        }
-      }
+      const allData = await fetchAllRows(def);
 
       if (!allData.length) {
         toast.info(`${def.label}: sin datos para exportar`);
@@ -59,11 +79,15 @@ const DataManagementTab = () => {
         return;
       }
 
-      const csv = jsonToCsv(allData);
       const timestamp = new Date().toISOString().slice(0, 10);
-      downloadCsv(csv, `surteya_${def.name}_${timestamp}.csv`);
+      if (format === "xlsx") {
+        downloadXlsx(allData, `surteya_${def.name}_${timestamp}.xlsx`);
+      } else {
+        const csv = jsonToCsv(allData);
+        downloadCsv(csv, `surteya_${def.name}_${timestamp}.csv`);
+      }
       setExportStatus((s) => ({ ...s, [def.name]: { status: "success", count: allData.length } }));
-      toast.success(`${def.label}: ${allData.length} registros exportados`);
+      toast.success(`${def.label}: ${allData.length} registros exportados (${format.toUpperCase()})`);
     } catch (err: any) {
       setExportStatus((s) => ({ ...s, [def.name]: { status: "error", error: err.message } }));
       toast.error(`Error exportando ${def.label}: ${err.message}`);
@@ -71,24 +95,33 @@ const DataManagementTab = () => {
   };
 
   // ── Bulk export all tables ──────────────────────────────
-  const handleBulkExport = async () => {
+  const handleBulkExport = async (format: "csv" | "xlsx" = "csv") => {
     setBulkExporting(true);
     for (const def of EXPORTABLE_TABLES) {
-      await handleExport(def);
+      await handleExport(def, format);
     }
     setBulkExporting(false);
-    toast.success("Exportación masiva completada");
+    toast.success(`Exportación masiva completada (${format.toUpperCase()})`);
   };
 
   // ── Single table import ──────────────────────────────────
   const handleImport = async (def: TableDef, file: File) => {
     setImportStatus((s) => ({ ...s, [def.name]: { status: "loading" } }));
     try {
-      const text = await readFileAsText(file);
-      let rows = parseCsv(text);
+      let rows: Record<string, any>[];
+
+      if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+        const buffer = await file.arrayBuffer();
+        const wb = XLSX.read(buffer, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      } else {
+        const text = await readFileAsText(file);
+        rows = parseCsv(text);
+      }
 
       if (!rows.length) {
-        throw new Error("El archivo CSV está vacío o no tiene formato válido");
+        throw new Error("El archivo está vacío o no tiene formato válido");
       }
 
       // Clean rows: remove skip columns, parse JSON arrays, handle empty strings
@@ -154,13 +187,25 @@ const DataManagementTab = () => {
             Gestión de Datos
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Exporta e importa todos los datos de la plataforma en formato CSV
+            Exporta e importa datos en formato CSV o Excel (XLSX)
           </p>
         </div>
-        <Button onClick={handleBulkExport} disabled={bulkExporting} className="btn-surte gap-2">
-          {bulkExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-          Exportar Todo
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button disabled={bulkExporting} className="btn-surte gap-2">
+              {bulkExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Exportar Todo
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleBulkExport("csv")}>
+              <FileSpreadsheet size={14} className="mr-2" /> CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleBulkExport("xlsx")}>
+              <FileDown size={14} className="mr-2" /> Excel (XLSX)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Table grid */}
@@ -200,16 +245,23 @@ const DataManagementTab = () => {
                 )}
               </CardHeader>
               <CardContent className="px-4 pb-3 pt-0 flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 gap-1.5 text-xs"
-                  disabled={exp?.status === "loading"}
-                  onClick={() => handleExport(def)}
-                >
-                  {exp?.status === "loading" ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-                  Exportar
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1.5 text-xs"
+                      disabled={exp?.status === "loading"}
+                    >
+                      {exp?.status === "loading" ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                      Exportar
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleExport(def, "csv")}>CSV</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport(def, "xlsx")}>Excel (XLSX)</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   size="sm"
                   variant="outline"
@@ -223,7 +275,7 @@ const DataManagementTab = () => {
                 <input
                   ref={(el) => { fileInputRefs.current[def.name] = el; }}
                   type="file"
-                  accept=".csv"
+                  accept=".csv,.xlsx,.xls"
                   className="hidden"
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
@@ -247,10 +299,10 @@ const DataManagementTab = () => {
         <CardContent className="py-4 px-5 space-y-2 text-sm text-muted-foreground">
           <p className="font-heading font-semibold text-foreground">📋 Instrucciones</p>
           <ul className="list-disc list-inside space-y-1">
-            <li><strong>Exportar</strong>: Descarga un CSV con todos los registros de la tabla seleccionada.</li>
-            <li><strong>Importar</strong>: Sube un CSV con la misma estructura. Se usa UPSERT por ID (actualiza existentes, inserta nuevos).</li>
-            <li><strong>Exportar Todo</strong>: Descarga CSVs de todas las tablas de forma secuencial.</li>
-            <li>Los archivos incluyen BOM para compatibilidad con Excel y caracteres especiales (ñ, tildes).</li>
+            <li><strong>Exportar</strong>: Descarga un CSV o Excel con todos los registros de la tabla.</li>
+            <li><strong>Importar</strong>: Sube un CSV o XLSX con la misma estructura. Se usa UPSERT por ID.</li>
+            <li><strong>Exportar Todo</strong>: Descarga archivos de todas las tablas de forma secuencial.</li>
+            <li>CSV incluye BOM para compatibilidad con Excel. XLSX es nativo de Excel.</li>
             <li>Columnas auto-generadas (created_at, updated_at) se omiten al importar.</li>
             <li>Para migrar datos a producción: exporta aquí, luego importa en el entorno Live.</li>
           </ul>
