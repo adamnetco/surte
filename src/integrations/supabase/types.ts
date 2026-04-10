@@ -236,6 +236,59 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_reviews: {
+        Row: {
+          admin_response: string | null
+          comment: string
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          is_active: boolean
+          is_approved: boolean
+          order_id: string | null
+          rating: number
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          comment: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          is_active?: boolean
+          is_approved?: boolean
+          order_id?: string | null
+          rating?: number
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          comment?: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          is_active?: boolean
+          is_approved?: boolean
+          order_id?: string | null
+          rating?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -386,6 +439,42 @@ export type Database = {
           image_url?: string
           is_active?: boolean | null
           sort_order?: number | null
+        }
+        Relationships: []
+      }
+      google_reviews: {
+        Row: {
+          author_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          profile_photo_url: string | null
+          rating: number
+          review_date: string | null
+          review_text: string | null
+          sort_order: number
+        }
+        Insert: {
+          author_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          profile_photo_url?: string | null
+          rating?: number
+          review_date?: string | null
+          review_text?: string | null
+          sort_order?: number
+        }
+        Update: {
+          author_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          profile_photo_url?: string | null
+          rating?: number
+          review_date?: string | null
+          review_text?: string | null
+          sort_order?: number
         }
         Relationships: []
       }
@@ -648,6 +737,7 @@ export type Database = {
         Row: {
           created_at: string
           customer_address: string | null
+          customer_email: string | null
           customer_name: string
           customer_phone: string
           delivery_price: number
@@ -670,6 +760,7 @@ export type Database = {
         Insert: {
           created_at?: string
           customer_address?: string | null
+          customer_email?: string | null
           customer_name: string
           customer_phone: string
           delivery_price?: number
@@ -692,6 +783,7 @@ export type Database = {
         Update: {
           created_at?: string
           customer_address?: string | null
+          customer_email?: string | null
           customer_name?: string
           customer_phone?: string
           delivery_price?: number
