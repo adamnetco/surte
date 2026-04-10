@@ -16,6 +16,7 @@ const TratamientoDatos = () => {
       <HeadMeta title={`Tratamiento de Datos — ${storeName}`} description={`Política de tratamiento de datos personales de ${storeName}.`} />
       <TopBar />
       <main className="px-4 py-6 max-w-3xl mx-auto space-y-6">
+        <SeoBreadcrumbs items={[{ label: "Tratamiento de Datos" }]} className="mb-2" />
         <h1 className="text-xl font-heading font-bold text-foreground">Política de Tratamiento de Datos Personales</h1>
 
         <section className="space-y-2">

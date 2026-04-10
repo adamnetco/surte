@@ -155,6 +155,13 @@ const Hub = () => {
       )}
       <TopBar />
       <main className="px-4 py-4">
+        <SeoBreadcrumbs
+          items={[
+            { label: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : type === "etiqueta" ? "Destacados" : "Ciudades", href: type === "categoria" ? "/categorias" : undefined },
+            { label: title },
+          ]}
+          className="mb-2"
+        />
         <div className="mb-4">
           <p className="text-[10px] uppercase tracking-widest text-accent font-semibold mb-1">
             {type === "categoria" ? "Categoría" : type === "marca" ? "Marca" : type === "etiqueta" ? "Destacados" : type === "ciudad" ? "Ciudad" : "Hub"}

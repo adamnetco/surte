@@ -23,6 +23,8 @@ const statusConfig: Record<string, { label: string; icon: any; color: string }> 
 
 const statusSteps = ["pendiente", "confirmado", "en_preparacion", "enviado", "entregado"];
 
+import HeadMeta from "@/components/seo/HeadMeta";
+
 const MisPedidos = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();

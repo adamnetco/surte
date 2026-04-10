@@ -653,6 +653,7 @@ const Carrito = () => {
     <div className="min-h-screen bg-background pb-24 lg:pb-8">
       <TopBar />
       <main className="px-4 py-4 max-w-7xl mx-auto">
+        <SeoBreadcrumbs items={[{ label: "Carrito" }]} className="mb-2" />
         <h1 className="text-xl lg:text-2xl font-heading font-bold text-foreground mb-4">Tu Carrito</h1>
 
         {items.length === 0 ? (

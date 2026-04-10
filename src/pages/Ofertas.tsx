@@ -12,6 +12,7 @@ const Ofertas = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4">
+        <SeoBreadcrumbs items={[{ label: "Ofertas" }]} className="mb-2" />
         <h1 className="text-xl font-heading font-bold text-foreground mb-1">Ofertas</h1>
         <p className="text-sm text-muted-foreground mb-4">Los mejores precios para tu negocio</p>
         {isLoading ? (

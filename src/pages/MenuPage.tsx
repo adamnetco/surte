@@ -30,6 +30,7 @@ const MenuPage = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4">
+        <SeoBreadcrumbs items={[{ label: "Menú" }]} className="mb-2" />
         <h1 className="text-xl font-heading font-bold text-foreground mb-4">Menú</h1>
 
         {user && (

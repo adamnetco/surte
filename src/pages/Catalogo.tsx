@@ -34,6 +34,7 @@ const Catalogo = () => {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <TopBar />
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-4">
+        <SeoBreadcrumbs items={[{ label: "Catálogo", href: "/catalogo" }]} className="mb-2" />
         <div className="flex items-baseline justify-between mb-1">
           <h1 className="text-xl md:text-2xl font-heading font-bold text-foreground">
             {activeCategory
