@@ -35,30 +35,43 @@ const DataManagementTab = () => {
   const [bulkExporting, setBulkExporting] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
+  // ── Fetch all rows from a table ──────────────────────────
+  const fetchAllRows = async (def: TableDef): Promise<any[]> => {
+    let query = supabase.from(def.table as any).select("*");
+    if (def.orderBy) query = query.order(def.orderBy.column, { ascending: def.orderBy.ascending });
+
+    let allData: any[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await query.range(from, from + pageSize - 1);
+      if (error) throw error;
+      if (data && data.length > 0) {
+        allData = [...allData, ...data];
+        from += pageSize;
+        hasMore = data.length === pageSize;
+      } else {
+        hasMore = false;
+      }
+    }
+    return allData;
+  };
+
+  // ── Download as XLSX ──────────────────────────────────────
+  const downloadXlsx = (rows: Record<string, any>[], filename: string) => {
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    XLSX.writeFile(wb, filename);
+  };
+
   // ── Single table export ──────────────────────────────────
-  const handleExport = async (def: TableDef) => {
+  const handleExport = async (def: TableDef, format: "csv" | "xlsx" = "csv") => {
     setExportStatus((s) => ({ ...s, [def.name]: { status: "loading" } }));
     try {
-      let query = supabase.from(def.table as any).select("*");
-      if (def.orderBy) query = query.order(def.orderBy.column, { ascending: def.orderBy.ascending });
-
-      // Handle pagination for large tables (>1000 rows)
-      let allData: any[] = [];
-      let from = 0;
-      const pageSize = 1000;
-      let hasMore = true;
-
-      while (hasMore) {
-        const { data, error } = await query.range(from, from + pageSize - 1);
-        if (error) throw error;
-        if (data && data.length > 0) {
-          allData = [...allData, ...data];
-          from += pageSize;
-          hasMore = data.length === pageSize;
-        } else {
-          hasMore = false;
-        }
-      }
+      const allData = await fetchAllRows(def);
 
       if (!allData.length) {
         toast.info(`${def.label}: sin datos para exportar`);
@@ -66,11 +79,15 @@ const DataManagementTab = () => {
         return;
       }
 
-      const csv = jsonToCsv(allData);
       const timestamp = new Date().toISOString().slice(0, 10);
-      downloadCsv(csv, `surteya_${def.name}_${timestamp}.csv`);
+      if (format === "xlsx") {
+        downloadXlsx(allData, `surteya_${def.name}_${timestamp}.xlsx`);
+      } else {
+        const csv = jsonToCsv(allData);
+        downloadCsv(csv, `surteya_${def.name}_${timestamp}.csv`);
+      }
       setExportStatus((s) => ({ ...s, [def.name]: { status: "success", count: allData.length } }));
-      toast.success(`${def.label}: ${allData.length} registros exportados`);
+      toast.success(`${def.label}: ${allData.length} registros exportados (${format.toUpperCase()})`);
     } catch (err: any) {
       setExportStatus((s) => ({ ...s, [def.name]: { status: "error", error: err.message } }));
       toast.error(`Error exportando ${def.label}: ${err.message}`);
@@ -78,13 +95,13 @@ const DataManagementTab = () => {
   };
 
   // ── Bulk export all tables ──────────────────────────────
-  const handleBulkExport = async () => {
+  const handleBulkExport = async (format: "csv" | "xlsx" = "csv") => {
     setBulkExporting(true);
     for (const def of EXPORTABLE_TABLES) {
-      await handleExport(def);
+      await handleExport(def, format);
     }
     setBulkExporting(false);
-    toast.success("Exportación masiva completada");
+    toast.success(`Exportación masiva completada (${format.toUpperCase()})`);
   };
 
   // ── Single table import ──────────────────────────────────
