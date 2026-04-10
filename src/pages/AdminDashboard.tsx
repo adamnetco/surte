@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, Database } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OverviewTab from "@/components/admin/OverviewTab";
@@ -28,6 +28,7 @@ import FeaturedSectionsTab from "@/components/admin/FeaturedSectionsTab";
 import MunicipalitiesTab from "@/components/admin/MunicipalitiesTab";
 import CustomerReviewsTab from "@/components/admin/CustomerReviewsTab";
 import GoogleReviewsTab from "@/components/admin/GoogleReviewsTab";
+import DataManagementTab from "@/components/admin/DataManagementTab";
 
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[] },
@@ -50,6 +51,7 @@ const allTabs = [
   { id: "reviews", label: "Comentarios", icon: MessageSquare, roles: ["superadmin", "admin", "editor"] as AppRole[] },
   { id: "google-reviews", label: "Google", icon: Map, roles: ["superadmin", "admin", "editor"] as AppRole[] },
   { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "data", label: "Datos", icon: Database, roles: ["superadmin"] as AppRole[] },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
 
@@ -168,6 +170,7 @@ const AdminDashboard = () => {
       {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
       {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
       {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
+      {activeTab === "data" && <DataManagementTab />}
       {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
     </TabErrorBoundary>
   );
