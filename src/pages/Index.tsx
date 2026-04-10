@@ -107,7 +107,7 @@ const Index = () => {
         {show("show_section_banners") && <BannerCarousel />}
         <CategoryGrid />
         <ValueStrip />
-        <FeaturedProducts />
+        {show("show_section_featured") && <FeaturedProducts />}
         {show("show_section_promo") && <PromoSection />}
         {show("show_section_brands") && <BrandsSection />}
         {show("show_section_gallery") && <GallerySection />}

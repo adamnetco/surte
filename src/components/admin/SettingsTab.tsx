@@ -51,6 +51,7 @@ const settingsMeta: Record<string, SettingMeta> = {
   show_section_brands: { label: "Marcas Aliadas", icon: Eye, type: "toggle", group: "visibilidad" },
   show_section_promo: { label: "Sección Promocional", icon: Eye, type: "toggle", group: "visibilidad" },
   show_section_banners: { label: "Carrusel de Banners", icon: Eye, type: "toggle", group: "visibilidad" },
+  show_section_featured: { label: "Sección Destacados", icon: Eye, type: "toggle", group: "visibilidad", description: "Pestañas de productos destacados en la página de inicio" },
   show_promo_banner: { label: "Barra Superior Promocional", icon: Eye, type: "toggle", group: "visibilidad" },
   promo_banner_text: { label: "Texto Barra Promocional", icon: MessageSquare, type: "text", group: "general", description: "Ej: 🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000" },
   featured_label_ofertas: { label: "Etiqueta Destacados: Ofertas", icon: Award, type: "text", group: "destacados", description: "Ej: 🔥 Ofertas" },
