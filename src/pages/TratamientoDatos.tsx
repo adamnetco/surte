@@ -2,6 +2,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import StoreFooter from "@/components/surte/StoreFooter";
 import HeadMeta from "@/components/seo/HeadMeta";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useAppSettings } from "@/hooks/useStore";
 
 const TratamientoDatos = () => {

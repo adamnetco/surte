@@ -7,6 +7,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { Package, Clock, CheckCircle, Truck, XCircle, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);

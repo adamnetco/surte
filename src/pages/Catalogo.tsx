@@ -7,6 +7,7 @@ import { useProducts, useCategories } from "@/hooks/useStore";
 import FloatingCart from "@/components/surte/FloatingCart";
 import { ArrowUpDown, Package } from "lucide-react";
 import { motion } from "framer-motion";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 
 const Catalogo = () => {
   const [searchParams] = useSearchParams();

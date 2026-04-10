@@ -5,6 +5,7 @@ import { useProducts } from "@/hooks/useStore";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Heart, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 
 const Favoritos = () => {
   const navigate = useNavigate();

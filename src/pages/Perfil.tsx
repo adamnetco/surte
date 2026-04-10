@@ -7,6 +7,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { ArrowLeft, Save, User, Phone, MapPin, Building2, Loader2, Store } from "lucide-react";
 import { toast } from "sonner";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import type { BusinessType } from "@/hooks/useProfile";
 
 const businessTypes: { value: BusinessType; label: string; desc: string }[] = [

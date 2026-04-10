@@ -5,6 +5,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import { Package, Clock, CheckCircle, Truck, XCircle, MessageCircle, Copy } from "lucide-react";
 import { motion } from "framer-motion";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { toast } from "sonner";
 import { useAppSettings } from "@/hooks/useStore";
 import { useEffect } from "react";

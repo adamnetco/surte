@@ -2,6 +2,7 @@ import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import ProductCard from "@/components/surte/ProductCard";
 import { useProducts } from "@/hooks/useStore";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 
 const Ofertas = () => {
   const { data: products, isLoading } = useProducts();

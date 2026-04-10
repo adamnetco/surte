@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import CategoryIcon from "@/components/surte/CategoryIcon";
 import { ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 
 const Categorias = () => {
   const navigate = useNavigate();
