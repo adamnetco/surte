@@ -299,10 +299,10 @@ const DataManagementTab = () => {
         <CardContent className="py-4 px-5 space-y-2 text-sm text-muted-foreground">
           <p className="font-heading font-semibold text-foreground">📋 Instrucciones</p>
           <ul className="list-disc list-inside space-y-1">
-            <li><strong>Exportar</strong>: Descarga un CSV con todos los registros de la tabla seleccionada.</li>
-            <li><strong>Importar</strong>: Sube un CSV con la misma estructura. Se usa UPSERT por ID (actualiza existentes, inserta nuevos).</li>
-            <li><strong>Exportar Todo</strong>: Descarga CSVs de todas las tablas de forma secuencial.</li>
-            <li>Los archivos incluyen BOM para compatibilidad con Excel y caracteres especiales (ñ, tildes).</li>
+            <li><strong>Exportar</strong>: Descarga un CSV o Excel con todos los registros de la tabla.</li>
+            <li><strong>Importar</strong>: Sube un CSV o XLSX con la misma estructura. Se usa UPSERT por ID.</li>
+            <li><strong>Exportar Todo</strong>: Descarga archivos de todas las tablas de forma secuencial.</li>
+            <li>CSV incluye BOM para compatibilidad con Excel. XLSX es nativo de Excel.</li>
             <li>Columnas auto-generadas (created_at, updated_at) se omiten al importar.</li>
             <li>Para migrar datos a producción: exporta aquí, luego importa en el entorno Live.</li>
           </ul>
