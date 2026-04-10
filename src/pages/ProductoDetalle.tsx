@@ -73,9 +73,14 @@ const ProductoDetalle = () => {
     enabled: !!productId,
   });
 
+  const { data: inactiveBrands } = useInactiveBrands();
+
   useEffect(() => {
     if (product) trackViewProduct(product);
   }, [product?.id]);
+
+  // Check if product's brand is inactive
+  const isBrandHidden = product?.brand && inactiveBrands?.has(product.brand.toLowerCase());
 
   if (isLoading) {
     return (
