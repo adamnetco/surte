@@ -5,11 +5,11 @@ import { Plus, Trash2, Save, X, MapPin, Upload, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const useCities = () => useQuery({
-  queryKey: ["municipalities"],
+  queryKey: ["admin-municipality-cities"],
   queryFn: async () => {
     const { data, error } = await supabase.from("municipality_settings").select("city").eq("is_active", true).order("city");
     if (error) throw error;
-    return data.map(m => m.city);
+    return (data || []).map((m: any) => String(m.city));
   },
 });
 
