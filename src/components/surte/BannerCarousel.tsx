@@ -40,7 +40,7 @@ const BannerCarousel = () => {
   };
 
   return (
-    <section className="px-4 mt-3">
+    <section className="px-4 mt-3 max-w-7xl mx-auto">
       <div className="relative rounded-2xl overflow-hidden" style={{ background: banner.image_url ? undefined : "var(--gradient-hero)" }}>
         {banner.image_url && (
           <img src={banner.image_url} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />

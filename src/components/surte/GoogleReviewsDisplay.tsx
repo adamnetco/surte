@@ -33,7 +33,7 @@ const GoogleReviewsDisplay = () => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="py-6 px-4"
+      className="py-6 px-4 max-w-7xl mx-auto"
     >
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -48,9 +48,9 @@ const GoogleReviewsDisplay = () => {
         )}
       </div>
 
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible">
         {reviews.map((review: any) => (
-          <div key={review.id} className="shrink-0 w-[260px] bg-card rounded-xl p-4 border border-border space-y-2">
+          <div key={review.id} className="shrink-0 w-[260px] md:w-auto md:shrink bg-card rounded-xl p-4 border border-border space-y-2">
             <div className="flex items-center gap-2">
               {review.profile_photo_url ? (
                 <img src={review.profile_photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />

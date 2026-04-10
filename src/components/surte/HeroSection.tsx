@@ -53,7 +53,7 @@ const HeroSection = () => {
   // Fallback if no slides configured
   if (!hasSlides) {
     return (
-      <section className="relative overflow-hidden mx-4 mt-4 rounded-2xl" style={{ background: "var(--gradient-hero)" }}>
+      <section className="relative overflow-hidden mx-4 mt-4 rounded-2xl max-w-7xl md:mx-auto" style={{ background: "var(--gradient-hero)" }}>
         <div className="relative z-10 px-5 py-8 md:py-12 md:px-8">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -90,7 +90,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative overflow-hidden mx-4 mt-4 rounded-2xl">
+    <section className="relative overflow-hidden mx-4 mt-4 rounded-2xl max-w-7xl md:mx-auto">
       {/* Background image with lazy loading */}
       {bgImage ? (
         <img
