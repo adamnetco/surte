@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { trackPurchase } from "@/components/seo/Analytics";
+import { mailService } from "@/utils/mailService";
+import { orderConfirmationTemplate } from "@/utils/emailTemplates";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
