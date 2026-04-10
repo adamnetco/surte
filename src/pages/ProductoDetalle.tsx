@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useProfile, getPriceForType } from "@/hooks/useProfile";
 import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
 import HeadMeta from "@/components/seo/HeadMeta";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings, useInactiveBrands } from "@/hooks/useStore";
 import { trackViewProduct, trackAddToCart } from "@/components/seo/Analytics";
 
 const formatPrice = (price: number) =>
