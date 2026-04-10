@@ -99,7 +99,7 @@ const ProductoDetalle = () => {
     );
   }
 
-  if (!product) {
+  if (!product || isBrandHidden) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
         <p className="font-heading font-bold text-lg text-foreground mb-2">Producto no encontrado</p>
