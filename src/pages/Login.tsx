@@ -4,6 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone } from "lucide-react";
 import { toast } from "sonner";
+import { mailService } from "@/utils/mailService";
+import { welcomeTemplate } from "@/utils/emailTemplates";
 import surteLogo from "@/assets/surte-logo.png";
 
 type BusinessTypeOption = { value: string; label: string; icon: string };
@@ -58,6 +60,12 @@ const Login = () => {
       if (isSignUp) {
         const { error } = await signUp(email, password, fullName, businessType, phone);
         if (error) throw error;
+        // Send branded welcome email via Resend
+        mailService.send({
+          to: email,
+          subject: "🎉 ¡Bienvenido a SURTÉ YA!",
+          html: welcomeTemplate(fullName || "Cliente"),
+        }).catch((err) => console.warn("Welcome email failed:", err));
         toast.success("¡Cuenta creada! Revisa tu email para confirmar.");
       } else {
         const { error } = await signIn(email, password);
@@ -158,6 +166,14 @@ const Login = () => {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+
+          {!isSignUp && (
+            <div className="text-right">
+              <button type="button" onClick={() => navigate("/reset-password")} className="text-xs text-accent font-medium">
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+          )}
 
           <button
             type="submit"

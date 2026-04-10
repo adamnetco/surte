@@ -32,6 +32,7 @@ import Hub from "./pages/Hub";
 import LandingPage from "./pages/LandingPage";
 import Politicas from "./pages/Politicas";
 import TratamientoDatos from "./pages/TratamientoDatos";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="/menu" element={<MenuPage />} />
                 <Route path="/ofertas" element={<Ofertas />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/pedidos" element={<MisPedidos />} />
                 <Route path="/perfil" element={<Perfil />} />
                 <Route path="/favoritos" element={<Favoritos />} />
