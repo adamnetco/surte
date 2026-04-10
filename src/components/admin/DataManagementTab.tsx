@@ -108,11 +108,20 @@ const DataManagementTab = () => {
   const handleImport = async (def: TableDef, file: File) => {
     setImportStatus((s) => ({ ...s, [def.name]: { status: "loading" } }));
     try {
-      const text = await readFileAsText(file);
-      let rows = parseCsv(text);
+      let rows: Record<string, any>[];
+
+      if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+        const buffer = await file.arrayBuffer();
+        const wb = XLSX.read(buffer, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      } else {
+        const text = await readFileAsText(file);
+        rows = parseCsv(text);
+      }
 
       if (!rows.length) {
-        throw new Error("El archivo CSV está vacío o no tiene formato válido");
+        throw new Error("El archivo está vacío o no tiene formato válido");
       }
 
       // Clean rows: remove skip columns, parse JSON arrays, handle empty strings
