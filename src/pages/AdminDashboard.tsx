@@ -29,7 +29,6 @@ import MunicipalitiesTab from "@/components/admin/MunicipalitiesTab";
 import CustomerReviewsTab from "@/components/admin/CustomerReviewsTab";
 import GoogleReviewsTab from "@/components/admin/GoogleReviewsTab";
 
-// Tabs visible per role
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "orders", label: "Pedidos", icon: ShoppingCart, roles: ["superadmin", "admin", "editor"] as AppRole[] },
@@ -54,7 +53,6 @@ const allTabs = [
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
 ];
 
-// Error Boundary for admin tabs
 class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
   constructor(props: any) { super(props); this.state = { hasError: false, error: "" }; }
   static getDerivedStateFromError(error: Error) { return { hasError: true, error: error.message }; }
@@ -79,26 +77,15 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
 
-  // Filter tabs by role
   const tabs = allTabs.filter((t) => t.roles.includes(role));
 
-  // Set default tab for editors
   useEffect(() => {
-    if (!loading && role === "editor") {
-      setActiveTab("orders");
-    }
+    if (!loading && role === "editor") setActiveTab("orders");
   }, [role, loading]);
 
   useEffect(() => {
-    if (!loading && !user) {
-      toast.error("Acceso denegado");
-      navigate("/");
-      return;
-    }
-    if (!loading && !["superadmin", "admin", "editor"].includes(role)) {
-      toast.error("Acceso denegado");
-      navigate("/");
-    }
+    if (!loading && !user) { toast.error("Acceso denegado"); navigate("/"); return; }
+    if (!loading && !["superadmin", "admin", "editor"].includes(role)) { toast.error("Acceso denegado"); navigate("/"); }
   }, [user, role, loading, navigate]);
 
   const hasAdminAccess = ["superadmin", "admin", "editor"].includes(role);
@@ -143,7 +130,6 @@ const AdminDashboard = () => {
     enabled: hasAdminAccess,
   });
 
-  // Realtime: listen for new orders
   useEffect(() => {
     if (!hasAdminAccess) return;
     const channel = supabase
@@ -160,12 +146,38 @@ const AdminDashboard = () => {
 
   const pendingCount = orders?.filter((o: any) => o.status === "pendiente").length || 0;
 
+  const renderContent = () => (
+    <TabErrorBoundary tabName={tabs.find(t => t.id === activeTab)?.label || activeTab} key={activeTab}>
+      {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
+      {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
+      {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
+      {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
+      {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
+      {activeTab === "users" && <UsersTab queryClient={queryClient} />}
+      {activeTab === "content" && <ContentTab queryClient={queryClient} />}
+      {activeTab === "hero" && <HeroSlidesTab queryClient={queryClient} />}
+      {activeTab === "municipalities" && <MunicipalitiesTab queryClient={queryClient} />}
+      {activeTab === "shipping" && <ShippingTab queryClient={queryClient} />}
+      {activeTab === "notifications" && <NotificationsTab queryClient={queryClient} />}
+      {activeTab === "seo" && <SeoTab settings={settings} queryClient={queryClient} />}
+      {activeTab === "inventory" && <InventoryTab products={products} categories={categories} queryClient={queryClient} />}
+      {activeTab === "landing" && <LandingPagesTab />}
+      {activeTab === "presentations" && <PresentationsTab queryClient={queryClient} />}
+      {activeTab === "featured" && <FeaturedSectionsTab queryClient={queryClient} />}
+      {activeTab === "coupons" && <CouponsTab queryClient={queryClient} />}
+      {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
+      {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
+      {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
+      {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
+    </TabErrorBoundary>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <AdminHeader />
 
-      {/* Tab navigation */}
-      <div className="flex overflow-x-auto border-b border-border bg-card scrollbar-hide">
+      {/* Mobile: horizontal tab scroll */}
+      <div className="lg:hidden flex overflow-x-auto border-b border-border bg-card scrollbar-hide">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={`relative flex items-center gap-1.5 px-4 py-3 text-xs font-heading font-semibold whitespace-nowrap border-b-2 transition-colors ${
@@ -184,31 +196,43 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      <main className="p-4 pb-8">
-        <TabErrorBoundary tabName={tabs.find(t => t.id === activeTab)?.label || activeTab} key={activeTab}>
-        {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
-        {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
-        {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
-        {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
-        {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
-        {activeTab === "users" && <UsersTab queryClient={queryClient} />}
-        {activeTab === "content" && <ContentTab queryClient={queryClient} />}
-        {activeTab === "hero" && <HeroSlidesTab queryClient={queryClient} />}
-        {activeTab === "municipalities" && <MunicipalitiesTab queryClient={queryClient} />}
-        {activeTab === "shipping" && <ShippingTab queryClient={queryClient} />}
-        {activeTab === "notifications" && <NotificationsTab queryClient={queryClient} />}
-        {activeTab === "seo" && <SeoTab settings={settings} queryClient={queryClient} />}
-        {activeTab === "inventory" && <InventoryTab products={products} categories={categories} queryClient={queryClient} />}
-        {activeTab === "landing" && <LandingPagesTab />}
-        {activeTab === "presentations" && <PresentationsTab queryClient={queryClient} />}
-        {activeTab === "featured" && <FeaturedSectionsTab queryClient={queryClient} />}
-        {activeTab === "coupons" && <CouponsTab queryClient={queryClient} />}
-        {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
-        {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
-        {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
-        {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
-        </TabErrorBoundary>
+      {/* Mobile content */}
+      <main className="lg:hidden p-4 pb-8">
+        {renderContent()}
       </main>
+
+      {/* Desktop: sidebar + content */}
+      <div className="hidden lg:flex">
+        {/* Sidebar */}
+        <aside className="w-56 xl:w-64 shrink-0 border-r border-border bg-card min-h-[calc(100vh-56px)] sticky top-[56px] overflow-y-auto">
+          <nav className="py-2">
+            {tabs.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                  activeTab === id
+                    ? "bg-primary/10 text-primary border-r-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                <Icon size={16} />
+                {label}
+                {id === "orders" && pendingCount > 0 && (
+                  <span className="ml-auto w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-bold">
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Content area */}
+        <main className="flex-1 p-6 pb-8 min-w-0 overflow-x-hidden">
+          {renderContent()}
+        </main>
+      </div>
     </div>
   );
 };
