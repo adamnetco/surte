@@ -236,16 +236,23 @@ const DataManagementTab = () => {
                 )}
               </CardHeader>
               <CardContent className="px-4 pb-3 pt-0 flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 gap-1.5 text-xs"
-                  disabled={exp?.status === "loading"}
-                  onClick={() => handleExport(def)}
-                >
-                  {exp?.status === "loading" ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-                  Exportar
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1.5 text-xs"
+                      disabled={exp?.status === "loading"}
+                    >
+                      {exp?.status === "loading" ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                      Exportar
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleExport(def, "csv")}>CSV</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport(def, "xlsx")}>Excel (XLSX)</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   size="sm"
                   variant="outline"
