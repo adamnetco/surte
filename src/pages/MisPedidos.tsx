@@ -78,6 +78,7 @@ const MisPedidos = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4">
+        <SeoBreadcrumbs items={[{ label: "Mis Pedidos" }]} className="mb-2" />
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => navigate(-1)} className="text-foreground"><ArrowLeft size={20} /></button>
           <h1 className="text-xl font-heading font-bold text-foreground">Mis Pedidos</h1>
