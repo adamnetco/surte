@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, Database } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OverviewTab from "@/components/admin/OverviewTab";
