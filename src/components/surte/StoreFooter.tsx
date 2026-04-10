@@ -62,7 +62,7 @@ const StoreFooter = () => {
 
   return (
     <footer className="bg-primary text-primary-foreground">
-      <div className="max-w-6xl mx-auto px-4 py-10">
+      <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
@@ -194,7 +194,7 @@ const StoreFooter = () => {
 
       {/* Bottom bar */}
       <div className="border-t border-primary-foreground/10 px-4 py-4">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2 text-center">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2 text-center">
           <p className="text-[11px] opacity-50">
             © {new Date().getFullYear()} {storeName}. Todos los derechos reservados.
           </p>

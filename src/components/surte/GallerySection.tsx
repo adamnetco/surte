@@ -31,10 +31,10 @@ const GallerySection = () => {
         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={{ once: true, amount: 0.2 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="px-4 py-5"
+        className="px-4 py-6 max-w-7xl mx-auto"
       >
         <h2 className="text-lg font-heading font-bold text-foreground mb-3">Galería</h2>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
           {gallery.map((g, i) => (
             <motion.button
               key={g.id}

@@ -22,7 +22,7 @@ const BrandsSection = () => {
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="py-6 px-4"
+      className="py-6 px-4 max-w-7xl mx-auto"
     >
       <div className="text-center mb-4">
         <h2 className="text-lg font-heading font-bold text-foreground">Marcas Aliadas</h2>

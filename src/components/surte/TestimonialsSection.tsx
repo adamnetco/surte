@@ -21,10 +21,10 @@ const TestimonialsSection = () => {
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="px-4 py-6"
+      className="px-4 py-6 max-w-7xl mx-auto"
     >
       <h2 className="text-lg font-heading font-bold text-foreground mb-4">Lo que dicen nuestros clientes</h2>
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible">
         {testimonials.map((t, i) => (
           <motion.div
             key={t.id}
@@ -32,7 +32,7 @@ const TestimonialsSection = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="bg-card rounded-xl p-4 min-w-[260px] max-w-[280px] shrink-0 relative"
+            className="bg-card rounded-xl p-4 min-w-[260px] max-w-[280px] md:max-w-none md:min-w-0 shrink-0 md:shrink relative"
             style={{ boxShadow: "var(--shadow-card)" }}
           >
             <Quote size={20} className="text-accent/20 absolute top-3 right-3" />
