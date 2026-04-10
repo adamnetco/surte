@@ -159,6 +159,14 @@ const Login = () => {
             </button>
           </div>
 
+          {!isSignUp && (
+            <div className="text-right">
+              <button type="button" onClick={() => navigate("/reset-password")} className="text-xs text-accent font-medium">
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
