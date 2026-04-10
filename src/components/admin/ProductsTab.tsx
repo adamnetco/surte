@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { useQuery, useQueryClient as useQC } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy } from "lucide-react";
+import { useInactiveBrands } from "@/hooks/useStore";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy, Ban } from "lucide-react";
 import MarginCalculator from "./MarginCalculator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -114,6 +115,8 @@ const ProductMediaGallery = ({ productId, queryClient }: { productId: string; qu
 };
 
 const ProductsTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
+  const { data: inactiveBrands } = useInactiveBrands();
+  const isBrandHidden = (p: any) => !!p.brand && !!inactiveBrands && inactiveBrands.has(p.brand.toLowerCase());
   const [editing, setEditing] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterVisibility, setFilterVisibility] = useState<"all" | "visible" | "hidden">("all");
@@ -241,14 +244,17 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
   const filtered = products?.filter((p: any) => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const brandHidden = isBrandHidden(p);
     const matchesVisibility = filterVisibility === "all" ? true :
-      filterVisibility === "visible" ? p.is_active !== false :
-      p.is_active === false;
+      filterVisibility === "visible" ? (p.is_active !== false && !brandHidden) :
+      (p.is_active === false || brandHidden);
     return matchesSearch && matchesVisibility;
   });
 
-  const visibleCount = products?.filter((p: any) => p.is_active !== false).length || 0;
-  const hiddenCount = (products?.length || 0) - visibleCount;
+  const brandHiddenCount = products?.filter((p: any) => isBrandHidden(p) && p.is_active !== false).length || 0;
+  const individuallyHiddenCount = products?.filter((p: any) => p.is_active === false).length || 0;
+  const visibleCount = (products?.length || 0) - individuallyHiddenCount - brandHiddenCount;
+  const hiddenCount = individuallyHiddenCount + brandHiddenCount;
 
   return (
     <div>
@@ -256,7 +262,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
         <div>
           <h2 className="font-heading font-bold text-lg text-foreground">Productos ({products?.length || 0})</h2>
           <p className="text-[11px] text-muted-foreground">
-            <span className="text-accent">{visibleCount} visibles</span> · <span className="text-muted-foreground">{hiddenCount} ocultos</span>
+            <span className="text-accent">{visibleCount} visibles</span> · {individuallyHiddenCount > 0 && <span>{individuallyHiddenCount} ocultos</span>}{brandHiddenCount > 0 && <span className="text-destructive"> · {brandHiddenCount} por marca</span>}
           </p>
         </div>
         <button onClick={() => { resetForm(); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
@@ -490,7 +496,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
       <div className="space-y-2">
         {filtered?.map((p: any) => (
-          <div key={p.id} className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${p.is_active !== false ? "border-border" : "border-border opacity-50"}`}>
+          <div key={p.id} className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${p.is_active !== false && !isBrandHidden(p) ? "border-border" : "border-border opacity-50"}`}>
             <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
               {p.image_url ? (
                 <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
@@ -499,10 +505,15 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
                 {p.is_active === false && (
                   <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium shrink-0">OCULTO</span>
+                )}
+                {isBrandHidden(p) && (
+                  <span className="text-[9px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded font-medium shrink-0 flex items-center gap-0.5">
+                    <Ban size={8} /> MARCA INACTIVA
+                  </span>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
