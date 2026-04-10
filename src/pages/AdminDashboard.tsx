@@ -28,6 +28,7 @@ import FeaturedSectionsTab from "@/components/admin/FeaturedSectionsTab";
 import MunicipalitiesTab from "@/components/admin/MunicipalitiesTab";
 import CustomerReviewsTab from "@/components/admin/CustomerReviewsTab";
 import GoogleReviewsTab from "@/components/admin/GoogleReviewsTab";
+import DataManagementTab from "@/components/admin/DataManagementTab";
 
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[] },
