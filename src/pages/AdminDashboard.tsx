@@ -185,6 +185,7 @@ const AdminDashboard = () => {
       </div>
 
       <main className="p-4 pb-8">
+        <TabErrorBoundary tabName={tabs.find(t => t.id === activeTab)?.label || activeTab} key={activeTab}>
         {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
         {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
         {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
@@ -206,6 +207,7 @@ const AdminDashboard = () => {
         {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
         {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
+        </TabErrorBoundary>
       </main>
     </div>
   );
