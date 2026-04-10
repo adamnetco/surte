@@ -96,7 +96,7 @@ const Carrito = () => {
   const meetsMinimum = totalPrice >= minOrder;
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", address: "", notes: "", neighborhood_id: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", notes: "", neighborhood_id: "", countryCode: "+57" });
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -191,9 +191,11 @@ const Carrito = () => {
     setForm({
       name: user?.user_metadata?.full_name || "",
       phone: user?.user_metadata?.phone || "",
+      email: user?.email || "",
       address: "",
       notes: "",
       neighborhood_id: "",
+      countryCode: "+57",
     });
     setGeoLocation(null);
     setShowForm(true);
@@ -204,6 +206,11 @@ const Carrito = () => {
       toast.error("Nombre y teléfono son obligatorios");
       return;
     }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      toast.error("Email no válido");
+      return;
+    }
+    const fullPhone = form.phone.startsWith("+") ? form.phone : `${form.countryCode}${form.phone.replace(/^0+/, "")}`;
     setSubmitting(true);
     try {
       const grandTotal = totalPrice + deliveryCost - couponDiscount;
@@ -217,7 +224,8 @@ const Carrito = () => {
           presentation_name: i.presentationName || null,
         })),
         customer_name: form.name,
-        customer_phone: form.phone,
+        customer_phone: fullPhone,
+        customer_email: form.email || null,
         customer_address: form.address,
         notes: form.notes,
         delivery_price: deliveryCost,
@@ -383,7 +391,42 @@ const Carrito = () => {
                 >
                   <h3 className="font-heading font-semibold text-sm text-foreground">Datos del Pedido</h3>
                   <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
-                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="WhatsApp (ej: 573001234567) *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
+                  
+                  {/* Email */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs font-medium text-muted-foreground">📧 Correo electrónico</span>
+                    </div>
+                    <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tucorreo@email.com" type="email" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Para confirmación y seguimiento de tu pedido</p>
+                  </div>
+
+                  {/* Phone with country code */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs font-medium text-muted-foreground">📱 WhatsApp *</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <select
+                        value={form.countryCode}
+                        onChange={(e) => setForm({ ...form, countryCode: e.target.value })}
+                        className="bg-muted rounded-lg px-2 py-2.5 text-sm outline-none w-[100px] shrink-0"
+                      >
+                        <option value="+57">🇨🇴 +57</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+58">🇻🇪 +58</option>
+                        <option value="+52">🇲🇽 +52</option>
+                        <option value="+51">🇵🇪 +51</option>
+                        <option value="+56">🇨🇱 +56</option>
+                        <option value="+54">🇦🇷 +54</option>
+                        <option value="+593">🇪🇨 +593</option>
+                        <option value="+507">🇵🇦 +507</option>
+                        <option value="+34">🇪🇸 +34</option>
+                      </select>
+                      <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/[^\d]/g, "") })} placeholder="3001234567" className="flex-1 bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required inputMode="tel" />
+                    </div>
+                  </div>
+
                   <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
                   
                   {/* Geolocation */}
