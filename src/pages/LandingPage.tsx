@@ -50,9 +50,14 @@ const LandingPage = () => {
     enabled: !!page?.id,
   });
 
-  // Show linked products if any, otherwise fallback to first 50
-  const filtered = linkedProductIds?.length
+  // Linked products (curated for this page)
+  const linkedProducts = linkedProductIds?.length
     ? (products?.filter(p => linkedProductIds.includes(p.id)).sort((a, b) => linkedProductIds.indexOf(a.id) - linkedProductIds.indexOf(b.id)) || [])
+    : [];
+
+  // Other products (excluding linked ones)
+  const otherProducts = linkedProductIds?.length
+    ? (products?.filter(p => !linkedProductIds.includes(p.id)).slice(0, 20) || [])
     : (products?.slice(0, 50) || []);
 
   const storeName = settings?.store_name || "SURTÉ YA";
