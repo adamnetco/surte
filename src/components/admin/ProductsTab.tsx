@@ -114,6 +114,79 @@ const ProductMediaGallery = ({ productId, queryClient }: { productId: string; qu
   );
 };
 
+/* ── Featured Tags Picker — shows featured sections and lets admin quickly add tags ── */
+const FeaturedTagsPicker = ({ tags, onTagsChange }: { tags: string; onTagsChange: (t: string) => void }) => {
+  const { data: sections } = useQuery({
+    queryKey: ["featured_sections"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("featured_sections").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const currentTags = tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [];
+
+  const tagSections = (sections || []).filter(
+    (s: any) => s.filter_type === "tag" && s.filter_value
+  );
+
+  const toggleTag = (tag: string) => {
+    const lower = tag.toLowerCase();
+    if (currentTags.some(t => t.toLowerCase() === lower)) {
+      onTagsChange(currentTags.filter(t => t.toLowerCase() !== lower).join(", "));
+    } else {
+      onTagsChange([...currentTags, tag].join(", "));
+    }
+  };
+
+  const hasTag = (tag: string) => currentTags.some(t => t.toLowerCase() === tag.toLowerCase());
+
+  return (
+    <div className="space-y-2">
+      <label className="text-[11px] text-muted-foreground mb-0.5 block">🏷️ Etiquetas (separadas por coma)</label>
+      <input value={tags} onChange={(e) => onTagsChange(e.target.value)} placeholder="salsa, artesanal, picante" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none" />
+      {tags && (
+        <div className="flex flex-wrap gap-1 mt-1">
+          {currentTags.map((tag, i) => (
+            <span key={i} className="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium cursor-pointer hover:bg-accent/20 transition-colors" onClick={() => toggleTag(tag)}>
+              {tag} ✕
+            </span>
+          ))}
+        </div>
+      )}
+
+      {tagSections.length > 0 && (
+        <div className="border-t border-border pt-2 mt-2">
+          <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1">
+            <Star size={10} className="text-accent" /> Secciones Destacadas — clic para asociar
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {tagSections.map((s: any) => {
+              const active = hasTag(s.filter_value!);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => toggleTag(s.filter_value!)}
+                  className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-all border ${
+                    active
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-muted text-muted-foreground border-transparent hover:border-primary/40"
+                  }`}
+                >
+                  {s.emoji} {s.label}
+                  {active && " ✓"}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProductsTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
   const { data: inactiveBrands } = useInactiveBrands();
   const isBrandHidden = (p: any) => !!p.brand && !!inactiveBrands && inactiveBrands.has(p.brand.toLowerCase());
