@@ -75,6 +75,20 @@ interface ImportProgressState {
   detail: string;
 }
 
+interface RowError {
+  row: number;
+  message: string;
+  data: Record<string, unknown>;
+}
+
+interface ImportReport {
+  table: string;
+  total: number;
+  success: number;
+  failed: number;
+  errors: RowError[];
+}
+
 const DataManagementTab = () => {
   const [exportStatus, setExportStatus] = useState<Record<string, TableStatus>>({});
   const [importStatus, setImportStatus] = useState<Record<string, TableStatus>>({});
@@ -86,6 +100,7 @@ const DataManagementTab = () => {
   const [showBackups, setShowBackups] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -263,14 +278,16 @@ const DataManagementTab = () => {
     if (!importPreview) return;
     const { def, rows: rawRows } = importPreview;
     setImportPreview(null);
+    setImportReport(null);
     setImportStatus((s) => ({ ...s, [def.name]: { status: "loading" } }));
+
+    const errors: RowError[] = [];
+    let successCount = 0;
 
     try {
       // Create backup first
       setImportProgress({
-        current: 0,
-        total: rawRows.length || 1,
-        table: def.label,
+        current: 0, total: rawRows.length || 1, table: def.label,
         phase: "Creando punto de reversión",
         detail: `Respaldando el estado actual de ${def.label} antes de modificar datos.`,
       });
@@ -285,67 +302,102 @@ const DataManagementTab = () => {
         throw new Error("No se detectaron filas válidas para importar.");
       }
 
-      const batchSize = 100;
-      let imported = 0;
-      let updated = 0;
-      let created = 0;
+      const batchSize = 50;
 
+      // Helper: try batch, on failure fall back to row-by-row
+      const processBatch = async (
+        batch: Record<string, unknown>[],
+        startIndex: number,
+        mode: "upsert" | "insert",
+        globalOffset: number,
+      ) => {
+        const op = mode === "upsert"
+          ? supabase.from(def.table as any).upsert(batch as any, { onConflict: "id" })
+          : supabase.from(def.table as any).insert(batch as any);
+        const { error } = await op;
+
+        if (!error) {
+          successCount += batch.length;
+          return;
+        }
+
+        // Batch failed → process each row individually
+        for (let j = 0; j < batch.length; j++) {
+          const row = batch[j];
+          const singleOp = mode === "upsert"
+            ? supabase.from(def.table as any).upsert(row as any, { onConflict: "id" })
+            : supabase.from(def.table as any).insert(row as any);
+          const { error: rowErr } = await singleOp;
+
+          if (rowErr) {
+            errors.push({
+              row: globalOffset + startIndex + j + 1,
+              message: rowErr.message || rowErr.details || "Error desconocido",
+              data: row as Record<string, unknown>,
+            });
+          } else {
+            successCount++;
+          }
+        }
+      };
+
+      let processed = 0;
+
+      // Upsert rows with ID
       if (rowsWithId.length > 0) {
-        setImportProgress({
-          current: 0,
-          total: totalRows,
-          table: def.label,
-          phase: "Actualizando registros existentes",
-          detail: `${rowsWithId.length} filas con ID se subirán como actualización o inserción controlada.`,
-        });
-
         for (let i = 0; i < rowsWithId.length; i += batchSize) {
           const batch = rowsWithId.slice(i, i + batchSize);
-          const { error } = await supabase.from(def.table as any).upsert(batch as any, { onConflict: "id" });
-          if (error) throw error;
-          imported += batch.length;
-          updated += batch.length;
           setImportProgress({
-            current: imported,
-            total: totalRows,
-            table: def.label,
-            phase: "Actualizando registros existentes",
-            detail: `Subiendo lote ${Math.floor(i / batchSize) + 1} de ${Math.ceil(rowsWithId.length / batchSize)} con filas identificadas por ID.`,
+            current: processed, total: totalRows, table: def.label,
+            phase: "Actualizando registros",
+            detail: `Lote ${Math.floor(i / batchSize) + 1}/${Math.ceil(rowsWithId.length / batchSize)} — ${successCount} ok, ${errors.length} errores`,
           });
+          await processBatch(batch, i, "upsert", 0);
+          processed += batch.length;
         }
       }
 
+      // Insert rows without ID
       if (rowsWithoutId.length > 0) {
-        setImportProgress({
-          current: imported,
-          total: totalRows,
-          table: def.label,
-          phase: "Creando registros nuevos",
-          detail: `${rowsWithoutId.length} filas sin ID se crearán como nuevos registros.`,
-        });
-
         for (let i = 0; i < rowsWithoutId.length; i += batchSize) {
           const batch = rowsWithoutId.slice(i, i + batchSize);
-          const { error } = await supabase.from(def.table as any).insert(batch as any);
-          if (error) throw error;
-          imported += batch.length;
-          created += batch.length;
           setImportProgress({
-            current: imported,
-            total: totalRows,
-            table: def.label,
+            current: processed, total: totalRows, table: def.label,
             phase: "Creando registros nuevos",
-            detail: `Subiendo lote ${Math.floor(i / batchSize) + 1} de ${Math.ceil(rowsWithoutId.length / batchSize)} con filas nuevas.`,
+            detail: `Lote ${Math.floor(i / batchSize) + 1}/${Math.ceil(rowsWithoutId.length / batchSize)} — ${successCount} ok, ${errors.length} errores`,
           });
+          await processBatch(batch, i, "insert", rowsWithId.length);
+          processed += batch.length;
         }
       }
 
       setImportProgress(null);
-      setImportStatus((s) => ({
-        ...s,
-        [def.name]: { status: "success", count: imported, timestamp: new Date().toLocaleString("es-CO") },
-      }));
-      toast.success(`${def.label}: ${imported} registros procesados (${updated} actualizados, ${created} nuevos)`);
+
+      const report: ImportReport = {
+        table: def.label, total: totalRows,
+        success: successCount, failed: errors.length, errors,
+      };
+      setImportReport(report);
+
+      if (errors.length === 0) {
+        setImportStatus((s) => ({
+          ...s,
+          [def.name]: { status: "success", count: successCount, timestamp: new Date().toLocaleString("es-CO") },
+        }));
+        toast.success(`${def.label}: ${successCount} registros importados correctamente`);
+      } else if (successCount > 0) {
+        setImportStatus((s) => ({
+          ...s,
+          [def.name]: { status: "success", count: successCount, timestamp: new Date().toLocaleString("es-CO") },
+        }));
+        toast.warning(`${def.label}: ${successCount} ok, ${errors.length} con errores. Ver reporte.`);
+      } else {
+        setImportStatus((s) => ({
+          ...s,
+          [def.name]: { status: "error", error: `${errors.length} filas fallaron` },
+        }));
+        toast.error(`${def.label}: todas las filas fallaron. Ver reporte de errores.`);
+      }
     } catch (err: any) {
       setImportProgress(null);
       setImportStatus((s) => ({ ...s, [def.name]: { status: "error", error: err.message } }));
@@ -651,6 +703,72 @@ const DataManagementTab = () => {
             <Button onClick={executeImport} className="btn-surte gap-1.5">
               <Upload size={14} /> Importar con Backup
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Report Dialog */}
+      <Dialog open={!!importReport} onOpenChange={(open) => !open && setImportReport(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {importReport && importReport.failed === 0 ? (
+                <CheckCircle2 size={18} className="text-secondary" />
+              ) : (
+                <AlertCircle size={18} className="text-destructive" />
+              )}
+              Reporte de Importación: {importReport?.table}
+            </DialogTitle>
+            <DialogDescription>
+              Resultado detallado del proceso de importación.
+            </DialogDescription>
+          </DialogHeader>
+
+          {importReport && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-muted-foreground text-xs">Total</p>
+                  <p className="font-bold text-lg">{importReport.total}</p>
+                </div>
+                <div className="bg-secondary/10 rounded-lg p-3">
+                  <p className="text-xs text-secondary">Exitosos</p>
+                  <p className="font-bold text-lg text-secondary">{importReport.success}</p>
+                </div>
+                <div className={`rounded-lg p-3 ${importReport.failed > 0 ? "bg-destructive/10" : "bg-muted/50"}`}>
+                  <p className={`text-xs ${importReport.failed > 0 ? "text-destructive" : "text-muted-foreground"}`}>Fallidos</p>
+                  <p className={`font-bold text-lg ${importReport.failed > 0 ? "text-destructive" : ""}`}>{importReport.failed}</p>
+                </div>
+              </div>
+
+              {importReport.errors.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium mb-1.5 text-destructive">Errores por fila (máx. 50):</p>
+                  <ScrollArea className="max-h-[250px]">
+                    <div className="space-y-1.5">
+                      {importReport.errors.slice(0, 50).map((err, idx) => (
+                        <div key={idx} className="text-xs bg-destructive/5 border border-destructive/20 rounded p-2">
+                          <p className="font-medium">Fila {err.row}: <span className="font-normal text-destructive">{err.message}</span></p>
+                          <p className="text-muted-foreground mt-0.5 truncate text-[10px]">
+                            {Object.entries(err.data).slice(0, 4).map(([k, v]) => `${k}: ${String(v ?? "null")}`).join(" · ")}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
+              {importReport.failed === 0 && (
+                <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-3 text-xs text-center">
+                  <p className="font-medium text-secondary">✅ Todos los registros se importaron correctamente</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportReport(null)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
