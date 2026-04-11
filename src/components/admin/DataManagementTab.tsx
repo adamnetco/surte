@@ -75,6 +75,20 @@ interface ImportProgressState {
   detail: string;
 }
 
+interface RowError {
+  row: number;
+  message: string;
+  data: Record<string, unknown>;
+}
+
+interface ImportReport {
+  table: string;
+  total: number;
+  success: number;
+  failed: number;
+  errors: RowError[];
+}
+
 const DataManagementTab = () => {
   const [exportStatus, setExportStatus] = useState<Record<string, TableStatus>>({});
   const [importStatus, setImportStatus] = useState<Record<string, TableStatus>>({});
