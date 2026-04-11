@@ -567,11 +567,17 @@ const DataManagementTab = () => {
                 <input
                   ref={(el) => { fileInputRefs.current[def.name] = el; }}
                   type="file"
-                  accept=".csv,text/csv,application/csv,.xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  accept=".csv,.xlsx,.xls"
                   className="hidden"
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
+                    const name = file.name.toLowerCase();
+                    if (!name.endsWith(".csv") && !name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+                      toast.error("Formato no soportado. Usa archivos .csv, .xlsx o .xls");
+                      e.target.value = "";
+                      return;
+                    }
                     await handleFileSelected(def, file);
                     e.target.value = "";
                   }}
