@@ -450,6 +450,9 @@ const ProductoDetalle = () => {
             </button>
             <h2 className="flex-1 mx-3 text-sm font-heading font-semibold text-foreground truncate text-center">{product.name}</h2>
             <div className="flex gap-1.5">
+              <button onClick={() => setSwipeOpen(true)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform" title="Explorar categoría">
+                <Layers size={16} className="text-foreground" />
+              </button>
               <button onClick={handleShare} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
                 <Share2 size={16} className="text-foreground" />
               </button>
