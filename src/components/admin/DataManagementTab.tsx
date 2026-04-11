@@ -707,6 +707,72 @@ const DataManagementTab = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Import Report Dialog */}
+      <Dialog open={!!importReport} onOpenChange={(open) => !open && setImportReport(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {importReport && importReport.failed === 0 ? (
+                <CheckCircle2 size={18} className="text-secondary" />
+              ) : (
+                <AlertCircle size={18} className="text-destructive" />
+              )}
+              Reporte de Importación: {importReport?.table}
+            </DialogTitle>
+            <DialogDescription>
+              Resultado detallado del proceso de importación.
+            </DialogDescription>
+          </DialogHeader>
+
+          {importReport && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-muted-foreground text-xs">Total</p>
+                  <p className="font-bold text-lg">{importReport.total}</p>
+                </div>
+                <div className="bg-secondary/10 rounded-lg p-3">
+                  <p className="text-xs text-secondary">Exitosos</p>
+                  <p className="font-bold text-lg text-secondary">{importReport.success}</p>
+                </div>
+                <div className={`rounded-lg p-3 ${importReport.failed > 0 ? "bg-destructive/10" : "bg-muted/50"}`}>
+                  <p className={`text-xs ${importReport.failed > 0 ? "text-destructive" : "text-muted-foreground"}`}>Fallidos</p>
+                  <p className={`font-bold text-lg ${importReport.failed > 0 ? "text-destructive" : ""}`}>{importReport.failed}</p>
+                </div>
+              </div>
+
+              {importReport.errors.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium mb-1.5 text-destructive">Errores por fila (máx. 50):</p>
+                  <ScrollArea className="max-h-[250px]">
+                    <div className="space-y-1.5">
+                      {importReport.errors.slice(0, 50).map((err, idx) => (
+                        <div key={idx} className="text-xs bg-destructive/5 border border-destructive/20 rounded p-2">
+                          <p className="font-medium">Fila {err.row}: <span className="font-normal text-destructive">{err.message}</span></p>
+                          <p className="text-muted-foreground mt-0.5 truncate text-[10px]">
+                            {Object.entries(err.data).slice(0, 4).map(([k, v]) => `${k}: ${String(v ?? "null")}`).join(" · ")}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
+              {importReport.failed === 0 && (
+                <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-3 text-xs text-center">
+                  <p className="font-medium text-secondary">✅ Todos los registros se importaron correctamente</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportReport(null)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Backups Dialog */}
       <Dialog open={showBackups} onOpenChange={setShowBackups}>
         <DialogContent className="max-w-lg">
