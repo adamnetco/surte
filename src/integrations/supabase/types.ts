@@ -613,6 +613,113 @@ export type Database = {
         }
         Relationships: []
       }
+      modifier_groups: {
+        Row: {
+          created_at: string
+          display_label: string
+          id: string
+          is_active: boolean
+          is_required: boolean
+          max_selections: number
+          min_selections: number
+          name: string
+          product_id: string
+          selection_type: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_label: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          max_selections?: number
+          min_selections?: number
+          name: string
+          product_id: string
+          selection_type?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_label?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          max_selections?: number
+          min_selections?: number
+          name?: string
+          product_id?: string
+          selection_type?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modifier_groups_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modifier_options: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          linked_product_id: string | null
+          max_quantity: number
+          modifier_group_id: string
+          price_adjustment: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          linked_product_id?: string | null
+          max_quantity?: number
+          modifier_group_id: string
+          price_adjustment?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          linked_product_id?: string | null
+          max_quantity?: number
+          modifier_group_id?: string
+          price_adjustment?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modifier_options_linked_product_id_fkey"
+            columns: ["linked_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modifier_options_modifier_group_id_fkey"
+            columns: ["modifier_group_id"]
+            isOneToOne: false
+            referencedRelation: "modifier_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       municipality_settings: {
         Row: {
           city: string
