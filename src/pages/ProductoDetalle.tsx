@@ -342,10 +342,10 @@ const ProductoDetalle = () => {
         </div>
         <button
           onClick={handleAdd}
-          disabled={outOfStock}
+          disabled={!canAdd}
           className={`flex-1 py-2.5 text-sm flex items-center justify-center gap-2 rounded-xl font-heading font-semibold transition-all active:scale-[0.97] ${
             added ? "bg-accent text-accent-foreground"
-              : outOfStock ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : !canAdd ? "bg-muted text-muted-foreground cursor-not-allowed"
               : "btn-surte"
           }`}
         >
