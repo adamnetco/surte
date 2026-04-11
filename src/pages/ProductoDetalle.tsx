@@ -250,6 +250,20 @@ const ProductoDetalle = () => {
         </div>
       )}
 
+      {/* Modifiers */}
+      {productId && (
+        <div className="mb-3">
+          <ModifierPicker
+            productId={productId}
+            onModifiersChange={(mods, total, valid) => {
+              setSelectedModifiers(mods);
+              setModifierTotal(total);
+              setModifiersValid(valid);
+            }}
+          />
+        </div>
+      )}
+
       <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} />
 
       {/* Tabs */}
