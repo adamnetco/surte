@@ -278,14 +278,16 @@ const DataManagementTab = () => {
     if (!importPreview) return;
     const { def, rows: rawRows } = importPreview;
     setImportPreview(null);
+    setImportReport(null);
     setImportStatus((s) => ({ ...s, [def.name]: { status: "loading" } }));
+
+    const errors: RowError[] = [];
+    let successCount = 0;
 
     try {
       // Create backup first
       setImportProgress({
-        current: 0,
-        total: rawRows.length || 1,
-        table: def.label,
+        current: 0, total: rawRows.length || 1, table: def.label,
         phase: "Creando punto de reversión",
         detail: `Respaldando el estado actual de ${def.label} antes de modificar datos.`,
       });
@@ -300,67 +302,102 @@ const DataManagementTab = () => {
         throw new Error("No se detectaron filas válidas para importar.");
       }
 
-      const batchSize = 100;
-      let imported = 0;
-      let updated = 0;
-      let created = 0;
+      const batchSize = 50;
 
+      // Helper: try batch, on failure fall back to row-by-row
+      const processBatch = async (
+        batch: Record<string, unknown>[],
+        startIndex: number,
+        mode: "upsert" | "insert",
+        globalOffset: number,
+      ) => {
+        const op = mode === "upsert"
+          ? supabase.from(def.table as any).upsert(batch as any, { onConflict: "id" })
+          : supabase.from(def.table as any).insert(batch as any);
+        const { error } = await op;
+
+        if (!error) {
+          successCount += batch.length;
+          return;
+        }
+
+        // Batch failed → process each row individually
+        for (let j = 0; j < batch.length; j++) {
+          const row = batch[j];
+          const singleOp = mode === "upsert"
+            ? supabase.from(def.table as any).upsert(row as any, { onConflict: "id" })
+            : supabase.from(def.table as any).insert(row as any);
+          const { error: rowErr } = await singleOp;
+
+          if (rowErr) {
+            errors.push({
+              row: globalOffset + startIndex + j + 1,
+              message: rowErr.message || rowErr.details || "Error desconocido",
+              data: row as Record<string, unknown>,
+            });
+          } else {
+            successCount++;
+          }
+        }
+      };
+
+      let processed = 0;
+
+      // Upsert rows with ID
       if (rowsWithId.length > 0) {
-        setImportProgress({
-          current: 0,
-          total: totalRows,
-          table: def.label,
-          phase: "Actualizando registros existentes",
-          detail: `${rowsWithId.length} filas con ID se subirán como actualización o inserción controlada.`,
-        });
-
         for (let i = 0; i < rowsWithId.length; i += batchSize) {
           const batch = rowsWithId.slice(i, i + batchSize);
-          const { error } = await supabase.from(def.table as any).upsert(batch as any, { onConflict: "id" });
-          if (error) throw error;
-          imported += batch.length;
-          updated += batch.length;
           setImportProgress({
-            current: imported,
-            total: totalRows,
-            table: def.label,
-            phase: "Actualizando registros existentes",
-            detail: `Subiendo lote ${Math.floor(i / batchSize) + 1} de ${Math.ceil(rowsWithId.length / batchSize)} con filas identificadas por ID.`,
+            current: processed, total: totalRows, table: def.label,
+            phase: "Actualizando registros",
+            detail: `Lote ${Math.floor(i / batchSize) + 1}/${Math.ceil(rowsWithId.length / batchSize)} — ${successCount} ok, ${errors.length} errores`,
           });
+          await processBatch(batch, i, "upsert", 0);
+          processed += batch.length;
         }
       }
 
+      // Insert rows without ID
       if (rowsWithoutId.length > 0) {
-        setImportProgress({
-          current: imported,
-          total: totalRows,
-          table: def.label,
-          phase: "Creando registros nuevos",
-          detail: `${rowsWithoutId.length} filas sin ID se crearán como nuevos registros.`,
-        });
-
         for (let i = 0; i < rowsWithoutId.length; i += batchSize) {
           const batch = rowsWithoutId.slice(i, i + batchSize);
-          const { error } = await supabase.from(def.table as any).insert(batch as any);
-          if (error) throw error;
-          imported += batch.length;
-          created += batch.length;
           setImportProgress({
-            current: imported,
-            total: totalRows,
-            table: def.label,
+            current: processed, total: totalRows, table: def.label,
             phase: "Creando registros nuevos",
-            detail: `Subiendo lote ${Math.floor(i / batchSize) + 1} de ${Math.ceil(rowsWithoutId.length / batchSize)} con filas nuevas.`,
+            detail: `Lote ${Math.floor(i / batchSize) + 1}/${Math.ceil(rowsWithoutId.length / batchSize)} — ${successCount} ok, ${errors.length} errores`,
           });
+          await processBatch(batch, i, "insert", rowsWithId.length);
+          processed += batch.length;
         }
       }
 
       setImportProgress(null);
-      setImportStatus((s) => ({
-        ...s,
-        [def.name]: { status: "success", count: imported, timestamp: new Date().toLocaleString("es-CO") },
-      }));
-      toast.success(`${def.label}: ${imported} registros procesados (${updated} actualizados, ${created} nuevos)`);
+
+      const report: ImportReport = {
+        table: def.label, total: totalRows,
+        success: successCount, failed: errors.length, errors,
+      };
+      setImportReport(report);
+
+      if (errors.length === 0) {
+        setImportStatus((s) => ({
+          ...s,
+          [def.name]: { status: "success", count: successCount, timestamp: new Date().toLocaleString("es-CO") },
+        }));
+        toast.success(`${def.label}: ${successCount} registros importados correctamente`);
+      } else if (successCount > 0) {
+        setImportStatus((s) => ({
+          ...s,
+          [def.name]: { status: "success", count: successCount, timestamp: new Date().toLocaleString("es-CO") },
+        }));
+        toast.warning(`${def.label}: ${successCount} ok, ${errors.length} con errores. Ver reporte.`);
+      } else {
+        setImportStatus((s) => ({
+          ...s,
+          [def.name]: { status: "error", error: `${errors.length} filas fallaron` },
+        }));
+        toast.error(`${def.label}: todas las filas fallaron. Ver reporte de errores.`);
+      }
     } catch (err: any) {
       setImportProgress(null);
       setImportStatus((s) => ({ ...s, [def.name]: { status: "error", error: err.message } }));
