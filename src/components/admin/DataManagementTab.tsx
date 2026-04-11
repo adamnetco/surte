@@ -100,6 +100,7 @@ const DataManagementTab = () => {
   const [showBackups, setShowBackups] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
