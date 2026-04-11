@@ -127,21 +127,34 @@ const ProductoDetalle = () => {
   const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
 
   const activePres = presentations?.find((p: any) => p.id === selectedPresentation);
-  const displayPrice = activePres ? Number(activePres.price) : userPrice;
+  const basePrice = activePres ? Number(activePres.price) : userPrice;
+  const displayPrice = basePrice + modifierTotal;
 
   const discount = product.original_price
-    ? Math.round(((product.original_price - displayPrice) / product.original_price) * 100)
+    ? Math.round(((product.original_price - basePrice) / product.original_price) * 100)
     : 0;
   const outOfStock = product.stock <= 0;
+  const canAdd = !outOfStock && modifiersValid;
 
   const handleAdd = () => {
-    if (outOfStock) return;
+    if (!canAdd) return;
     const maxQty = Math.min(qty, product.stock);
     const presentation = activePres ? { id: activePres.id, name: activePres.name } : undefined;
-    addItem(product, maxQty, displayPrice, presentation);
+    const cartModifiers: CartModifier[] = selectedModifiers.map((m) => ({
+      groupId: m.groupId,
+      groupName: m.groupName,
+      optionId: m.optionId,
+      displayName: m.displayName,
+      linkedProductId: m.linkedProductId,
+      linkedProductName: m.linkedProductName,
+      priceAdjustment: m.priceAdjustment,
+      quantity: m.quantity,
+    }));
+    addItem(product, maxQty, basePrice, presentation, cartModifiers.length > 0 ? cartModifiers : undefined, modifierTotal > 0 ? modifierTotal : undefined);
     trackAddToCart(product, maxQty);
     setAdded(true);
-    toast.success(`${product.name}${activePres ? ` (${activePres.name})` : ""} agregado al carrito`);
+    const modNames = selectedModifiers.map((m) => m.displayName).join(", ");
+    toast.success(`${product.name}${modNames ? ` (${modNames})` : ""} agregado al carrito`);
     setTimeout(() => setAdded(false), 1500);
   };
 
