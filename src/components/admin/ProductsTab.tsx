@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { useQuery, useQueryClient as useQC } from "@tanstack/react-query";
 import { useInactiveBrands } from "@/hooks/useStore";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy, Ban } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy, Ban, Star } from "lucide-react";
 import MarginCalculator from "./MarginCalculator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -435,18 +435,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             </div>
           </div>
 
-          {/* Tags */}
-          <div>
-            <label className="text-[11px] text-muted-foreground mb-0.5 block">🏷️ Etiquetas (separadas por coma)</label>
-            <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="salsa, artesanal, picante" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none" />
-            {form.tags && (
-              <div className="flex flex-wrap gap-1 mt-1.5">
-                {form.tags.split(",").map(t => t.trim()).filter(Boolean).map((tag, i) => (
-                  <span key={i} className="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">{tag}</span>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Tags + Featured Sections */}
+          <FeaturedTagsPicker tags={form.tags} onTagsChange={(t) => setForm({ ...form, tags: t })} />
 
           {/* SEO Fields */}
           <div className="space-y-2 border-t border-border pt-3">
