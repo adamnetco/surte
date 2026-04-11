@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye, Box } from "lucide-react";
+import ModifierPicker, { type SelectedModifier } from "@/components/surte/ModifierPicker";
+import type { CartModifier } from "@/context/CartContext";
 import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
 import TopBar from "@/components/surte/TopBar";
@@ -37,6 +39,9 @@ const ProductoDetalle = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"descripcion" | "ficha">("descripcion");
   const [selectedPresentation, setSelectedPresentation] = useState<string | null>(null);
+  const [selectedModifiers, setSelectedModifiers] = useState<SelectedModifier[]>([]);
+  const [modifierTotal, setModifierTotal] = useState(0);
+  const [modifiersValid, setModifiersValid] = useState(true);
 
   const isUuid = id && /^[0-9a-f]{8}-/.test(id);
 
