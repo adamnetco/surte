@@ -237,10 +237,10 @@ const DataManagementTab = () => {
   const parseFile = async (file: File): Promise<Record<string, any>[]> => {
     try {
       const buffer = await file.arrayBuffer();
-      const wb = XLSX.read(buffer, { type: "array", cellDates: true, raw: false });
+      const wb = XLSX.read(buffer, { type: "array", cellDates: true });
       const ws = wb.Sheets[wb.SheetNames[0]];
       if (!ws) throw new Error("El archivo no contiene hojas de datos");
-      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "", raw: false });
+      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
       return normalizeImportedHeaders(rows);
     } catch (err: any) {
       console.error("Error parsing file:", err);
