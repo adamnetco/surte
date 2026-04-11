@@ -65,6 +65,11 @@ const CartDrawer = ({ children }: CartDrawerProps) => {
                     <p className="text-xs text-muted-foreground">
                       {item.presentationName || item.product.unit}
                     </p>
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <p className="text-[10px] text-accent truncate">
+                        {item.modifiers.map((m) => m.displayName).join(", ")}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between mt-1.5">
                       <span className="text-sm font-heading font-bold text-foreground">
                         {formatPrice(item.unitPrice * item.quantity)}
