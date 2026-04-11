@@ -3,17 +3,30 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Product = Tables<"products">;
 
+export interface CartModifier {
+  groupId: string;
+  groupName: string;
+  optionId: string;
+  displayName: string;
+  linkedProductId: string | null;
+  linkedProductName: string | null;
+  priceAdjustment: number;
+  quantity: number;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
   unitPrice: number;
   presentationId?: string;
   presentationName?: string;
+  modifiers?: CartModifier[];
+  modifierTotal?: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number, unitPrice?: number, presentation?: { id: string; name: string }) => void;
+  addItem: (product: Product, quantity?: number, unitPrice?: number, presentation?: { id: string; name: string }, modifiers?: CartModifier[], modifierTotal?: number) => void;
   removeItem: (productId: string, presentationId?: string) => void;
   updateQuantity: (productId: string, quantity: number, presentationId?: string) => void;
   clearCart: () => void;
@@ -81,14 +94,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  const addItem = useCallback((product: Product, quantity = 1, unitPrice?: number, presentation?: { id: string; name: string }) => {
+  const addItem = useCallback((product: Product, quantity = 1, unitPrice?: number, presentation?: { id: string; name: string }, modifiers?: CartModifier[], modifierTotal?: number) => {
     const price = unitPrice ?? product.price;
     const key = lineKey(product.id, presentation?.id);
     setItems((prev) => {
-      const existing = prev.find((i) => getLineKey(i) === key);
+      // If modifiers are present, always add as new line (modifiers make each line unique)
+      if (modifiers && modifiers.length > 0) {
+        return [...prev, {
+          product,
+          quantity,
+          unitPrice: price + (modifierTotal || 0),
+          presentationId: presentation?.id,
+          presentationName: presentation?.name,
+          modifiers,
+          modifierTotal: modifierTotal || 0,
+        }];
+      }
+      const existing = prev.find((i) => getLineKey(i) === key && (!i.modifiers || i.modifiers.length === 0));
       if (existing) {
         return prev.map((i) =>
-          getLineKey(i) === key
+          getLineKey(i) === key && (!i.modifiers || i.modifiers.length === 0)
             ? { ...i, quantity: i.quantity + quantity, unitPrice: price }
             : i
         );
