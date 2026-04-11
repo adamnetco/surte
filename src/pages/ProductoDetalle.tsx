@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
-import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye, Box } from "lucide-react";
+import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye, Box, Layers } from "lucide-react";
 import ModifierPicker, { type SelectedModifier } from "@/components/surte/ModifierPicker";
+import ProductSwipeOverlay from "@/components/surte/ProductSwipeOverlay";
 import type { CartModifier } from "@/context/CartContext";
 import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
@@ -42,6 +43,7 @@ const ProductoDetalle = () => {
   const [selectedModifiers, setSelectedModifiers] = useState<SelectedModifier[]>([]);
   const [modifierTotal, setModifierTotal] = useState(0);
   const [modifiersValid, setModifiersValid] = useState(true);
+  const [swipeOpen, setSwipeOpen] = useState(false);
 
   const isUuid = id && /^[0-9a-f]{8}-/.test(id);
 
