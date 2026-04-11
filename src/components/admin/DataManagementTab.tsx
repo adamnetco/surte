@@ -220,25 +220,16 @@ const DataManagementTab = () => {
 
   // ── Parse file for preview ─────────────────────────────
   const parseFile = async (file: File): Promise<Record<string, any>[]> => {
-    const lowerName = file.name.toLowerCase();
-
     try {
-      if (lowerName.endsWith(".csv")) {
-        const text = await readFileAsText(file);
-        const wb = XLSX.read(text, { type: "string", cellDates: true, raw: false });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        return normalizeImportedHeaders(XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }));
-      }
-
       const buffer = await file.arrayBuffer();
       const wb = XLSX.read(buffer, { type: "array", cellDates: true, raw: false });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      return normalizeImportedHeaders(XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }));
-    } catch {
-      const text = await readFileAsText(file);
-      const wb = XLSX.read(text, { type: "string", cellDates: true, raw: false });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      return normalizeImportedHeaders(XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }));
+      if (!ws) throw new Error("El archivo no contiene hojas de datos");
+      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "", raw: false });
+      return normalizeImportedHeaders(rows);
+    } catch (err: any) {
+      console.error("Error parsing file:", err);
+      throw new Error(`No se pudo leer el archivo: ${err.message}`);
     }
   };
 
@@ -567,11 +558,17 @@ const DataManagementTab = () => {
                 <input
                   ref={(el) => { fileInputRefs.current[def.name] = el; }}
                   type="file"
-                  accept=".csv,text/csv,application/csv,.xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  accept=".csv,.xlsx,.xls"
                   className="hidden"
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
+                    const name = file.name.toLowerCase();
+                    if (!name.endsWith(".csv") && !name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+                      toast.error("Formato no soportado. Usa archivos .csv, .xlsx o .xls");
+                      e.target.value = "";
+                      return;
+                    }
                     await handleFileSelected(def, file);
                     e.target.value = "";
                   }}
