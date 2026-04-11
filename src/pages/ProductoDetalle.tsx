@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
-import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye, Box } from "lucide-react";
+import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye, Box, Layers } from "lucide-react";
 import ModifierPicker, { type SelectedModifier } from "@/components/surte/ModifierPicker";
+import ProductSwipeOverlay from "@/components/surte/ProductSwipeOverlay";
 import type { CartModifier } from "@/context/CartContext";
 import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
@@ -42,6 +43,7 @@ const ProductoDetalle = () => {
   const [selectedModifiers, setSelectedModifiers] = useState<SelectedModifier[]>([]);
   const [modifierTotal, setModifierTotal] = useState(0);
   const [modifiersValid, setModifiersValid] = useState(true);
+  const [swipeOpen, setSwipeOpen] = useState(false);
 
   const isUuid = id && /^[0-9a-f]{8}-/.test(id);
 
@@ -448,6 +450,9 @@ const ProductoDetalle = () => {
             </button>
             <h2 className="flex-1 mx-3 text-sm font-heading font-semibold text-foreground truncate text-center">{product.name}</h2>
             <div className="flex gap-1.5">
+              <button onClick={() => setSwipeOpen(true)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform" title="Explorar categoría">
+                <Layers size={16} className="text-foreground" />
+              </button>
               <button onClick={handleShare} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
                 <Share2 size={16} className="text-foreground" />
               </button>
@@ -557,6 +562,19 @@ const ProductoDetalle = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Swipe Overlay */}
+      {swipeOpen && product && (
+        <ProductSwipeOverlay
+          currentProductId={product.id}
+          categorySlug={(product as any).categories?.slug}
+          brand={product.brand}
+          onClose={() => setSwipeOpen(false)}
+          onNavigate={(slug) => {
+            setSwipeOpen(false);
+            navigate(`/producto/${slug}`);
+          }}
+        />
+      )}
     </>
   );
 };
