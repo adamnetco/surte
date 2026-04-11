@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye, Box } from "lucide-react";
+import ModifierPicker, { type SelectedModifier } from "@/components/surte/ModifierPicker";
+import type { CartModifier } from "@/context/CartContext";
 import { toast } from "sonner";
 import PriceTiers from "@/components/surte/PriceTiers";
 import TopBar from "@/components/surte/TopBar";
@@ -37,6 +39,9 @@ const ProductoDetalle = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"descripcion" | "ficha">("descripcion");
   const [selectedPresentation, setSelectedPresentation] = useState<string | null>(null);
+  const [selectedModifiers, setSelectedModifiers] = useState<SelectedModifier[]>([]);
+  const [modifierTotal, setModifierTotal] = useState(0);
+  const [modifiersValid, setModifiersValid] = useState(true);
 
   const isUuid = id && /^[0-9a-f]{8}-/.test(id);
 
@@ -122,21 +127,34 @@ const ProductoDetalle = () => {
   const userPrice = getPriceForType(businessType, product.price, product.price_wholesale, product.price_distributor);
 
   const activePres = presentations?.find((p: any) => p.id === selectedPresentation);
-  const displayPrice = activePres ? Number(activePres.price) : userPrice;
+  const basePrice = activePres ? Number(activePres.price) : userPrice;
+  const displayPrice = basePrice + modifierTotal;
 
   const discount = product.original_price
-    ? Math.round(((product.original_price - displayPrice) / product.original_price) * 100)
+    ? Math.round(((product.original_price - basePrice) / product.original_price) * 100)
     : 0;
   const outOfStock = product.stock <= 0;
+  const canAdd = !outOfStock && modifiersValid;
 
   const handleAdd = () => {
-    if (outOfStock) return;
+    if (!canAdd) return;
     const maxQty = Math.min(qty, product.stock);
     const presentation = activePres ? { id: activePres.id, name: activePres.name } : undefined;
-    addItem(product, maxQty, displayPrice, presentation);
+    const cartModifiers: CartModifier[] = selectedModifiers.map((m) => ({
+      groupId: m.groupId,
+      groupName: m.groupName,
+      optionId: m.optionId,
+      displayName: m.displayName,
+      linkedProductId: m.linkedProductId,
+      linkedProductName: m.linkedProductName,
+      priceAdjustment: m.priceAdjustment,
+      quantity: m.quantity,
+    }));
+    addItem(product, maxQty, basePrice, presentation, cartModifiers.length > 0 ? cartModifiers : undefined, modifierTotal > 0 ? modifierTotal : undefined);
     trackAddToCart(product, maxQty);
     setAdded(true);
-    toast.success(`${product.name}${activePres ? ` (${activePres.name})` : ""} agregado al carrito`);
+    const modNames = selectedModifiers.map((m) => m.displayName).join(", ");
+    toast.success(`${product.name}${modNames ? ` (${modNames})` : ""} agregado al carrito`);
     setTimeout(() => setAdded(false), 1500);
   };
 
@@ -232,6 +250,20 @@ const ProductoDetalle = () => {
         </div>
       )}
 
+      {/* Modifiers */}
+      {productId && (
+        <div className="mb-3">
+          <ModifierPicker
+            productId={productId}
+            onModifiersChange={(mods, total, valid) => {
+              setSelectedModifiers(mods);
+              setModifierTotal(total);
+              setModifiersValid(valid);
+            }}
+          />
+        </div>
+      )}
+
       <PriceTiers price={product.price} priceWholesale={product.price_wholesale} priceDistributor={product.price_distributor} />
 
       {/* Tabs */}
@@ -310,10 +342,10 @@ const ProductoDetalle = () => {
         </div>
         <button
           onClick={handleAdd}
-          disabled={outOfStock}
+          disabled={!canAdd}
           className={`flex-1 py-2.5 text-sm flex items-center justify-center gap-2 rounded-xl font-heading font-semibold transition-all active:scale-[0.97] ${
             added ? "bg-accent text-accent-foreground"
-              : outOfStock ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : !canAdd ? "bg-muted text-muted-foreground cursor-not-allowed"
               : "btn-surte"
           }`}
         >
