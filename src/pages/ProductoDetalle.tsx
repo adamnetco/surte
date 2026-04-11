@@ -562,6 +562,19 @@ const ProductoDetalle = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Swipe Overlay */}
+      {swipeOpen && product && (
+        <ProductSwipeOverlay
+          currentProductId={product.id}
+          categorySlug={(product as any).categories?.slug}
+          brand={product.brand}
+          onClose={() => setSwipeOpen(false)}
+          onNavigate={(slug) => {
+            setSwipeOpen(false);
+            navigate(`/producto/${slug}`);
+          }}
+        />
+      )}
     </>
   );
 };
