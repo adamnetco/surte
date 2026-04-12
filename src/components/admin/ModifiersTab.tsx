@@ -49,6 +49,7 @@ const ModifiersTab = () => {
   const [groupForm, setGroupForm] = useState({
     name: "", display_label: "", is_required: false, selection_type: "single",
     min_selections: "0", max_selections: "1", sort_order: "0", is_active: true,
+    pricing_mode: "sum",
   });
 
   const [optionForm, setOptionForm] = useState({
