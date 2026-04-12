@@ -22,6 +22,7 @@ type ModifierGroup = {
   max_selections: number;
   sort_order: number;
   is_active: boolean;
+  pricing_mode: string;
 };
 
 type ModifierOption = {
