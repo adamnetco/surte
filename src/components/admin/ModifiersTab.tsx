@@ -447,6 +447,9 @@ const ModifiersTab = () => {
                       <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                         {g.selection_type === "single" ? "Solo uno" : `${g.min_selections}-${g.max_selections} opciones`}
                       </span>
+                      {g.pricing_mode === "max_price" && (
+                        <span className="text-[9px] bg-accent/10 text-accent px-1.5 py-0.5 rounded font-medium">🍕 Mayor valor</span>
+                      )}
                     </div>
                   </button>
                   <Switch checked={g.is_active} onCheckedChange={() => toggleGroupActive(g.id, g.is_active)} />

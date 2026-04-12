@@ -86,6 +86,8 @@ const ModifierPicker = ({ productId, onModifiersChange }: ModifierPickerProps) =
       const groupSel = selections[group.id] || {};
       const opts = allOptions.filter((o) => o.modifier_group_id === group.id);
       let selectedCount = 0;
+      const pricingMode = (group as any).pricing_mode || "sum";
+      let groupAdjustments: number[] = [];
 
       for (const opt of opts) {
         const qty = groupSel[opt.id] || 0;
@@ -102,8 +104,15 @@ const ModifierPicker = ({ productId, onModifiersChange }: ModifierPickerProps) =
             priceAdjustment: opt.price_adjustment * qty,
             quantity: qty,
           });
-          totalAdj += opt.price_adjustment * qty;
+          groupAdjustments.push(opt.price_adjustment * qty);
         }
+      }
+
+      // Apply pricing mode
+      if (pricingMode === "max_price" && groupAdjustments.length > 0) {
+        totalAdj += Math.max(...groupAdjustments);
+      } else {
+        totalAdj += groupAdjustments.reduce((s, v) => s + v, 0);
       }
 
       if (group.is_required && selectedCount < (group.min_selections || 1)) {
