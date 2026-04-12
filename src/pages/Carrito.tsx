@@ -94,7 +94,8 @@ const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; sel
 const Carrito = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
   const { data: settings } = useAppSettings();
-  const { user } = useAuth();
+  const { user, isAgent } = useAuth();
+  const { customer: agentCustomer, deliveryDate: agentDeliveryDate, clearAgent } = useAgent();
   const navigate = useNavigate();
   const minOrder = Number(settings?.min_order_amount || 40000);
   const meetsMinimum = totalPrice >= minOrder;
