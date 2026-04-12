@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
-import { Search, Shield, ShieldCheck, ShieldAlert, User, Filter, Pencil, Trash2, X, Save } from "lucide-react";
+import { Search, Shield, ShieldCheck, ShieldAlert, User, Filter, Pencil, Trash2, X, Save, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
@@ -10,13 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
-type AppRole = "superadmin" | "admin" | "editor" | "user";
+type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
 type BusinessType = "detal" | "horeca" | "minimercado" | "distribuidor" | "casa";
 
 const roleMeta: Record<AppRole, { label: string; color: string; icon: typeof Shield }> = {
   superadmin: { label: "Superadmin", color: "bg-destructive text-destructive-foreground", icon: ShieldAlert },
   admin: { label: "Admin", color: "bg-primary text-primary-foreground", icon: ShieldCheck },
   editor: { label: "Editor", color: "bg-accent text-accent-foreground", icon: Shield },
+  agente: { label: "Agente", color: "bg-secondary text-secondary-foreground", icon: Briefcase },
   user: { label: "Cliente", color: "bg-muted text-muted-foreground", icon: User },
 };
 
