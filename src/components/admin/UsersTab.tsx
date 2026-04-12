@@ -108,7 +108,8 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const filtered = users?.filter((u: any) => {
     const q = search.toLowerCase();
     const matchesSearch = (u.full_name || "").toLowerCase().includes(q) ||
-      (u.business_name || "").toLowerCase().includes(q) || (u.phone || "").includes(q);
+      (u.business_name || "").toLowerCase().includes(q) || (u.phone || "").includes(q) ||
+      (u.customer_code || "").toLowerCase().includes(q);
     const matchesRole = filterRole === "all" || u.role === filterRole;
     const matchesBiz = filterBiz === "all" || u.business_type === filterBiz;
     return matchesSearch && matchesRole && matchesBiz;
@@ -171,6 +172,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
                       {isCurrentUser && <span className="text-[10px] text-muted-foreground ml-1">(Tú)</span>}
                     </p>
                     <div className="flex flex-wrap gap-1 mt-0.5">
+                      {u.customer_code && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{u.customer_code}</span>}
                       {u.phone && <span className="text-[11px] text-muted-foreground">{u.phone}</span>}
                       {u.business_name && <span className="text-[11px] text-muted-foreground">· {u.business_name}</span>}
                     </div>
