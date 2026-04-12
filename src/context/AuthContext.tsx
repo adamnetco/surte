@@ -29,12 +29,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const applyRole = (nextRole: AppRole) => {
     setRole(nextRole);
     setIsAdmin(["superadmin", "admin"].includes(nextRole));
+    setIsAgent(nextRole === "agente");
   };
 
   const resetAuthState = () => {
     setSession(null);
     setUser(null);
     setIsAdmin(false);
+    setIsAgent(false);
     setRole("user");
   };
 
@@ -49,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const priority: AppRole[] = ["superadmin", "admin", "editor", "user"];
+    const priority: AppRole[] = ["superadmin", "admin", "editor", "agente", "user"];
     const assignedRoles = (data ?? []).map(({ role }) => role as AppRole);
     const userRole = priority.find((candidate) => assignedRoles.includes(candidate)) || "user";
 
