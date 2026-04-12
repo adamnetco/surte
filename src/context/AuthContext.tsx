@@ -2,12 +2,13 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-export type AppRole = "superadmin" | "admin" | "editor" | "user";
+export type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
+  isAgent: boolean;
   role: AppRole;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
