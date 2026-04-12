@@ -139,6 +139,7 @@ const ModifiersTab = () => {
         max_selections: Number(groupForm.max_selections) || 1,
         sort_order: Number(groupForm.sort_order) || 0,
         is_active: groupForm.is_active,
+        pricing_mode: groupForm.pricing_mode,
       };
       if (editingGroup && editingGroup !== "new") {
         const { error } = await supabase.from("modifier_groups").update(payload).eq("id", editingGroup);
