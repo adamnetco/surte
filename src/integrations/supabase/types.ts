@@ -623,6 +623,7 @@ export type Database = {
           max_selections: number
           min_selections: number
           name: string
+          pricing_mode: string
           product_id: string
           selection_type: string
           sort_order: number
@@ -637,6 +638,7 @@ export type Database = {
           max_selections?: number
           min_selections?: number
           name: string
+          pricing_mode?: string
           product_id: string
           selection_type?: string
           sort_order?: number
@@ -651,6 +653,7 @@ export type Database = {
           max_selections?: number
           min_selections?: number
           name?: string
+          pricing_mode?: string
           product_id?: string
           selection_type?: string
           sort_order?: number
