@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAgent, setIsAgent] = useState(false);
   const [role, setRole] = useState<AppRole>("user");
   const [loading, setLoading] = useState(true);
 
