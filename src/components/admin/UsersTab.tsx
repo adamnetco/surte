@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
-import { Search, Shield, ShieldCheck, ShieldAlert, User, Filter, Pencil, Trash2, X, Save } from "lucide-react";
+import { Search, Shield, ShieldCheck, ShieldAlert, User, Filter, Pencil, Trash2, X, Save, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
@@ -10,13 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
-type AppRole = "superadmin" | "admin" | "editor" | "user";
+type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
 type BusinessType = "detal" | "horeca" | "minimercado" | "distribuidor" | "casa";
 
 const roleMeta: Record<AppRole, { label: string; color: string; icon: typeof Shield }> = {
   superadmin: { label: "Superadmin", color: "bg-destructive text-destructive-foreground", icon: ShieldAlert },
   admin: { label: "Admin", color: "bg-primary text-primary-foreground", icon: ShieldCheck },
   editor: { label: "Editor", color: "bg-accent text-accent-foreground", icon: Shield },
+  agente: { label: "Agente", color: "bg-secondary text-secondary-foreground", icon: Briefcase },
   user: { label: "Cliente", color: "bg-muted text-muted-foreground", icon: User },
 };
 
@@ -107,7 +108,8 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const filtered = users?.filter((u: any) => {
     const q = search.toLowerCase();
     const matchesSearch = (u.full_name || "").toLowerCase().includes(q) ||
-      (u.business_name || "").toLowerCase().includes(q) || (u.phone || "").includes(q);
+      (u.business_name || "").toLowerCase().includes(q) || (u.phone || "").includes(q) ||
+      (u.customer_code || "").toLowerCase().includes(q);
     const matchesRole = filterRole === "all" || u.role === filterRole;
     const matchesBiz = filterBiz === "all" || u.business_type === filterBiz;
     return matchesSearch && matchesRole && matchesBiz;
@@ -170,6 +172,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
                       {isCurrentUser && <span className="text-[10px] text-muted-foreground ml-1">(Tú)</span>}
                     </p>
                     <div className="flex flex-wrap gap-1 mt-0.5">
+                      {u.customer_code && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{u.customer_code}</span>}
                       {u.phone && <span className="text-[11px] text-muted-foreground">{u.phone}</span>}
                       {u.business_name && <span className="text-[11px] text-muted-foreground">· {u.business_name}</span>}
                     </div>

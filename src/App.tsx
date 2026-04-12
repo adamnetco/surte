@@ -5,7 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { AgentProvider } from "@/context/AgentContext";
 import FloatingWhatsApp from "@/components/surte/FloatingWhatsApp";
+import AgentBar from "@/components/surte/AgentBar";
 import CityPickerModal from "@/components/surte/CityPickerModal";
 import DynamicThemeInjector from "@/components/DynamicThemeInjector";
 import CustomScriptInjector from "@/components/CustomScriptInjector";
@@ -40,12 +42,14 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
+        <AgentProvider>
         <CartProvider>
           <Toaster />
           <Sonner />
           <DynamicThemeInjector />
           <CustomScriptInjector />
-          <CityPickerModal />
+              <AgentBar />
+              <CityPickerModal />
             <BrowserRouter>
               <Analytics />
               <CartNavigationGuard />
@@ -78,6 +82,7 @@ const App = () => (
               <FloatingWhatsApp />
             </BrowserRouter>
         </CartProvider>
+        </AgentProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

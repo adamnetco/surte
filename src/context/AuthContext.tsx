@@ -2,12 +2,13 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-export type AppRole = "superadmin" | "admin" | "editor" | "user";
+export type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
+  isAgent: boolean;
   role: AppRole;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -21,18 +22,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAgent, setIsAgent] = useState(false);
   const [role, setRole] = useState<AppRole>("user");
   const [loading, setLoading] = useState(true);
 
   const applyRole = (nextRole: AppRole) => {
     setRole(nextRole);
     setIsAdmin(["superadmin", "admin"].includes(nextRole));
+    setIsAgent(nextRole === "agente");
   };
 
   const resetAuthState = () => {
     setSession(null);
     setUser(null);
     setIsAdmin(false);
+    setIsAgent(false);
     setRole("user");
   };
 
@@ -47,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const priority: AppRole[] = ["superadmin", "admin", "editor", "user"];
+    const priority: AppRole[] = ["superadmin", "admin", "editor", "agente", "user"];
     const assignedRoles = (data ?? []).map(({ role }) => role as AppRole);
     const userRole = priority.find((candidate) => assignedRoles.includes(candidate)) || "user";
 
@@ -109,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, role, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, isAgent, role, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

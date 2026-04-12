@@ -845,11 +845,13 @@ export type Database = {
       }
       orders: {
         Row: {
+          agent_id: string | null
           created_at: string
           customer_address: string | null
           customer_email: string | null
           customer_name: string
           customer_phone: string
+          customer_profile_id: string | null
           delivery_price: number
           delivery_zone_id: string | null
           external_sync_sent_at: string | null
@@ -868,11 +870,13 @@ export type Database = {
           whatsapp_ref: string | null
         }
         Insert: {
+          agent_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_email?: string | null
           customer_name: string
           customer_phone: string
+          customer_profile_id?: string | null
           delivery_price?: number
           delivery_zone_id?: string | null
           external_sync_sent_at?: string | null
@@ -891,11 +895,13 @@ export type Database = {
           whatsapp_ref?: string | null
         }
         Update: {
+          agent_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_email?: string | null
           customer_name?: string
           customer_phone?: string
+          customer_profile_id?: string | null
           delivery_price?: number
           delivery_zone_id?: string | null
           external_sync_sent_at?: string | null
@@ -1125,6 +1131,7 @@ export type Database = {
           business_type: Database["public"]["Enums"]["business_type"]
           city: string | null
           created_at: string
+          customer_code: string | null
           full_name: string | null
           id: string
           phone: string | null
@@ -1137,6 +1144,7 @@ export type Database = {
           business_type?: Database["public"]["Enums"]["business_type"]
           city?: string | null
           created_at?: string
+          customer_code?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -1149,6 +1157,7 @@ export type Database = {
           business_type?: Database["public"]["Enums"]["business_type"]
           city?: string | null
           created_at?: string
+          customer_code?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -1305,7 +1314,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user" | "superadmin" | "editor"
+      app_role: "admin" | "user" | "superadmin" | "editor" | "agente"
       business_type:
         | "detal"
         | "horeca"
@@ -1439,7 +1448,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "superadmin", "editor"],
+      app_role: ["admin", "user", "superadmin", "editor", "agente"],
       business_type: ["detal", "horeca", "minimercado", "distribuidor", "casa"],
     },
   },

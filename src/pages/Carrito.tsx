@@ -8,6 +8,7 @@ import BottomNav from "@/components/surte/BottomNav";
 import { useCart } from "@/context/CartContext";
 import { useAppSettings } from "@/hooks/useStore";
 import { useAuth } from "@/context/AuthContext";
+import { useAgent } from "@/context/AgentContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -93,7 +94,8 @@ const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; sel
 const Carrito = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
   const { data: settings } = useAppSettings();
-  const { user } = useAuth();
+  const { user, isAgent } = useAuth();
+  const { customer: agentCustomer, deliveryDate: agentDeliveryDate, clearAgent } = useAgent();
   const navigate = useNavigate();
   const minOrder = Number(settings?.min_order_amount || 40000);
   const meetsMinimum = totalPrice >= minOrder;
@@ -191,15 +193,29 @@ const Carrito = () => {
 
   const handleFinalize = () => {
     if (!meetsMinimum) return;
-    setForm({
-      name: user?.user_metadata?.full_name || "",
-      phone: user?.user_metadata?.phone || "",
-      email: user?.email || "",
-      address: "",
-      notes: "",
-      neighborhood_id: "",
-      countryCode: "+57",
-    });
+    // Pre-fill form with agent customer data or logged-in user data
+    if (isAgent && agentCustomer) {
+      setForm({
+        name: agentCustomer.fullName || "",
+        phone: agentCustomer.phone || "",
+        email: "",
+        address: agentCustomer.address || "",
+        notes: "",
+        neighborhood_id: "",
+        countryCode: "+57",
+      });
+      setPreferredDate(agentDeliveryDate);
+    } else {
+      setForm({
+        name: user?.user_metadata?.full_name || "",
+        phone: user?.user_metadata?.phone || "",
+        email: user?.email || "",
+        address: "",
+        notes: "",
+        neighborhood_id: "",
+        countryCode: "+57",
+      });
+    }
     setGeoLocation(null);
     setShowForm(true);
   };
@@ -237,6 +253,9 @@ const Carrito = () => {
         preferred_time_slot: timeSlot,
         payment_method: paymentMethod,
         geo_location: geoLocation ? `${geoLocation.lat},${geoLocation.lng}` : null,
+        // Agent fields
+        agent_id: isAgent ? user?.id : null,
+        customer_profile_id: isAgent && agentCustomer ? agentCustomer.profileId : null,
       };
 
       const { data, error } = await supabase.functions.invoke("send-whatsapp-order", {
@@ -288,6 +307,7 @@ const Carrito = () => {
       );
       const whatsappMsg = [
         `🛒 *Pedido SURTÉ #${data.order_number}*`,
+        isAgent && agentCustomer ? `🧑‍💼 *Agente:* ${user?.user_metadata?.full_name || "Agente"} | Cliente: ${agentCustomer.customerCode}` : "",
         "",
         `👤 ${form.name}`,
         `📱 ${form.phone}`,
@@ -315,6 +335,7 @@ const Carrito = () => {
       }
 
       clearCart();
+      if (isAgent) clearAgent();
       setShowForm(false);
       removeCoupon();
 
