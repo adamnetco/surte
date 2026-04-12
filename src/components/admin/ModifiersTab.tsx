@@ -384,6 +384,30 @@ const ModifiersTab = () => {
             </div>
           )}
 
+          {/* Pricing Mode */}
+          <div>
+            <label className="text-[10px] text-muted-foreground font-medium block mb-0.5">Modo de cobro</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setGroupForm({ ...groupForm, pricing_mode: "sum" })}
+                className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${groupForm.pricing_mode === "sum" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+              >
+                Sumar todo
+              </button>
+              <button
+                onClick={() => setGroupForm({ ...groupForm, pricing_mode: "max_price" })}
+                className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${groupForm.pricing_mode === "max_price" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+              >
+                🍕 Mayor valor
+              </button>
+            </div>
+            {groupForm.pricing_mode === "max_price" && (
+              <p className="text-[9px] text-muted-foreground mt-1 leading-tight">
+                Estilo pizza: el cliente elige varios sabores y se cobra solo el de mayor precio.
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center gap-2">
             <Switch checked={groupForm.is_active} onCheckedChange={(v) => setGroupForm({ ...groupForm, is_active: v })} />
             <span className="text-xs text-muted-foreground">{groupForm.is_active ? "Activo" : "Inactivo"}</span>
