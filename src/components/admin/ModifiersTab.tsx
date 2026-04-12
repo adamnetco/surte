@@ -109,7 +109,7 @@ const ModifiersTab = () => {
 
   // ─── Group CRUD ───
   const resetGroupForm = () => {
-    setGroupForm({ name: "", display_label: "", is_required: false, selection_type: "single", min_selections: "0", max_selections: "1", sort_order: "0", is_active: true });
+    setGroupForm({ name: "", display_label: "", is_required: false, selection_type: "single", min_selections: "0", max_selections: "1", sort_order: "0", is_active: true, pricing_mode: "sum" });
     setEditingGroup(null);
   };
 
@@ -118,6 +118,7 @@ const ModifiersTab = () => {
       name: g.name, display_label: g.display_label, is_required: g.is_required,
       selection_type: g.selection_type, min_selections: String(g.min_selections),
       max_selections: String(g.max_selections), sort_order: String(g.sort_order), is_active: g.is_active,
+      pricing_mode: g.pricing_mode || "sum",
     });
     setEditingGroup(g.id);
   };
