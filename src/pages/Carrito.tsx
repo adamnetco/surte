@@ -307,6 +307,7 @@ const Carrito = () => {
       );
       const whatsappMsg = [
         `🛒 *Pedido SURTÉ #${data.order_number}*`,
+        isAgent && agentCustomer ? `🧑‍💼 *Agente:* ${user?.user_metadata?.full_name || "Agente"} | Cliente: ${agentCustomer.customerCode}` : "",
         "",
         `👤 ${form.name}`,
         `📱 ${form.phone}`,
