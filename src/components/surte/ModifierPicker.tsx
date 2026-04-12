@@ -175,6 +175,9 @@ const ModifierPicker = ({ productId, onModifiersChange }: ModifierPickerProps) =
                 <p className="text-[10px] text-muted-foreground">
                   {isSingle ? "Elige uno" : `Elige ${group.min_selections || 0} a ${group.max_selections}`}
                   {group.is_required && <span className="text-destructive ml-1">*</span>}
+                  {(group as any).pricing_mode === "max_price" && (
+                    <span className="text-accent ml-1">· Se cobra el de mayor valor</span>
+                  )}
                 </p>
               </div>
               {isIncomplete && (
