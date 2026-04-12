@@ -193,15 +193,29 @@ const Carrito = () => {
 
   const handleFinalize = () => {
     if (!meetsMinimum) return;
-    setForm({
-      name: user?.user_metadata?.full_name || "",
-      phone: user?.user_metadata?.phone || "",
-      email: user?.email || "",
-      address: "",
-      notes: "",
-      neighborhood_id: "",
-      countryCode: "+57",
-    });
+    // Pre-fill form with agent customer data or logged-in user data
+    if (isAgent && agentCustomer) {
+      setForm({
+        name: agentCustomer.fullName || "",
+        phone: agentCustomer.phone || "",
+        email: "",
+        address: agentCustomer.address || "",
+        notes: "",
+        neighborhood_id: "",
+        countryCode: "+57",
+      });
+      setPreferredDate(agentDeliveryDate);
+    } else {
+      setForm({
+        name: user?.user_metadata?.full_name || "",
+        phone: user?.user_metadata?.phone || "",
+        email: user?.email || "",
+        address: "",
+        notes: "",
+        neighborhood_id: "",
+        countryCode: "+57",
+      });
+    }
     setGeoLocation(null);
     setShowForm(true);
   };
