@@ -22,6 +22,7 @@ type ModifierGroup = {
   max_selections: number;
   sort_order: number;
   is_active: boolean;
+  pricing_mode: string;
 };
 
 type ModifierOption = {
@@ -48,6 +49,7 @@ const ModifiersTab = () => {
   const [groupForm, setGroupForm] = useState({
     name: "", display_label: "", is_required: false, selection_type: "single",
     min_selections: "0", max_selections: "1", sort_order: "0", is_active: true,
+    pricing_mode: "sum",
   });
 
   const [optionForm, setOptionForm] = useState({
@@ -107,7 +109,7 @@ const ModifiersTab = () => {
 
   // ─── Group CRUD ───
   const resetGroupForm = () => {
-    setGroupForm({ name: "", display_label: "", is_required: false, selection_type: "single", min_selections: "0", max_selections: "1", sort_order: "0", is_active: true });
+    setGroupForm({ name: "", display_label: "", is_required: false, selection_type: "single", min_selections: "0", max_selections: "1", sort_order: "0", is_active: true, pricing_mode: "sum" });
     setEditingGroup(null);
   };
 
@@ -116,6 +118,7 @@ const ModifiersTab = () => {
       name: g.name, display_label: g.display_label, is_required: g.is_required,
       selection_type: g.selection_type, min_selections: String(g.min_selections),
       max_selections: String(g.max_selections), sort_order: String(g.sort_order), is_active: g.is_active,
+      pricing_mode: g.pricing_mode || "sum",
     });
     setEditingGroup(g.id);
   };
@@ -136,6 +139,7 @@ const ModifiersTab = () => {
         max_selections: Number(groupForm.max_selections) || 1,
         sort_order: Number(groupForm.sort_order) || 0,
         is_active: groupForm.is_active,
+        pricing_mode: groupForm.pricing_mode,
       };
       if (editingGroup && editingGroup !== "new") {
         const { error } = await supabase.from("modifier_groups").update(payload).eq("id", editingGroup);
@@ -380,6 +384,30 @@ const ModifiersTab = () => {
             </div>
           )}
 
+          {/* Pricing Mode */}
+          <div>
+            <label className="text-[10px] text-muted-foreground font-medium block mb-0.5">Modo de cobro</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setGroupForm({ ...groupForm, pricing_mode: "sum" })}
+                className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${groupForm.pricing_mode === "sum" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+              >
+                Sumar todo
+              </button>
+              <button
+                onClick={() => setGroupForm({ ...groupForm, pricing_mode: "max_price" })}
+                className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${groupForm.pricing_mode === "max_price" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+              >
+                🍕 Mayor valor
+              </button>
+            </div>
+            {groupForm.pricing_mode === "max_price" && (
+              <p className="text-[9px] text-muted-foreground mt-1 leading-tight">
+                Estilo pizza: el cliente elige varios sabores y se cobra solo el de mayor precio.
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center gap-2">
             <Switch checked={groupForm.is_active} onCheckedChange={(v) => setGroupForm({ ...groupForm, is_active: v })} />
             <span className="text-xs text-muted-foreground">{groupForm.is_active ? "Activo" : "Inactivo"}</span>
@@ -419,6 +447,9 @@ const ModifiersTab = () => {
                       <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                         {g.selection_type === "single" ? "Solo uno" : `${g.min_selections}-${g.max_selections} opciones`}
                       </span>
+                      {g.pricing_mode === "max_price" && (
+                        <span className="text-[9px] bg-accent/10 text-accent px-1.5 py-0.5 rounded font-medium">🍕 Mayor valor</span>
+                      )}
                     </div>
                   </button>
                   <Switch checked={g.is_active} onCheckedChange={() => toggleGroupActive(g.id, g.is_active)} />
