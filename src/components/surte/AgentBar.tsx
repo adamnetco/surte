@@ -101,6 +101,9 @@ const AgentBar = () => {
   };
 
   return (
+    <>
+    {/* Spacer to push page content below the fixed agent bar */}
+    <div className="h-10" />
     <div className="fixed top-0 left-0 right-0 z-[100]">
       {/* Main bar */}
       <div className="bg-primary text-primary-foreground px-3 py-2">
@@ -283,6 +286,7 @@ const AgentBar = () => {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 };
 
