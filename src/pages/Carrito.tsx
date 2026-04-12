@@ -253,6 +253,9 @@ const Carrito = () => {
         preferred_time_slot: timeSlot,
         payment_method: paymentMethod,
         geo_location: geoLocation ? `${geoLocation.lat},${geoLocation.lng}` : null,
+        // Agent fields
+        agent_id: isAgent ? user?.id : null,
+        customer_profile_id: isAgent && agentCustomer ? agentCustomer.profileId : null,
       };
 
       const { data, error } = await supabase.functions.invoke("send-whatsapp-order", {
