@@ -48,7 +48,8 @@ const App = () => (
           <Sonner />
           <DynamicThemeInjector />
           <CustomScriptInjector />
-          <CityPickerModal />
+              <AgentBar />
+              <CityPickerModal />
             <BrowserRouter>
               <Analytics />
               <CartNavigationGuard />
@@ -81,6 +82,7 @@ const App = () => (
               <FloatingWhatsApp />
             </BrowserRouter>
         </CartProvider>
+        </AgentProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
