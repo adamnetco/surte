@@ -334,6 +334,7 @@ const Carrito = () => {
       }
 
       clearCart();
+      if (isAgent) clearAgent();
       setShowForm(false);
       removeCoupon();
 
