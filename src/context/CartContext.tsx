@@ -24,9 +24,13 @@ export interface CartItem {
   modifierTotal?: number;
 }
 
+interface AddItemOptions {
+  openDrawer?: boolean;
+}
+
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number, unitPrice?: number, presentation?: { id: string; name: string }, modifiers?: CartModifier[], modifierTotal?: number) => void;
+  addItem: (product: Product, quantity?: number, unitPrice?: number, presentation?: { id: string; name: string }, modifiers?: CartModifier[], modifierTotal?: number, options?: AddItemOptions) => void;
   removeItem: (productId: string, presentationId?: string) => void;
   updateQuantity: (productId: string, quantity: number, presentationId?: string) => void;
   clearCart: () => void;
