@@ -83,6 +83,29 @@ const ProductoDetalle = () => {
     enabled: !!productId,
   });
 
+  // Auto-select presentation when quantity matches a conversion_factor
+  useEffect(() => {
+    if (!presentations || presentations.length === 0) return;
+    // Find the best matching presentation where qty >= conversion_factor
+    const matching = presentations
+      .filter((p: any) => p.conversion_factor > 1 && qty >= p.conversion_factor && qty % p.conversion_factor === 0)
+      .sort((a: any, b: any) => b.conversion_factor - a.conversion_factor);
+
+    if (matching.length > 0) {
+      const best = matching[0] as any;
+      if (selectedPresentation !== best.id) {
+        setSelectedPresentation(best.id);
+        setAutoPresentation(true);
+        const presQty = Math.floor(qty / best.conversion_factor);
+        setQty(presQty);
+        toast.info(`💡 Presentación "${best.name}" seleccionada (mejor precio)`, { duration: 3000 });
+      }
+    } else if (autoPresentation && selectedPresentation) {
+      setAutoPresentation(false);
+      setSelectedPresentation(null);
+    }
+  }, [qty, presentations]);
+
   const { data: inactiveBrands } = useInactiveBrands();
 
   useEffect(() => {
