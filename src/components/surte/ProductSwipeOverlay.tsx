@@ -1,11 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useCallback } from "react";
 import { useProducts } from "@/hooks/useStore";
 import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useProfile, getPriceForType } from "@/hooks/useProfile";
 import { useAppSettings } from "@/hooks/useStore";
-import { Heart, Plus, X, ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
+import { Heart, Plus, X, ChevronLeft, ChevronRight, ShoppingCart, Check } from "lucide-react";
 import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -25,16 +24,40 @@ interface ProductSwipeOverlayProps {
 
 const SWIPE_THRESHOLD = 60;
 
+/* Animated swipe hint pill */
+const SwipeHint = () => (
+  <motion.div
+    className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-card/80 backdrop-blur-sm rounded-full px-3 py-1"
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.4, duration: 0.4 }}
+  >
+    <motion.div
+      animate={{ x: [-3, 3, -3] }}
+      transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+    >
+      <ChevronLeft size={12} className="text-muted-foreground" />
+    </motion.div>
+    <span className="text-[10px] text-muted-foreground font-medium">Desliza</span>
+    <motion.div
+      animate={{ x: [3, -3, 3] }}
+      transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+    >
+      <ChevronRight size={12} className="text-muted-foreground" />
+    </motion.div>
+  </motion.div>
+);
+
 const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, onClose, onNavigate }: ProductSwipeOverlayProps) => {
   const { data: allProducts } = useProducts();
-  const { addItem } = useCart();
+  const { addItem, totalItems, setDrawerOpen } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { data: profile } = useProfile();
   const { data: appSettings } = useAppSettings();
   const businessType = (profile as any)?.business_type;
-  const navigate = useNavigate();
 
-  // Filter same-category products
+  const [addedId, setAddedId] = useState<string | null>(null);
+
   const siblingProducts = (allProducts || []).filter((p: any) => {
     if (p.id === currentProductId) return true;
     if (categorySlug && p.categories?.slug === categorySlug) return true;
@@ -73,7 +96,9 @@ const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, onClose, o
 
   const handleAdd = () => {
     if (outOfStock) return;
-    addItem(product, 1, userPrice);
+    addItem(product, 1, userPrice, undefined, undefined, undefined, { openDrawer: false });
+    setAddedId(product.id);
+    setTimeout(() => setAddedId(null), 1200);
     toast.success(`${product.name} agregado`);
   };
 
@@ -82,11 +107,18 @@ const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, onClose, o
     onNavigate(slug);
   };
 
+  const handleGoToCart = () => {
+    onClose();
+    setDrawerOpen(true);
+  };
+
   const variants = {
     enter: (dir: number) => ({ x: dir > 0 ? 300 : -300, opacity: 0, scale: 0.92 }),
     center: { x: 0, opacity: 1, scale: 1 },
     exit: (dir: number) => ({ x: dir > 0 ? -300 : 300, opacity: 0, scale: 0.92 }),
   };
+
+  const isAdded = addedId === product.id;
 
   return (
     <div className="fixed inset-0 z-[90] bg-foreground/60 backdrop-blur-sm flex items-center justify-center px-4">
@@ -94,6 +126,17 @@ const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, onClose, o
       <button onClick={onClose} className="absolute top-4 right-4 z-[95] w-9 h-9 rounded-full bg-card/90 flex items-center justify-center shadow-lg">
         <X size={18} className="text-foreground" />
       </button>
+
+      {/* Cart badge */}
+      {totalItems > 0 && (
+        <button
+          onClick={handleGoToCart}
+          className="absolute top-4 left-4 z-[95] flex items-center gap-1.5 bg-accent text-accent-foreground rounded-full pl-2.5 pr-3 py-1.5 shadow-lg active:scale-95 transition-transform"
+        >
+          <ShoppingCart size={16} />
+          <span className="text-xs font-bold">{totalItems}</span>
+        </button>
+      )}
 
       {/* Counter */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[95] bg-card/90 rounded-full px-3 py-1 text-xs font-medium text-foreground shadow">
@@ -157,12 +200,8 @@ const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, onClose, o
               <Heart size={16} className={fav ? "text-destructive fill-destructive" : "text-muted-foreground"} />
             </button>
 
-            {/* Swipe hint */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-card/80 backdrop-blur-sm rounded-full px-3 py-1">
-              <ChevronLeft size={12} className="text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground font-medium">Desliza</span>
-              <ChevronRight size={12} className="text-muted-foreground" />
-            </div>
+            {/* Animated swipe hint */}
+            <SwipeHint />
           </div>
 
           {/* Info */}
@@ -178,17 +217,22 @@ const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, onClose, o
                   <span className="block text-xs text-muted-foreground line-through">{formatPrice(product.original_price)}</span>
                 )}
               </div>
-              <button
+              <motion.button
                 onClick={(e) => { e.stopPropagation(); handleAdd(); }}
                 disabled={outOfStock}
-                className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
+                whileTap={{ scale: 0.85 }}
+                animate={isAdded ? { scale: [1, 1.2, 1] } : {}}
+                transition={{ duration: 0.3 }}
+                className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
                   outOfStock
                     ? "bg-muted text-muted-foreground cursor-not-allowed"
-                    : "bg-accent text-accent-foreground hover:opacity-90 shadow-sm"
+                    : isAdded
+                      ? "bg-secondary text-secondary-foreground shadow-sm"
+                      : "bg-accent text-accent-foreground hover:opacity-90 shadow-sm"
                 }`}
               >
-                <Plus size={20} strokeWidth={2.5} />
-              </button>
+                {isAdded ? <Check size={20} strokeWidth={2.5} /> : <Plus size={20} strokeWidth={2.5} />}
+              </motion.button>
             </div>
           </div>
         </motion.div>
