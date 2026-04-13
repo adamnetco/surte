@@ -46,31 +46,6 @@ const ProductoDetalle = () => {
   const [swipeOpen, setSwipeOpen] = useState(false);
   const [autoPresentation, setAutoPresentation] = useState(false);
 
-  // Auto-select presentation when quantity matches a conversion_factor
-  useEffect(() => {
-    if (!presentations || presentations.length === 0) return;
-    // Find the best matching presentation where qty >= conversion_factor
-    // Pick the one with the highest factor that still fits
-    const matching = presentations
-      .filter((p: any) => p.conversion_factor > 1 && qty >= p.conversion_factor && qty % p.conversion_factor === 0)
-      .sort((a: any, b: any) => b.conversion_factor - a.conversion_factor);
-
-    if (matching.length > 0) {
-      const best = matching[0] as any;
-      if (selectedPresentation !== best.id) {
-        setSelectedPresentation(best.id);
-        setAutoPresentation(true);
-        // Adjust qty to presentation units
-        const presQty = Math.floor(qty / best.conversion_factor);
-        setQty(presQty);
-        toast.info(`💡 Presentación "${best.name}" seleccionada automáticamente (mejor precio)`, { duration: 3000 });
-      }
-    } else if (autoPresentation && selectedPresentation) {
-      // If qty no longer matches, revert to unit
-      setAutoPresentation(false);
-      setSelectedPresentation(null);
-    }
-  }, [qty, presentations]);
 
   const isUuid = id && /^[0-9a-f]{8}-/.test(id);
 
