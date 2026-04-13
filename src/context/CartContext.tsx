@@ -98,7 +98,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  const addItem = useCallback((product: Product, quantity = 1, unitPrice?: number, presentation?: { id: string; name: string }, modifiers?: CartModifier[], modifierTotal?: number) => {
+  const addItem = useCallback((product: Product, quantity = 1, unitPrice?: number, presentation?: { id: string; name: string }, modifiers?: CartModifier[], modifierTotal?: number, options?: AddItemOptions) => {
     const price = unitPrice ?? product.price;
     const key = lineKey(product.id, presentation?.id);
     setItems((prev) => {
@@ -130,7 +130,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         presentationName: presentation?.name,
       }];
     });
-    setDrawerOpen(true);
+    if (options?.openDrawer !== false) {
+      setDrawerOpen(true);
+    }
   }, []);
 
   const removeItem = useCallback((productId: string, presentationId?: string) => {
