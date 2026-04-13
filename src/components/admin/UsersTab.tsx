@@ -2,13 +2,12 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
-import { Search, Shield, ShieldCheck, ShieldAlert, User, Filter, Pencil, Trash2, X, Save, Briefcase } from "lucide-react";
+import { Search, Shield, ShieldCheck, ShieldAlert, User, Pencil, Save, Briefcase, UserPlus, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 
 type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
 type BusinessType = "detal" | "horeca" | "minimercado" | "distribuidor" | "casa";
@@ -39,6 +38,10 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   }>({ open: false, userId: "", userName: "", field: "role", value: "" });
   const [editModal, setEditModal] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", business_name: "", address: "", city: "" });
+  const [createModal, setCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "Bucaramanga", business_type: "detal" as BusinessType, role: "user" as AppRole });
+  const [creating, setCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -78,7 +81,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   };
 
   const requestChange = (userId: string, userName: string, field: "role" | "business_type", value: string) => {
-    if (field === "role" && (value === "superadmin" || value === "admin") && currentRole !== "superadmin") {
+    if (field === "role" && value === "superadmin" && currentRole !== "superadmin") {
       toast.error("Solo el Superadmin puede asignar este rol"); return;
     }
     if (userId === currentUser?.id) { toast.error("No puedes cambiar tu propio rol"); return; }
@@ -105,6 +108,48 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
     setEditModal({ open: false, user: null });
   };
 
+  const handleCreateUser = async () => {
+    if (!createForm.email || !createForm.password || !createForm.full_name) {
+      toast.error("Email, contraseña y nombre son obligatorios"); return;
+    }
+    if (createForm.password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres"); return;
+    }
+    setCreating(true);
+    try {
+      // Sign up the user via Supabase Auth
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: createForm.email,
+        password: createForm.password,
+        options: {
+          data: {
+            full_name: createForm.full_name,
+            business_type: createForm.business_type,
+            phone: createForm.phone || "",
+          },
+        },
+      });
+      if (signUpError) throw signUpError;
+      const newUserId = signUpData.user?.id;
+      if (!newUserId) throw new Error("No se pudo crear el usuario");
+
+      // Assign role if not default 'user'
+      if (createForm.role !== "user") {
+        const { error: roleError } = await supabase.from("user_roles").insert([{ user_id: newUserId, role: createForm.role }]);
+        if (roleError) console.warn("Role assignment failed:", roleError.message);
+      }
+
+      toast.success(`Usuario ${createForm.full_name} creado exitosamente`);
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setCreateModal(false);
+      setCreateForm({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "Bucaramanga", business_type: "detal", role: "user" });
+    } catch (err: any) {
+      toast.error(err.message || "Error al crear usuario");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const filtered = users?.filter((u: any) => {
     const q = search.toLowerCase();
     const matchesSearch = (u.full_name || "").toLowerCase().includes(q) ||
@@ -116,22 +161,32 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   });
 
   const isSuperadmin = currentRole === "superadmin";
-  const availableRoles: AppRole[] = isSuperadmin ? ["user", "editor", "admin", "superadmin"] : ["user", "editor"];
+  const isAdminLevel = ["superadmin", "admin"].includes(currentRole);
+  const availableRoles: AppRole[] = isSuperadmin
+    ? ["user", "editor", "agente", "admin", "superadmin"]
+    : isAdminLevel
+      ? ["user", "editor", "agente", "admin"]
+      : ["user", "editor"];
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="font-heading font-bold text-lg text-foreground">Usuarios ({users?.length || 0})</h2>
-          <p className="text-[11px] text-muted-foreground">Gestión de roles y tipologías de precio</p>
+          <p className="text-[11px] text-muted-foreground">Gestión de roles, tipologías y precios</p>
         </div>
+        {isAdminLevel && (
+          <Button onClick={() => setCreateModal(true)} size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground gap-1.5">
+            <UserPlus size={14} /> Crear
+          </Button>
+        )}
       </div>
 
       {/* Search */}
       <div className="relative mb-3">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre, NIT o teléfono..."
+          placeholder="Buscar por nombre, código, NIT o teléfono..."
           className="w-full bg-muted rounded-lg pl-9 pr-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
       </div>
 
@@ -280,6 +335,87 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
             <DialogClose asChild><Button variant="outline" size="sm">Cancelar</Button></DialogClose>
             <Button onClick={saveEditProfile} size="sm" className="bg-accent hover:bg-accent/90">
               <Save size={14} className="mr-1" /> Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Modal */}
+      <Dialog open={createModal} onOpenChange={setCreateModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <UserPlus size={18} className="text-accent" />
+              Crear nuevo usuario
+            </DialogTitle>
+            <DialogDescription>Registra un nuevo usuario con rol y tipología de precio</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Email *</label>
+              <input value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                type="email" placeholder="correo@ejemplo.com"
+                className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Contraseña *</label>
+              <div className="relative">
+                <input value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                  type={showPassword ? "text" : "password"} placeholder="Mínimo 6 caracteres"
+                  className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none pr-10" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Nombre completo *</label>
+              <input value={createForm.full_name} onChange={(e) => setCreateForm({ ...createForm, full_name: e.target.value })}
+                placeholder="Nombre del usuario"
+                className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Teléfono</label>
+                <input value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                  placeholder="3001234567" inputMode="tel"
+                  className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Ciudad</label>
+                <input value={createForm.city} onChange={(e) => setCreateForm({ ...createForm, city: e.target.value })}
+                  className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Empresa / NIT</label>
+              <input value={createForm.business_name} onChange={(e) => setCreateForm({ ...createForm, business_name: e.target.value })}
+                placeholder="Opcional"
+                className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Rol</label>
+                <select value={createForm.role} onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as AppRole })}
+                  className="w-full bg-muted rounded-lg px-2.5 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none">
+                  {availableRoles.map((r) => <option key={r} value={r}>{roleMeta[r].label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Tipología de precio</label>
+                <select value={createForm.business_type} onChange={(e) => setCreateForm({ ...createForm, business_type: e.target.value as BusinessType })}
+                  className="w-full bg-muted rounded-lg px-2.5 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none">
+                  {Object.entries(businessMeta).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <DialogClose asChild><Button variant="outline" size="sm">Cancelar</Button></DialogClose>
+            <Button onClick={handleCreateUser} disabled={creating} size="sm" className="bg-accent hover:bg-accent/90 gap-1.5">
+              {creating ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+              {creating ? "Creando..." : "Crear usuario"}
             </Button>
           </DialogFooter>
         </DialogContent>

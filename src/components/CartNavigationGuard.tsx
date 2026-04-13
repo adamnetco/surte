@@ -11,10 +11,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, ShoppingBag, ArrowLeft } from "lucide-react";
 import React, { useContext } from "react";
 
-const ALLOWED_PATHS = ["/carrito", "/pedido"];
+/** Paths the user can navigate to freely while the cart has items */
+const ALLOWED_PATHS = [
+  "/carrito",
+  "/pedido",
+  "/catalogo",
+  "/hub",
+  "/producto",
+  "/ofertas",
+  "/categorias",
+  "/favoritos",
+];
 
 const CartNavigationGuard = () => {
   const { totalItems } = useCart();
@@ -27,6 +37,9 @@ const CartNavigationGuard = () => {
   const locationRef = useRef(location.pathname);
   locationRef.current = location.pathname;
 
+  const isAllowed = (path: string) =>
+    ALLOWED_PATHS.some((p) => path.startsWith(p));
+
   // Intercept programmatic navigation (navigate() calls)
   useEffect(() => {
     const navigator = navContext.navigator as any;
@@ -38,7 +51,7 @@ const CartNavigationGuard = () => {
       if (
         totalItemsRef.current > 0 &&
         path !== locationRef.current &&
-        !ALLOWED_PATHS.some((p) => path.startsWith(p))
+        !isAllowed(path)
       ) {
         setPendingPath(path);
         return;
@@ -64,7 +77,7 @@ const CartNavigationGuard = () => {
       if (!anchor) return;
       const href = anchor.getAttribute("href");
       if (!href || href.startsWith("http") || href.startsWith("mailto") || href.startsWith("tel")) return;
-      if (ALLOWED_PATHS.some((p) => href.startsWith(p))) return;
+      if (isAllowed(href)) return;
       if (href === location.pathname) return;
 
       e.preventDefault();
@@ -80,7 +93,6 @@ const CartNavigationGuard = () => {
     if (pendingPath) {
       const path = pendingPath;
       setPendingPath(null);
-      // Use setTimeout to ensure state is cleared before navigating
       setTimeout(() => navigate(path), 0);
     }
   }, [pendingPath, navigate]);
@@ -88,6 +100,11 @@ const CartNavigationGuard = () => {
   const handleCancel = useCallback(() => {
     setPendingPath(null);
   }, []);
+
+  const handleKeepShopping = useCallback(() => {
+    setPendingPath(null);
+    navigate("/catalogo");
+  }, [navigate]);
 
   return (
     <AlertDialog open={!!pendingPath}>
@@ -98,20 +115,34 @@ const CartNavigationGuard = () => {
             Tienes {totalItems} {totalItems === 1 ? "producto" : "productos"} en el carrito
           </AlertDialogTitle>
           <AlertDialogDescription className="text-sm">
-            Tu carrito se conservará por 24 horas. ¿Seguro que deseas salir de esta página?
+            Tu carrito se conservará por 24 horas. ¿Qué deseas hacer?
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex-row gap-2">
-          <AlertDialogCancel onClick={handleCancel} className="flex-1 mt-0">
-            Quedarme
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleProceed}
-            className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
+        <div className="flex flex-col gap-2 pt-1">
+          {/* Primary: keep shopping */}
+          <button
+            onClick={handleKeepShopping}
+            className="w-full flex items-center justify-center gap-2 bg-accent text-accent-foreground font-heading font-semibold py-3 rounded-xl text-sm transition-all active:scale-[0.97]"
           >
-            Salir
-          </AlertDialogAction>
-        </AlertDialogFooter>
+            <ShoppingBag size={16} />
+            Seguir comprando
+          </button>
+          {/* Secondary: stay on current page */}
+          <button
+            onClick={handleCancel}
+            className="w-full flex items-center justify-center gap-2 bg-muted text-foreground font-medium py-2.5 rounded-xl text-sm transition-colors hover:bg-muted/80"
+          >
+            <ArrowLeft size={14} />
+            Quedarme aquí
+          </button>
+          {/* Tertiary: leave anyway */}
+          <button
+            onClick={handleProceed}
+            className="w-full text-center text-xs text-muted-foreground py-1.5 hover:text-foreground transition-colors"
+          >
+            Salir sin comprar
+          </button>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );
