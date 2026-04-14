@@ -83,9 +83,16 @@ const ProductoDetalle = () => {
     enabled: !!productId,
   });
 
+  // Default to base presentation (conversion_factor = 1) on load
+  useEffect(() => {
+    if (!presentations || presentations.length === 0 || selectedPresentation) return;
+    const base = presentations.find((p: any) => p.conversion_factor === 1);
+    if (base) setSelectedPresentation(base.id);
+  }, [presentations]);
+
   // Auto-select presentation when quantity matches a conversion_factor
   useEffect(() => {
-    if (!presentations || presentations.length === 0) return;
+    if (!presentations || presentations.length <= 1) return;
     // Find the best matching presentation where qty >= conversion_factor
     const matching = presentations
       .filter((p: any) => p.conversion_factor > 1 && qty >= p.conversion_factor && qty % p.conversion_factor === 0)
@@ -101,8 +108,10 @@ const ProductoDetalle = () => {
         toast.info(`💡 Presentación "${best.name}" seleccionada (mejor precio)`, { duration: 3000 });
       }
     } else if (autoPresentation && selectedPresentation) {
+      // Go back to base
       setAutoPresentation(false);
-      setSelectedPresentation(null);
+      const base = presentations.find((p: any) => p.conversion_factor === 1);
+      setSelectedPresentation(base?.id || null);
     }
   }, [qty, presentations]);
 
