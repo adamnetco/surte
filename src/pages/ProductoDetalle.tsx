@@ -83,9 +83,16 @@ const ProductoDetalle = () => {
     enabled: !!productId,
   });
 
+  // Default to base presentation (conversion_factor = 1) on load
+  useEffect(() => {
+    if (!presentations || presentations.length === 0 || selectedPresentation) return;
+    const base = presentations.find((p: any) => p.conversion_factor === 1);
+    if (base) setSelectedPresentation(base.id);
+  }, [presentations]);
+
   // Auto-select presentation when quantity matches a conversion_factor
   useEffect(() => {
-    if (!presentations || presentations.length === 0) return;
+    if (!presentations || presentations.length <= 1) return;
     // Find the best matching presentation where qty >= conversion_factor
     const matching = presentations
       .filter((p: any) => p.conversion_factor > 1 && qty >= p.conversion_factor && qty % p.conversion_factor === 0)
@@ -101,8 +108,10 @@ const ProductoDetalle = () => {
         toast.info(`💡 Presentación "${best.name}" seleccionada (mejor precio)`, { duration: 3000 });
       }
     } else if (autoPresentation && selectedPresentation) {
+      // Go back to base
       setAutoPresentation(false);
-      setSelectedPresentation(null);
+      const base = presentations.find((p: any) => p.conversion_factor === 1);
+      setSelectedPresentation(base?.id || null);
     }
   }, [qty, presentations]);
 
@@ -251,26 +260,30 @@ const ProductoDetalle = () => {
         <p className="text-[11px] text-accent font-medium mb-2">Precio {businessType.toUpperCase()}</p>
       )}
 
-      {/* Presentations */}
-      {presentations && presentations.length > 0 && (
+      {/* Presentations — base unit is included as a presentation with conversion_factor=1 */}
+      {presentations && presentations.length > 1 && (
         <div className="mb-3">
           <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
             <Box size={11} /> Presentación
           </p>
           <div className="flex flex-wrap gap-1.5">
-            <button
-              onClick={() => setSelectedPresentation(null)}
-              className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors border ${!selectedPresentation ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
-            >
-              {product.base_unit || "Unidad"} · {formatPrice(userPrice)}
-            </button>
             {presentations.map((p: any) => (
               <button
                 key={p.id}
-                onClick={() => setSelectedPresentation(p.id)}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors border ${selectedPresentation === p.id ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent"}`}
+                onClick={() => {
+                  setSelectedPresentation(p.id);
+                  setAutoPresentation(false);
+                }}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all border ${
+                  selectedPresentation === p.id || (!selectedPresentation && p.conversion_factor === 1)
+                    ? "bg-accent text-accent-foreground border-accent shadow-sm"
+                    : "bg-muted text-muted-foreground border-transparent hover:border-accent/40"
+                }`}
               >
                 {p.name} · {formatPrice(p.price)}
+                {p.conversion_factor > 1 && (
+                  <span className="text-[9px] opacity-70 ml-0.5">×{p.conversion_factor}</span>
+                )}
               </button>
             ))}
           </div>

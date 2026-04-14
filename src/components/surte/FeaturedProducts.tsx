@@ -32,6 +32,7 @@ const useFeaturedSections = () =>
   });
 
 const applyFilter = (products: any[], section: FeaturedSection) => {
+  const val = section.filter_value?.trim().toLowerCase() || "";
   switch (section.filter_type) {
     case "offers":
       return products.filter((p) => p.original_price && p.original_price > p.price);
@@ -40,9 +41,16 @@ const applyFilter = (products: any[], section: FeaturedSection) => {
     case "fresh":
       return products.filter((p) => p.is_fresh);
     case "category":
-      return products.filter((p) => p.categories?.slug === section.filter_value);
+      return products.filter((p) => p.categories?.slug?.toLowerCase() === val);
     case "tag":
-      return products.filter((p) => p.tags?.some((t: string) => t.toLowerCase() === section.filter_value?.toLowerCase()));
+      return products.filter((p) => {
+        if (!p.tags || !Array.isArray(p.tags)) return false;
+        // Match any tag that contains the filter value (more flexible)
+        return p.tags.some((t: string) => {
+          const tl = t.toLowerCase().trim();
+          return tl === val || tl.includes(val) || val.includes(tl);
+        });
+      });
     case "combo":
       return products.filter((p) => p.tags?.some((t: string) => ["combo", "pack", "kit"].includes(t.toLowerCase())));
     default:
@@ -64,7 +72,8 @@ const FeaturedProducts = () => {
     return applyFilter(products, currentSection).slice(0, 12);
   }, [products, currentSection]);
 
-  const displayProducts = filtered.length > 0 ? filtered : (products?.slice(0, 8) ?? []);
+  // Show filtered products, or a "no results" message — don't fallback to random products
+  const displayProducts = filtered;
   const isLoading = productsLoading || sectionsLoading;
 
   if (isLoading) {
@@ -153,9 +162,10 @@ const FeaturedProducts = () => {
         </motion.div>
       </AnimatePresence>
 
-      {filtered.length === 0 && currentSection && (
+      {displayProducts.length === 0 && currentSection && (
         <div className="text-center py-8 text-muted-foreground">
-          <p className="text-sm">Próximamente productos en esta categoría</p>
+          <p className="text-sm">No hay productos con la etiqueta "{currentSection.filter_value || currentSection.label}"</p>
+          <p className="text-xs mt-1">Asigna la etiqueta desde Admin → Productos</p>
         </div>
       )}
     </motion.section>
