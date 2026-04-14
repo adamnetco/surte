@@ -55,6 +55,30 @@ const FeaturedSectionsTab = ({ queryClient }: { queryClient: QueryClient }) => {
     },
   });
 
+  // Fetch products to show match count
+  const { data: products } = useQuery({
+    queryKey: ["admin-products-for-sections"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("id, name, tags, is_fresh, is_wholesale, original_price, price, categories(slug)").eq("is_active", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const countMatches = (s: FeaturedSection) => {
+    if (!products) return 0;
+    const val = s.filter_value?.trim().toLowerCase() || "";
+    switch (s.filter_type) {
+      case "offers": return products.filter((p: any) => p.original_price && p.original_price > p.price).length;
+      case "wholesale": return products.filter((p: any) => p.is_wholesale).length;
+      case "fresh": return products.filter((p: any) => p.is_fresh).length;
+      case "category": return products.filter((p: any) => p.categories?.slug?.toLowerCase() === val).length;
+      case "tag": return products.filter((p: any) => p.tags?.some((t: string) => t.toLowerCase().trim() === val || t.toLowerCase().trim().includes(val))).length;
+      case "combo": return products.filter((p: any) => p.tags?.some((t: string) => ["combo", "pack", "kit"].includes(t.toLowerCase()))).length;
+      default: return 0;
+    }
+  };
+
   const handleSave = async (section: Partial<FeaturedSection> & { id?: string }) => {
     if (!section.label?.trim()) {
       toast.error("El nombre es obligatorio");
@@ -216,6 +240,9 @@ const FeaturedSectionsTab = ({ queryClient }: { queryClient: QueryClient }) => {
                 <p className="text-xs text-muted-foreground">
                   {FILTER_TYPES.find((f) => f.value === s.filter_type)?.label}
                   {s.filter_value ? ` → ${s.filter_value}` : ""}
+                  <span className={`ml-1.5 font-semibold ${countMatches(s) > 0 ? "text-accent" : "text-destructive"}`}>
+                    ({countMatches(s)} productos)
+                  </span>
                 </p>
               </div>
               <Switch checked={s.is_active} onCheckedChange={() => toggleActive(s.id, s.is_active)} />
