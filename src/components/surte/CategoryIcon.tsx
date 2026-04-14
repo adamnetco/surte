@@ -4,7 +4,7 @@ import {
   Coffee, Wine, Beer, Candy, Leaf, Salad, Soup, Pizza, Cake, UtensilsCrossed,
   ShoppingBasket, Carrot, Ham, Popcorn, CupSoda, GlassWater, Refrigerator,
   Warehouse, Truck, Store, Heart, Sparkles, Zap, Tag, Star, Gift,
-  Snowflake, Sun, Pepper, Vegan, Banana, Popsicle,
+  Snowflake, Sun, Vegan, Banana,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,7 +24,7 @@ const iconMap: Record<string, LucideIcon> = {
   Coffee, Wine, Beer, Candy, Leaf, Salad, Soup, Pizza, Cake, UtensilsCrossed,
   ShoppingBasket, Carrot, Ham, Popcorn, CupSoda, GlassWater, Refrigerator,
   Warehouse, Truck, Store, Heart, Sparkles, Zap, Tag, Star, Gift,
-  Snowflake, Sun, Pepper, Vegan, Banana, Popsicle,
+  Snowflake, Sun, Vegan, Banana,
 };
 
 export const AVAILABLE_ICONS = Object.keys(iconMap);
