@@ -24,6 +24,13 @@ const ALLOWED_PATHS = [
   "/ofertas",
   "/categorias",
   "/favoritos",
+  "/",
+  "/login",
+  "/perfil",
+  "/configuracion",
+  "/mis-pedidos",
+  "/ayuda",
+  "/politicas",
 ];
 
 const CartNavigationGuard = () => {

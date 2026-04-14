@@ -2,7 +2,10 @@ import {
   Drumstick, Cherry, Droplets, Flame, Croissant, Package, Beef, Fish,
   IceCream, Milk, Cookie, Apple, Grape, Citrus, Wheat, Egg, Sandwich,
   Coffee, Wine, Beer, Candy, Leaf, Salad, Soup, Pizza, Cake, UtensilsCrossed,
-  ShoppingBasket, type LucideIcon,
+  ShoppingBasket, Carrot, Ham, Popcorn, CupSoda, GlassWater, Refrigerator,
+  Warehouse, Truck, Store, Heart, Sparkles, Zap, Tag, Star, Gift,
+  Snowflake, Sun, Pepper, Vegan, Banana, Popsicle,
+  type LucideIcon,
 } from "lucide-react";
 
 /**
@@ -19,7 +22,9 @@ const iconMap: Record<string, LucideIcon> = {
   Drumstick, Cherry, Droplets, Flame, Croissant, Package, Beef, Fish,
   IceCream, Milk, Cookie, Apple, Grape, Citrus, Wheat, Egg, Sandwich,
   Coffee, Wine, Beer, Candy, Leaf, Salad, Soup, Pizza, Cake, UtensilsCrossed,
-  ShoppingBasket,
+  ShoppingBasket, Carrot, Ham, Popcorn, CupSoda, GlassWater, Refrigerator,
+  Warehouse, Truck, Store, Heart, Sparkles, Zap, Tag, Star, Gift,
+  Snowflake, Sun, Pepper, Vegan, Banana, Popsicle,
 };
 
 export const AVAILABLE_ICONS = Object.keys(iconMap);

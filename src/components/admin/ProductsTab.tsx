@@ -280,16 +280,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     } else {
       const { data: newProduct, error } = await supabase.from("products").insert(payload).select("id, name, price, base_unit").single();
       if (error) { toast.error(error.message); return; }
-      // Auto-create default presentation
-      const baseUnit = newProduct.base_unit || form.unit || "unidad";
-      await supabase.from("product_presentations").insert({
-        product_id: newProduct.id,
-        name: `${baseUnit.charAt(0).toUpperCase() + baseUnit.slice(1)}`,
-        conversion_factor: 1,
-        price: Number(form.price),
-        sort_order: 0,
-        is_active: true,
-      });
+      // Base presentation is auto-created by the DB trigger (trg_auto_base_presentation)
       toast.success("Producto creado con presentación base");
       queryClient.invalidateQueries({ queryKey: ["admin-presentations"] });
       queryClient.invalidateQueries({ queryKey: ["admin-all-presentations"] });
