@@ -180,12 +180,28 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h2 className="font-heading font-bold text-lg text-foreground">Pedidos ({orders?.length || 0})</h2>
       </div>
 
+      {/* Payment KPIs */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2.5">
+          <p className="text-[10px] text-secondary font-semibold uppercase tracking-wide flex items-center gap-1">
+            <CheckCircle2 size={10} /> Recaudado
+          </p>
+          <p className="text-base font-heading font-bold text-secondary">{formatPrice(totalRevenue)}</p>
+        </div>
+        <div className="bg-accent/10 border border-accent/30 rounded-lg p-2.5">
+          <p className="text-[10px] text-accent font-semibold uppercase tracking-wide flex items-center gap-1">
+            <AlertCircle size={10} /> Saldo pendiente
+          </p>
+          <p className="text-base font-heading font-bold text-accent">{formatPrice(totalPending)}</p>
+        </div>
+      </div>
+
       {/* Status filter chips */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-4 pb-1">
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-2 pb-1">
         <button onClick={() => setStatusFilter("all")}
           className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-heading font-semibold transition-colors ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
           Todos
@@ -203,9 +219,27 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
         })}
       </div>
 
+      {/* Payment status filter */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-4 pb-1">
+        <button onClick={() => setPaymentFilter("all")}
+          className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium border transition-colors ${paymentFilter === "all" ? "border-foreground text-foreground" : "border-border text-muted-foreground"}`}>
+          💳 Todos los pagos
+        </button>
+        {Object.entries(paymentStatusConfig).map(([key, cfg]) => {
+          const count = orders?.filter((o: any) => (o.payment_status || "pendiente") === key).length || 0;
+          if (count === 0) return null;
+          return (
+            <button key={key} onClick={() => setPaymentFilter(key)}
+              className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium border transition-colors ${paymentFilter === key ? `${cfg.bg} ${cfg.text} border-current` : "border-border text-muted-foreground"}`}>
+              {cfg.emoji} {cfg.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       {filtered?.length === 0 && (
         <div className="text-center py-12 bg-card rounded-xl border border-dashed border-border">
-          <p className="text-sm text-muted-foreground">Sin pedidos en este estado</p>
+          <p className="text-sm text-muted-foreground">Sin pedidos con estos filtros</p>
         </div>
       )}
 
