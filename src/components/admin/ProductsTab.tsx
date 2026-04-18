@@ -201,6 +201,13 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   });
   const { upload, uploading } = useImageUpload();
 
+  // Bulk edit state
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<"price_pct" | "activate" | "deactivate" | "add_tag" | "remove_tag" | "set_category">("price_pct");
+  const [bulkValue, setBulkValue] = useState<string>("");
+  const [bulkApplying, setBulkApplying] = useState(false);
+
   const resetForm = () => {
     setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "", slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "", tags: "", unit_quantity: "", unit_measure: "", net_weight_grams: "" });
     setEditing(null);
@@ -304,6 +311,95 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     toast.success(!currentActive ? "Producto visible" : "Producto oculto");
     queryClient.invalidateQueries({ queryKey: ["admin-products"] });
     queryClient.invalidateQueries({ queryKey: ["products"] });
+  };
+
+  /* ── Bulk actions ── */
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllVisible = () => {
+    if (!filtered) return;
+    setSelectedIds(new Set(filtered.map((p: any) => p.id)));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const exitBulkMode = () => {
+    setBulkMode(false);
+    clearSelection();
+    setBulkValue("");
+  };
+
+  const applyBulk = async () => {
+    if (selectedIds.size === 0) {
+      toast.error("Selecciona al menos un producto");
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    const selectedProducts = products?.filter((p: any) => selectedIds.has(p.id)) || [];
+    const desc: Record<string, string> = {
+      price_pct: `ajustar precios ${bulkValue}%`,
+      activate: "activar",
+      deactivate: "ocultar",
+      add_tag: `añadir etiqueta "${bulkValue}"`,
+      remove_tag: `quitar etiqueta "${bulkValue}"`,
+      set_category: "cambiar categoría",
+    };
+    if (!confirm(`¿Aplicar acción "${desc[bulkAction]}" a ${ids.length} producto(s)?`)) return;
+
+    setBulkApplying(true);
+    try {
+      if (bulkAction === "activate" || bulkAction === "deactivate") {
+        const { error } = await supabase
+          .from("products")
+          .update({ is_active: bulkAction === "activate" })
+          .in("id", ids);
+        if (error) throw error;
+      } else if (bulkAction === "set_category") {
+        const { error } = await supabase
+          .from("products")
+          .update({ category_id: bulkValue || null })
+          .in("id", ids);
+        if (error) throw error;
+      } else if (bulkAction === "price_pct") {
+        const pct = Number(bulkValue);
+        if (!pct || isNaN(pct)) { toast.error("Indica un porcentaje válido (ej: 10 ó -5)"); setBulkApplying(false); return; }
+        const factor = 1 + pct / 100;
+        // Update each product's prices individually (preserve nullable fields)
+        await Promise.all(selectedProducts.map((p: any) => {
+          const newPayload: any = { price: Math.round(Number(p.price) * factor) };
+          if (p.price_wholesale) newPayload.price_wholesale = Math.round(Number(p.price_wholesale) * factor);
+          if (p.price_distributor) newPayload.price_distributor = Math.round(Number(p.price_distributor) * factor);
+          return supabase.from("products").update(newPayload).eq("id", p.id);
+        }));
+      } else if (bulkAction === "add_tag" || bulkAction === "remove_tag") {
+        const tag = bulkValue.trim().toLowerCase();
+        if (!tag) { toast.error("Escribe la etiqueta"); setBulkApplying(false); return; }
+        await Promise.all(selectedProducts.map((p: any) => {
+          const current: string[] = (p.tags || []).map((t: string) => t.toLowerCase());
+          let next: string[];
+          if (bulkAction === "add_tag") {
+            next = current.includes(tag) ? current : [...current, tag];
+          } else {
+            next = current.filter((t) => t !== tag);
+          }
+          return supabase.from("products").update({ tags: next }).eq("id", p.id);
+        }));
+      }
+      toast.success(`✓ ${ids.length} producto(s) actualizados`);
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      exitBulkMode();
+    } catch (err: any) {
+      toast.error(err.message || "Error al aplicar la acción");
+    } finally {
+      setBulkApplying(false);
+    }
   };
 
   const filtered = products?.filter((p: any) => {
