@@ -40,6 +40,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
   const [form, setForm] = useState({
     city: "", min_order_amount: "120000", is_active: true,
     slug: "", meta_title: "", meta_description: "", og_image_url: "",
+    free_shipping_enabled: false, free_shipping_threshold: "150000",
   });
   const [saving, setSaving] = useState(false);
   const [showSeo, setShowSeo] = useState(false);
@@ -78,6 +79,8 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
       meta_title: form.meta_title.trim() || null,
       meta_description: form.meta_description.trim() || null,
       og_image_url: form.og_image_url.trim() || null,
+      free_shipping_enabled: form.free_shipping_enabled,
+      free_shipping_threshold: Number(form.free_shipping_threshold) || 150000,
     };
 
     try {
@@ -93,7 +96,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
       invalidate();
       setEditing(null);
       setShowSeo(false);
-      setForm({ city: "", min_order_amount: "120000", is_active: true, slug: "", meta_title: "", meta_description: "", og_image_url: "" });
+      setForm({ city: "", min_order_amount: "120000", is_active: true, slug: "", meta_title: "", meta_description: "", og_image_url: "", free_shipping_enabled: false, free_shipping_threshold: "150000" });
     } finally {
       setSaving(false);
     }
@@ -136,6 +139,8 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
       meta_title: m.meta_title || "",
       meta_description: m.meta_description || "",
       og_image_url: m.og_image_url || "",
+      free_shipping_enabled: !!m.free_shipping_enabled,
+      free_shipping_threshold: String(m.free_shipping_threshold || 150000),
     });
     setEditing(m.id);
     setShowSeo(!!m.meta_title || !!m.meta_description || !!m.og_image_url);
@@ -169,7 +174,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
             )}
           </p>
         </div>
-        <button onClick={() => { setForm({ city: "", min_order_amount: "120000", is_active: true, slug: "", meta_title: "", meta_description: "", og_image_url: "" }); setEditing("new"); setShowSeo(false); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
+        <button onClick={() => { setForm({ city: "", min_order_amount: "120000", is_active: true, slug: "", meta_title: "", meta_description: "", og_image_url: "", free_shipping_enabled: false, free_shipping_threshold: "150000" }); setEditing("new"); setShowSeo(false); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
           <Plus size={14} /> Nuevo
         </button>
       </div>
@@ -208,6 +213,35 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
           <div className="flex items-center gap-2">
             <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
             <span className="text-sm text-foreground">{form.is_active ? "Activo" : "Inactivo"}</span>
+          </div>
+
+          {/* Free shipping toggle + threshold */}
+          <div className="bg-secondary/5 border border-secondary/30 rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🚚</span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Domicilio gratis por monto</p>
+                  <p className="text-[10px] text-muted-foreground">Si el subtotal supera el umbral, el envío es gratis</p>
+                </div>
+              </div>
+              <Switch checked={form.free_shipping_enabled} onCheckedChange={(v) => setForm({ ...form, free_shipping_enabled: v })} />
+            </div>
+            {form.free_shipping_enabled && (
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-1 block">Umbral de envío gratis (COP)</label>
+                <input
+                  type="number"
+                  value={form.free_shipping_threshold}
+                  onChange={(e) => setForm({ ...form, free_shipping_threshold: e.target.value })}
+                  placeholder="150000"
+                  className="w-full bg-card rounded-lg px-3 py-2 text-sm border border-secondary/30 focus:border-secondary focus:outline-none transition-colors font-mono"
+                />
+                <p className="text-[10px] text-secondary mt-1">
+                  Pedidos ≥ {fmt.format(Number(form.free_shipping_threshold) || 0)} → domicilio gratis
+                </p>
+              </div>
+            )}
           </div>
 
           {/* SEO Toggle */}
@@ -331,7 +365,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
           <div className="text-center py-8 space-y-2">
             <MapPin size={32} className="mx-auto text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">No hay municipios configurados</p>
-            <button onClick={() => { setForm({ city: "", min_order_amount: "120000", is_active: true, slug: "", meta_title: "", meta_description: "", og_image_url: "" }); setEditing("new"); setShowSeo(false); }} className="text-xs text-accent hover:underline">
+            <button onClick={() => { setForm({ city: "", min_order_amount: "120000", is_active: true, slug: "", meta_title: "", meta_description: "", og_image_url: "", free_shipping_enabled: false, free_shipping_threshold: "150000" }); setEditing("new"); setShowSeo(false); }} className="text-xs text-accent hover:underline">
               + Crear el primero
             </button>
           </div>
