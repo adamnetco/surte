@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Phone, MapPin, Clock, MessageCircle, Loader2, CheckCircle2, ChevronDown, Filter, CalendarIcon, Banknote, CreditCard, Sun, Moon } from "lucide-react";
+import { Phone, MapPin, Clock, MessageCircle, Loader2, CheckCircle2, ChevronDown, Filter, CalendarIcon, Banknote, CreditCard, Sun, Moon, Wallet, AlertCircle, RotateCcw } from "lucide-react";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -13,6 +13,13 @@ const statusConfig: Record<string, { label: string; bg: string; text: string }> 
   enviado: { label: "Enviado", bg: "bg-primary/70", text: "text-primary-foreground" },
   entregado: { label: "Entregado", bg: "bg-secondary", text: "text-secondary-foreground" },
   cancelado: { label: "Cancelado", bg: "bg-destructive", text: "text-destructive-foreground" },
+};
+
+const paymentStatusConfig: Record<string, { label: string; icon: any; bg: string; text: string; emoji: string }> = {
+  pendiente: { label: "Pago pendiente", icon: AlertCircle, bg: "bg-accent/15", text: "text-accent", emoji: "⏳" },
+  pagado: { label: "Pagado", icon: CheckCircle2, bg: "bg-secondary/15", text: "text-secondary", emoji: "✅" },
+  parcial: { label: "Pago parcial", icon: Wallet, bg: "bg-primary/15", text: "text-primary", emoji: "💰" },
+  reembolsado: { label: "Reembolsado", icon: RotateCcw, bg: "bg-muted", text: "text-muted-foreground", emoji: "↩️" },
 };
 
 const categoryEmojis: Record<string, string> = {
@@ -32,6 +39,10 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
   const [sendingWhatsApp, setSendingWhatsApp] = useState<Record<string, boolean>>({});
   const [sentWhatsApp, setSentWhatsApp] = useState<Record<string, boolean>>({});
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [openPayment, setOpenPayment] = useState<Record<string, boolean>>({});
+  const [paymentForm, setPaymentForm] = useState<Record<string, { status: string; amount: string; notes: string }>>({});
+  const [savingPayment, setSavingPayment] = useState<Record<string, boolean>>({});
 
   const updateStatus = async (orderId: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
@@ -105,16 +116,92 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
     }
   };
 
-  const filtered = statusFilter === "all" ? orders : orders?.filter((o: any) => o.status === statusFilter);
+  const savePayment = async (orderId: string, total: number) => {
+    const f = paymentForm[orderId];
+    if (!f) return;
+    setSavingPayment((p) => ({ ...p, [orderId]: true }));
+    try {
+      const amount = Number(f.amount) || 0;
+      // Guard: parcial must be > 0 and < total; pagado must equal total
+      let normalizedStatus = f.status;
+      let normalizedAmount = amount;
+      if (f.status === "pagado") normalizedAmount = total;
+      if (f.status === "pendiente") normalizedAmount = 0;
+      if (f.status === "parcial" && (amount <= 0 || amount >= total)) {
+        toast.error("El monto parcial debe ser mayor a 0 y menor al total");
+        setSavingPayment((p) => ({ ...p, [orderId]: false }));
+        return;
+      }
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          payment_status: normalizedStatus,
+          amount_paid: normalizedAmount,
+          payment_notes: f.notes || null,
+          payment_recorded_at: new Date().toISOString(),
+        })
+        .eq("id", orderId);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Pago registrado: ${paymentStatusConfig[normalizedStatus]?.label}`);
+      setOpenPayment((p) => ({ ...p, [orderId]: false }));
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    } finally {
+      setSavingPayment((p) => ({ ...p, [orderId]: false }));
+    }
+  };
+
+  const togglePaymentPanel = (o: any) => {
+    const isOpen = !openPayment[o.id];
+    setOpenPayment((p) => ({ ...p, [o.id]: isOpen }));
+    if (isOpen && !paymentForm[o.id]) {
+      setPaymentForm((p) => ({
+        ...p,
+        [o.id]: {
+          status: o.payment_status || "pendiente",
+          amount: String(o.amount_paid || 0),
+          notes: o.payment_notes || "",
+        },
+      }));
+    }
+  };
+
+  const filtered = (statusFilter === "all" ? orders : orders?.filter((o: any) => o.status === statusFilter))
+    ?.filter((o: any) => paymentFilter === "all" || (o.payment_status || "pendiente") === paymentFilter);
+
+  // Payment KPIs
+  const totalRevenue = orders?.reduce((s: number, o: any) => s + Number(o.amount_paid || 0), 0) || 0;
+  const totalPending = orders?.reduce((s: number, o: any) => {
+    const ps = o.payment_status || "pendiente";
+    if (ps === "pendiente" || ps === "parcial") {
+      return s + Math.max(0, Number(o.total) - Number(o.amount_paid || 0));
+    }
+    return s;
+  }, 0) || 0;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h2 className="font-heading font-bold text-lg text-foreground">Pedidos ({orders?.length || 0})</h2>
       </div>
 
+      {/* Payment KPIs */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2.5">
+          <p className="text-[10px] text-secondary font-semibold uppercase tracking-wide flex items-center gap-1">
+            <CheckCircle2 size={10} /> Recaudado
+          </p>
+          <p className="text-base font-heading font-bold text-secondary">{formatPrice(totalRevenue)}</p>
+        </div>
+        <div className="bg-accent/10 border border-accent/30 rounded-lg p-2.5">
+          <p className="text-[10px] text-accent font-semibold uppercase tracking-wide flex items-center gap-1">
+            <AlertCircle size={10} /> Saldo pendiente
+          </p>
+          <p className="text-base font-heading font-bold text-accent">{formatPrice(totalPending)}</p>
+        </div>
+      </div>
+
       {/* Status filter chips */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-4 pb-1">
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-2 pb-1">
         <button onClick={() => setStatusFilter("all")}
           className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-heading font-semibold transition-colors ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
           Todos
@@ -132,9 +219,27 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
         })}
       </div>
 
+      {/* Payment status filter */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-4 pb-1">
+        <button onClick={() => setPaymentFilter("all")}
+          className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium border transition-colors ${paymentFilter === "all" ? "border-foreground text-foreground" : "border-border text-muted-foreground"}`}>
+          💳 Todos los pagos
+        </button>
+        {Object.entries(paymentStatusConfig).map(([key, cfg]) => {
+          const count = orders?.filter((o: any) => (o.payment_status || "pendiente") === key).length || 0;
+          if (count === 0) return null;
+          return (
+            <button key={key} onClick={() => setPaymentFilter(key)}
+              className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium border transition-colors ${paymentFilter === key ? `${cfg.bg} ${cfg.text} border-current` : "border-border text-muted-foreground"}`}>
+              {cfg.emoji} {cfg.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       {filtered?.length === 0 && (
         <div className="text-center py-12 bg-card rounded-xl border border-dashed border-border">
-          <p className="text-sm text-muted-foreground">Sin pedidos en este estado</p>
+          <p className="text-sm text-muted-foreground">Sin pedidos con estos filtros</p>
         </div>
       )}
 
@@ -144,20 +249,38 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
           const isSending = sendingWhatsApp[o.id];
           const isSent = sentWhatsApp[o.id];
 
+          const pStatus = o.payment_status || "pendiente";
+          const pCfg = paymentStatusConfig[pStatus];
+          const PIcon = pCfg.icon;
+          const balance = Math.max(0, Number(o.total) - Number(o.amount_paid || 0));
+          const showPayPanel = openPayment[o.id];
+          const pf = paymentForm[o.id] || { status: pStatus, amount: String(o.amount_paid || 0), notes: o.payment_notes || "" };
+
           return (
             <div key={o.id} className="bg-card rounded-lg p-4 space-y-3 border border-border shadow-sm">
               {/* Header */}
               <div className="flex justify-between items-start">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-heading font-bold text-foreground">#{o.order_number}</p>
                     <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-heading font-bold ${sc.bg} ${sc.text}`}>
                       {sc.label}
                     </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${pCfg.bg} ${pCfg.text}`}>
+                      <PIcon size={9} /> {pCfg.label}
+                    </span>
                   </div>
                   <p className="text-xs text-foreground font-medium mt-0.5">{o.customer_name}</p>
                 </div>
-                <p className="text-base font-heading font-bold text-primary">{formatPrice(o.total)}</p>
+                <div className="text-right">
+                  <p className="text-base font-heading font-bold text-primary">{formatPrice(o.total)}</p>
+                  {pStatus === "parcial" && (
+                    <p className="text-[10px] text-accent font-semibold">Saldo: {formatPrice(balance)}</p>
+                  )}
+                  {pStatus === "pagado" && (
+                    <p className="text-[10px] text-secondary font-semibold">✓ Cobrado</p>
+                  )}
+                </div>
               </div>
 
               {/* Contact info */}
@@ -180,6 +303,16 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
               </div>
 
               {o.notes && <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-lg px-3 py-2">📝 {o.notes}</p>}
+              {o.payment_notes && (
+                <p className="text-xs text-primary italic bg-primary/5 rounded-lg px-3 py-2 border-l-2 border-primary">
+                  💳 {o.payment_notes}
+                  {o.payment_recorded_at && (
+                    <span className="ml-1 text-muted-foreground text-[10px]">
+                      · {new Date(o.payment_recorded_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}
+                    </span>
+                  )}
+                </p>
+              )}
 
               {/* Delivery & payment info */}
               {(o.preferred_delivery_date || o.payment_method) && (
@@ -205,15 +338,86 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
                 </div>
               )}
 
+              {/* Payment management panel (collapsible) */}
+              {showPayPanel && (
+                <div className="bg-muted/30 border border-border rounded-lg p-3 space-y-2.5">
+                  <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider flex items-center gap-1">
+                    <Wallet size={11} /> Registrar pago
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-muted-foreground block mb-0.5">Estado</label>
+                      <select
+                        value={pf.status}
+                        onChange={(e) => setPaymentForm((p) => ({ ...p, [o.id]: { ...pf, status: e.target.value } }))}
+                        className="w-full bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none"
+                      >
+                        {Object.entries(paymentStatusConfig).map(([k, c]) => (
+                          <option key={k} value={k}>{c.emoji} {c.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground block mb-0.5">
+                        Monto recibido {pf.status === "parcial" ? "*" : ""}
+                      </label>
+                      <input
+                        type="number"
+                        value={pf.amount}
+                        onChange={(e) => setPaymentForm((p) => ({ ...p, [o.id]: { ...pf, amount: e.target.value } }))}
+                        disabled={pf.status === "pagado" || pf.status === "pendiente"}
+                        className="w-full bg-card rounded-lg px-2 py-1.5 text-xs font-mono border border-border focus:border-primary focus:outline-none disabled:opacity-60"
+                      />
+                    </div>
+                  </div>
+                  <textarea
+                    value={pf.notes}
+                    onChange={(e) => setPaymentForm((p) => ({ ...p, [o.id]: { ...pf, notes: e.target.value } }))}
+                    placeholder="Notas: ref. transferencia, banco, fecha de cobro..."
+                    rows={2}
+                    className="w-full bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none resize-none"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => savePayment(o.id, Number(o.total))}
+                      disabled={savingPayment[o.id]}
+                      className="flex-1 bg-primary text-primary-foreground rounded-lg py-1.5 text-xs font-semibold flex items-center justify-center gap-1 disabled:opacity-50"
+                    >
+                      {savingPayment[o.id] ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                      Guardar pago
+                    </button>
+                    <button
+                      onClick={() => setOpenPayment((p) => ({ ...p, [o.id]: false }))}
+                      className="bg-muted rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <select
                   value={o.status}
                   onChange={(e) => updateStatus(o.id, e.target.value)}
-                  className="flex-1 bg-muted rounded-lg px-3 py-2.5 text-sm font-heading font-medium border border-transparent focus:border-primary focus:outline-none transition-colors"
+                  className="flex-1 min-w-[140px] bg-muted rounded-lg px-3 py-2.5 text-sm font-heading font-medium border border-transparent focus:border-primary focus:outline-none transition-colors"
                 >
                   {statuses.map((s) => <option key={s} value={s}>{statusConfig[s]?.label || s}</option>)}
                 </select>
+
+                <button
+                  onClick={() => togglePaymentPanel(o)}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-heading font-semibold transition-all border ${
+                    showPayPanel
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : `${pCfg.bg} ${pCfg.text} border-current/30`
+                  }`}
+                  title="Gestionar pago"
+                >
+                  <Wallet size={14} />
+                  {showPayPanel ? "Cerrar" : "Pago"}
+                </button>
 
                 <button
                   onClick={() => sendWhatsAppUpdate(o)}

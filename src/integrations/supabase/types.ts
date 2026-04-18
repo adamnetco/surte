@@ -748,6 +748,8 @@ export type Database = {
         Row: {
           city: string
           created_at: string
+          free_shipping_enabled: boolean
+          free_shipping_threshold: number
           id: string
           is_active: boolean
           meta_description: string | null
@@ -760,6 +762,8 @@ export type Database = {
         Insert: {
           city: string
           created_at?: string
+          free_shipping_enabled?: boolean
+          free_shipping_threshold?: number
           id?: string
           is_active?: boolean
           meta_description?: string | null
@@ -772,6 +776,8 @@ export type Database = {
         Update: {
           city?: string
           created_at?: string
+          free_shipping_enabled?: boolean
+          free_shipping_threshold?: number
           id?: string
           is_active?: boolean
           meta_description?: string | null
@@ -874,6 +880,7 @@ export type Database = {
       orders: {
         Row: {
           agent_id: string | null
+          amount_paid: number
           created_at: string
           customer_address: string | null
           customer_email: string | null
@@ -888,6 +895,9 @@ export type Database = {
           notes: string | null
           order_number: number
           payment_method: string | null
+          payment_notes: string | null
+          payment_recorded_at: string | null
+          payment_status: string
           preferred_delivery_date: string | null
           preferred_time_slot: string | null
           status: string
@@ -899,6 +909,7 @@ export type Database = {
         }
         Insert: {
           agent_id?: string | null
+          amount_paid?: number
           created_at?: string
           customer_address?: string | null
           customer_email?: string | null
@@ -913,6 +924,9 @@ export type Database = {
           notes?: string | null
           order_number?: number
           payment_method?: string | null
+          payment_notes?: string | null
+          payment_recorded_at?: string | null
+          payment_status?: string
           preferred_delivery_date?: string | null
           preferred_time_slot?: string | null
           status?: string
@@ -924,6 +938,7 @@ export type Database = {
         }
         Update: {
           agent_id?: string | null
+          amount_paid?: number
           created_at?: string
           customer_address?: string | null
           customer_email?: string | null
@@ -938,6 +953,9 @@ export type Database = {
           notes?: string | null
           order_number?: number
           payment_method?: string | null
+          payment_notes?: string | null
+          payment_recorded_at?: string | null
+          payment_status?: string
           preferred_delivery_date?: string | null
           preferred_time_slot?: string | null
           status?: string

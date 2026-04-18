@@ -136,6 +136,30 @@ const Carrito = () => {
     },
   });
 
+  // Free shipping config per municipality (admin-managed)
+  const { data: municipalitiesCfg } = useQuery({
+    queryKey: ["municipalities-free-shipping"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("municipality_settings")
+        .select("city, free_shipping_enabled, free_shipping_threshold")
+        .eq("is_active", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Resolve free-shipping rule for the selected zone
+  const selectedZone = shippingZones?.find((z: any) => z.id === form.neighborhood_id);
+  const cityCfg = selectedZone
+    ? municipalitiesCfg?.find((m: any) => m.city === selectedZone.city)
+    : null;
+  const freeShippingActive = !!(cityCfg?.free_shipping_enabled && totalPrice >= Number(cityCfg.free_shipping_threshold || 0));
+  const finalDeliveryCost = freeShippingActive ? 0 : deliveryCost;
+  const freeShippingMissing = cityCfg?.free_shipping_enabled
+    ? Math.max(0, Number(cityCfg.free_shipping_threshold || 0) - totalPrice)
+    : 0;
+
   const handleZoneChange = (zoneId: string) => {
     setForm({ ...form, neighborhood_id: zoneId });
     const zone = shippingZones?.find((z: any) => z.id === zoneId);
@@ -232,7 +256,7 @@ const Carrito = () => {
     const fullPhone = form.phone.startsWith("+") ? form.phone : `${form.countryCode}${form.phone.replace(/^0+/, "")}`;
     setSubmitting(true);
     try {
-      const grandTotal = totalPrice + deliveryCost - couponDiscount;
+      const grandTotal = totalPrice + finalDeliveryCost - couponDiscount;
       const payload = {
         items: items.map((i) => ({
           product_id: i.product.id,
@@ -247,7 +271,7 @@ const Carrito = () => {
         customer_email: form.email || null,
         customer_address: form.address,
         notes: form.notes,
-        delivery_price: deliveryCost,
+        delivery_price: finalDeliveryCost,
         delivery_zone_id: form.neighborhood_id || null,
         preferred_delivery_date: preferredDate ? format(preferredDate, "yyyy-MM-dd") : null,
         preferred_time_slot: timeSlot,
@@ -280,7 +304,7 @@ const Carrito = () => {
             price: i.unitPrice,
           })),
           subtotal: totalPrice,
-          deliveryCost,
+          deliveryCost: finalDeliveryCost,
           couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
           couponCode: appliedCoupon?.code,
           total: grandTotal,
@@ -318,7 +342,7 @@ const Carrito = () => {
         "",
         `💰 Subtotal: ${formatPrice(totalPrice)}`,
         couponDiscount > 0 ? `🎟️ Cupón (${appliedCoupon?.code}): -${formatPrice(couponDiscount)}` : "",
-        deliveryCost > 0 ? `🚚 Domicilio: ${formatPrice(deliveryCost)}` : "",
+        finalDeliveryCost > 0 ? `🚚 Domicilio: ${formatPrice(finalDeliveryCost)}` : (freeShippingActive ? `🚚 Domicilio: GRATIS 🎉` : ""),
         `💰 *Total: ${formatPrice(grandTotal)}*`,
         "",
         preferredDate ? `📅 Entrega: ${format(preferredDate, "EEEE d MMM", { locale: es })} (${timeSlot === "mañana" ? "8am-12pm" : "2pm-6pm"})` : "",
@@ -351,7 +375,7 @@ const Carrito = () => {
     }
   };
 
-  const grandTotal = Math.max(0, totalPrice + deliveryCost - couponDiscount);
+  const grandTotal = Math.max(0, totalPrice + finalDeliveryCost - couponDiscount);
 
   // Summary/CTA block (reused in mobile fixed bar and desktop sidebar)
   const SummaryBlock = ({ className = "" }: { className?: string }) => (
@@ -397,10 +421,21 @@ const Carrito = () => {
           <span className="text-sm font-medium text-secondary">-{formatPrice(couponDiscount)}</span>
         </div>
       )}
-      {deliveryCost > 0 && (
+      {(deliveryCost > 0 || freeShippingActive) && (
         <div className="flex items-center justify-between mb-1">
           <span className="text-sm text-muted-foreground">Domicilio</span>
-          <span className="text-sm font-medium text-foreground">{formatPrice(deliveryCost)}</span>
+          {freeShippingActive ? (
+            <span className="text-sm font-bold text-secondary">GRATIS 🎉</span>
+          ) : (
+            <span className="text-sm font-medium text-foreground">{formatPrice(deliveryCost)}</span>
+          )}
+        </div>
+      )}
+      {!freeShippingActive && cityCfg?.free_shipping_enabled && freeShippingMissing > 0 && deliveryCost > 0 && (
+        <div className="bg-secondary/10 border border-secondary/30 rounded-lg px-2.5 py-1.5 mb-2">
+          <p className="text-[11px] text-secondary font-medium">
+            🚚 Te faltan {formatPrice(freeShippingMissing)} para envío gratis
+          </p>
         </div>
       )}
       <div className="flex items-center justify-between mb-3">
@@ -505,8 +540,11 @@ const Carrito = () => {
               onSelect={(zoneId) => handleZoneChange(zoneId)}
             />
           )}
-          {deliveryCost > 0 && (
+          {deliveryCost > 0 && !freeShippingActive && (
             <p className="text-xs text-accent font-medium">🚚 Domicilio: {formatPrice(deliveryCost)}</p>
+          )}
+          {freeShippingActive && (
+            <p className="text-xs text-secondary font-bold">🎉 ¡Envío GRATIS aplicado!</p>
           )}
           <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notas adicionales" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" rows={2} />
 

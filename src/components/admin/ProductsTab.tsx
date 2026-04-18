@@ -201,6 +201,13 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   });
   const { upload, uploading } = useImageUpload();
 
+  // Bulk edit state
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<"price_pct" | "activate" | "deactivate" | "add_tag" | "remove_tag" | "set_category">("price_pct");
+  const [bulkValue, setBulkValue] = useState<string>("");
+  const [bulkApplying, setBulkApplying] = useState(false);
+
   const resetForm = () => {
     setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "", slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "", tags: "", unit_quantity: "", unit_measure: "", net_weight_grams: "" });
     setEditing(null);
@@ -306,6 +313,95 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     queryClient.invalidateQueries({ queryKey: ["products"] });
   };
 
+  /* ── Bulk actions ── */
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllVisible = () => {
+    if (!filtered) return;
+    setSelectedIds(new Set(filtered.map((p: any) => p.id)));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const exitBulkMode = () => {
+    setBulkMode(false);
+    clearSelection();
+    setBulkValue("");
+  };
+
+  const applyBulk = async () => {
+    if (selectedIds.size === 0) {
+      toast.error("Selecciona al menos un producto");
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    const selectedProducts = products?.filter((p: any) => selectedIds.has(p.id)) || [];
+    const desc: Record<string, string> = {
+      price_pct: `ajustar precios ${bulkValue}%`,
+      activate: "activar",
+      deactivate: "ocultar",
+      add_tag: `añadir etiqueta "${bulkValue}"`,
+      remove_tag: `quitar etiqueta "${bulkValue}"`,
+      set_category: "cambiar categoría",
+    };
+    if (!confirm(`¿Aplicar acción "${desc[bulkAction]}" a ${ids.length} producto(s)?`)) return;
+
+    setBulkApplying(true);
+    try {
+      if (bulkAction === "activate" || bulkAction === "deactivate") {
+        const { error } = await supabase
+          .from("products")
+          .update({ is_active: bulkAction === "activate" })
+          .in("id", ids);
+        if (error) throw error;
+      } else if (bulkAction === "set_category") {
+        const { error } = await supabase
+          .from("products")
+          .update({ category_id: bulkValue || null })
+          .in("id", ids);
+        if (error) throw error;
+      } else if (bulkAction === "price_pct") {
+        const pct = Number(bulkValue);
+        if (!pct || isNaN(pct)) { toast.error("Indica un porcentaje válido (ej: 10 ó -5)"); setBulkApplying(false); return; }
+        const factor = 1 + pct / 100;
+        // Update each product's prices individually (preserve nullable fields)
+        await Promise.all(selectedProducts.map((p: any) => {
+          const newPayload: any = { price: Math.round(Number(p.price) * factor) };
+          if (p.price_wholesale) newPayload.price_wholesale = Math.round(Number(p.price_wholesale) * factor);
+          if (p.price_distributor) newPayload.price_distributor = Math.round(Number(p.price_distributor) * factor);
+          return supabase.from("products").update(newPayload).eq("id", p.id);
+        }));
+      } else if (bulkAction === "add_tag" || bulkAction === "remove_tag") {
+        const tag = bulkValue.trim().toLowerCase();
+        if (!tag) { toast.error("Escribe la etiqueta"); setBulkApplying(false); return; }
+        await Promise.all(selectedProducts.map((p: any) => {
+          const current: string[] = (p.tags || []).map((t: string) => t.toLowerCase());
+          let next: string[];
+          if (bulkAction === "add_tag") {
+            next = current.includes(tag) ? current : [...current, tag];
+          } else {
+            next = current.filter((t) => t !== tag);
+          }
+          return supabase.from("products").update({ tags: next }).eq("id", p.id);
+        }));
+      }
+      toast.success(`✓ ${ids.length} producto(s) actualizados`);
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      exitBulkMode();
+    } catch (err: any) {
+      toast.error(err.message || "Error al aplicar la acción");
+    } finally {
+      setBulkApplying(false);
+    }
+  };
+
   const filtered = products?.filter((p: any) => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
     const brandHidden = isBrandHidden(p);
@@ -329,10 +425,83 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             <span className="text-accent">{visibleCount} visibles</span> · {individuallyHiddenCount > 0 && <span>{individuallyHiddenCount} ocultos</span>}{brandHiddenCount > 0 && <span className="text-destructive"> · {brandHiddenCount} por marca</span>}
           </p>
         </div>
-        <button onClick={() => { resetForm(); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
-          <Plus size={14} /> Nuevo
-        </button>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => { setBulkMode((v) => !v); clearSelection(); }}
+            className={`text-xs px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-1 ${bulkMode ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+          >
+            <Filter size={14} /> {bulkMode ? "Salir lote" : "Edición masiva"}
+          </button>
+          <button onClick={() => { resetForm(); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
+            <Plus size={14} /> Nuevo
+          </button>
+        </div>
       </div>
+
+      {/* Bulk action bar */}
+      {bulkMode && (
+        <div className="bg-primary/5 border border-primary/30 rounded-xl p-3 mb-3 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-xs font-semibold text-primary">
+              📋 {selectedIds.size} seleccionado(s) de {filtered?.length || 0}
+            </p>
+            <div className="flex gap-1.5">
+              <button onClick={selectAllVisible} className="text-[11px] text-primary font-medium hover:underline">Todos</button>
+              <span className="text-muted-foreground">·</span>
+              <button onClick={clearSelection} className="text-[11px] text-muted-foreground font-medium hover:underline">Ninguno</button>
+            </div>
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            <select
+              value={bulkAction}
+              onChange={(e) => { setBulkAction(e.target.value as any); setBulkValue(""); }}
+              className="flex-1 min-w-[160px] bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none"
+            >
+              <option value="price_pct">💲 Ajustar precios %</option>
+              <option value="activate">👁 Activar</option>
+              <option value="deactivate">🚫 Ocultar</option>
+              <option value="add_tag">🏷️ Añadir etiqueta</option>
+              <option value="remove_tag">✂️ Quitar etiqueta</option>
+              <option value="set_category">📁 Cambiar categoría</option>
+            </select>
+            {bulkAction === "price_pct" && (
+              <input
+                type="number"
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                placeholder="Ej: 10 ó -5"
+                className="w-24 bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none font-mono"
+              />
+            )}
+            {(bulkAction === "add_tag" || bulkAction === "remove_tag") && (
+              <input
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                placeholder="etiqueta"
+                className="w-32 bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none"
+              />
+            )}
+            {bulkAction === "set_category" && (
+              <select
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                className="flex-1 min-w-[120px] bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none"
+              >
+                <option value="">Sin categoría</option>
+                {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
+            <button
+              onClick={applyBulk}
+              disabled={bulkApplying || selectedIds.size === 0}
+              className="bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1 disabled:opacity-50"
+            >
+              {bulkApplying ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+              Aplicar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search + Filter */}
       {!editing && (products?.length || 0) > 0 && (
