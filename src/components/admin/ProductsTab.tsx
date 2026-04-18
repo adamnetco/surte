@@ -425,10 +425,83 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             <span className="text-accent">{visibleCount} visibles</span> · {individuallyHiddenCount > 0 && <span>{individuallyHiddenCount} ocultos</span>}{brandHiddenCount > 0 && <span className="text-destructive"> · {brandHiddenCount} por marca</span>}
           </p>
         </div>
-        <button onClick={() => { resetForm(); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
-          <Plus size={14} /> Nuevo
-        </button>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => { setBulkMode((v) => !v); clearSelection(); }}
+            className={`text-xs px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-1 ${bulkMode ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+          >
+            <Filter size={14} /> {bulkMode ? "Salir lote" : "Edición masiva"}
+          </button>
+          <button onClick={() => { resetForm(); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
+            <Plus size={14} /> Nuevo
+          </button>
+        </div>
       </div>
+
+      {/* Bulk action bar */}
+      {bulkMode && (
+        <div className="bg-primary/5 border border-primary/30 rounded-xl p-3 mb-3 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-xs font-semibold text-primary">
+              📋 {selectedIds.size} seleccionado(s) de {filtered?.length || 0}
+            </p>
+            <div className="flex gap-1.5">
+              <button onClick={selectAllVisible} className="text-[11px] text-primary font-medium hover:underline">Todos</button>
+              <span className="text-muted-foreground">·</span>
+              <button onClick={clearSelection} className="text-[11px] text-muted-foreground font-medium hover:underline">Ninguno</button>
+            </div>
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            <select
+              value={bulkAction}
+              onChange={(e) => { setBulkAction(e.target.value as any); setBulkValue(""); }}
+              className="flex-1 min-w-[160px] bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none"
+            >
+              <option value="price_pct">💲 Ajustar precios %</option>
+              <option value="activate">👁 Activar</option>
+              <option value="deactivate">🚫 Ocultar</option>
+              <option value="add_tag">🏷️ Añadir etiqueta</option>
+              <option value="remove_tag">✂️ Quitar etiqueta</option>
+              <option value="set_category">📁 Cambiar categoría</option>
+            </select>
+            {bulkAction === "price_pct" && (
+              <input
+                type="number"
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                placeholder="Ej: 10 ó -5"
+                className="w-24 bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none font-mono"
+              />
+            )}
+            {(bulkAction === "add_tag" || bulkAction === "remove_tag") && (
+              <input
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                placeholder="etiqueta"
+                className="w-32 bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none"
+              />
+            )}
+            {bulkAction === "set_category" && (
+              <select
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                className="flex-1 min-w-[120px] bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none"
+              >
+                <option value="">Sin categoría</option>
+                {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
+            <button
+              onClick={applyBulk}
+              disabled={bulkApplying || selectedIds.size === 0}
+              className="bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1 disabled:opacity-50"
+            >
+              {bulkApplying ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+              Aplicar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search + Filter */}
       {!editing && (products?.length || 0) > 0 && (
