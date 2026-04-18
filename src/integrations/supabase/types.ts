@@ -560,6 +560,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "landing_page_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       landing_pages: {
@@ -667,6 +674,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "modifier_groups_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       modifier_options: {
@@ -712,6 +726,13 @@ export type Database = {
             columns: ["linked_product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modifier_options_linked_product_id_fkey"
+            columns: ["linked_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
             referencedColumns: ["id"]
           },
           {
@@ -841,6 +862,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       orders: {
@@ -968,6 +996,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       product_presentations: {
@@ -1013,6 +1048,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_presentations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1270,7 +1312,104 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      products_public: {
+        Row: {
+          availability: string | null
+          base_unit: string | null
+          brand: string | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          gtin: string | null
+          id: string | null
+          image_url: string | null
+          is_active: boolean | null
+          is_fresh: boolean | null
+          is_wholesale: boolean | null
+          meta_description: string | null
+          meta_title: string | null
+          name: string | null
+          net_weight_grams: number | null
+          original_price: number | null
+          price: number | null
+          sku: string | null
+          slug: string | null
+          stock: number | null
+          tags: string[] | null
+          unit: string | null
+          unit_measure: string | null
+          unit_quantity: number | null
+          updated_at: string | null
+          weight: string | null
+        }
+        Insert: {
+          availability?: string | null
+          base_unit?: string | null
+          brand?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          gtin?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          is_fresh?: boolean | null
+          is_wholesale?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          name?: string | null
+          net_weight_grams?: number | null
+          original_price?: number | null
+          price?: number | null
+          sku?: string | null
+          slug?: string | null
+          stock?: number | null
+          tags?: string[] | null
+          unit?: string | null
+          unit_measure?: string | null
+          unit_quantity?: number | null
+          updated_at?: string | null
+          weight?: string | null
+        }
+        Update: {
+          availability?: string | null
+          base_unit?: string | null
+          brand?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          gtin?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          is_fresh?: boolean | null
+          is_wholesale?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          name?: string | null
+          net_weight_grams?: number | null
+          original_price?: number | null
+          price?: number | null
+          sku?: string | null
+          slug?: string | null
+          stock?: number | null
+          tags?: string[] | null
+          unit?: string | null
+          unit_measure?: string | null
+          unit_quantity?: number | null
+          updated_at?: string | null
+          weight?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       delete_email: {
