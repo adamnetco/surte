@@ -382,7 +382,14 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
                   {!m.is_active && <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium shrink-0">OCULTO</span>}
                   <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${badge.color}`}>SEO {badge.label}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Mín. {fmt.format(m.min_order_amount)}</p>
+                <p className="text-xs text-muted-foreground">
+                  Mín. {fmt.format(m.min_order_amount)}
+                  {m.free_shipping_enabled && (
+                    <span className="ml-1.5 text-[10px] bg-secondary/15 text-secondary px-1.5 py-0.5 rounded-full font-semibold">
+                      🚚 Gratis ≥ {fmt.format(m.free_shipping_threshold || 150000)}
+                    </span>
+                  )}
+                </p>
               </div>
               <Switch checked={m.is_active} onCheckedChange={() => toggleActive(m.id, m.is_active)} />
               <button onClick={() => copyUrl(m.city, m.slug)} className="text-muted-foreground hover:text-primary transition-colors p-1.5" title="Copiar URL"><LinkIcon size={14} /></button>
