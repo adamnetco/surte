@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Phone, MapPin, Clock, MessageCircle, Loader2, CheckCircle2, ChevronDown, Filter, CalendarIcon, Banknote, CreditCard, Sun, Moon } from "lucide-react";
+import { Phone, MapPin, Clock, MessageCircle, Loader2, CheckCircle2, ChevronDown, Filter, CalendarIcon, Banknote, CreditCard, Sun, Moon, Wallet, AlertCircle, RotateCcw } from "lucide-react";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -13,6 +13,13 @@ const statusConfig: Record<string, { label: string; bg: string; text: string }> 
   enviado: { label: "Enviado", bg: "bg-primary/70", text: "text-primary-foreground" },
   entregado: { label: "Entregado", bg: "bg-secondary", text: "text-secondary-foreground" },
   cancelado: { label: "Cancelado", bg: "bg-destructive", text: "text-destructive-foreground" },
+};
+
+const paymentStatusConfig: Record<string, { label: string; icon: any; bg: string; text: string; emoji: string }> = {
+  pendiente: { label: "Pago pendiente", icon: AlertCircle, bg: "bg-accent/15", text: "text-accent", emoji: "⏳" },
+  pagado: { label: "Pagado", icon: CheckCircle2, bg: "bg-secondary/15", text: "text-secondary", emoji: "✅" },
+  parcial: { label: "Pago parcial", icon: Wallet, bg: "bg-primary/15", text: "text-primary", emoji: "💰" },
+  reembolsado: { label: "Reembolsado", icon: RotateCcw, bg: "bg-muted", text: "text-muted-foreground", emoji: "↩️" },
 };
 
 const categoryEmojis: Record<string, string> = {
@@ -32,6 +39,10 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
   const [sendingWhatsApp, setSendingWhatsApp] = useState<Record<string, boolean>>({});
   const [sentWhatsApp, setSentWhatsApp] = useState<Record<string, boolean>>({});
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [openPayment, setOpenPayment] = useState<Record<string, boolean>>({});
+  const [paymentForm, setPaymentForm] = useState<Record<string, { status: string; amount: string; notes: string }>>({});
+  const [savingPayment, setSavingPayment] = useState<Record<string, boolean>>({});
 
   const updateStatus = async (orderId: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
@@ -105,7 +116,67 @@ const OrdersTab = ({ orders, queryClient }: { orders: any[]; queryClient: any })
     }
   };
 
-  const filtered = statusFilter === "all" ? orders : orders?.filter((o: any) => o.status === statusFilter);
+  const savePayment = async (orderId: string, total: number) => {
+    const f = paymentForm[orderId];
+    if (!f) return;
+    setSavingPayment((p) => ({ ...p, [orderId]: true }));
+    try {
+      const amount = Number(f.amount) || 0;
+      // Guard: parcial must be > 0 and < total; pagado must equal total
+      let normalizedStatus = f.status;
+      let normalizedAmount = amount;
+      if (f.status === "pagado") normalizedAmount = total;
+      if (f.status === "pendiente") normalizedAmount = 0;
+      if (f.status === "parcial" && (amount <= 0 || amount >= total)) {
+        toast.error("El monto parcial debe ser mayor a 0 y menor al total");
+        setSavingPayment((p) => ({ ...p, [orderId]: false }));
+        return;
+      }
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          payment_status: normalizedStatus,
+          amount_paid: normalizedAmount,
+          payment_notes: f.notes || null,
+          payment_recorded_at: new Date().toISOString(),
+        })
+        .eq("id", orderId);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Pago registrado: ${paymentStatusConfig[normalizedStatus]?.label}`);
+      setOpenPayment((p) => ({ ...p, [orderId]: false }));
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    } finally {
+      setSavingPayment((p) => ({ ...p, [orderId]: false }));
+    }
+  };
+
+  const togglePaymentPanel = (o: any) => {
+    const isOpen = !openPayment[o.id];
+    setOpenPayment((p) => ({ ...p, [o.id]: isOpen }));
+    if (isOpen && !paymentForm[o.id]) {
+      setPaymentForm((p) => ({
+        ...p,
+        [o.id]: {
+          status: o.payment_status || "pendiente",
+          amount: String(o.amount_paid || 0),
+          notes: o.payment_notes || "",
+        },
+      }));
+    }
+  };
+
+  const filtered = (statusFilter === "all" ? orders : orders?.filter((o: any) => o.status === statusFilter))
+    ?.filter((o: any) => paymentFilter === "all" || (o.payment_status || "pendiente") === paymentFilter);
+
+  // Payment KPIs
+  const totalRevenue = orders?.reduce((s: number, o: any) => s + Number(o.amount_paid || 0), 0) || 0;
+  const totalPending = orders?.reduce((s: number, o: any) => {
+    const ps = o.payment_status || "pendiente";
+    if (ps === "pendiente" || ps === "parcial") {
+      return s + Math.max(0, Number(o.total) - Number(o.amount_paid || 0));
+    }
+    return s;
+  }, 0) || 0;
 
   return (
     <div>
