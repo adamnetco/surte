@@ -65,7 +65,7 @@ const InventoryTab = ({ products, categories, queryClient }: { products: any[]; 
   const downloadTemplate = () => {
     const example = [
       "", "Salsa de Tomate 500g", "Salsa artesanal premium", "8500", "10000", "7500", "6800",
-      "5000", "100", "unidad", "Salsas", "SURTÉ", "SAL-001", "7701234567890", "500g",
+      "5000", "100", "unidad", "Salsas", "SURTÉ YA", "SAL-001", "7701234567890", "500g",
       "TRUE", "FALSE", "FALSE", "salsa-de-tomate-500g", "Salsa de Tomate 500g - SURTÉ YA", "Salsa de tomate artesanal", "", "salsa, tomate, artesanal",
     ];
     const ws = XLSX.utils.aoa_to_sheet([HEADERS, example]);

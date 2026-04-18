@@ -13,4 +13,6 @@ Allow: /
 User-agent: *
 Allow: /
 
+# Sitemap dinámico (generado por edge function)
+Sitemap: https://surteya.com/sitemap.xml
 Sitemap: https://dimyhjzcwlgfczimqhet.supabase.co/functions/v1/sitemap
