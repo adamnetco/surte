@@ -6,7 +6,7 @@ import { useState } from "react";
 const FloatingWhatsApp = () => {
   const { data: settings } = useAppSettings();
   const phone = settings?.whatsapp_number || "573001234567";
-  const message = encodeURIComponent("Hola SURTÉ, necesito ayuda con mi pedido 🛒");
+  const message = encodeURIComponent("Hola SURTÉ YA, necesito ayuda con mi pedido");
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed) return null;

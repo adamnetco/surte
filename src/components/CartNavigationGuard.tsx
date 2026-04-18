@@ -16,21 +16,27 @@ import React, { useContext } from "react";
 
 /** Paths the user can navigate to freely while the cart has items */
 const ALLOWED_PATHS = [
+  "/",
   "/carrito",
   "/pedido",
+  "/pedidos",
   "/catalogo",
-  "/hub",
-  "/producto",
-  "/ofertas",
   "/categorias",
+  "/ofertas",
   "/favoritos",
-  "/",
+  "/producto",
+  "/p/",
+  "/hub",
+  "/menu",
+  "/s/",
   "/login",
+  "/reset-password",
   "/perfil",
   "/configuracion",
-  "/mis-pedidos",
   "/ayuda",
   "/politicas",
+  "/tratamiento-datos",
+  "/unsubscribe",
 ];
 
 const CartNavigationGuard = () => {
