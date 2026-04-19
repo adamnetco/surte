@@ -2,10 +2,13 @@ import { useCategories } from "@/hooks/useStore";
 import { useNavigate } from "react-router-dom";
 import CategoryIcon from "./CategoryIcon";
 import { motion } from "framer-motion";
+import { useSwipe } from "@/context/SwipeContext";
+import { Layers } from "lucide-react";
 
 const CategoryGrid = () => {
   const navigate = useNavigate();
   const { data: categories, isLoading } = useCategories();
+  const { open: openSwipe } = useSwipe();
 
   if (isLoading) {
     return (
