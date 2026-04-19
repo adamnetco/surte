@@ -34,6 +34,22 @@ export const useCategories = () =>
     },
   });
 
+/** Returns true if a product is currently available based on its scheduling fields. */
+const isProductAvailableNow = (p: any): boolean => {
+  const now = new Date();
+  if (p.available_from && new Date(p.available_from) > now) return false;
+  if (p.available_until && new Date(p.available_until) < now) return false;
+  if (Array.isArray(p.available_days) && p.available_days.length > 0) {
+    if (!p.available_days.includes(now.getDay())) return false;
+  }
+  if (p.available_time_start || p.available_time_end) {
+    const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    if (p.available_time_start && hhmm < String(p.available_time_start).slice(0, 5)) return false;
+    if (p.available_time_end && hhmm > String(p.available_time_end).slice(0, 5)) return false;
+  }
+  return true;
+};
+
 export const useProducts = (categorySlug?: string, search?: string) => {
   const { data: inactiveBrands } = useInactiveBrands();
 
@@ -51,12 +67,15 @@ export const useProducts = (categorySlug?: string, search?: string) => {
       if (inactiveBrands && inactiveBrands.size > 0) {
         result = result.filter((p: any) => !p.brand || !inactiveBrands.has(p.brand.toLowerCase()));
       }
+      // Filter by scheduling/availability
+      result = result.filter((p: any) => isProductAvailableNow(p));
       if (categorySlug) {
         result = result.filter((p: any) => p.categories?.slug === categorySlug);
       }
       return result as (Product & { categories: { slug: string; name: string } | null })[];
     },
     enabled: inactiveBrands !== undefined,
+    refetchInterval: 5 * 60 * 1000, // re-evaluate scheduling every 5 min
   });
 };
 

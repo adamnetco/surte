@@ -57,6 +57,10 @@ const settingsMeta: Record<string, SettingMeta> = {
   featured_label_ofertas: { label: "Etiqueta Destacados: Ofertas", icon: Award, type: "text", group: "destacados", description: "Ej: 🔥 Ofertas" },
   featured_label_mayorista: { label: "Etiqueta Destacados: Mayorista", icon: Award, type: "text", group: "destacados", description: "Ej: 💰 Mayorista" },
   featured_label_frescos: { label: "Etiqueta Destacados: Frescos", icon: Award, type: "text", group: "destacados", description: "Ej: 🌿 Frescos" },
+  checkout_show_delivery_date: { label: "Mostrar fecha de entrega", icon: Eye, type: "toggle", group: "checkout", description: "Permite al cliente elegir fecha preferida" },
+  checkout_show_time_slot: { label: "Mostrar jornada (mañana/tarde)", icon: Eye, type: "toggle", group: "checkout", description: "Selector de horario preferido" },
+  checkout_show_payment_method: { label: "Mostrar método de pago", icon: Eye, type: "toggle", group: "checkout", description: "Efectivo / Transferencia" },
+  checkout_show_geolocation: { label: "Mostrar geolocalización", icon: Eye, type: "toggle", group: "checkout", description: "Permite capturar coordenadas GPS" },
 };
 
 const GROUP_LABELS: Record<string, string> = {
@@ -67,6 +71,7 @@ const GROUP_LABELS: Record<string, string> = {
   badges: "🏅 Trust Badges",
   visibilidad: "👁️ Visibilidad de Secciones",
   destacados: "⭐ Etiquetas Destacados",
+  checkout: "🛒 Checkout — Campos Visibles",
 };
 
 const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }) => {

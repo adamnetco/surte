@@ -115,6 +115,12 @@ const Carrito = () => {
 
   const estimatedDays = settings?.estimated_delivery_days || "1-2";
 
+  // Checkout visibility toggles (admin-managed). Default: all visible (true) unless explicitly "false".
+  const showDeliveryDate = settings?.checkout_show_delivery_date !== "false";
+  const showTimeSlot = settings?.checkout_show_time_slot !== "false";
+  const showPaymentMethod = settings?.checkout_show_payment_method !== "false";
+  const showGeolocation = settings?.checkout_show_geolocation !== "false";
+
   // Compute min delivery date (skip weekends)
   const getMinDeliveryDate = () => {
     const minDaysNum = parseInt(estimatedDays) || 1;
@@ -507,30 +513,34 @@ const Carrito = () => {
           <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
           
           {/* Geolocation */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleGetLocation}
-              disabled={loadingGeo}
-              className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
-            >
-              {loadingGeo ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
-              {geoLocation ? "Actualizar ubicación" : "Añadir ubicación actual"}
-            </button>
-            {geoLocation && (
-              <a
-                href={`https://www.google.com/maps?q=${geoLocation.lat},${geoLocation.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-accent font-medium hover:underline"
-              >
-                <MapPin size={12} /> Ver en mapa <ExternalLink size={10} />
-              </a>
-            )}
-          </div>
-          {geoLocation && (
-            <p className="text-[10px] text-secondary font-medium bg-secondary/10 rounded-lg px-2 py-1">
-              📍 Ubicación capturada: {geoLocation.lat.toFixed(6)}, {geoLocation.lng.toFixed(6)}
-            </p>
+          {showGeolocation && (
+            <>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleGetLocation}
+                  disabled={loadingGeo}
+                  className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
+                >
+                  {loadingGeo ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
+                  {geoLocation ? "Actualizar ubicación" : "Añadir ubicación actual"}
+                </button>
+                {geoLocation && (
+                  <a
+                    href={`https://www.google.com/maps?q=${geoLocation.lat},${geoLocation.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-accent font-medium hover:underline"
+                  >
+                    <MapPin size={12} /> Ver en mapa <ExternalLink size={10} />
+                  </a>
+                )}
+              </div>
+              {geoLocation && (
+                <p className="text-[10px] text-secondary font-medium bg-secondary/10 rounded-lg px-2 py-1">
+                  📍 Ubicación capturada: {geoLocation.lat.toFixed(6)}, {geoLocation.lng.toFixed(6)}
+                </p>
+              )}
+            </>
           )}
 
           {shippingZones && shippingZones.length > 0 && (
@@ -555,74 +565,80 @@ const Carrito = () => {
           </div>
 
           {/* Preferred delivery date */}
-          <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <CalendarIcon size={14} className="text-accent" />
-              <span className="text-xs font-medium text-muted-foreground">Fecha preferida de entrega</span>
+          {showDeliveryDate && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <CalendarIcon size={14} className="text-accent" />
+                <span className="text-xs font-medium text-muted-foreground">Fecha preferida de entrega</span>
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={cn("w-full bg-muted rounded-lg px-3 py-2.5 text-sm text-left flex items-center justify-between", !preferredDate && "text-muted-foreground")}>
+                    {preferredDate ? format(preferredDate, "EEEE d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
+                    <CalendarIcon size={14} className="text-muted-foreground" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={preferredDate}
+                    onSelect={setPreferredDate}
+                    disabled={(date) => date < getMinDeliveryDate() || isWeekend(date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className={cn("w-full bg-muted rounded-lg px-3 py-2.5 text-sm text-left flex items-center justify-between", !preferredDate && "text-muted-foreground")}>
-                  {preferredDate ? format(preferredDate, "EEEE d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
-                  <CalendarIcon size={14} className="text-muted-foreground" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={preferredDate}
-                  onSelect={setPreferredDate}
-                  disabled={(date) => date < getMinDeliveryDate() || isWeekend(date)}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          )}
 
           {/* Time slot */}
-          <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Clock size={14} className="text-accent" />
-              <span className="text-xs font-medium text-muted-foreground">Horario preferido</span>
+          {showTimeSlot && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Clock size={14} className="text-accent" />
+                <span className="text-xs font-medium text-muted-foreground">Horario preferido</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setTimeSlot("mañana")}
+                  className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "mañana" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+                >
+                  ☀️ Mañana (8-12)
+                </button>
+                <button
+                  onClick={() => setTimeSlot("tarde")}
+                  className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "tarde" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+                >
+                  🌙 Tarde (2-6)
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setTimeSlot("mañana")}
-                className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "mañana" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-              >
-                ☀️ Mañana (8-12)
-              </button>
-              <button
-                onClick={() => setTimeSlot("tarde")}
-                className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "tarde" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-              >
-                🌙 Tarde (2-6)
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Payment method */}
-          <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Banknote size={14} className="text-accent" />
-              <span className="text-xs font-medium text-muted-foreground">Método de pago</span>
+          {showPaymentMethod && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Banknote size={14} className="text-accent" />
+                <span className="text-xs font-medium text-muted-foreground">Método de pago</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setPaymentMethod("efectivo")}
+                  className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "efectivo" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+                >
+                  <Banknote size={14} /> Efectivo
+                </button>
+                <button
+                  onClick={() => setPaymentMethod("transferencia")}
+                  className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "transferencia" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
+                >
+                  <CreditCard size={14} /> Transferencia
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setPaymentMethod("efectivo")}
-                className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "efectivo" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-              >
-                <Banknote size={14} /> Efectivo
-              </button>
-              <button
-                onClick={() => setPaymentMethod("transferencia")}
-                className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "transferencia" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-              >
-                <CreditCard size={14} /> Transferencia
-              </button>
-            </div>
-          </div>
+          )}
 
           <div className="flex gap-2">
             <button onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-2.5 text-sm text-muted-foreground font-medium">Cancelar</button>
