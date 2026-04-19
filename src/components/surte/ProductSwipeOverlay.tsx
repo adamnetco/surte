@@ -18,6 +18,7 @@ interface ProductSwipeOverlayProps {
   currentProductId: string;
   categorySlug?: string | null;
   brand?: string | null;
+  tag?: string | null;
   onClose: () => void;
   onNavigate: (slug: string) => void;
 }
@@ -48,7 +49,7 @@ const SwipeHint = () => (
   </motion.div>
 );
 
-const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, onClose, onNavigate }: ProductSwipeOverlayProps) => {
+const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, tag, onClose, onNavigate }: ProductSwipeOverlayProps) => {
   const { data: allProducts } = useProducts();
   const { addItem, totalItems, setDrawerOpen } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -58,10 +59,19 @@ const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, onClose, o
 
   const [addedId, setAddedId] = useState<string | null>(null);
 
+  const tagLower = tag?.trim().toLowerCase();
   const siblingProducts = (allProducts || []).filter((p: any) => {
-    if (p.id === currentProductId) return true;
-    if (categorySlug && p.categories?.slug === categorySlug) return true;
-    if (!categorySlug && brand && p.brand?.toLowerCase() === brand?.toLowerCase()) return true;
+    // Always include the current product (used as anchor when present)
+    if (currentProductId && p.id === currentProductId) return true;
+    if (categorySlug) return p.categories?.slug === categorySlug;
+    if (brand) return p.brand?.toLowerCase() === brand.toLowerCase();
+    if (tagLower) {
+      if (!p.tags || !Array.isArray(p.tags)) return false;
+      return p.tags.some((t: string) => {
+        const tl = t.toLowerCase().trim();
+        return tl === tagLower || tl.includes(tagLower) || tagLower.includes(tl);
+      });
+    }
     return false;
   });
 
@@ -69,7 +79,7 @@ const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, onClose, o
   const [activeIdx, setActiveIdx] = useState(Math.max(0, currentIdx));
   const [direction, setDirection] = useState(0);
 
-  if (siblingProducts.length <= 1) return null;
+  if (siblingProducts.length === 0) return null;
 
   const product = siblingProducts[activeIdx] as any;
   if (!product) return null;

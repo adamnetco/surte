@@ -1,8 +1,9 @@
-import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu } from "lucide-react";
+import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu, Sun, Moon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppSettings } from "@/hooks/useStore";
 import { useCart } from "@/context/CartContext";
+import { useTheme } from "@/context/ThemeContext";
 import surteLogo from "@/assets/surte-logo.png";
 
 const CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"] as const;
@@ -25,6 +26,7 @@ const TopBar = ({ onSearch }: TopBarProps) => {
   const cityRef = useRef<HTMLDivElement>(null);
   const { data: settings } = useAppSettings();
   const { totalItems, totalPrice } = useCart();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const showPromoBanner = settings?.show_promo_banner === "true";
   const promoBannerText = settings?.promo_banner_text || "🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000";
@@ -119,6 +121,16 @@ const TopBar = ({ onSearch }: TopBarProps) => {
                 <span>{totalItems} · {formatPrice(totalPrice)}</span>
               )}
               {totalItems === 0 && <span>Carrito</span>}
+            </button>
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-muted text-foreground hover:bg-muted/80 transition-colors"
+            >
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
             <button

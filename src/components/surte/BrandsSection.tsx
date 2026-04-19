@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSwipe } from "@/context/SwipeContext";
+import { Layers } from "lucide-react";
 
 const BrandsSection = () => {
+  const { open: openSwipe } = useSwipe();
   const { data: brands } = useQuery({
     queryKey: ["brands"],
     queryFn: async () => {
@@ -38,26 +41,41 @@ const BrandsSection = () => {
           transition={{ duration: Math.max(brands.length * 4, 16), repeat: Infinity, ease: "linear" }}
         >
           {duplicated.map((brand, i) => (
-            <a
+            <div
               key={`${brand.id}-${i}`}
-              href={brand.website_url || "#"}
-              target={brand.website_url ? "_blank" : undefined}
-              rel="noopener noreferrer"
-              className="shrink-0 w-32 h-24 rounded-xl bg-card border border-border flex items-center justify-center p-2 transition-all duration-300 hover:border-accent/40 hover:-translate-y-0.5"
+              className="relative shrink-0 w-32 h-24 rounded-xl bg-card border border-border flex items-center justify-center p-2 transition-all duration-300 hover:border-accent/40 hover:-translate-y-0.5 group"
               style={{ boxShadow: "var(--shadow-card)" }}
-              onClick={(e) => !brand.website_url && e.preventDefault()}
             >
-              {brand.logo_url ? (
-                <img src={brand.logo_url} alt={brand.name} className="w-full h-full object-contain" />
-              ) : (
-                <div className="text-center">
-                  <span className="text-xl font-heading font-bold text-accent leading-none">
-                    {brand.name.substring(0, 2).toUpperCase()}
-                  </span>
-                  <p className="text-[9px] text-muted-foreground font-medium mt-0.5 leading-none truncate max-w-[100px]">{brand.name}</p>
-                </div>
+              <button
+                type="button"
+                onClick={() => openSwipe({ brand: brand.name })}
+                className="w-full h-full flex items-center justify-center"
+                aria-label={`Ver productos de ${brand.name} en modo swipe`}
+              >
+                {brand.logo_url ? (
+                  <img src={brand.logo_url} alt={brand.name} className="w-full h-full object-contain" draggable={false} />
+                ) : (
+                  <div className="text-center">
+                    <span className="text-xl font-heading font-bold text-accent leading-none">
+                      {brand.name.substring(0, 2).toUpperCase()}
+                    </span>
+                    <p className="text-[9px] text-muted-foreground font-medium mt-0.5 leading-none truncate max-w-[100px]">{brand.name}</p>
+                  </div>
+                )}
+              </button>
+              {brand.website_url && (
+                <a
+                  href={brand.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Sitio web de ${brand.name}`}
+                  className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-muted text-muted-foreground flex items-center justify-center shadow opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-[10px]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  ↗
+                </a>
               )}
-            </a>
+            </div>
           ))}
         </motion.div>
       </div>

@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { AgentProvider } from "@/context/AgentContext";
+import { ThemeProvider } from "@/context/ThemeContext";
+import { SwipeProvider } from "@/context/SwipeContext";
 import FloatingWhatsApp from "@/components/surte/FloatingWhatsApp";
 import AgentBar from "@/components/surte/AgentBar";
 import CityPickerModal from "@/components/surte/CityPickerModal";
@@ -40,51 +42,54 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <AgentProvider>
-        <CartProvider>
-          <Toaster />
-          <Sonner />
-          <DynamicThemeInjector />
-          <CustomScriptInjector />
-              <AgentBar />
-              <CityPickerModal />
-            <BrowserRouter>
-              <Analytics />
-              <CartNavigationGuard />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/catalogo" element={<Catalogo />} />
-                <Route path="/carrito" element={<Carrito />} />
-                <Route path="/categorias" element={<Categorias />} />
-                <Route path="/menu" element={<MenuPage />} />
-                <Route path="/ofertas" element={<Ofertas />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/pedidos" element={<MisPedidos />} />
-                <Route path="/perfil" element={<Perfil />} />
-                <Route path="/favoritos" element={<Favoritos />} />
-                <Route path="/ayuda" element={<Ayuda />} />
-                <Route path="/configuracion" element={<Configuracion />} />
-                <Route path="/producto/:id" element={<ProductoDetalle />} />
-                <Route path="/p/:id" element={<ProductoDetalle />} />
-                <Route path="/pedido/:orderNumber" element={<Pedido />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/unsubscribe" element={<Unsubscribe />} />
-                <Route path="/hub/:type/:slug" element={<Hub />} />
-                <Route path="/s/:slug" element={<LandingPage />} />
-                <Route path="/politicas" element={<Politicas />} />
-                <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
-                <Route path="*" element={<NotFound />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <FloatingWhatsApp />
-            </BrowserRouter>
-        </CartProvider>
-        </AgentProvider>
-      </AuthProvider>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <AuthProvider>
+          <AgentProvider>
+          <CartProvider>
+            <Toaster />
+            <Sonner />
+            <DynamicThemeInjector />
+            <CustomScriptInjector />
+                <AgentBar />
+                <CityPickerModal />
+              <BrowserRouter>
+                <Analytics />
+                <CartNavigationGuard />
+                <SwipeProvider>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/catalogo" element={<Catalogo />} />
+                    <Route path="/carrito" element={<Carrito />} />
+                    <Route path="/categorias" element={<Categorias />} />
+                    <Route path="/menu" element={<MenuPage />} />
+                    <Route path="/ofertas" element={<Ofertas />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/pedidos" element={<MisPedidos />} />
+                    <Route path="/perfil" element={<Perfil />} />
+                    <Route path="/favoritos" element={<Favoritos />} />
+                    <Route path="/ayuda" element={<Ayuda />} />
+                    <Route path="/configuracion" element={<Configuracion />} />
+                    <Route path="/producto/:id" element={<ProductoDetalle />} />
+                    <Route path="/p/:id" element={<ProductoDetalle />} />
+                    <Route path="/pedido/:orderNumber" element={<Pedido />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/unsubscribe" element={<Unsubscribe />} />
+                    <Route path="/hub/:type/:slug" element={<Hub />} />
+                    <Route path="/s/:slug" element={<LandingPage />} />
+                    <Route path="/politicas" element={<Politicas />} />
+                    <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <FloatingWhatsApp />
+                </SwipeProvider>
+              </BrowserRouter>
+          </CartProvider>
+          </AgentProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

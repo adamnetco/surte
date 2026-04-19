@@ -2,10 +2,13 @@ import { useCategories } from "@/hooks/useStore";
 import { useNavigate } from "react-router-dom";
 import CategoryIcon from "./CategoryIcon";
 import { motion } from "framer-motion";
+import { useSwipe } from "@/context/SwipeContext";
+import { Layers } from "lucide-react";
 
 const CategoryGrid = () => {
   const navigate = useNavigate();
   const { data: categories, isLoading } = useCategories();
+  const { open: openSwipe } = useSwipe();
 
   if (isLoading) {
     return (
@@ -34,23 +37,37 @@ const CategoryGrid = () => {
       <h2 className="text-lg font-heading font-bold text-foreground mb-3">Categorías</h2>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide md:flex-wrap md:overflow-visible">
         {categories?.map((cat, i) => (
-          <motion.button
+          <motion.div
             key={cat.id}
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
-            onClick={() => navigate(`/hub/categoria/${cat.slug}`)}
-            className="flex flex-col items-center gap-1.5 min-w-[72px] md:min-w-[88px] shrink-0 group"
+            className="flex flex-col items-center gap-1.5 min-w-[72px] md:min-w-[88px] shrink-0 group relative"
           >
-            <div
-              className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-active:scale-95"
-              style={{ backgroundColor: `${cat.color}18` }}
+            <button
+              type="button"
+              onClick={() => navigate(`/hub/categoria/${cat.slug}`)}
+              className="flex flex-col items-center gap-1.5"
             >
-              <CategoryIcon icon={cat.icon} size={26} color={cat.color || "hsl(var(--accent))"} />
-            </div>
-            <span className="text-xs font-medium text-foreground text-center leading-tight">{cat.name}</span>
-          </motion.button>
+              <div
+                className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-active:scale-95"
+                style={{ backgroundColor: `${cat.color}18` }}
+              >
+                <CategoryIcon icon={cat.icon} size={26} color={cat.color || "hsl(var(--accent))"} />
+              </div>
+              <span className="text-xs font-medium text-foreground text-center leading-tight">{cat.name}</span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); openSwipe({ categorySlug: cat.slug }); }}
+              aria-label={`Modo swipe para ${cat.name}`}
+              title="Modo swipe"
+              className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 focus:opacity-100 active:opacity-100 transition-opacity"
+            >
+              <Layers size={12} />
+            </button>
+          </motion.div>
         ))}
       </div>
     </motion.section>
