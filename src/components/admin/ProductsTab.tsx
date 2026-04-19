@@ -718,8 +718,31 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       )}
 
       <div className="space-y-2">
-        {filtered?.map((p: any) => (
-          <div key={p.id} className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${p.is_active !== false && !isBrandHidden(p) ? "border-border" : "border-border opacity-50"}`}>
+        {filtered?.map((p: any) => {
+          const isSelected = selectedIds.has(p.id);
+          return (
+          <div
+            key={p.id}
+            onClick={bulkMode ? () => toggleSelected(p.id) : undefined}
+            className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${
+              bulkMode ? "cursor-pointer" : ""
+            } ${
+              isSelected
+                ? "border-primary bg-primary/5 ring-1 ring-primary/40"
+                : p.is_active !== false && !isBrandHidden(p)
+                ? "border-border"
+                : "border-border opacity-50"
+            }`}
+          >
+            {bulkMode && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => toggleSelected(p.id)}
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0"
+                aria-label={`Seleccionar ${p.name}`}
+              />
+            )}
             <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
               {p.image_url ? (
                 <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
