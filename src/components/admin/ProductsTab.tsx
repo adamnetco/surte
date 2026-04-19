@@ -686,6 +686,51 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           {/* Tags + Featured Sections */}
           <FeaturedTagsPicker tags={form.tags} onTagsChange={(t) => setForm({ ...form, tags: t })} />
 
+          {/* Scheduling / Availability */}
+          <div className="space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">📅 Programación / Disponibilidad</p>
+            <p className="text-[10px] text-muted-foreground">Limita cuándo el producto está visible. Deja vacío para mostrar siempre.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Desde</label>
+                <input type="datetime-local" value={form.available_from} onChange={(e) => setForm({ ...form, available_from: e.target.value })} className="w-full bg-muted rounded-lg px-2 py-2 text-xs border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Hasta</label>
+                <input type="datetime-local" value={form.available_until} onChange={(e) => setForm({ ...form, available_until: e.target.value })} className="w-full bg-muted rounded-lg px-2 py-2 text-xs border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1 block">Días de la semana (vacío = todos)</label>
+              <div className="flex gap-1 flex-wrap">
+                {[{d:1,l:"Lun"},{d:2,l:"Mar"},{d:3,l:"Mié"},{d:4,l:"Jue"},{d:5,l:"Vie"},{d:6,l:"Sáb"},{d:0,l:"Dom"}].map(({d, l}) => {
+                  const active = form.available_days.includes(d);
+                  return (
+                    <button key={d} type="button"
+                      onClick={() => setForm({ ...form, available_days: active ? form.available_days.filter((x) => x !== d) : [...form.available_days, d] })}
+                      className={`text-[11px] w-10 py-1.5 rounded-lg font-medium transition-colors ${active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                    >{l}</button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Hora inicio</label>
+                <input type="time" value={form.available_time_start} onChange={(e) => setForm({ ...form, available_time_start: e.target.value })} className="w-full bg-muted rounded-lg px-2 py-2 text-xs border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-0.5 block">Hora fin</label>
+                <input type="time" value={form.available_time_end} onChange={(e) => setForm({ ...form, available_time_end: e.target.value })} className="w-full bg-muted rounded-lg px-2 py-2 text-xs border border-transparent focus:border-accent focus:outline-none" />
+              </div>
+            </div>
+            {(form.available_from || form.available_until || form.available_days.length > 0 || form.available_time_start || form.available_time_end) && (
+              <button type="button" onClick={() => setForm({ ...form, available_from: "", available_until: "", available_days: [], available_time_start: "", available_time_end: "" })}
+                className="text-[11px] text-destructive hover:underline">✕ Limpiar programación</button>
+            )}
+          </div>
+
+
           {/* SEO Fields */}
           <div className="space-y-2 border-t border-border pt-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">🔍 SEO & Indexación</p>
