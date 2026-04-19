@@ -6,6 +6,7 @@ import { useInactiveBrands } from "@/hooks/useStore";
 import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy, Ban, Star } from "lucide-react";
 import MarginCalculator from "./MarginCalculator";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 const formatPrice = (price: number) =>
@@ -718,8 +719,31 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       )}
 
       <div className="space-y-2">
-        {filtered?.map((p: any) => (
-          <div key={p.id} className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${p.is_active !== false && !isBrandHidden(p) ? "border-border" : "border-border opacity-50"}`}>
+        {filtered?.map((p: any) => {
+          const isSelected = selectedIds.has(p.id);
+          return (
+          <div
+            key={p.id}
+            onClick={bulkMode ? () => toggleSelected(p.id) : undefined}
+            className={`flex items-center gap-3 bg-card rounded-xl p-3 border transition-colors ${
+              bulkMode ? "cursor-pointer" : ""
+            } ${
+              isSelected
+                ? "border-primary bg-primary/5 ring-1 ring-primary/40"
+                : p.is_active !== false && !isBrandHidden(p)
+                ? "border-border"
+                : "border-border opacity-50"
+            }`}
+          >
+            {bulkMode && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => toggleSelected(p.id)}
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0"
+                aria-label={`Seleccionar ${p.name}`}
+              />
+            )}
             <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
               {p.image_url ? (
                 <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
@@ -748,14 +772,16 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             <Switch
               checked={p.is_active !== false}
               onCheckedChange={() => toggleVisibility(p.id, p.is_active !== false)}
+              onClick={(e) => e.stopPropagation()}
             />
-            <button onClick={() => duplicateProduct(p)} className="text-muted-foreground hover:text-secondary transition-colors" title="Duplicar">
+            <button onClick={(e) => { e.stopPropagation(); duplicateProduct(p); }} className="text-muted-foreground hover:text-secondary transition-colors" title="Duplicar">
               <Copy size={15} />
             </button>
-            <button onClick={() => editProduct(p)} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
-            <button onClick={() => deleteProduct(p.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
+            <button onClick={(e) => { e.stopPropagation(); editProduct(p); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
+            <button onClick={(e) => { e.stopPropagation(); deleteProduct(p.id); }} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
