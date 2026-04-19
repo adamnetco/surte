@@ -1,69 +1,99 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Send, Users, MessageSquare, Loader2, Smartphone } from "lucide-react";
+import { Bell, Send, Users, MessageSquare, Loader2, Smartphone, Radio, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+
+type Segment = "all" | "offers" | "fresh" | "new_products";
+
+const SEGMENTS: Record<Segment, { label: string; emoji: string }> = {
+  all: { label: "Todos", emoji: "📣" },
+  offers: { label: "Ofertas", emoji: "🔥" },
+  fresh: { label: "Frescos", emoji: "🌿" },
+  new_products: { label: "Nuevos", emoji: "✨" },
+};
+
+const TEMPLATES: Record<Segment, string> = {
+  all: "Hola desde SURTÉ YA. Tenemos novedades que te interesarán. Visítanos en nuestra app.",
+  offers: "SURTÉ YA - Nuevas ofertas disponibles. Descuentos hasta del 30% en cárnicos y salsas. Pide ya antes que se agoten.",
+  fresh: "SURTÉ YA - Llegaron productos frescos del día. Pulpas y cárnicos recién procesados. Reserva el tuyo.",
+  new_products: "SURTÉ YA - Hemos añadido nuevos productos al catálogo. Entra y descubre las novedades.",
+};
 
 const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
-  const [notifType, setNotifType] = useState<"offers" | "fresh" | "new_products" | "custom">("offers");
+  const [segment, setSegment] = useState<Segment>("all");
+  const [lastResult, setLastResult] = useState<any>(null);
 
   const { data: subscribers } = useQuery({
     queryKey: ["admin-notification-subs"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("notification_subscriptions").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("notification_subscriptions")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
   const { data: settings } = useQuery({
-    queryKey: ["app_settings"],
+    queryKey: ["app_settings_notif"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("app_settings").select("*");
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("key, value")
+        .in("key", ["ycloud_api_key", "ycloud_from_number"]);
       if (error) throw error;
       const s: Record<string, string> = {};
-      data.forEach((r) => { s[r.key] = r.value; });
+      data.forEach((r: any) => { s[r.key] = r.value; });
       return s;
     },
   });
 
-  const whatsappNumber = settings?.whatsapp_number || "";
-  const activeSubscribers = subscribers?.filter((s) => s.is_active) || [];
+  const ycloudReady = !!(settings?.ycloud_api_key && settings?.ycloud_from_number);
 
-  const templates: Record<string, { label: string; emoji: string; defaultMsg: string }> = {
-    offers: { label: "Nuevas Ofertas", emoji: "🔥", defaultMsg: "¡Tenemos nuevas ofertas especiales para ti! Entra a SURTÉ y descubre descuentos hasta del 30% en cárnicos y salsas. 🥩🌶️" },
-    fresh: { label: "Productos Frescos", emoji: "🌿", defaultMsg: "¡Llegaron productos frescos! Pulpas de fruta recién procesadas y cárnicos del día. Pide ahora antes de que se agoten. 🍊🥬" },
-    new_products: { label: "Nuevos Productos", emoji: "✨", defaultMsg: "¡Novedad en SURTÉ! Hemos añadido nuevos productos a nuestro catálogo. Entra y descúbrelos. 🛒" },
-    custom: { label: "Personalizado", emoji: "📝", defaultMsg: "" },
-  };
+  const activeAll = subscribers?.filter((s) => s.is_active) || [];
+  const audienceCount = activeAll.filter((s) =>
+    segment === "all" ? true :
+    segment === "offers" ? s.notify_offers :
+    segment === "fresh" ? s.notify_fresh :
+    s.notify_new_products
+  ).length;
 
-  const sendNotification = async () => {
-    const text = message || templates[notifType]?.defaultMsg;
+  const broadcast = async (dryRun = false) => {
+    const text = (message || TEMPLATES[segment]).trim();
     if (!text) { toast.error("Escribe un mensaje"); return; }
-    if (!whatsappNumber) { toast.error("Configura el número de WhatsApp en Configuración"); return; }
-    if (activeSubscribers.length === 0) { toast.error("No hay suscriptores activos"); return; }
+    if (!ycloudReady) {
+      toast.error("Configura YCloud (API Key + número remitente) en Configuración");
+      return;
+    }
+    if (audienceCount === 0 && !dryRun) {
+      toast.error("No hay suscriptores activos para este segmento");
+      return;
+    }
+    if (!dryRun && !confirm(`¿Enviar a ${audienceCount} suscriptor(es) por WhatsApp?\nSegmento: ${SEGMENTS[segment].label}`)) return;
 
     setSending(true);
+    setLastResult(null);
     try {
-      // Generate WhatsApp links for each subscriber
-      const encodedMsg = encodeURIComponent(text);
-      const links = activeSubscribers.map((s) => ({
-        phone: s.phone,
-        url: `https://wa.me/${s.phone.replace(/\D/g, "")}?text=${encodedMsg}`,
-      }));
-
-      // Open first link to initiate (WhatsApp API limitation for mass sending)
-      if (links.length > 0) {
-        window.open(links[0].url, "_blank");
+      const { data, error } = await supabase.functions.invoke("broadcast-whatsapp-ycloud", {
+        body: { message: text, segment, dry_run: dryRun },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setLastResult(data);
+      if (dryRun) {
+        toast.success(`Vista previa: alcanzará a ${data.total} suscriptor(es)`);
+      } else {
+        toast.success(`✓ Enviados: ${data.sent} · Fallidos: ${data.failed}`);
+        if (data.failed > 0) toast.warning(`${data.failed} mensaje(s) no pudieron enviarse`);
+        setMessage("");
       }
-
-      toast.success(`Notificación preparada para ${activeSubscribers.length} suscriptor(es). Se abrirá WhatsApp para enviar.`);
-      setMessage("");
-    } catch (err) {
-      toast.error("Error al preparar notificación");
+    } catch (err: any) {
+      toast.error(err?.message || "Error al enviar la difusión");
     } finally {
       setSending(false);
     }
@@ -78,14 +108,14 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Bell size={20} className="text-accent" />
-        <h2 className="font-heading font-bold text-lg text-foreground">Notificaciones</h2>
+        <h2 className="font-heading font-bold text-lg text-foreground">Notificaciones WhatsApp</h2>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-card rounded-xl p-4 border border-border text-center">
           <Users size={20} className="mx-auto text-accent mb-1" />
-          <p className="text-2xl font-heading font-bold text-foreground">{activeSubscribers.length}</p>
+          <p className="text-2xl font-heading font-bold text-foreground">{activeAll.length}</p>
           <p className="text-[11px] text-muted-foreground">Suscriptores activos</p>
         </div>
         <div className="bg-card rounded-xl p-4 border border-border text-center">
@@ -95,37 +125,104 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
         </div>
       </div>
 
-      {/* Send notification */}
-      <div className="bg-card rounded-xl p-4 border border-border space-y-3">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Enviar Notificación WhatsApp</p>
+      {/* YCloud not configured warning */}
+      {!ycloudReady && (
+        <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-xl p-3">
+          <AlertTriangle size={16} className="text-destructive shrink-0 mt-0.5" />
+          <div className="text-xs">
+            <p className="font-semibold text-destructive">YCloud no está configurado</p>
+            <p className="text-muted-foreground mt-0.5">Ve a <span className="font-semibold">Configuración → Integraciones</span> y añade la API Key y el número remitente para habilitar la difusión masiva.</p>
+          </div>
+        </div>
+      )}
 
+      {/* Broadcast composer */}
+      <div className="bg-card rounded-xl p-4 border border-border space-y-3">
+        <div className="flex items-center gap-2">
+          <Radio size={16} className="text-accent" />
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Difusión Masiva (YCloud)</p>
+        </div>
+
+        {/* Segment selector */}
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-          {Object.entries(templates).map(([key, { label, emoji }]) => (
-            <button key={key} onClick={() => { setNotifType(key as any); setMessage(templates[key].defaultMsg); }}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${notifType === key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+          {(Object.entries(SEGMENTS) as [Segment, typeof SEGMENTS[Segment]][]).map(([key, { label, emoji }]) => (
+            <button
+              key={key}
+              onClick={() => { setSegment(key); if (!message) setMessage(TEMPLATES[key]); }}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${segment === key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+            >
               {emoji} {label}
             </button>
           ))}
         </div>
 
         <textarea
-          value={message || templates[notifType]?.defaultMsg || ""}
+          value={message || TEMPLATES[segment]}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Escribe tu mensaje..."
+          maxLength={1000}
           className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors resize-none"
           rows={4}
         />
+        <p className="text-[10px] text-muted-foreground text-right">
+          {(message || TEMPLATES[segment]).length}/1000
+        </p>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <p className="text-[11px] text-muted-foreground">
-            Se enviará a <span className="font-semibold text-accent">{activeSubscribers.length}</span> suscriptor(es)
+            Audiencia: <span className="font-semibold text-accent">{audienceCount}</span> de {activeAll.length} suscriptor(es)
           </p>
-          <button onClick={sendNotification} disabled={sending || activeSubscribers.length === 0}
-            className="btn-surte text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50">
-            {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            Enviar
-          </button>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => broadcast(true)}
+              disabled={sending}
+              className="text-xs px-3 py-2 rounded-lg bg-muted text-muted-foreground font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
+            >
+              Vista previa
+            </button>
+            <button
+              onClick={() => broadcast(false)}
+              disabled={sending || !ycloudReady || audienceCount === 0}
+              className="btn-surte text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              Enviar
+            </button>
+          </div>
         </div>
+
+        {/* Last result */}
+        {lastResult && (
+          <div className="bg-muted/50 rounded-lg p-2.5 border border-border">
+            <p className="text-[11px] font-semibold text-foreground">Último envío</p>
+            <div className="grid grid-cols-3 gap-2 mt-1.5 text-[11px]">
+              <div className="text-center bg-card rounded p-1.5">
+                <p className="text-base font-heading font-bold text-foreground">{lastResult.total ?? 0}</p>
+                <p className="text-muted-foreground text-[10px]">Total</p>
+              </div>
+              <div className="text-center bg-secondary/10 rounded p-1.5">
+                <p className="text-base font-heading font-bold text-secondary">{lastResult.sent ?? 0}</p>
+                <p className="text-muted-foreground text-[10px]">Enviados</p>
+              </div>
+              <div className="text-center bg-destructive/10 rounded p-1.5">
+                <p className="text-base font-heading font-bold text-destructive">{lastResult.failed ?? 0}</p>
+                <p className="text-muted-foreground text-[10px]">Fallidos</p>
+              </div>
+            </div>
+            {lastResult.errors?.length > 0 && (
+              <details className="mt-2">
+                <summary className="text-[10px] text-destructive cursor-pointer">Ver errores ({lastResult.errors.length})</summary>
+                <ul className="mt-1 space-y-0.5">
+                  {lastResult.errors.map((e: any, i: number) => (
+                    <li key={i} className="text-[10px] text-muted-foreground font-mono truncate">
+                      {e.phone}: {e.error}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Subscribers list */}
