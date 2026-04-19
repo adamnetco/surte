@@ -256,6 +256,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       unit_quantity: p.unit_quantity ? String(p.unit_quantity) : "",
       unit_measure: p.unit_measure || "",
       net_weight_grams: p.net_weight_grams ? String(p.net_weight_grams) : "",
+      available_from: "", available_until: "", available_days: [],
+      available_time_start: "", available_time_end: "",
     });
     setEditing("new");
     toast.info("Producto duplicado — edita y guarda");
