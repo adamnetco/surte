@@ -56,32 +56,34 @@ const App = () => (
               <BrowserRouter>
                 <Analytics />
                 <CartNavigationGuard />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/catalogo" element={<Catalogo />} />
-                  <Route path="/carrito" element={<Carrito />} />
-                  <Route path="/categorias" element={<Categorias />} />
-                  <Route path="/menu" element={<MenuPage />} />
-                  <Route path="/ofertas" element={<Ofertas />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/pedidos" element={<MisPedidos />} />
-                  <Route path="/perfil" element={<Perfil />} />
-                  <Route path="/favoritos" element={<Favoritos />} />
-                  <Route path="/ayuda" element={<Ayuda />} />
-                  <Route path="/configuracion" element={<Configuracion />} />
-                  <Route path="/producto/:id" element={<ProductoDetalle />} />
-                  <Route path="/p/:id" element={<ProductoDetalle />} />
-                  <Route path="/pedido/:orderNumber" element={<Pedido />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
-                  <Route path="/unsubscribe" element={<Unsubscribe />} />
-                  <Route path="/hub/:type/:slug" element={<Hub />} />
-                  <Route path="/s/:slug" element={<LandingPage />} />
-                  <Route path="/politicas" element={<Politicas />} />
-                  <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <FloatingWhatsApp />
+                <SwipeProvider>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/catalogo" element={<Catalogo />} />
+                    <Route path="/carrito" element={<Carrito />} />
+                    <Route path="/categorias" element={<Categorias />} />
+                    <Route path="/menu" element={<MenuPage />} />
+                    <Route path="/ofertas" element={<Ofertas />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/pedidos" element={<MisPedidos />} />
+                    <Route path="/perfil" element={<Perfil />} />
+                    <Route path="/favoritos" element={<Favoritos />} />
+                    <Route path="/ayuda" element={<Ayuda />} />
+                    <Route path="/configuracion" element={<Configuracion />} />
+                    <Route path="/producto/:id" element={<ProductoDetalle />} />
+                    <Route path="/p/:id" element={<ProductoDetalle />} />
+                    <Route path="/pedido/:orderNumber" element={<Pedido />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/unsubscribe" element={<Unsubscribe />} />
+                    <Route path="/hub/:type/:slug" element={<Hub />} />
+                    <Route path="/s/:slug" element={<LandingPage />} />
+                    <Route path="/politicas" element={<Politicas />} />
+                    <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <FloatingWhatsApp />
+                </SwipeProvider>
               </BrowserRouter>
           </CartProvider>
           </AgentProvider>
