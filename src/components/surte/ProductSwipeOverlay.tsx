@@ -79,7 +79,7 @@ const ProductSwipeOverlay = ({ currentProductId, categorySlug, brand, tag, onClo
   const [activeIdx, setActiveIdx] = useState(Math.max(0, currentIdx));
   const [direction, setDirection] = useState(0);
 
-  if (siblingProducts.length <= 1) return null;
+  if (siblingProducts.length === 0) return null;
 
   const product = siblingProducts[activeIdx] as any;
   if (!product) return null;
