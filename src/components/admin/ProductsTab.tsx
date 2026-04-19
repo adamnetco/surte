@@ -199,6 +199,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "",
     slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "",
     tags: "", unit_quantity: "", unit_measure: "", net_weight_grams: "",
+    available_from: "", available_until: "", available_days: [] as number[],
+    available_time_start: "", available_time_end: "",
   });
   const { upload, uploading } = useImageUpload();
 
@@ -210,7 +212,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   const [bulkApplying, setBulkApplying] = useState(false);
 
   const resetForm = () => {
-    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "", slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "", tags: "", unit_quantity: "", unit_measure: "", net_weight_grams: "" });
+    setForm({ name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "", cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "", slug: "", meta_title: "", meta_description: "", brand: "", sku: "", gtin: "", weight: "", tags: "", unit_quantity: "", unit_measure: "", net_weight_grams: "", available_from: "", available_until: "", available_days: [], available_time_start: "", available_time_end: "" });
     setEditing(null);
   };
 
@@ -229,6 +231,11 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       unit_quantity: p.unit_quantity ? String(p.unit_quantity) : "",
       unit_measure: p.unit_measure || "",
       net_weight_grams: p.net_weight_grams ? String(p.net_weight_grams) : "",
+      available_from: p.available_from ? String(p.available_from).slice(0, 16) : "",
+      available_until: p.available_until ? String(p.available_until).slice(0, 16) : "",
+      available_days: Array.isArray(p.available_days) ? p.available_days : [],
+      available_time_start: p.available_time_start ? String(p.available_time_start).slice(0, 5) : "",
+      available_time_end: p.available_time_end ? String(p.available_time_end).slice(0, 5) : "",
     });
     setEditing(p.id);
   };
@@ -279,6 +286,11 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       unit_quantity: form.unit_quantity ? Number(form.unit_quantity) : null,
       unit_measure: form.unit_measure || null,
       net_weight_grams: form.net_weight_grams ? Number(form.net_weight_grams) : null,
+      available_from: form.available_from ? new Date(form.available_from).toISOString() : null,
+      available_until: form.available_until ? new Date(form.available_until).toISOString() : null,
+      available_days: form.available_days.length > 0 ? form.available_days : null,
+      available_time_start: form.available_time_start || null,
+      available_time_end: form.available_time_end || null,
     };
 
     if (editing && editing !== "new") {
