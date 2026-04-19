@@ -771,14 +771,16 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             <Switch
               checked={p.is_active !== false}
               onCheckedChange={() => toggleVisibility(p.id, p.is_active !== false)}
+              onClick={(e) => e.stopPropagation()}
             />
-            <button onClick={() => duplicateProduct(p)} className="text-muted-foreground hover:text-secondary transition-colors" title="Duplicar">
+            <button onClick={(e) => { e.stopPropagation(); duplicateProduct(p); }} className="text-muted-foreground hover:text-secondary transition-colors" title="Duplicar">
               <Copy size={15} />
             </button>
-            <button onClick={() => editProduct(p)} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
-            <button onClick={() => deleteProduct(p.id)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
+            <button onClick={(e) => { e.stopPropagation(); editProduct(p); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil size={15} /></button>
+            <button onClick={(e) => { e.stopPropagation(); deleteProduct(p.id); }} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
