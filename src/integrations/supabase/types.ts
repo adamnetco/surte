@@ -1080,6 +1080,11 @@ export type Database = {
       products: {
         Row: {
           availability: string | null
+          available_days: number[] | null
+          available_from: string | null
+          available_time_end: string | null
+          available_time_start: string | null
+          available_until: string | null
           base_unit: string | null
           brand: string | null
           category_id: string | null
@@ -1112,6 +1117,11 @@ export type Database = {
         }
         Insert: {
           availability?: string | null
+          available_days?: number[] | null
+          available_from?: string | null
+          available_time_end?: string | null
+          available_time_start?: string | null
+          available_until?: string | null
           base_unit?: string | null
           brand?: string | null
           category_id?: string | null
@@ -1144,6 +1154,11 @@ export type Database = {
         }
         Update: {
           availability?: string | null
+          available_days?: number[] | null
+          available_from?: string | null
+          available_time_end?: string | null
+          available_time_start?: string | null
+          available_until?: string | null
           base_unit?: string | null
           brand?: string | null
           category_id?: string | null
