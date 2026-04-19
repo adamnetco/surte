@@ -1,11 +1,12 @@
 import { useProducts } from "@/hooks/useStore";
 import ProductCard from "./ProductCard";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Layers } from "lucide-react";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSwipe } from "@/context/SwipeContext";
 
 interface FeaturedSection {
   id: string;
@@ -60,6 +61,7 @@ const applyFilter = (products: any[], section: FeaturedSection) => {
 
 const FeaturedProducts = () => {
   const navigate = useNavigate();
+  const { open: openSwipe } = useSwipe();
   const { data: products, isLoading: productsLoading } = useProducts();
   const { data: sections = [], isLoading: sectionsLoading } = useFeaturedSections();
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -112,12 +114,34 @@ const FeaturedProducts = () => {
     >
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg md:text-xl font-heading font-bold text-foreground">Destacados</h2>
-        <button
-          onClick={() => navigate("/catalogo")}
-          className="text-sm text-accent font-medium flex items-center gap-0.5 hover:gap-1.5 transition-all active:scale-95"
-        >
-          Ver todo <ChevronRight size={16} />
-        </button>
+        <div className="flex items-center gap-2">
+          {currentSection && displayProducts.length > 0 && (
+            <button
+              onClick={() => {
+                if (currentSection.filter_type === "tag" && currentSection.filter_value) {
+                  openSwipe({ tag: currentSection.filter_value });
+                } else if (currentSection.filter_type === "category" && currentSection.filter_value) {
+                  openSwipe({ categorySlug: currentSection.filter_value });
+                } else {
+                  // For offers / wholesale / fresh / combo: open with anchor on first product
+                  const first: any = displayProducts[0];
+                  openSwipe({ productId: first?.id, tag: currentSection.filter_value || currentSection.label });
+                }
+              }}
+              className="text-xs font-medium px-2.5 py-1 rounded-full bg-accent/10 text-accent flex items-center gap-1 hover:bg-accent/20 transition-colors active:scale-95"
+              aria-label="Modo swipe"
+              title="Modo swipe"
+            >
+              <Layers size={12} /> Swipe
+            </button>
+          )}
+          <button
+            onClick={() => navigate("/catalogo")}
+            className="text-sm text-accent font-medium flex items-center gap-0.5 hover:gap-1.5 transition-all active:scale-95"
+          >
+            Ver todo <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Dynamic tabs */}
