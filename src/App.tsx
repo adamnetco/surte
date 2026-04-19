@@ -7,6 +7,7 @@ import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { AgentProvider } from "@/context/AgentContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { SwipeProvider } from "@/context/SwipeContext";
 import FloatingWhatsApp from "@/components/surte/FloatingWhatsApp";
 import AgentBar from "@/components/surte/AgentBar";
 import CityPickerModal from "@/components/surte/CityPickerModal";
