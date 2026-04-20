@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, isWeekend } from "date-fns";
@@ -24,6 +24,7 @@ import { orderConfirmationTemplate } from "@/utils/emailTemplates";
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
+/* ── Neighborhood typeahead — extracted to its own stable component ── */
 const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; selectedId: string; onSelect: (id: string) => void }) => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -42,7 +43,7 @@ const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; sel
     <div className="relative">
       <div className="flex items-center gap-1.5 mb-1.5">
         <MapPin size={14} className="text-accent" />
-        <span className="text-xs font-medium text-muted-foreground">Barrio de entrega</span>
+        <label className="text-xs font-medium text-muted-foreground">Barrio de entrega</label>
       </div>
       <input
         type="text"
@@ -50,7 +51,8 @@ const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; sel
         onChange={(e) => { setSearch(e.target.value); setOpen(true); if (!e.target.value) onSelect(""); }}
         onFocus={() => { setOpen(true); setSearch(""); }}
         placeholder="Escribe tu barrio..."
-        className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+        autoComplete="off"
+        className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring text-foreground"
       />
       {open && (filtered.length > 0 || otherCityZones.length > 0) && (
         <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl max-h-48 overflow-y-auto z-50 shadow-lg">
@@ -60,6 +62,7 @@ const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; sel
           {filtered.map((z: any) => (
             <button
               key={z.id}
+              type="button"
               onClick={() => { onSelect(z.id); setSearch(""); setOpen(false); }}
               className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors hover:bg-muted ${selectedId === z.id ? "bg-accent/10 text-accent font-medium" : "text-foreground"}`}
             >
@@ -73,6 +76,7 @@ const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; sel
               {otherCityZones.slice(0, 10).map((z: any) => (
                 <button
                   key={z.id}
+                  type="button"
                   onClick={() => { onSelect(z.id); setSearch(""); setOpen(false); }}
                   className="w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors hover:bg-muted text-foreground"
                 >
@@ -91,6 +95,19 @@ const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; sel
   );
 };
 
+const COUNTRY_CODES = [
+  { code: "+57", flag: "🇨🇴" },
+  { code: "+1", flag: "🇺🇸" },
+  { code: "+58", flag: "🇻🇪" },
+  { code: "+52", flag: "🇲🇽" },
+  { code: "+51", flag: "🇵🇪" },
+  { code: "+56", flag: "🇨🇱" },
+  { code: "+54", flag: "🇦🇷" },
+  { code: "+593", flag: "🇪🇨" },
+  { code: "+507", flag: "🇵🇦" },
+  { code: "+34", flag: "🇪🇸" },
+];
+
 const Carrito = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
   const { data: settings } = useAppSettings();
@@ -101,7 +118,16 @@ const Carrito = () => {
   const meetsMinimum = totalPrice >= minOrder;
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", notes: "", neighborhood_id: "", countryCode: "+57" });
+
+  // Split form state into individual primitives so each input only re-renders when its own value changes.
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [notes, setNotes] = useState("");
+  const [neighborhoodId, setNeighborhoodId] = useState("");
+  const [countryCode, setCountryCode] = useState("+57");
+
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -121,8 +147,7 @@ const Carrito = () => {
   const showPaymentMethod = settings?.checkout_show_payment_method !== "false";
   const showGeolocation = settings?.checkout_show_geolocation !== "false";
 
-  // Compute min delivery date (skip weekends)
-  const getMinDeliveryDate = () => {
+  const getMinDeliveryDate = useCallback(() => {
     const minDaysNum = parseInt(estimatedDays) || 1;
     let date = new Date();
     let added = 0;
@@ -131,7 +156,7 @@ const Carrito = () => {
       if (!isWeekend(date)) added++;
     }
     return date;
-  };
+  }, [estimatedDays]);
 
   const { data: shippingZones } = useQuery({
     queryKey: ["shipping-zones"],
@@ -142,7 +167,6 @@ const Carrito = () => {
     },
   });
 
-  // Free shipping config per municipality (admin-managed)
   const { data: municipalitiesCfg } = useQuery({
     queryKey: ["municipalities-free-shipping"],
     queryFn: async () => {
@@ -155,8 +179,7 @@ const Carrito = () => {
     },
   });
 
-  // Resolve free-shipping rule for the selected zone
-  const selectedZone = shippingZones?.find((z: any) => z.id === form.neighborhood_id);
+  const selectedZone = shippingZones?.find((z: any) => z.id === neighborhoodId);
   const cityCfg = selectedZone
     ? municipalitiesCfg?.find((m: any) => m.city === selectedZone.city)
     : null;
@@ -166,11 +189,11 @@ const Carrito = () => {
     ? Math.max(0, Number(cityCfg.free_shipping_threshold || 0) - totalPrice)
     : 0;
 
-  const handleZoneChange = (zoneId: string) => {
-    setForm({ ...form, neighborhood_id: zoneId });
+  const handleZoneChange = useCallback((zoneId: string) => {
+    setNeighborhoodId(zoneId);
     const zone = shippingZones?.find((z: any) => z.id === zoneId);
     setDeliveryCost(zone ? Number(zone.delivery_price) : 0);
-  };
+  }, [shippingZones]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -213,9 +236,9 @@ const Carrito = () => {
         setLoadingGeo(false);
         toast.success("Ubicación capturada");
       },
-      (err) => {
+      () => {
         setLoadingGeo(false);
-        toast.error("No se pudo obtener la ubicación. Activa los permisos de ubicación.");
+        toast.error("No se pudo obtener la ubicación. Activa los permisos.");
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -223,43 +246,42 @@ const Carrito = () => {
 
   const handleFinalize = () => {
     if (!meetsMinimum) return;
-    // Pre-fill form with agent customer data or logged-in user data
     if (isAgent && agentCustomer) {
-      setForm({
-        name: agentCustomer.fullName || "",
-        phone: agentCustomer.phone || "",
-        email: "",
-        address: agentCustomer.address || "",
-        notes: "",
-        neighborhood_id: "",
-        countryCode: "+57",
-      });
+      setName(agentCustomer.fullName || "");
+      setPhone(agentCustomer.phone || "");
+      setEmail("");
+      setAddress(agentCustomer.address || "");
+      setNotes("");
+      setNeighborhoodId("");
+      setCountryCode("+57");
       setPreferredDate(agentDeliveryDate);
     } else {
-      setForm({
-        name: user?.user_metadata?.full_name || "",
-        phone: user?.user_metadata?.phone || "",
-        email: user?.email || "",
-        address: "",
-        notes: "",
-        neighborhood_id: "",
-        countryCode: "+57",
-      });
+      setName(user?.user_metadata?.full_name || "");
+      setPhone(user?.user_metadata?.phone || "");
+      setEmail(user?.email || "");
+      setAddress("");
+      setNotes("");
+      setNeighborhoodId("");
+      setCountryCode("+57");
     }
     setGeoLocation(null);
     setShowForm(true);
+    // Smooth-scroll to form on mobile
+    setTimeout(() => {
+      document.getElementById("checkout-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
   const handleSubmitOrder = async () => {
-    if (!form.name || !form.phone) {
+    if (!name.trim() || !phone.trim()) {
       toast.error("Nombre y teléfono son obligatorios");
       return;
     }
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error("Email no válido");
       return;
     }
-    const fullPhone = form.phone.startsWith("+") ? form.phone : `${form.countryCode}${form.phone.replace(/^0+/, "")}`;
+    const fullPhone = phone.startsWith("+") ? phone : `${countryCode}${phone.replace(/^0+/, "")}`;
     setSubmitting(true);
     try {
       const grandTotal = totalPrice + finalDeliveryCost - couponDiscount;
@@ -272,38 +294,33 @@ const Carrito = () => {
           presentation_id: i.presentationId || null,
           presentation_name: i.presentationName || null,
         })),
-        customer_name: form.name,
+        customer_name: name,
         customer_phone: fullPhone,
-        customer_email: form.email || null,
-        customer_address: form.address,
-        notes: form.notes,
+        customer_email: email || null,
+        customer_address: address,
+        notes,
         delivery_price: finalDeliveryCost,
-        delivery_zone_id: form.neighborhood_id || null,
+        delivery_zone_id: neighborhoodId || null,
         preferred_delivery_date: preferredDate ? format(preferredDate, "yyyy-MM-dd") : null,
         preferred_time_slot: timeSlot,
         payment_method: paymentMethod,
         geo_location: geoLocation ? `${geoLocation.lat},${geoLocation.lng}` : null,
-        // Agent fields
         agent_id: isAgent ? user?.id : null,
         customer_profile_id: isAgent && agentCustomer ? agentCustomer.profileId : null,
       };
 
-      const { data, error } = await supabase.functions.invoke("send-whatsapp-order", {
-        body: payload,
-      });
+      const { data, error } = await supabase.functions.invoke("send-whatsapp-order", { body: payload });
 
       if (error) throw new Error(error.message || "Error de conexión al procesar pedido");
       if (data?.error) throw new Error(data.error);
 
-      // Track purchase conversion
       trackPurchase(data.order_number, grandTotal, payload.items);
 
-      // Send order confirmation email
-      if (form.email) {
+      if (email) {
         const trackingUrl = `${window.location.origin}/pedido/${data.order_number}`;
         const emailHtml = orderConfirmationTemplate({
           orderNumber: data.order_number,
-          customerName: form.name,
+          customerName: name,
           items: items.map((i) => ({
             name: i.presentationName ? `${i.product.name} (${i.presentationName})` : i.product.name,
             quantity: i.quantity,
@@ -318,10 +335,10 @@ const Carrito = () => {
           deliveryDate: preferredDate ? format(preferredDate, "EEEE d 'de' MMMM", { locale: es }) : undefined,
           timeSlot,
           paymentMethod,
-          address: form.address || undefined,
+          address: address || undefined,
         });
         mailService.send({
-          to: form.email,
+          to: email,
           subject: `✅ Pedido #${data.order_number} confirmado — SURTÉ YA`,
           html: emailHtml,
         }).catch((err) => console.warn("Email confirmation failed:", err));
@@ -329,7 +346,6 @@ const Carrito = () => {
 
       toast.success(`¡Pedido #${data.order_number} creado!`);
 
-      // Build WhatsApp message
       const whatsappNumber = settings?.whatsapp_number || "573000000000";
       const trackingUrl = `${window.location.origin}/pedido/${data.order_number}`;
       const orderLines = items.map(
@@ -339,10 +355,10 @@ const Carrito = () => {
         `🛒 *Pedido SURTÉ #${data.order_number}*`,
         isAgent && agentCustomer ? `🧑‍💼 *Agente:* ${user?.user_metadata?.full_name || "Agente"} | Cliente: ${agentCustomer.customerCode}` : "",
         "",
-        `👤 ${form.name}`,
-        `📱 ${form.phone}`,
-        form.address ? `📍 ${form.address}` : "",
-        form.notes ? `📝 ${form.notes}` : "",
+        `👤 ${name}`,
+        `📱 ${fullPhone}`,
+        address ? `📍 ${address}` : "",
+        notes ? `📝 ${notes}` : "",
         "",
         ...orderLines,
         "",
@@ -358,8 +374,7 @@ const Carrito = () => {
       ].filter(Boolean).join("\n");
 
       const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMsg)}`;
-      
-      // Increment coupon usage
+
       if (appliedCoupon) {
         await supabase.from("coupons").update({ current_uses: (appliedCoupon.current_uses || 0) + 1 }).eq("id", appliedCoupon.id);
       }
@@ -369,10 +384,7 @@ const Carrito = () => {
       setShowForm(false);
       removeCoupon();
 
-      // Open WhatsApp so customer confirms with the store
       window.open(waUrl, "_blank");
-
-      // Navigate to tracking page
       navigate(`/pedido/${data.order_number}`);
     } catch (err: any) {
       toast.error(err.message || "Error al crear pedido");
@@ -382,347 +394,6 @@ const Carrito = () => {
   };
 
   const grandTotal = Math.max(0, totalPrice + finalDeliveryCost - couponDiscount);
-
-  // Summary/CTA block (reused in mobile fixed bar and desktop sidebar)
-  const SummaryBlock = ({ className = "" }: { className?: string }) => (
-    <div className={className}>
-      {/* Coupon input */}
-      <div className="flex items-center gap-2 mb-3">
-        {appliedCoupon ? (
-          <div className="flex-1 flex items-center gap-1.5 bg-secondary/10 rounded-lg px-3 py-2">
-            <CheckCircle2 size={14} className="text-secondary" />
-            <span className="text-xs font-medium text-secondary">{appliedCoupon.code}</span>
-            <span className="text-xs text-secondary">-{formatPrice(couponDiscount)}</span>
-            <button onClick={removeCoupon} className="ml-auto"><X size={14} className="text-muted-foreground" /></button>
-          </div>
-        ) : (
-          <>
-            <div className="flex-1 flex items-center gap-1.5 bg-muted rounded-lg px-3 py-2">
-              <Ticket size={14} className="text-muted-foreground" />
-              <input
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                placeholder="Código cupón"
-                className="flex-1 bg-transparent text-sm outline-none font-mono uppercase"
-              />
-            </div>
-            <button
-              onClick={applyCoupon}
-              disabled={validatingCoupon || !couponCode.trim()}
-              className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-50"
-            >
-              {validatingCoupon ? <Loader2 size={14} className="animate-spin" /> : "Aplicar"}
-            </button>
-          </>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-sm text-muted-foreground">Subtotal</span>
-        <span className="text-sm font-medium text-foreground">{formatPrice(totalPrice)}</span>
-      </div>
-      {couponDiscount > 0 && (
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm text-secondary">Cupón</span>
-          <span className="text-sm font-medium text-secondary">-{formatPrice(couponDiscount)}</span>
-        </div>
-      )}
-      {(deliveryCost > 0 || freeShippingActive) && (
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm text-muted-foreground">Domicilio</span>
-          {freeShippingActive ? (
-            <span className="text-sm font-bold text-secondary">GRATIS 🎉</span>
-          ) : (
-            <span className="text-sm font-medium text-foreground">{formatPrice(deliveryCost)}</span>
-          )}
-        </div>
-      )}
-      {!freeShippingActive && cityCfg?.free_shipping_enabled && freeShippingMissing > 0 && deliveryCost > 0 && (
-        <div className="bg-secondary/10 border border-secondary/30 rounded-lg px-2.5 py-1.5 mb-2">
-          <p className="text-[11px] text-secondary font-medium">
-            🚚 Te faltan {formatPrice(freeShippingMissing)} para envío gratis
-          </p>
-        </div>
-      )}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-foreground">Total</span>
-        <span className="text-xl font-heading font-bold text-foreground">{formatPrice(grandTotal)}</span>
-      </div>
-      <button
-        onClick={handleFinalize}
-        disabled={!meetsMinimum}
-        className={`w-full flex items-center justify-center gap-2 font-heading font-semibold py-3.5 rounded-xl text-sm transition-all ${
-          meetsMinimum ? "btn-surte" : "bg-muted text-muted-foreground cursor-not-allowed"
-        }`}
-      >
-        <MessageCircle size={18} />
-        Finalizar Pedido por WhatsApp
-      </button>
-    </div>
-  );
-
-  // Order form block
-  const OrderFormBlock = () => (
-    <AnimatePresence>
-      {showForm && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          className="bg-card rounded-xl p-4 mb-4 space-y-3"
-          style={{ boxShadow: "var(--shadow-card)" }}
-        >
-          <h3 className="font-heading font-semibold text-sm text-foreground">Datos del Pedido</h3>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required />
-          
-          {/* Email */}
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-xs font-medium text-muted-foreground">📧 Correo electrónico</span>
-            </div>
-            <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tucorreo@email.com" type="email" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
-            <p className="text-[10px] text-muted-foreground mt-0.5">Para confirmación y seguimiento de tu pedido</p>
-          </div>
-
-          {/* Phone with country code */}
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-xs font-medium text-muted-foreground">📱 WhatsApp *</span>
-            </div>
-            <div className="flex gap-1.5">
-              <select
-                value={form.countryCode}
-                onChange={(e) => setForm({ ...form, countryCode: e.target.value })}
-                className="bg-muted rounded-lg px-2 py-2.5 text-sm outline-none w-[100px] shrink-0"
-              >
-                <option value="+57">🇨🇴 +57</option>
-                <option value="+1">🇺🇸 +1</option>
-                <option value="+58">🇻🇪 +58</option>
-                <option value="+52">🇲🇽 +52</option>
-                <option value="+51">🇵🇪 +51</option>
-                <option value="+56">🇨🇱 +56</option>
-                <option value="+54">🇦🇷 +54</option>
-                <option value="+593">🇪🇨 +593</option>
-                <option value="+507">🇵🇦 +507</option>
-                <option value="+34">🇪🇸 +34</option>
-              </select>
-              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/[^\d]/g, "") })} placeholder="3001234567" className="flex-1 bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" required inputMode="tel" />
-            </div>
-          </div>
-
-          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Dirección de entrega" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" />
-          
-          {/* Geolocation */}
-          {showGeolocation && (
-            <>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={handleGetLocation}
-                  disabled={loadingGeo}
-                  className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
-                >
-                  {loadingGeo ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
-                  {geoLocation ? "Actualizar ubicación" : "Añadir ubicación actual"}
-                </button>
-                {geoLocation && (
-                  <a
-                    href={`https://www.google.com/maps?q=${geoLocation.lat},${geoLocation.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-accent font-medium hover:underline"
-                  >
-                    <MapPin size={12} /> Ver en mapa <ExternalLink size={10} />
-                  </a>
-                )}
-              </div>
-              {geoLocation && (
-                <p className="text-[10px] text-secondary font-medium bg-secondary/10 rounded-lg px-2 py-1">
-                  📍 Ubicación capturada: {geoLocation.lat.toFixed(6)}, {geoLocation.lng.toFixed(6)}
-                </p>
-              )}
-            </>
-          )}
-
-          {shippingZones && shippingZones.length > 0 && (
-            <NeighborhoodSearch
-              zones={shippingZones}
-              selectedId={form.neighborhood_id}
-              onSelect={(zoneId) => handleZoneChange(zoneId)}
-            />
-          )}
-          {deliveryCost > 0 && !freeShippingActive && (
-            <p className="text-xs text-accent font-medium">🚚 Domicilio: {formatPrice(deliveryCost)}</p>
-          )}
-          {freeShippingActive && (
-            <p className="text-xs text-secondary font-bold">🎉 ¡Envío GRATIS aplicado!</p>
-          )}
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notas adicionales" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none" rows={2} />
-
-          {/* Delivery estimate badge */}
-          <div className="flex items-center gap-2 bg-accent/10 rounded-lg px-3 py-2">
-            <Truck size={14} className="text-accent" />
-            <span className="text-xs font-medium text-foreground">Entrega en {estimatedDays} días hábiles</span>
-          </div>
-
-          {/* Preferred delivery date */}
-          {showDeliveryDate && (
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <CalendarIcon size={14} className="text-accent" />
-                <span className="text-xs font-medium text-muted-foreground">Fecha preferida de entrega</span>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className={cn("w-full bg-muted rounded-lg px-3 py-2.5 text-sm text-left flex items-center justify-between", !preferredDate && "text-muted-foreground")}>
-                    {preferredDate ? format(preferredDate, "EEEE d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
-                    <CalendarIcon size={14} className="text-muted-foreground" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={preferredDate}
-                    onSelect={setPreferredDate}
-                    disabled={(date) => date < getMinDeliveryDate() || isWeekend(date)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          )}
-
-          {/* Time slot */}
-          {showTimeSlot && (
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Clock size={14} className="text-accent" />
-                <span className="text-xs font-medium text-muted-foreground">Horario preferido</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setTimeSlot("mañana")}
-                  className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "mañana" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-                >
-                  ☀️ Mañana (8-12)
-                </button>
-                <button
-                  onClick={() => setTimeSlot("tarde")}
-                  className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "tarde" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-                >
-                  🌙 Tarde (2-6)
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Payment method */}
-          {showPaymentMethod && (
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Banknote size={14} className="text-accent" />
-                <span className="text-xs font-medium text-muted-foreground">Método de pago</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setPaymentMethod("efectivo")}
-                  className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "efectivo" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-                >
-                  <Banknote size={14} /> Efectivo
-                </button>
-                <button
-                  onClick={() => setPaymentMethod("transferencia")}
-                  className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "transferencia" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}
-                >
-                  <CreditCard size={14} /> Transferencia
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <button onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-2.5 text-sm text-muted-foreground font-medium">Cancelar</button>
-            <button onClick={handleSubmitOrder} disabled={submitting} className="flex-1 btn-surte py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-50">
-              {submitting ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
-              {submitting ? "Enviando..." : "Confirmar"}
-            </button>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-
-  // Product list block
-  const ProductListBlock = () => (
-    <>
-      <AnimatePresence>
-        {items.map((item) => {
-          const lineId = `${item.product.id}${item.presentationId ? `__${item.presentationId}` : ""}`;
-          return (
-            <motion.div
-              key={lineId}
-              layout
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="flex items-center gap-3 bg-card rounded-xl p-3 mb-3"
-              style={{ boxShadow: "var(--shadow-card)" }}
-            >
-              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                {item.product.image_url ? (
-                  <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xl font-heading font-bold text-muted-foreground/40">
-                    {item.product.name.charAt(0)}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-foreground truncate">{item.product.name}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {item.presentationName || item.product.unit} · {formatPrice(item.unitPrice)} c/u
-                </p>
-                <p className="text-sm font-heading font-bold text-foreground mt-0.5">
-                  {formatPrice(item.unitPrice * item.quantity)}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.presentationId)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground">
-                  <Minus size={14} />
-                </button>
-                <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
-                <button
-                  onClick={() => {
-                    if (item.quantity < item.product.stock) {
-                      updateQuantity(item.product.id, item.quantity + 1, item.presentationId);
-                    } else {
-                      toast.error(`Stock máximo: ${item.product.stock}`);
-                    }
-                  }}
-                  className="w-7 h-7 rounded-lg bg-accent text-accent-foreground flex items-center justify-center"
-                >
-                  <Plus size={14} />
-                </button>
-                <button onClick={() => removeItem(item.product.id, item.presentationId)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
-
-      {!meetsMinimum && (
-        <div className="flex items-start gap-2 bg-surte-naranja/10 border border-surte-naranja/30 rounded-xl p-3 mb-4">
-          <AlertTriangle size={18} className="text-surte-naranja shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-foreground">Pedido mínimo: {formatPrice(minOrder)}</p>
-            <p className="text-xs text-muted-foreground">Te faltan {formatPrice(minOrder - totalPrice)}</p>
-          </div>
-        </div>
-      )}
-    </>
-  );
 
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-8">
@@ -738,41 +409,463 @@ const Carrito = () => {
             <p className="text-sm">Agrega productos desde el catálogo</p>
           </div>
         ) : (
-          <>
-            {/* Desktop: two-column layout */}
-            <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-6">
-              {/* Left: products + form */}
-              <div className="min-w-0">
-                <ProductListBlock />
-                <OrderFormBlock />
-              </div>
+          <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-6">
+            {/* Left column: products + form */}
+            <div className="min-w-0">
+              {/* Product list (inline JSX — NOT a sub-component, to avoid remounts) */}
+              <AnimatePresence>
+                {items.map((item) => {
+                  const lineId = `${item.product.id}${item.presentationId ? `__${item.presentationId}` : ""}`;
+                  return (
+                    <motion.div
+                      key={lineId}
+                      layout
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      className="flex items-center gap-3 bg-card rounded-xl p-3 mb-3 border border-border"
+                    >
+                      <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                        {item.product.image_url ? (
+                          <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xl font-heading font-bold text-muted-foreground/40">
+                            {item.product.name.charAt(0)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-foreground truncate">{item.product.name}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {item.presentationName || item.product.unit} · {formatPrice(item.unitPrice)} c/u
+                        </p>
+                        <p className="text-sm font-heading font-bold text-foreground mt-0.5">
+                          {formatPrice(item.unitPrice * item.quantity)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.presentationId)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-foreground" aria-label="Disminuir">
+                          <Minus size={14} />
+                        </button>
+                        <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
+                        <button
+                          onClick={() => {
+                            if (item.quantity < item.product.stock) {
+                              updateQuantity(item.product.id, item.quantity + 1, item.presentationId);
+                            } else {
+                              toast.error(`Stock máximo: ${item.product.stock}`);
+                            }
+                          }}
+                          className="w-7 h-7 rounded-lg bg-accent text-accent-foreground flex items-center justify-center"
+                          aria-label="Aumentar"
+                        >
+                          <Plus size={14} />
+                        </button>
+                        <button onClick={() => removeItem(item.product.id, item.presentationId)} className="w-7 h-7 rounded-lg flex items-center justify-center text-destructive ml-1" aria-label="Eliminar">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
 
-              {/* Right: sticky summary (desktop only) */}
-              <div className="hidden lg:block">
-                <div className="sticky top-24">
-                  <div className="bg-card rounded-xl p-5 border border-border" style={{ boxShadow: "var(--shadow-card)" }}>
-                    <h3 className="font-heading font-semibold text-base mb-4 flex items-center gap-2">
-                      <ShoppingCart size={18} className="text-accent" />
-                      Resumen ({items.length} {items.length === 1 ? "producto" : "productos"})
-                    </h3>
-                    <SummaryBlock />
+              {!meetsMinimum && (
+                <div className="flex items-start gap-2 bg-surte-naranja/10 border border-surte-naranja/30 rounded-xl p-3 mb-4">
+                  <AlertTriangle size={18} className="text-surte-naranja shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Pedido mínimo: {formatPrice(minOrder)}</p>
+                    <p className="text-xs text-muted-foreground">Te faltan {formatPrice(minOrder - totalPrice)}</p>
                   </div>
+                </div>
+              )}
+
+              {/* Order Form (inline — no sub-component to keep input identity stable) */}
+              <AnimatePresence>
+                {showForm && (
+                  <motion.div
+                    id="checkout-form"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="bg-card rounded-xl p-4 mb-4 space-y-3 border border-border"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-heading font-semibold text-base text-foreground">Datos del pedido</h3>
+                      <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground" aria-label="Cerrar">
+                        <X size={18} />
+                      </button>
+                    </div>
+
+                    {/* Name */}
+                    <div>
+                      <label htmlFor="ck-name" className="text-xs font-medium text-muted-foreground mb-1 block">Nombre completo *</label>
+                      <input
+                        id="ck-name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Tu nombre"
+                        autoComplete="name"
+                        className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring text-foreground"
+                        required
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label htmlFor="ck-email" className="text-xs font-medium text-muted-foreground mb-1 block">📧 Correo electrónico</label>
+                      <input
+                        id="ck-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="tucorreo@email.com"
+                        autoComplete="email"
+                        inputMode="email"
+                        className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring text-foreground"
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Para confirmación y seguimiento</p>
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <label htmlFor="ck-phone" className="text-xs font-medium text-muted-foreground mb-1 block">📱 WhatsApp *</label>
+                      <div className="flex gap-1.5">
+                        <select
+                          value={countryCode}
+                          onChange={(e) => setCountryCode(e.target.value)}
+                          className="bg-muted rounded-lg px-2 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring w-[100px] shrink-0 text-foreground"
+                          aria-label="Código de país"
+                        >
+                          {COUNTRY_CODES.map((c) => (
+                            <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+                          ))}
+                        </select>
+                        <input
+                          id="ck-phone"
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ""))}
+                          placeholder="3001234567"
+                          autoComplete="tel"
+                          inputMode="tel"
+                          className="flex-1 bg-muted rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring text-foreground"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Address */}
+                    <div>
+                      <label htmlFor="ck-address" className="text-xs font-medium text-muted-foreground mb-1 block">📍 Dirección de entrega</label>
+                      <input
+                        id="ck-address"
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Calle 123 #45-67"
+                        autoComplete="street-address"
+                        className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring text-foreground"
+                      />
+                    </div>
+
+                    {/* Geolocation */}
+                    {showGeolocation && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={handleGetLocation}
+                          disabled={loadingGeo}
+                          className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
+                        >
+                          {loadingGeo ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
+                          {geoLocation ? "Actualizar ubicación" : "Añadir ubicación actual"}
+                        </button>
+                        {geoLocation && (
+                          <a
+                            href={`https://www.google.com/maps?q=${geoLocation.lat},${geoLocation.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-accent font-medium hover:underline"
+                          >
+                            <MapPin size={12} /> Ver en mapa <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {shippingZones && shippingZones.length > 0 && (
+                      <NeighborhoodSearch
+                        zones={shippingZones}
+                        selectedId={neighborhoodId}
+                        onSelect={handleZoneChange}
+                      />
+                    )}
+                    {deliveryCost > 0 && !freeShippingActive && (
+                      <p className="text-xs text-accent font-medium">🚚 Domicilio: {formatPrice(deliveryCost)}</p>
+                    )}
+                    {freeShippingActive && (
+                      <p className="text-xs text-secondary font-bold">🎉 ¡Envío GRATIS aplicado!</p>
+                    )}
+
+                    {/* Notes */}
+                    <div>
+                      <label htmlFor="ck-notes" className="text-xs font-medium text-muted-foreground mb-1 block">📝 Notas (opcional)</label>
+                      <textarea
+                        id="ck-notes"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Indicaciones para el repartidor..."
+                        rows={2}
+                        className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring resize-none text-foreground"
+                      />
+                    </div>
+
+                    {/* Delivery estimate */}
+                    <div className="flex items-center gap-2 bg-accent/10 rounded-lg px-3 py-2">
+                      <Truck size={14} className="text-accent" />
+                      <span className="text-xs font-medium text-foreground">Entrega en {estimatedDays} días hábiles</span>
+                    </div>
+
+                    {showDeliveryDate && (
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <CalendarIcon size={14} className="text-accent" />
+                          <span className="text-xs font-medium text-muted-foreground">Fecha preferida de entrega</span>
+                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className={cn("w-full bg-muted rounded-lg px-3 py-2.5 text-sm text-left flex items-center justify-between", !preferredDate && "text-muted-foreground")}>
+                              {preferredDate ? format(preferredDate, "EEEE d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
+                              <CalendarIcon size={14} className="text-muted-foreground" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={preferredDate}
+                              onSelect={setPreferredDate}
+                              disabled={(date) => date < getMinDeliveryDate() || isWeekend(date)}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+
+                    {showTimeSlot && (
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Clock size={14} className="text-accent" />
+                          <span className="text-xs font-medium text-muted-foreground">Horario preferido</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button type="button" onClick={() => setTimeSlot("mañana")} className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "mañana" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}>
+                            ☀️ Mañana (8-12)
+                          </button>
+                          <button type="button" onClick={() => setTimeSlot("tarde")} className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border", timeSlot === "tarde" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}>
+                            🌙 Tarde (2-6)
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {showPaymentMethod && (
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Banknote size={14} className="text-accent" />
+                          <span className="text-xs font-medium text-muted-foreground">Método de pago</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button type="button" onClick={() => setPaymentMethod("efectivo")} className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "efectivo" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}>
+                            <Banknote size={14} /> Efectivo
+                          </button>
+                          <button type="button" onClick={() => setPaymentMethod("transferencia")} className={cn("rounded-lg py-2.5 text-sm font-medium transition-colors border flex items-center justify-center gap-1.5", paymentMethod === "transferencia" ? "bg-accent text-accent-foreground border-accent" : "bg-muted text-muted-foreground border-transparent")}>
+                            <CreditCard size={14} /> Transferencia
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-3 text-sm text-muted-foreground font-medium">
+                        Cancelar
+                      </button>
+                      <button type="button" onClick={handleSubmitOrder} disabled={submitting} className="flex-1 btn-surte py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                        {submitting ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
+                        {submitting ? "Enviando..." : "Confirmar pedido"}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Right column: sticky summary on desktop */}
+            <div className="hidden lg:block">
+              <div className="sticky top-24">
+                <div className="bg-card rounded-xl p-5 border border-border">
+                  <h3 className="font-heading font-semibold text-base mb-4 flex items-center gap-2">
+                    <ShoppingCart size={18} className="text-accent" />
+                    Resumen
+                  </h3>
+                  <SummaryBlock
+                    couponCode={couponCode}
+                    setCouponCode={setCouponCode}
+                    appliedCoupon={appliedCoupon}
+                    couponDiscount={couponDiscount}
+                    validatingCoupon={validatingCoupon}
+                    applyCoupon={applyCoupon}
+                    removeCoupon={removeCoupon}
+                    totalPrice={totalPrice}
+                    deliveryCost={deliveryCost}
+                    freeShippingActive={freeShippingActive}
+                    cityCfg={cityCfg}
+                    freeShippingMissing={freeShippingMissing}
+                    grandTotal={grandTotal}
+                    meetsMinimum={meetsMinimum}
+                    onFinalize={handleFinalize}
+                  />
                 </div>
               </div>
             </div>
-          </>
+
+            {/* Mobile: fixed bottom summary bar */}
+            <div className="lg:hidden fixed bottom-16 left-0 right-0 bg-card border-t border-border px-4 py-3 z-30">
+              <SummaryBlock
+                couponCode={couponCode}
+                setCouponCode={setCouponCode}
+                appliedCoupon={appliedCoupon}
+                couponDiscount={couponDiscount}
+                validatingCoupon={validatingCoupon}
+                applyCoupon={applyCoupon}
+                removeCoupon={removeCoupon}
+                totalPrice={totalPrice}
+                deliveryCost={deliveryCost}
+                freeShippingActive={freeShippingActive}
+                cityCfg={cityCfg}
+                freeShippingMissing={freeShippingMissing}
+                grandTotal={grandTotal}
+                meetsMinimum={meetsMinimum}
+                onFinalize={handleFinalize}
+                compact
+              />
+            </div>
+          </div>
         )}
       </main>
-
-      {/* Mobile: fixed bottom bar (hidden on lg+) */}
-      {items.length > 0 && !showForm && (
-        <div className="fixed bottom-[68px] left-0 right-0 bg-card border-t border-border px-4 py-3 z-40 lg:hidden" style={{ boxShadow: "var(--shadow-nav)" }}>
-          <SummaryBlock />
-        </div>
-      )}
       <BottomNav />
     </div>
   );
 };
+
+/* ── Summary block — pure props, no internal state, safe to render anywhere ── */
+interface SummaryProps {
+  couponCode: string;
+  setCouponCode: (v: string) => void;
+  appliedCoupon: any;
+  couponDiscount: number;
+  validatingCoupon: boolean;
+  applyCoupon: () => void;
+  removeCoupon: () => void;
+  totalPrice: number;
+  deliveryCost: number;
+  freeShippingActive: boolean;
+  cityCfg: any;
+  freeShippingMissing: number;
+  grandTotal: number;
+  meetsMinimum: boolean;
+  onFinalize: () => void;
+  compact?: boolean;
+}
+
+const SummaryBlock = ({
+  couponCode, setCouponCode, appliedCoupon, couponDiscount, validatingCoupon,
+  applyCoupon, removeCoupon, totalPrice, deliveryCost, freeShippingActive, cityCfg,
+  freeShippingMissing, grandTotal, meetsMinimum, onFinalize, compact,
+}: SummaryProps) => (
+  <div>
+    {!compact && (
+      <div className="flex items-center gap-2 mb-3">
+        {appliedCoupon ? (
+          <div className="flex-1 flex items-center gap-1.5 bg-secondary/10 rounded-lg px-3 py-2">
+            <CheckCircle2 size={14} className="text-secondary" />
+            <span className="text-xs font-medium text-secondary">{appliedCoupon.code}</span>
+            <span className="text-xs text-secondary">-{formatPrice(couponDiscount)}</span>
+            <button onClick={removeCoupon} className="ml-auto" aria-label="Quitar cupón"><X size={14} className="text-muted-foreground" /></button>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 flex items-center gap-1.5 bg-muted rounded-lg px-3 py-2">
+              <Ticket size={14} className="text-muted-foreground" />
+              <input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="Código cupón"
+                className="flex-1 bg-transparent text-sm outline-none font-mono uppercase text-foreground"
+              />
+            </div>
+            <button
+              onClick={applyCoupon}
+              disabled={validatingCoupon || !couponCode.trim()}
+              className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-50"
+            >
+              {validatingCoupon ? <Loader2 size={14} className="animate-spin" /> : "Aplicar"}
+            </button>
+          </>
+        )}
+      </div>
+    )}
+
+    {!compact && (
+      <>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm text-muted-foreground">Subtotal</span>
+          <span className="text-sm font-medium text-foreground">{formatPrice(totalPrice)}</span>
+        </div>
+        {couponDiscount > 0 && (
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm text-secondary">Cupón</span>
+            <span className="text-sm font-medium text-secondary">-{formatPrice(couponDiscount)}</span>
+          </div>
+        )}
+        {(deliveryCost > 0 || freeShippingActive) && (
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm text-muted-foreground">Domicilio</span>
+            {freeShippingActive ? (
+              <span className="text-sm font-bold text-secondary">GRATIS 🎉</span>
+            ) : (
+              <span className="text-sm font-medium text-foreground">{formatPrice(deliveryCost)}</span>
+            )}
+          </div>
+        )}
+        {!freeShippingActive && cityCfg?.free_shipping_enabled && freeShippingMissing > 0 && deliveryCost > 0 && (
+          <div className="bg-secondary/10 border border-secondary/30 rounded-lg px-2.5 py-1.5 mb-2">
+            <p className="text-[11px] text-secondary font-medium">
+              🚚 Te faltan {formatPrice(freeShippingMissing)} para envío gratis
+            </p>
+          </div>
+        )}
+      </>
+    )}
+
+    <div className="flex items-center justify-between mb-3">
+      <span className="text-sm font-semibold text-foreground">Total</span>
+      <span className="text-xl font-heading font-bold text-foreground">{formatPrice(grandTotal)}</span>
+    </div>
+    <button
+      onClick={onFinalize}
+      disabled={!meetsMinimum}
+      className={`w-full flex items-center justify-center gap-2 font-heading font-semibold py-3.5 rounded-xl text-sm transition-all ${
+        meetsMinimum ? "btn-surte" : "bg-muted text-muted-foreground cursor-not-allowed"
+      }`}
+    >
+      <MessageCircle size={18} />
+      Finalizar Pedido por WhatsApp
+    </button>
+  </div>
+);
 
 export default Carrito;
