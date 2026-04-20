@@ -116,6 +116,54 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_logs: {
+        Row: {
+          created_at: string
+          errors: Json | null
+          failed: number
+          id: string
+          message: string
+          scheduled_at: string | null
+          segment: string
+          sent: number
+          sent_at: string | null
+          sent_by: string | null
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          errors?: Json | null
+          failed?: number
+          id?: string
+          message: string
+          scheduled_at?: string | null
+          segment?: string
+          sent?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          errors?: Json | null
+          failed?: number
+          id?: string
+          message?: string
+          scheduled_at?: string | null
+          segment?: string
+          sent?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string | null

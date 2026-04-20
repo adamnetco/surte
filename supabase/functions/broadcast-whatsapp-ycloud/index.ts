@@ -7,8 +7,6 @@ const corsHeaders = {
 };
 
 const YCLOUD_API = "https://api.ycloud.com/v2";
-
-// Simple async sleep used between sends to avoid hitting per-second rate limits.
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 interface SubscriberRow {
@@ -20,6 +18,16 @@ interface SubscriberRow {
   notify_new_products: boolean | null;
 }
 
+// Normalise phone to international format for YCloud (must include leading +)
+const normalisePhone = (raw: string): string | null => {
+  const digits = (raw || "").replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  // Default to Colombia (+57) if no country code (10 digits, starts with 3)
+  if (digits.length === 10 && digits.startsWith("3")) return `+57${digits}`;
+  // Already has country code
+  return `+${digits}`;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -30,13 +38,14 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // ── Body ───────────────────────────────────────────────
     const body = await req.json().catch(() => ({}));
     const message: string = (body?.message || "").trim();
-    const segment: "all" | "offers" | "fresh" | "new_products" =
-      body?.segment || "all";
+    const segment: "all" | "offers" | "fresh" | "new_products" = body?.segment || "all";
     const dryRun: boolean = !!body?.dry_run;
     const delayMs: number = Math.max(150, Number(body?.delay_ms) || 350);
+    const scheduledAt: string | null = body?.scheduled_at || null;
+    const sentBy: string | null = body?.sent_by || null;
+    const existingLogId: string | null = body?.log_id || null;
 
     if (!message) {
       return new Response(
@@ -51,7 +60,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ── YCloud credentials from app_settings ───────────────
+    // ── Schedule for later ──────────────────────────────────
+    if (scheduledAt && !dryRun) {
+      const when = new Date(scheduledAt);
+      if (isNaN(when.getTime()) || when.getTime() <= Date.now()) {
+        return new Response(
+          JSON.stringify({ error: "La fecha programada debe ser futura" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const { data: scheduled, error: schedErr } = await supabase
+        .from("broadcast_logs")
+        .insert({
+          message,
+          segment,
+          status: "pending",
+          scheduled_at: when.toISOString(),
+          sent_by: sentBy,
+        })
+        .select()
+        .single();
+      if (schedErr) throw schedErr;
+      return new Response(
+        JSON.stringify({
+          success: true,
+          scheduled: true,
+          log_id: scheduled.id,
+          scheduled_at: scheduled.scheduled_at,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── YCloud credentials ──────────────────────────────────
     const { data: settingsRows } = await supabase
       .from("app_settings")
       .select("key, value")
@@ -69,7 +110,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ── Audience selection ─────────────────────────────────
+    // YCloud requires the from number with leading +
+    const fromFormatted = fromNumber.startsWith("+") ? fromNumber : `+${fromNumber.replace(/\D/g, "")}`;
+
+    // ── Audience ────────────────────────────────────────────
     let query = supabase
       .from("notification_subscriptions")
       .select("id, phone, is_active, notify_offers, notify_fresh, notify_new_products")
@@ -84,11 +128,15 @@ Deno.serve(async (req) => {
 
     const recipients: SubscriberRow[] = (subs || []) as any;
 
-    // De-duplicate phones (normalised)
     const seen = new Set<string>();
     const targets = recipients
-      .map((s) => ({ ...s, normPhone: s.phone.replace(/\D/g, "") }))
-      .filter((s) => s.normPhone.length >= 10 && !seen.has(s.normPhone) && (seen.add(s.normPhone), true));
+      .map((s) => ({ ...s, normPhone: normalisePhone(s.phone) }))
+      .filter((s): s is SubscriberRow & { normPhone: string } => {
+        if (!s.normPhone) return false;
+        if (seen.has(s.normPhone)) return false;
+        seen.add(s.normPhone);
+        return true;
+      });
 
     if (dryRun) {
       return new Response(
@@ -97,7 +145,7 @@ Deno.serve(async (req) => {
           dry_run: true,
           segment,
           total: targets.length,
-          preview: targets.slice(0, 5).map((t) => t.phone),
+          preview: targets.slice(0, 5).map((t) => t.normPhone),
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -108,6 +156,29 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "No hay suscriptores activos para este segmento" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // ── Create / update broadcast_logs row ─────────────────
+    let logId = existingLogId;
+    if (!logId) {
+      const { data: logRow, error: logErr } = await supabase
+        .from("broadcast_logs")
+        .insert({
+          message,
+          segment,
+          status: "running",
+          total: targets.length,
+          sent_by: sentBy,
+        })
+        .select()
+        .single();
+      if (logErr) throw logErr;
+      logId = logRow.id;
+    } else {
+      await supabase
+        .from("broadcast_logs")
+        .update({ status: "running", total: targets.length })
+        .eq("id", logId);
     }
 
     // ── Broadcast loop ─────────────────────────────────────
@@ -124,7 +195,7 @@ Deno.serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: fromNumber,
+            from: fromFormatted,
             to: t.normPhone,
             type: "text",
             text: { body: message },
@@ -135,15 +206,29 @@ Deno.serve(async (req) => {
         } else {
           failed++;
           const errBody = await yRes.text().catch(() => "");
-          errors.push({ phone: t.phone, error: `HTTP ${yRes.status}: ${errBody.slice(0, 120)}` });
+          errors.push({ phone: t.phone, error: `HTTP ${yRes.status}: ${errBody.slice(0, 200)}` });
+          console.error(`[YCloud] ${t.normPhone} → HTTP ${yRes.status}: ${errBody}`);
         }
       } catch (err) {
         failed++;
-        errors.push({ phone: t.phone, error: err instanceof Error ? err.message : "Error desconocido" });
+        const msg = err instanceof Error ? err.message : "Error desconocido";
+        errors.push({ phone: t.phone, error: msg });
+        console.error(`[YCloud] ${t.normPhone} → ${msg}`);
       }
-      // Rate-limit guard
       await sleep(delayMs);
     }
+
+    // Finalise log
+    await supabase
+      .from("broadcast_logs")
+      .update({
+        status: failed === targets.length ? "failed" : "completed",
+        sent,
+        failed,
+        errors: errors.slice(0, 50),
+        sent_at: new Date().toISOString(),
+      })
+      .eq("id", logId);
 
     return new Response(
       JSON.stringify({
@@ -152,6 +237,7 @@ Deno.serve(async (req) => {
         total: targets.length,
         sent,
         failed,
+        log_id: logId,
         errors: errors.slice(0, 10),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
