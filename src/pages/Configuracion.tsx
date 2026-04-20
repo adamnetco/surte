@@ -1,25 +1,16 @@
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
-import { ArrowLeft, Bell, Moon, Globe, Shield } from "lucide-react";
+import { ArrowLeft, Bell, Globe, Shield, Sun, Moon, Monitor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTheme } from "@/context/ThemeContext";
 
 const Configuracion = () => {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-
-  const toggleSetting = (key: string, value: boolean, setter: (v: boolean) => void) => {
-    setter(value);
-    toast.success(`${key} ${value ? "activado" : "desactivado"}`);
-  };
-
-  const settings = [
-    { icon: Bell, label: "Notificaciones", desc: "Recibir alertas de pedidos", value: notifications, setter: setNotifications },
-    { icon: Moon, label: "Modo oscuro", desc: "Cambiar tema de la app", value: darkMode, setter: setDarkMode },
-  ];
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -31,33 +22,59 @@ const Configuracion = () => {
           <h1 className="text-xl font-heading font-bold text-foreground">Configuración</h1>
         </div>
 
-        <div className="space-y-2">
-          {settings.map(({ icon: Icon, label, desc, value, setter }) => (
-            <div key={label} className="flex items-center gap-3 bg-card rounded-xl p-4" style={{ boxShadow: "var(--shadow-card)" }}>
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                <Icon size={20} className="text-accent" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">{label}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
-              </div>
-              <button
-                onClick={() => toggleSetting(label, !value, setter)}
-                className={`w-12 h-7 rounded-full transition-colors relative ${value ? "bg-accent" : "bg-muted"}`}
-              >
-                <span className={`absolute top-1 w-5 h-5 rounded-full bg-card shadow transition-transform ${value ? "right-1" : "left-1"}`} />
-              </button>
+        {/* Notifications */}
+        <div className="space-y-2 mb-6">
+          <div className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border">
+            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+              <Bell size={20} className="text-accent" />
             </div>
-          ))}
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">Notificaciones</p>
+              <p className="text-xs text-muted-foreground">Recibir alertas de pedidos</p>
+            </div>
+            <button
+              onClick={() => { setNotifications((v) => !v); toast.success(`Notificaciones ${!notifications ? "activadas" : "desactivadas"}`); }}
+              className={`w-12 h-7 rounded-full transition-colors relative ${notifications ? "bg-accent" : "bg-muted"}`}
+            >
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-card shadow transition-transform ${notifications ? "right-1" : "left-1"}`} />
+            </button>
+          </div>
         </div>
 
-        <div className="mt-6 space-y-2">
+        {/* Theme selector — synced with global ThemeContext */}
+        <div className="mb-6">
+          <h2 className="font-heading font-bold text-base text-foreground mb-2">Apariencia</h2>
+          <div className="bg-card rounded-xl p-2 border border-border grid grid-cols-3 gap-1">
+            {[
+              { key: "light", label: "Claro", icon: Sun },
+              { key: "dark", label: "Oscuro", icon: Moon },
+              { key: "system", label: "Sistema", icon: Monitor },
+            ].map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                onClick={() => { setTheme(key as any); toast.success(`Tema: ${label}`); }}
+                className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-medium transition-colors ${
+                  theme === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <Icon size={18} />
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1.5 px-1">
+            También puedes alternar el tema rápidamente desde el botón en la barra superior.
+          </p>
+        </div>
+
+        {/* Info */}
+        <div className="space-y-2">
           <h2 className="font-heading font-bold text-base text-foreground mb-2">Información</h2>
           {[
             { icon: Globe, label: "Idioma", value: "Español" },
             { icon: Shield, label: "Versión", value: "1.0.0 MVP" },
           ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex items-center gap-3 bg-card rounded-xl p-4" style={{ boxShadow: "var(--shadow-card)" }}>
+            <div key={label} className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border">
               <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
                 <Icon size={20} className="text-muted-foreground" />
               </div>
