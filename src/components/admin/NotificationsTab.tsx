@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Send, Users, MessageSquare, Loader2, Smartphone, Radio, AlertTriangle } from "lucide-react";
+import { Bell, Send, Users, MessageSquare, Loader2, Smartphone, Radio, AlertTriangle, Clock, History, Calendar, CheckCircle2, XCircle, Hourglass } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
@@ -21,10 +21,18 @@ const TEMPLATES: Record<Segment, string> = {
   new_products: "SURTÉ YA - Hemos añadido nuevos productos al catálogo. Entra y descubre las novedades.",
 };
 
+const STATUS_META: Record<string, { label: string; cls: string; icon: any }> = {
+  pending:   { label: "Pendiente",  cls: "bg-muted text-muted-foreground",          icon: Hourglass },
+  running:   { label: "Enviando",   cls: "bg-accent/15 text-accent",                icon: Loader2 },
+  completed: { label: "Completado", cls: "bg-secondary/15 text-secondary",          icon: CheckCircle2 },
+  failed:    { label: "Fallido",    cls: "bg-destructive/10 text-destructive",      icon: XCircle },
+};
+
 const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
   const [segment, setSegment] = useState<Segment>("all");
+  const [scheduleAt, setScheduleAt] = useState<string>(""); // datetime-local string
   const [lastResult, setLastResult] = useState<any>(null);
 
   const { data: subscribers } = useQuery({
@@ -53,7 +61,25 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
     },
   });
 
+  const { data: history } = useQuery({
+    queryKey: ["broadcast-logs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("broadcast_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 30000,
+  });
+
   const ycloudReady = !!(settings?.ycloud_api_key && settings?.ycloud_from_number);
+  const fromNumberRaw = settings?.ycloud_from_number || "";
+  const fromNumberFormatted = fromNumberRaw
+    ? (fromNumberRaw.startsWith("+") ? fromNumberRaw : `+${fromNumberRaw.replace(/\D/g, "")}`)
+    : "";
 
   const activeAll = subscribers?.filter((s) => s.is_active) || [];
   const audienceCount = activeAll.filter((s) =>
@@ -63,40 +89,59 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
     s.notify_new_products
   ).length;
 
-  const broadcast = async (dryRun = false) => {
+  const broadcast = async (mode: "preview" | "send" | "schedule") => {
     const text = (message || TEMPLATES[segment]).trim();
     if (!text) { toast.error("Escribe un mensaje"); return; }
     if (!ycloudReady) {
       toast.error("Configura YCloud (API Key + número remitente) en Configuración");
       return;
     }
-    if (audienceCount === 0 && !dryRun) {
+    if (mode !== "preview" && audienceCount === 0) {
       toast.error("No hay suscriptores activos para este segmento");
       return;
     }
-    if (!dryRun && !confirm(`¿Enviar a ${audienceCount} suscriptor(es) por WhatsApp?\nSegmento: ${SEGMENTS[segment].label}`)) return;
+    if (mode === "schedule") {
+      if (!scheduleAt) { toast.error("Elige fecha y hora para programar"); return; }
+      if (new Date(scheduleAt).getTime() <= Date.now()) { toast.error("La fecha debe ser futura"); return; }
+    }
+    if (mode === "send" && !confirm(`¿Enviar a ${audienceCount} suscriptor(es) por WhatsApp?\nSegmento: ${SEGMENTS[segment].label}`)) return;
+    if (mode === "schedule" && !confirm(`¿Programar difusión para ${new Date(scheduleAt).toLocaleString("es-CO")}?\nSegmento: ${SEGMENTS[segment].label} · ${audienceCount} suscriptor(es)`)) return;
 
     setSending(true);
     setLastResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("broadcast-whatsapp-ycloud", {
-        body: { message: text, segment, dry_run: dryRun },
-      });
+      const body: any = { message: text, segment };
+      if (mode === "preview") body.dry_run = true;
+      if (mode === "schedule") body.scheduled_at = new Date(scheduleAt).toISOString();
+      const { data, error } = await supabase.functions.invoke("broadcast-whatsapp-ycloud", { body });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setLastResult(data);
-      if (dryRun) {
+      if (mode === "preview") {
         toast.success(`Vista previa: alcanzará a ${data.total} suscriptor(es)`);
+      } else if (mode === "schedule") {
+        toast.success(`✓ Programado para ${new Date(data.scheduled_at).toLocaleString("es-CO")}`);
+        setScheduleAt("");
+        setMessage("");
       } else {
         toast.success(`✓ Enviados: ${data.sent} · Fallidos: ${data.failed}`);
         if (data.failed > 0) toast.warning(`${data.failed} mensaje(s) no pudieron enviarse`);
         setMessage("");
       }
+      queryClient.invalidateQueries({ queryKey: ["broadcast-logs"] });
     } catch (err: any) {
       toast.error(err?.message || "Error al enviar la difusión");
     } finally {
       setSending(false);
     }
+  };
+
+  const cancelScheduled = async (id: string) => {
+    if (!confirm("¿Cancelar esta difusión programada?")) return;
+    const { error } = await supabase.from("broadcast_logs").update({ status: "failed", errors: [{ phone: "system", error: "Cancelado por el administrador" }] }).eq("id", id).eq("status", "pending");
+    if (error) { toast.error(error.message); return; }
+    toast.success("Difusión cancelada");
+    queryClient.invalidateQueries({ queryKey: ["broadcast-logs"] });
   };
 
   const toggleSubscriber = async (id: string, current: boolean) => {
@@ -109,6 +154,23 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
       <div className="flex items-center gap-2">
         <Bell size={20} className="text-accent" />
         <h2 className="font-heading font-bold text-lg text-foreground">Notificaciones WhatsApp</h2>
+      </div>
+
+      {/* Diagnostic panel */}
+      <div className={`rounded-xl p-3 border ${ycloudReady ? "bg-secondary/5 border-secondary/30" : "bg-destructive/10 border-destructive/30"}`}>
+        <div className="flex items-start gap-2">
+          {ycloudReady ? <CheckCircle2 size={16} className="text-secondary shrink-0 mt-0.5" /> : <AlertTriangle size={16} className="text-destructive shrink-0 mt-0.5" />}
+          <div className="text-xs flex-1">
+            <p className={`font-semibold ${ycloudReady ? "text-secondary" : "text-destructive"}`}>
+              {ycloudReady ? "YCloud listo para enviar" : "YCloud no está configurado"}
+            </p>
+            {ycloudReady ? (
+              <p className="text-muted-foreground mt-0.5">Remitente: <span className="font-mono">{fromNumberFormatted}</span></p>
+            ) : (
+              <p className="text-muted-foreground mt-0.5">Ve a <span className="font-semibold">Configuración → Integraciones</span> y añade <code className="font-mono">ycloud_api_key</code> y <code className="font-mono">ycloud_from_number</code>.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
@@ -124,17 +186,6 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
           <p className="text-[11px] text-muted-foreground">Total registrados</p>
         </div>
       </div>
-
-      {/* YCloud not configured warning */}
-      {!ycloudReady && (
-        <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-xl p-3">
-          <AlertTriangle size={16} className="text-destructive shrink-0 mt-0.5" />
-          <div className="text-xs">
-            <p className="font-semibold text-destructive">YCloud no está configurado</p>
-            <p className="text-muted-foreground mt-0.5">Ve a <span className="font-semibold">Configuración → Integraciones</span> y añade la API Key y el número remitente para habilitar la difusión masiva.</p>
-          </div>
-        </div>
-      )}
 
       {/* Broadcast composer */}
       <div className="bg-card rounded-xl p-4 border border-border space-y-3">
@@ -168,26 +219,52 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
           {(message || TEMPLATES[segment]).length}/1000
         </p>
 
+        {/* Schedule selector */}
+        <div className="bg-muted/40 rounded-lg p-2.5 border border-border">
+          <label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1 mb-1">
+            <Calendar size={12} /> Programar (opcional)
+          </label>
+          <input
+            type="datetime-local"
+            value={scheduleAt}
+            min={new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16)}
+            onChange={(e) => setScheduleAt(e.target.value)}
+            className="w-full bg-card rounded-lg px-2 py-1.5 text-xs border border-transparent focus:border-accent focus:outline-none"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">El cron ejecuta difusiones pendientes cada 5 min.</p>
+        </div>
+
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <p className="text-[11px] text-muted-foreground">
             Audiencia: <span className="font-semibold text-accent">{audienceCount}</span> de {activeAll.length} suscriptor(es)
           </p>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 flex-wrap">
             <button
-              onClick={() => broadcast(true)}
+              onClick={() => broadcast("preview")}
               disabled={sending}
               className="text-xs px-3 py-2 rounded-lg bg-muted text-muted-foreground font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
             >
               Vista previa
             </button>
-            <button
-              onClick={() => broadcast(false)}
-              disabled={sending || !ycloudReady || audienceCount === 0}
-              className="btn-surte text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50"
-            >
-              {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-              Enviar
-            </button>
+            {scheduleAt ? (
+              <button
+                onClick={() => broadcast("schedule")}
+                disabled={sending || !ycloudReady || audienceCount === 0}
+                className="text-sm px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold flex items-center gap-1.5 disabled:opacity-50 hover:bg-primary/90 transition-colors"
+              >
+                {sending ? <Loader2 size={14} className="animate-spin" /> : <Clock size={14} />}
+                Programar
+              </button>
+            ) : (
+              <button
+                onClick={() => broadcast("send")}
+                disabled={sending || !ycloudReady || audienceCount === 0}
+                className="btn-surte text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                Enviar ahora
+              </button>
+            )}
           </div>
         </div>
 
@@ -223,6 +300,71 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
             )}
           </div>
         )}
+      </div>
+
+      {/* History */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <History size={14} className="text-muted-foreground" />
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Historial ({history?.length || 0})</p>
+        </div>
+        {(!history || history.length === 0) && (
+          <div className="text-center py-6 text-muted-foreground bg-card rounded-xl border border-border">
+            <History size={28} strokeWidth={1.2} className="mx-auto mb-2 opacity-30" />
+            <p className="text-xs">Aún no hay difusiones registradas</p>
+          </div>
+        )}
+        {history?.map((log: any) => {
+          const meta = STATUS_META[log.status] || STATUS_META.completed;
+          const Icon = meta.icon;
+          const isPending = log.status === "pending";
+          return (
+            <div key={log.id} className="bg-card rounded-xl p-3 border border-border space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-1 ${meta.cls}`}>
+                    <Icon size={10} className={log.status === "running" ? "animate-spin" : ""} />
+                    {meta.label}
+                  </span>
+                  <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                    {SEGMENTS[log.segment as Segment]?.emoji} {SEGMENTS[log.segment as Segment]?.label || log.segment}
+                  </span>
+                </div>
+                {isPending && (
+                  <button onClick={() => cancelScheduled(log.id)} className="text-[10px] text-destructive hover:underline">Cancelar</button>
+                )}
+              </div>
+              <p className="text-xs text-foreground line-clamp-2">{log.message}</p>
+              <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
+                {log.scheduled_at && (
+                  <span className="flex items-center gap-1"><Calendar size={10} />Programado: {new Date(log.scheduled_at).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}</span>
+                )}
+                {log.sent_at && (
+                  <span className="flex items-center gap-1"><CheckCircle2 size={10} />Enviado: {new Date(log.sent_at).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}</span>
+                )}
+                {!log.scheduled_at && !log.sent_at && (
+                  <span>Creado: {new Date(log.created_at).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}</span>
+                )}
+              </div>
+              {(log.total > 0 || log.sent > 0 || log.failed > 0) && (
+                <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                  <div className="text-center bg-muted/50 rounded py-1">
+                    <p className="font-bold text-foreground text-xs">{log.total}</p>
+                    <p className="text-muted-foreground">Total</p>
+                  </div>
+                  <div className="text-center bg-secondary/10 rounded py-1">
+                    <p className="font-bold text-secondary text-xs">{log.sent}</p>
+                    <p className="text-muted-foreground">Enviados</p>
+                  </div>
+                  <div className="text-center bg-destructive/10 rounded py-1">
+                    <p className="font-bold text-destructive text-xs">{log.failed}</p>
+                    <p className="text-muted-foreground">Fallidos</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Subscribers list */}

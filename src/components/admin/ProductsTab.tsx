@@ -3,7 +3,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { useQuery, useQueryClient as useQC } from "@tanstack/react-query";
 import { useInactiveBrands } from "@/hooks/useStore";
-import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy, Ban, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy, Ban, Star, Clock, AlertCircle } from "lucide-react";
+
+/** Returns scheduling status for a product: null | 'scheduled' | 'out_of_window' */
+const getScheduleStatus = (p: any): null | "scheduled" | "out_of_window" => {
+  const hasSchedule =
+    p.available_from || p.available_until ||
+    (Array.isArray(p.available_days) && p.available_days.length > 0) ||
+    p.available_time_start || p.available_time_end;
+  if (!hasSchedule) return null;
+  const now = new Date();
+  if (p.available_from && new Date(p.available_from) > now) return "out_of_window";
+  if (p.available_until && new Date(p.available_until) < now) return "out_of_window";
+  if (Array.isArray(p.available_days) && p.available_days.length > 0 && !p.available_days.includes(now.getDay())) {
+    return "out_of_window";
+  }
+  if (p.available_time_start || p.available_time_end) {
+    const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    if (p.available_time_start && hhmm < String(p.available_time_start).slice(0, 5)) return "out_of_window";
+    if (p.available_time_end && hhmm > String(p.available_time_end).slice(0, 5)) return "out_of_window";
+  }
+  return "scheduled";
+};
 import MarginCalculator from "./MarginCalculator";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -821,6 +842,20 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
                     <Ban size={8} /> MARCA INACTIVA
                   </span>
                 )}
+                {(() => {
+                  const status = getScheduleStatus(p);
+                  if (status === "scheduled") return (
+                    <span className="text-[9px] bg-secondary/15 text-secondary px-1.5 py-0.5 rounded font-medium shrink-0 flex items-center gap-0.5" title="Disponibilidad limitada">
+                      <Clock size={8} /> PROGRAMADO
+                    </span>
+                  );
+                  if (status === "out_of_window") return (
+                    <span className="text-[9px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded font-medium shrink-0 flex items-center gap-0.5" title="Fuera del horario configurado">
+                      <AlertCircle size={8} /> FUERA DE HORARIO
+                    </span>
+                  );
+                  return null;
+                })()}
               </div>
               <p className="text-xs text-muted-foreground">
                 {formatPrice(p.price)}
