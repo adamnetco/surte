@@ -9,7 +9,7 @@ import { useTheme } from "@/context/ThemeContext";
 
 const Configuracion = () => {
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
+  const { preference, setPreference } = useTheme();
   const [notifications, setNotifications] = useState(true);
 
   return (
@@ -52,9 +52,9 @@ const Configuracion = () => {
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => { setTheme(key as any); toast.success(`Tema: ${label}`); }}
+                onClick={() => { setPreference(key as any); toast.success(`Tema: ${label}`); }}
                 className={`flex flex-col items-center gap-1 py-3 rounded-lg text-xs font-medium transition-colors ${
-                  theme === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                  preference === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
                 }`}
               >
                 <Icon size={18} />
