@@ -6,7 +6,7 @@ import ProductCard from "@/components/surte/ProductCard";
 import FloatingCart from "@/components/surte/FloatingCart";
 import StoreFooter from "@/components/surte/StoreFooter";
 import HeadMeta from "@/components/seo/HeadMeta";
-import JsonLd, { buildProductListSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
+import JsonLd, { buildProductListSchema, buildBreadcrumbSchema, buildFaqSchema } from "@/components/seo/JsonLd";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useProducts, useCategories, useAppSettings } from "@/hooks/useStore";
 import { useQuery } from "@tanstack/react-query";
@@ -146,11 +146,33 @@ const Hub = () => {
     }),
   };
 
+  // FAQ for local SEO — answers common buyer questions for any hub page.
+  const cityName = type === "ciudad" ? title : "Bucaramanga";
+  const faqs = [
+    {
+      question: `¿Hacen domicilios de ${title} en ${cityName}?`,
+      answer: `Sí. Entregamos ${title.toLowerCase()} a domicilio en ${cityName} y su área metropolitana (Floridablanca, Girón y Piedecuesta) en 1 a 2 días hábiles. Consulta el costo de envío al ingresar tu barrio en el carrito.`,
+    },
+    {
+      question: `¿Cuál es el pedido mínimo para comprar ${title}?`,
+      answer: `El pedido mínimo en ${storeName} es de $40.000 COP. Aceptamos pago en efectivo contra entrega o transferencia bancaria. En municipios seleccionados ofrecemos envío gratis al superar el umbral configurado.`,
+    },
+    {
+      question: `¿Los precios de ${title} incluyen mayorista para HORECA?`,
+      answer: `Sí. Restaurantes, hoteles, minimercados y distribuidores acceden a precios escalonados (Detal, Mayorista, Distribuidor) registrando su negocio en su perfil.`,
+    },
+    {
+      question: `¿Cómo confirmo mi pedido de ${title}?`,
+      answer: `Al finalizar el carrito, recibes un mensaje de WhatsApp con el resumen del pedido y el enlace de seguimiento en tiempo real. Nuestro equipo te confirma en minutos.`,
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <HeadMeta title={metaTitle} description={metaDesc} canonical={pageUrl} ogImage={ogImage} />
       <JsonLd data={collectionSchema} id="collection" />
       <JsonLd data={buildBreadcrumbSchema(breadcrumbs)} id="breadcrumb" />
+      <JsonLd data={buildFaqSchema(faqs)} id="faq" />
       {sorted.length > 0 && (
         <JsonLd data={buildProductListSchema(sorted, title, pageUrl)} id="product-list" />
       )}
@@ -221,6 +243,23 @@ const Hub = () => {
             <p className="text-lg font-heading font-semibold mb-1">Sin resultados</p>
             <p className="text-sm">No hay productos disponibles en esta sección</p>
           </div>
+        )}
+
+        {/* FAQ visible — refuerza SEO local on-page */}
+        {sorted.length > 0 && (
+          <section className="mt-10 border-t border-border pt-6" aria-labelledby="faq-heading">
+            <h2 id="faq-heading" className="text-lg font-heading font-bold text-foreground mb-3">
+              Preguntas frecuentes sobre {title}
+            </h2>
+            <div className="space-y-2">
+              {faqs.map((f, i) => (
+                <details key={i} className="bg-card rounded-xl p-3 border border-border">
+                  <summary className="text-sm font-semibold text-foreground cursor-pointer">{f.question}</summary>
+                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{f.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
         )}
       </main>
       <StoreFooter />

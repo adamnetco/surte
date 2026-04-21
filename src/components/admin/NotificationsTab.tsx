@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Send, Users, MessageSquare, Loader2, Smartphone, Radio, AlertTriangle, Clock, History, Calendar, CheckCircle2, XCircle, Hourglass } from "lucide-react";
+import { Bell, Send, Users, MessageSquare, Loader2, Smartphone, Radio, AlertTriangle, Clock, History, Calendar, CheckCircle2, XCircle, Hourglass, FileText, RefreshCw, Plus, Minus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
@@ -32,8 +32,36 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
   const [segment, setSegment] = useState<Segment>("all");
-  const [scheduleAt, setScheduleAt] = useState<string>(""); // datetime-local string
+  const [scheduleAt, setScheduleAt] = useState<string>("");
   const [lastResult, setLastResult] = useState<any>(null);
+
+  // Template (HSM) state
+  const [useTemplate, setUseTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateLang, setTemplateLang] = useState("es");
+  const [templateVars, setTemplateVars] = useState<string[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  const loadTemplates = async () => {
+    setLoadingTemplates(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("broadcast-whatsapp-ycloud", {
+        body: { action: "list_templates" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setTemplates(data?.templates || []);
+      toast.success(`${data?.templates?.length || 0} plantilla(s) cargada(s)`);
+    } catch (err: any) {
+      toast.error(err?.message || "Error al cargar plantillas");
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
+  const selectedTemplate = templates.find((t) => t.name === templateName);
+  const requiredVarCount = selectedTemplate?.variableCount || 0;
 
   const { data: subscribers } = useQuery({
     queryKey: ["admin-notification-subs"],
@@ -90,8 +118,6 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
   ).length;
 
   const broadcast = async (mode: "preview" | "send" | "schedule") => {
-    const text = (message || TEMPLATES[segment]).trim();
-    if (!text) { toast.error("Escribe un mensaje"); return; }
     if (!ycloudReady) {
       toast.error("Configura YCloud (API Key + número remitente) en Configuración");
       return;
@@ -104,21 +130,40 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
       if (!scheduleAt) { toast.error("Elige fecha y hora para programar"); return; }
       if (new Date(scheduleAt).getTime() <= Date.now()) { toast.error("La fecha debe ser futura"); return; }
     }
-    if (mode === "send" && !confirm(`¿Enviar a ${audienceCount} suscriptor(es) por WhatsApp?\nSegmento: ${SEGMENTS[segment].label}`)) return;
+
+    // Build body depending on template vs text mode
+    const body: any = { segment };
+    if (useTemplate) {
+      if (!templateName.trim()) { toast.error("Selecciona o escribe el nombre de la plantilla"); return; }
+      if (templateVars.slice(0, requiredVarCount).some((v) => !v?.trim())) {
+        toast.error(`La plantilla requiere ${requiredVarCount} variable(s)`);
+        return;
+      }
+      body.template_name = templateName.trim();
+      body.template_language = templateLang.trim() || "es";
+      body.template_variables = templateVars.slice(0, requiredVarCount || templateVars.length);
+      body.message = `[TEMPLATE:${templateName}]`;
+    } else {
+      const text = (message || TEMPLATES[segment]).trim();
+      if (!text) { toast.error("Escribe un mensaje"); return; }
+      body.message = text;
+    }
+
+    if (mode === "preview") body.dry_run = true;
+    if (mode === "schedule") body.scheduled_at = new Date(scheduleAt).toISOString();
+
+    if (mode === "send" && !confirm(`¿Enviar a ${audienceCount} suscriptor(es) por WhatsApp?\nSegmento: ${SEGMENTS[segment].label}${useTemplate ? `\nPlantilla: ${templateName}` : ""}`)) return;
     if (mode === "schedule" && !confirm(`¿Programar difusión para ${new Date(scheduleAt).toLocaleString("es-CO")}?\nSegmento: ${SEGMENTS[segment].label} · ${audienceCount} suscriptor(es)`)) return;
 
     setSending(true);
     setLastResult(null);
     try {
-      const body: any = { message: text, segment };
-      if (mode === "preview") body.dry_run = true;
-      if (mode === "schedule") body.scheduled_at = new Date(scheduleAt).toISOString();
       const { data, error } = await supabase.functions.invoke("broadcast-whatsapp-ycloud", { body });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setLastResult(data);
       if (mode === "preview") {
-        toast.success(`Vista previa: alcanzará a ${data.total} suscriptor(es)`);
+        toast.success(`Vista previa: alcanzará a ${data.total} suscriptor(es) (${data.mode})`);
       } else if (mode === "schedule") {
         toast.success(`✓ Programado para ${new Date(data.scheduled_at).toLocaleString("es-CO")}`);
         setScheduleAt("");
@@ -207,17 +252,122 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
           ))}
         </div>
 
-        <textarea
-          value={message || TEMPLATES[segment]}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Escribe tu mensaje..."
-          maxLength={1000}
-          className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors resize-none"
-          rows={4}
-        />
-        <p className="text-[10px] text-muted-foreground text-right">
-          {(message || TEMPLATES[segment]).length}/1000
-        </p>
+        {/* Mode toggle: text vs HSM template */}
+        <div className="flex items-center justify-between bg-muted/40 rounded-lg p-2.5 border border-border">
+          <div className="flex items-center gap-2">
+            <FileText size={14} className="text-accent" />
+            <div>
+              <p className="text-xs font-semibold text-foreground">Plantilla HSM aprobada</p>
+              <p className="text-[10px] text-muted-foreground">Necesario para iniciar conversación &gt;24h</p>
+            </div>
+          </div>
+          <Switch checked={useTemplate} onCheckedChange={(v) => { setUseTemplate(v); if (v && templates.length === 0) loadTemplates(); }} />
+        </div>
+
+        {useTemplate ? (
+          <div className="space-y-2 bg-primary/5 border border-primary/20 rounded-lg p-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-semibold text-primary">Plantilla WhatsApp</p>
+              <button
+                type="button"
+                onClick={loadTemplates}
+                disabled={loadingTemplates}
+                className="text-[10px] text-primary hover:underline flex items-center gap-1 disabled:opacity-50"
+              >
+                {loadingTemplates ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+                {templates.length > 0 ? `Recargar (${templates.length})` : "Cargar plantillas"}
+              </button>
+            </div>
+            {templates.length > 0 ? (
+              <select
+                value={templateName}
+                onChange={(e) => {
+                  setTemplateName(e.target.value);
+                  const tpl = templates.find((t) => t.name === e.target.value);
+                  if (tpl) {
+                    setTemplateLang(tpl.language || "es");
+                    setTemplateVars(Array(tpl.variableCount || 0).fill(""));
+                  }
+                }}
+                className="w-full bg-card rounded-lg px-2 py-2 text-xs border border-border focus:border-primary focus:outline-none"
+              >
+                <option value="">— Selecciona una plantilla —</option>
+                {templates.map((t) => (
+                  <option key={`${t.name}_${t.language}`} value={t.name}>
+                    {t.name} ({t.language}) — {t.status} · {t.variableCount} var
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="Nombre exacto de la plantilla (ej: order_update)"
+                className="w-full bg-card rounded-lg px-2 py-2 text-xs border border-border focus:border-primary focus:outline-none font-mono"
+              />
+            )}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-1">
+                <label className="text-[10px] text-muted-foreground">Idioma</label>
+                <input
+                  type="text"
+                  value={templateLang}
+                  onChange={(e) => setTemplateLang(e.target.value)}
+                  placeholder="es"
+                  className="w-full bg-card rounded-lg px-2 py-1.5 text-xs border border-border focus:border-primary focus:outline-none font-mono"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="text-[10px] text-muted-foreground">Variables ({requiredVarCount || templateVars.length})</label>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => setTemplateVars((v) => [...v, ""])} className="bg-card border border-border rounded px-1.5 py-1 text-[10px] hover:bg-muted">
+                    <Plus size={10} />
+                  </button>
+                  <button type="button" onClick={() => setTemplateVars((v) => v.slice(0, -1))} disabled={templateVars.length === 0} className="bg-card border border-border rounded px-1.5 py-1 text-[10px] hover:bg-muted disabled:opacity-30">
+                    <Minus size={10} />
+                  </button>
+                </div>
+              </div>
+            </div>
+            {selectedTemplate?.body && (
+              <div className="bg-card rounded p-2 border border-border">
+                <p className="text-[10px] text-muted-foreground mb-0.5">Cuerpo de la plantilla:</p>
+                <p className="text-[11px] text-foreground whitespace-pre-wrap font-mono">{selectedTemplate.body}</p>
+              </div>
+            )}
+            {(requiredVarCount > 0 || templateVars.length > 0) && (
+              <div className="space-y-1">
+                {Array.from({ length: Math.max(requiredVarCount, templateVars.length) }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-muted-foreground font-mono w-8">{`{{${i + 1}}}`}</span>
+                    <input
+                      type="text"
+                      value={templateVars[i] || ""}
+                      onChange={(e) => setTemplateVars((v) => { const next = [...v]; next[i] = e.target.value; return next; })}
+                      placeholder={`Valor para variable ${i + 1}`}
+                      className="flex-1 bg-card rounded px-2 py-1 text-xs border border-border focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={message || TEMPLATES[segment]}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Escribe tu mensaje..."
+              maxLength={1000}
+              className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors resize-none"
+              rows={4}
+            />
+            <p className="text-[10px] text-muted-foreground text-right">
+              {(message || TEMPLATES[segment]).length}/1000
+            </p>
+          </>
+        )}
 
         {/* Schedule selector */}
         <div className="bg-muted/40 rounded-lg p-2.5 border border-border">
