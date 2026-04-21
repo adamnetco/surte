@@ -164,7 +164,7 @@ const Hub = () => {
   };
 
   // FAQ for local SEO — answers common buyer questions for any hub page.
-  const cityName = type === "ciudad" ? title : "Bucaramanga";
+  const cityName = cityScope ? cityLabel : (type === "ciudad" ? title : "Bucaramanga");
   const faqs = [
     {
       question: `¿Hacen domicilios de ${title} en ${cityName}?`,
