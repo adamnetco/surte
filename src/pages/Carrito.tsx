@@ -384,7 +384,10 @@ const Carrito = () => {
       setShowForm(false);
       removeCoupon();
 
-      window.open(waUrl, "_blank");
+      // Skip WhatsApp window when agent chose "register only"
+      if (!(window as any).__skipWhatsApp) {
+        window.open(waUrl, "_blank");
+      }
       navigate(`/pedido/${data.order_number}`);
     } catch (err: any) {
       toast.error(err.message || "Error al crear pedido");
@@ -689,15 +692,53 @@ const Carrito = () => {
                       </div>
                     )}
 
-                    <div className="flex gap-2 pt-2">
-                      <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-3 text-sm text-muted-foreground font-medium">
-                        Cancelar
-                      </button>
-                      <button type="button" onClick={handleSubmitOrder} disabled={submitting} className="flex-1 btn-surte py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50">
-                        {submitting ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
-                        {submitting ? "Enviando..." : "Confirmar pedido"}
-                      </button>
-                    </div>
+                    {isAgent && agentCustomer ? (
+                      <div className="space-y-2 pt-2">
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 flex items-start gap-2">
+                          <span className="text-base shrink-0">🧑‍💼</span>
+                          <div className="text-[11px] text-muted-foreground leading-tight">
+                            <span className="font-semibold text-primary">Modo Agente:</span> Eliges cómo cerrar la venta para <span className="font-semibold text-foreground">{agentCustomer.fullName}</span>.
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleSubmitOrder}
+                          disabled={submitting}
+                          className="w-full btn-surte py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                          title="Crea el pedido y abre WhatsApp para confirmar con el cliente"
+                        >
+                          {submitting ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
+                          {submitting ? "Procesando..." : "Registrar venta + Enviar WhatsApp"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            (window as any).__skipWhatsApp = true;
+                            await handleSubmitOrder();
+                            (window as any).__skipWhatsApp = false;
+                          }}
+                          disabled={submitting}
+                          className="w-full bg-secondary text-secondary-foreground rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-secondary/90 transition-colors"
+                          title="Solo registra la venta, sin enviar mensaje al cliente"
+                        >
+                          <CheckCircle2 size={16} />
+                          Solo registrar venta (sin WhatsApp)
+                        </button>
+                        <button type="button" onClick={() => setShowForm(false)} className="w-full bg-muted rounded-xl py-2 text-xs text-muted-foreground font-medium">
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 pt-2">
+                        <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-muted rounded-xl py-3 text-sm text-muted-foreground font-medium">
+                          Cancelar
+                        </button>
+                        <button type="button" onClick={handleSubmitOrder} disabled={submitting} className="flex-1 btn-surte py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                          {submitting ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
+                          {submitting ? "Enviando..." : "Confirmar y enviar por WhatsApp"}
+                        </button>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
