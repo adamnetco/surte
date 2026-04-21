@@ -16,10 +16,18 @@ import { motion } from "framer-motion";
 
 const BASE_URL = "https://surteya.com";
 
+const VALID_CITIES = ["bucaramanga", "floridablanca", "giron", "piedecuesta"];
+
 const Hub = () => {
-  const { type, slug } = useParams<{ type: string; slug: string }>();
+  const params = useParams<{ type?: string; slug?: string; city?: string }>();
   const [searchParams] = useSearchParams();
   const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc">("default");
+
+  // Resolve type/slug/cityScope from either /hub/:type/:slug or /:city[/categoria|marca|etiqueta/:slug]
+  const rawCity = params.city?.toLowerCase();
+  const cityScope = rawCity && VALID_CITIES.includes(rawCity) ? rawCity : null;
+  const type = cityScope ? (params.type || "ciudad") : params.type;
+  const slug = cityScope ? (params.slug || cityScope) : params.slug;
 
   const { data: settings } = useAppSettings();
   const { data: categories } = useCategories();
@@ -120,17 +128,26 @@ const Hub = () => {
   const cycleSortBy = () =>
     setSortBy(sortBy === "default" ? "price-asc" : sortBy === "price-asc" ? "price-desc" : "default");
 
-  const pageUrl = `${BASE_URL}/hub/${type}/${slug}`;
+  // City-aware canonical URL: prefer /:city/:type/:slug if cityScope
+  const pageUrl = cityScope
+    ? (type === "ciudad" ? `${BASE_URL}/${cityScope}` : `${BASE_URL}/${cityScope}/${type}/${slug}`)
+    : `${BASE_URL}/hub/${type}/${slug}`;
+  const cityLabel = cityScope ? cityScope.charAt(0).toUpperCase() + cityScope.slice(1) : "Bucaramanga";
   const storeName = settings?.store_name || "SURTÉ YA";
-  const metaTitle = entitySeo?.meta_title || `${title} — ${storeName} | Compra en línea`;
-  const metaDesc = entitySeo?.meta_description || (subtitle
-    ? `${subtitle}. Compra al mejor precio en ${storeName}. Envíos a Bucaramanga, Floridablanca, Girón y Piedecuesta.`
-    : `Productos de ${title} en ${storeName}`);
+  const metaTitle = entitySeo?.meta_title || (cityScope
+    ? `${title} en ${cityLabel} — ${storeName} | Domicilios mismo día`
+    : `${title} — ${storeName} | Compra en línea`);
+  const metaDesc = entitySeo?.meta_description || (cityScope
+    ? `Compra ${title.toLowerCase()} en ${cityLabel} con domicilio rápido. ${storeName}: precios mayoristas para HORECA, pago contra entrega y envíos en 1-2 días hábiles.`
+    : (subtitle
+      ? `${subtitle}. Compra al mejor precio en ${storeName}. Envíos a Bucaramanga, Floridablanca, Girón y Piedecuesta.`
+      : `Productos de ${title} en ${storeName}`));
   const ogImage = entitySeo?.og_image_url || undefined;
 
   const breadcrumbs = [
     { name: "Inicio", url: BASE_URL },
-    { name: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : type === "etiqueta" ? "Destacados" : "Ciudades", url: `${BASE_URL}/categorias` },
+    ...(cityScope ? [{ name: cityLabel, url: `${BASE_URL}/${cityScope}` }] : []),
+    { name: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : type === "etiqueta" ? "Destacados" : "Ciudades", url: cityScope ? `${BASE_URL}/${cityScope}` : `${BASE_URL}/categorias` },
     { name: title, url: pageUrl },
   ];
 
@@ -147,7 +164,7 @@ const Hub = () => {
   };
 
   // FAQ for local SEO — answers common buyer questions for any hub page.
-  const cityName = type === "ciudad" ? title : "Bucaramanga";
+  const cityName = cityScope ? cityLabel : (type === "ciudad" ? title : "Bucaramanga");
   const faqs = [
     {
       question: `¿Hacen domicilios de ${title} en ${cityName}?`,
