@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Send, Users, MessageSquare, Loader2, Smartphone, Radio, AlertTriangle, Clock, History, Calendar, CheckCircle2, XCircle, Hourglass } from "lucide-react";
+import { Bell, Send, Users, MessageSquare, Loader2, Smartphone, Radio, AlertTriangle, Clock, History, Calendar, CheckCircle2, XCircle, Hourglass, FileText, RefreshCw, Plus, Minus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
