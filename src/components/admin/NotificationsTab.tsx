@@ -32,8 +32,36 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
   const [segment, setSegment] = useState<Segment>("all");
-  const [scheduleAt, setScheduleAt] = useState<string>(""); // datetime-local string
+  const [scheduleAt, setScheduleAt] = useState<string>("");
   const [lastResult, setLastResult] = useState<any>(null);
+
+  // Template (HSM) state
+  const [useTemplate, setUseTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateLang, setTemplateLang] = useState("es");
+  const [templateVars, setTemplateVars] = useState<string[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  const loadTemplates = async () => {
+    setLoadingTemplates(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("broadcast-whatsapp-ycloud", {
+        body: { action: "list_templates" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setTemplates(data?.templates || []);
+      toast.success(`${data?.templates?.length || 0} plantilla(s) cargada(s)`);
+    } catch (err: any) {
+      toast.error(err?.message || "Error al cargar plantillas");
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
+  const selectedTemplate = templates.find((t) => t.name === templateName);
+  const requiredVarCount = selectedTemplate?.variableCount || 0;
 
   const { data: subscribers } = useQuery({
     queryKey: ["admin-notification-subs"],
@@ -90,8 +118,6 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
   ).length;
 
   const broadcast = async (mode: "preview" | "send" | "schedule") => {
-    const text = (message || TEMPLATES[segment]).trim();
-    if (!text) { toast.error("Escribe un mensaje"); return; }
     if (!ycloudReady) {
       toast.error("Configura YCloud (API Key + número remitente) en Configuración");
       return;
@@ -104,21 +130,40 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
       if (!scheduleAt) { toast.error("Elige fecha y hora para programar"); return; }
       if (new Date(scheduleAt).getTime() <= Date.now()) { toast.error("La fecha debe ser futura"); return; }
     }
-    if (mode === "send" && !confirm(`¿Enviar a ${audienceCount} suscriptor(es) por WhatsApp?\nSegmento: ${SEGMENTS[segment].label}`)) return;
+
+    // Build body depending on template vs text mode
+    const body: any = { segment };
+    if (useTemplate) {
+      if (!templateName.trim()) { toast.error("Selecciona o escribe el nombre de la plantilla"); return; }
+      if (templateVars.slice(0, requiredVarCount).some((v) => !v?.trim())) {
+        toast.error(`La plantilla requiere ${requiredVarCount} variable(s)`);
+        return;
+      }
+      body.template_name = templateName.trim();
+      body.template_language = templateLang.trim() || "es";
+      body.template_variables = templateVars.slice(0, requiredVarCount || templateVars.length);
+      body.message = `[TEMPLATE:${templateName}]`;
+    } else {
+      const text = (message || TEMPLATES[segment]).trim();
+      if (!text) { toast.error("Escribe un mensaje"); return; }
+      body.message = text;
+    }
+
+    if (mode === "preview") body.dry_run = true;
+    if (mode === "schedule") body.scheduled_at = new Date(scheduleAt).toISOString();
+
+    if (mode === "send" && !confirm(`¿Enviar a ${audienceCount} suscriptor(es) por WhatsApp?\nSegmento: ${SEGMENTS[segment].label}${useTemplate ? `\nPlantilla: ${templateName}` : ""}`)) return;
     if (mode === "schedule" && !confirm(`¿Programar difusión para ${new Date(scheduleAt).toLocaleString("es-CO")}?\nSegmento: ${SEGMENTS[segment].label} · ${audienceCount} suscriptor(es)`)) return;
 
     setSending(true);
     setLastResult(null);
     try {
-      const body: any = { message: text, segment };
-      if (mode === "preview") body.dry_run = true;
-      if (mode === "schedule") body.scheduled_at = new Date(scheduleAt).toISOString();
       const { data, error } = await supabase.functions.invoke("broadcast-whatsapp-ycloud", { body });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setLastResult(data);
       if (mode === "preview") {
-        toast.success(`Vista previa: alcanzará a ${data.total} suscriptor(es)`);
+        toast.success(`Vista previa: alcanzará a ${data.total} suscriptor(es) (${data.mode})`);
       } else if (mode === "schedule") {
         toast.success(`✓ Programado para ${new Date(data.scheduled_at).toLocaleString("es-CO")}`);
         setScheduleAt("");
