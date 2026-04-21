@@ -438,19 +438,35 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     }
   };
 
+  /** Quick problem filters: 'scheduled' | 'out_of_window' | 'no_stock' | 'inactive_brand' */
+  const matchesProblem = (p: any) => {
+    if (problemFilter === "all") return true;
+    const status = getScheduleStatus(p);
+    if (problemFilter === "scheduled") return status === "scheduled";
+    if (problemFilter === "out_of_window") return status === "out_of_window";
+    if (problemFilter === "no_stock") return Number(p.stock || 0) <= 0;
+    if (problemFilter === "inactive_brand") return isBrandHidden(p);
+    return true;
+  };
+
   const filtered = products?.filter((p: any) => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
     const brandHidden = isBrandHidden(p);
     const matchesVisibility = filterVisibility === "all" ? true :
       filterVisibility === "visible" ? (p.is_active !== false && !brandHidden) :
       (p.is_active === false || brandHidden);
-    return matchesSearch && matchesVisibility;
+    return matchesSearch && matchesVisibility && matchesProblem(p);
   });
 
   const brandHiddenCount = products?.filter((p: any) => isBrandHidden(p) && p.is_active !== false).length || 0;
   const individuallyHiddenCount = products?.filter((p: any) => p.is_active === false).length || 0;
   const visibleCount = (products?.length || 0) - individuallyHiddenCount - brandHiddenCount;
   const hiddenCount = individuallyHiddenCount + brandHiddenCount;
+
+  // Counts for problem filters
+  const scheduledCount = products?.filter((p: any) => getScheduleStatus(p) === "scheduled").length || 0;
+  const outOfWindowCount = products?.filter((p: any) => getScheduleStatus(p) === "out_of_window").length || 0;
+  const noStockCount = products?.filter((p: any) => Number(p.stock || 0) <= 0).length || 0;
 
   return (
     <div>
