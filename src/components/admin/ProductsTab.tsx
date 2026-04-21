@@ -215,6 +215,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   const [editing, setEditing] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterVisibility, setFilterVisibility] = useState<"all" | "visible" | "hidden">("all");
+  const [problemFilter, setProblemFilter] = useState<"all" | "scheduled" | "out_of_window" | "no_stock" | "inactive_brand">("all");
   const [form, setForm] = useState({
     name: "", description: "", price: "", original_price: "", price_wholesale: "", price_distributor: "",
     cost_price: "", stock: "", unit: "unidad", category_id: "", is_fresh: false, is_wholesale: false, is_active: true, image_url: "",
@@ -567,11 +568,27 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
               className="w-full bg-muted rounded-lg pl-9 pr-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors"
             />
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 flex-wrap">
             {(["all", "visible", "hidden"] as const).map((f) => (
               <button key={f} onClick={() => setFilterVisibility(f)}
                 className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${filterVisibility === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                 {f === "all" ? `Todos (${products?.length || 0})` : f === "visible" ? `👁 Visibles (${visibleCount})` : `🚫 Ocultos (${hiddenCount})`}
+              </button>
+            ))}
+          </div>
+          {/* Problem filters: scheduled / out of window / no stock / inactive brand */}
+          <div className="flex gap-1.5 flex-wrap pt-1 border-t border-border">
+            <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider self-center mr-1">Problemas:</span>
+            {([
+              { key: "all", label: `Todos`, count: null, cls: "bg-muted text-muted-foreground" },
+              { key: "scheduled", label: `⏱ Programados`, count: scheduledCount, cls: "bg-secondary/15 text-secondary" },
+              { key: "out_of_window", label: `🔴 Fuera horario`, count: outOfWindowCount, cls: "bg-destructive/10 text-destructive" },
+              { key: "no_stock", label: `📦 Sin stock`, count: noStockCount, cls: "bg-surte-naranja/15 text-surte-naranja" },
+              { key: "inactive_brand", label: `🚫 Marca oculta`, count: brandHiddenCount, cls: "bg-destructive/10 text-destructive" },
+            ] as const).map((opt) => (
+              <button key={opt.key} onClick={() => setProblemFilter(opt.key as any)}
+                className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-colors ${problemFilter === opt.key ? "bg-primary text-primary-foreground" : opt.cls}`}>
+                {opt.label}{opt.count !== null ? ` (${opt.count})` : ""}
               </button>
             ))}
           </div>
