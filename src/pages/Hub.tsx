@@ -16,10 +16,18 @@ import { motion } from "framer-motion";
 
 const BASE_URL = "https://surteya.com";
 
+const VALID_CITIES = ["bucaramanga", "floridablanca", "giron", "piedecuesta"];
+
 const Hub = () => {
-  const { type, slug } = useParams<{ type: string; slug: string }>();
+  const params = useParams<{ type?: string; slug?: string; city?: string }>();
   const [searchParams] = useSearchParams();
   const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc">("default");
+
+  // Resolve type/slug/cityScope from either /hub/:type/:slug or /:city[/categoria|marca|etiqueta/:slug]
+  const rawCity = params.city?.toLowerCase();
+  const cityScope = rawCity && VALID_CITIES.includes(rawCity) ? rawCity : null;
+  const type = cityScope ? (params.type || "ciudad") : params.type;
+  const slug = cityScope ? (params.slug || cityScope) : params.slug;
 
   const { data: settings } = useAppSettings();
   const { data: categories } = useCategories();
