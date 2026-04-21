@@ -1,0 +1,1 @@
+UPDATE public.notification_subscriptions SET is_active = false WHERE id IN ('e1944f9c-2e10-46d4-88b0-4db4c7656c69','80a69d2e-170c-46a7-afd8-05cda014d959');
