@@ -244,6 +244,23 @@ const Hub = () => {
             <p className="text-sm">No hay productos disponibles en esta sección</p>
           </div>
         )}
+
+        {/* FAQ visible — refuerza SEO local on-page */}
+        {sorted.length > 0 && (
+          <section className="mt-10 border-t border-border pt-6" aria-labelledby="faq-heading">
+            <h2 id="faq-heading" className="text-lg font-heading font-bold text-foreground mb-3">
+              Preguntas frecuentes sobre {title}
+            </h2>
+            <div className="space-y-2">
+              {faqs.map((f, i) => (
+                <details key={i} className="bg-card rounded-xl p-3 border border-border">
+                  <summary className="text-sm font-semibold text-foreground cursor-pointer">{f.question}</summary>
+                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{f.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       <StoreFooter />
       <FloatingCart />
