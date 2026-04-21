@@ -77,6 +77,11 @@ const App = () => (
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
+                    {/* SEO local: URLs amigables con ciudad */}
+                    <Route path="/:city/categoria/:slug" element={<Hub />} />
+                    <Route path="/:city/marca/:slug" element={<Hub />} />
+                    <Route path="/:city/etiqueta/:slug" element={<Hub />} />
+                    <Route path="/:city" element={<Hub />} />
                     <Route path="/s/:slug" element={<LandingPage />} />
                     <Route path="/politicas" element={<Politicas />} />
                     <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
