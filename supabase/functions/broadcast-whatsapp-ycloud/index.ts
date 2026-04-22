@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const tplRes = await fetch(`${YCLOUD_API}/whatsapp/templates?limit=200`, {
+      const tplRes = await fetch(`${YCLOUD_API}/whatsapp/templates?limit=100`, {
         headers: { "X-API-Key": apiKey },
       });
       const tplBody = await tplRes.json().catch(() => ({}));
