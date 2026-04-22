@@ -1289,6 +1289,144 @@ export type Database = {
         }
         Relationships: []
       }
+      push_broadcast_logs: {
+        Row: {
+          body: string
+          created_at: string
+          errors: Json | null
+          failed: number
+          icon: string | null
+          id: string
+          segment: string
+          sent: number
+          sent_at: string | null
+          sent_by: string | null
+          status: string
+          title: string
+          total: number
+          url: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          errors?: Json | null
+          failed?: number
+          icon?: string | null
+          id?: string
+          segment?: string
+          sent?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          title: string
+          total?: number
+          url?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          errors?: Json | null
+          failed?: number
+          icon?: string | null
+          id?: string
+          segment?: string
+          sent?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          title?: string
+          total?: number
+          url?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          is_active: boolean
+          notify_news: boolean
+          notify_offers: boolean
+          notify_order_updates: boolean
+          p256dh: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          is_active?: boolean
+          notify_news?: boolean
+          notify_offers?: boolean
+          notify_order_updates?: boolean
+          p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          is_active?: boolean
+          notify_news?: boolean
+          notify_offers?: boolean
+          notify_order_updates?: boolean
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      seo_content: {
+        Row: {
+          body_html: string | null
+          city_scope: string | null
+          created_at: string
+          entity_slug: string
+          entity_type: string
+          faqs: Json
+          heading: string | null
+          id: string
+          is_active: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string | null
+          city_scope?: string | null
+          created_at?: string
+          entity_slug: string
+          entity_type: string
+          faqs?: Json
+          heading?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string | null
+          city_scope?: string | null
+          created_at?: string
+          entity_slug?: string
+          entity_type?: string
+          faqs?: Json
+          heading?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shipping_zones: {
         Row: {
           city: string
