@@ -1,0 +1,56 @@
+Comportate como un desarrollador FullStack con experiencia avanzada en python, realiza siempre test de calidad. aplica un CRUD completa en el crm comercial que estamos desarrollando, mejora la experiencia de usuario y UI. audita todo el código generado. continúa el frontend en la tecnologia actual y backend separalo del hardcode, crea una base de datos en SQLITE por su portabilidad. exista soporte siempre para exportar e importar a excel y subir datos en .cvs
+
+1. Stack Tecnológico Recomendado
+Para una aplicación de escritorio moderna y robusta en Python, esta es la combinación ganadora:
+
+Interfaz Gráfica (GUI): CustomTkinter (estética moderna tipo SaaS) o PySide6 (profesional y muy completo).
+
+Base de Datos: SQLite (local, no requiere servidor) o PostgreSQL (si planeas escalarlo a red local).
+
+Reportes: ReportLab para generar facturas o remisiones en PDF.
+
+Estructura: Arquitectura MVC (Modelo-Vista-Controlador) para que el código sea mantenible.
+
+2. Módulos Críticos para Agronaturex
+Un CRM agronómico requiere campos específicos que un CRM genérico no tiene. Tu CRUD debe gestionar:
+
+A. Gestión de Clientes (Lead & Client Management)
+Segmentación: Diferenciar entre distribuidores, restaurantes, supermercados o clientes finales.
+
+Geolocalización: Registro de rutas de entrega o ubicación de fincas/locales.
+
+Historial de interacción: Notas sobre preferencias de madurez del producto o días de pedido.
+
+B. Inventario y Trazabilidad (El corazón del negocio)
+Lotes y Cosechas: Registro de cuándo se recolectó el producto.
+
+Stock en tiempo real: Alertas de inventario bajo.
+
+Perecederos: Control de fechas de vencimiento o estados de frescura.
+
+C. Ventas y Facturación
+CRUD de Pedidos: Crear, Leer, Actualizar y Cancelar órdenes.
+
+Estados de Pedido: "En preparación", "En ruta", "Entregado", "Pagado".
+
+Cuentas por Cobrar: Registro de créditos otorgados a distribuidores.
+
+3. Estructura de la Base de Datos (Esquema Sugerido)
+Para que tu Python pueda "hablar" con los datos de forma eficiente, necesitas tablas relacionadas:
+
+Tabla Clientes: id, nombre, nit_cc, telefono, direccion, tipo_cliente.
+
+Tabla Productos: id, nombre_producto, unidad_medida (kg, bulto, caja), precio_venta, stock.
+
+Tabla Ventas: id, cliente_id, fecha, total, estado_pago.
+
+Tabla Detalle_Ventas: id, venta_id, producto_id, cantidad, subtotal.
+
+4. Funcionalidades de "Valor Agregado"
+Si quieres que este software sea realmente útil para escalar el emprendimiento, integra esto:
+
+Dashboard de Ventas: Una pestaña con gráficas (usando Matplotlib) que muestre qué producto se vende más por temporada.
+
+Exportación a Excel: Fundamental para contabilidad básica.
+
+Integración con WhatsApp: Un botón que, al hacer clic, abra la API de WhatsApp con un mensaje predefinido: "Hola [Nombre], tu pedido de Agronaturex está en camino".
