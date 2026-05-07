@@ -49,6 +49,26 @@ const Hub = () => {
     },
   });
 
+  // Long-form SEO content (H2 + body + own FAQs) per category/brand/city/tag
+  const seoEntityType = type === "categoria" ? "category" : type === "marca" ? "brand" : type === "ciudad" ? "city" : type === "etiqueta" ? "tag" : null;
+  const { data: seoLong } = useQuery({
+    queryKey: ["seo_content", seoEntityType, slug, cityScope],
+    enabled: !!seoEntityType && !!slug,
+    queryFn: async () => {
+      const q = supabase
+        .from("seo_content")
+        .select("heading, body_html, faqs, city_scope")
+        .eq("entity_type", seoEntityType!)
+        .eq("entity_slug", slug!)
+        .eq("is_active", true);
+      const { data, error } = await q;
+      if (error) throw error;
+      // Prefer the row matching cityScope; fallback to one with no city_scope
+      const list = data || [];
+      return list.find((r: any) => r.city_scope === cityScope) || list.find((r: any) => !r.city_scope) || null;
+    },
+  });
+
   const categorySlug = type === "categoria" ? slug : "";
   const { data: products, isLoading } = useProducts(categorySlug || undefined);
 
@@ -275,7 +295,20 @@ const Hub = () => {
                   <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{f.answer}</p>
                 </details>
               ))}
+              {(seoLong?.faqs as any[] | undefined)?.map((f: any, i: number) => (
+                <details key={`s-${i}`} className="bg-card rounded-xl p-3 border border-border">
+                  <summary className="text-sm font-semibold text-foreground cursor-pointer">{f.q}</summary>
+                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed whitespace-pre-line">{f.a}</p>
+                </details>
+              ))}
             </div>
+          </section>
+        )}
+
+        {(seoLong?.heading || seoLong?.body_html) && (
+          <section className="mt-10 border-t border-border pt-6 prose prose-sm max-w-none prose-headings:font-heading prose-headings:text-foreground prose-p:text-muted-foreground">
+            {seoLong?.heading && <h2>{seoLong.heading}</h2>}
+            {seoLong?.body_html && <div dangerouslySetInnerHTML={{ __html: seoLong.body_html }} />}
           </section>
         )}
       </main>
