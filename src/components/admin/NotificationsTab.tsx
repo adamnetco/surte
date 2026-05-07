@@ -517,6 +517,9 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
         })}
       </div>
 
+      {/* Web Push (PWA) ─────────────────────────────────────── */}
+      <WebPushSection />
+
       {/* Subscribers list */}
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Suscriptores ({subscribers?.length || 0})</p>
@@ -549,3 +552,92 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
 };
 
 export default NotificationsTab;
+
+// ── Web Push (PWA) admin section ─────────────────────────────────
+function WebPushSection() {
+  const [title, setTitle] = useState("SURTÉ YA");
+  const [body, setBody] = useState("");
+  const [url, setUrl] = useState("/");
+  const [seg, setSeg] = useState<"all" | "offers" | "news" | "order_updates">("all");
+  const [busy, setBusy] = useState(false);
+
+  const { data: subs } = useQuery({
+    queryKey: ["push_subs_admin"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("push_subscriptions")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true);
+      return count || 0;
+    },
+  });
+
+  const send = async () => {
+    if (!body.trim()) return toast.error("Escribe el cuerpo del mensaje");
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-web-push", {
+        body: { title, body, url, segment: seg },
+      });
+      if (error) throw error;
+      toast.success(`Push enviado: ${data?.sent ?? 0} entregados, ${data?.failed ?? 0} fallidos`);
+      setBody("");
+    } catch (e: any) {
+      toast.error(e?.message || "Error al enviar");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-heading font-bold text-sm flex items-center gap-2">
+            <Smartphone size={16} className="text-secondary" /> Web Push (PWA)
+          </h3>
+          <p className="text-[11px] text-muted-foreground">{subs ?? 0} navegadores suscritos</p>
+        </div>
+      </div>
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Título"
+        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+      />
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="Cuerpo del mensaje"
+        rows={2}
+        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="URL al hacer click"
+          className="px-3 py-2 rounded-lg border border-border bg-background text-sm"
+        />
+        <select
+          value={seg}
+          onChange={(e) => setSeg(e.target.value as any)}
+          className="px-3 py-2 rounded-lg border border-border bg-background text-sm"
+        >
+          <option value="all">Todos</option>
+          <option value="offers">Ofertas</option>
+          <option value="news">Noticias</option>
+          <option value="order_updates">Pedidos</option>
+        </select>
+      </div>
+      <button
+        onClick={send}
+        disabled={busy || !body.trim()}
+        className="w-full bg-secondary text-secondary-foreground px-4 py-2 rounded-full text-sm font-bold inline-flex items-center justify-center gap-2 disabled:opacity-50"
+      >
+        {busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+        Enviar push ahora
+      </button>
+    </div>
+  );
+}
