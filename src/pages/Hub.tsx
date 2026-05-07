@@ -209,7 +209,7 @@ const Hub = () => {
       <HeadMeta title={metaTitle} description={metaDesc} canonical={pageUrl} ogImage={ogImage} />
       <JsonLd data={collectionSchema} id="collection" />
       <JsonLd data={buildBreadcrumbSchema(breadcrumbs)} id="breadcrumb" />
-      <JsonLd data={buildFaqSchema(faqs)} id="faq" />
+      <JsonLd data={buildFaqSchema([...faqs, ...((seoLong?.faqs as any[] | undefined) || []).map((f: any) => ({ question: f.q, answer: f.a }))])} id="faq" />
       {sorted.length > 0 && (
         <JsonLd data={buildProductListSchema(sorted, title, pageUrl)} id="product-list" />
       )}
