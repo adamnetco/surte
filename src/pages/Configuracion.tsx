@@ -1,5 +1,6 @@
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
+import PushOptIn from "@/components/PushOptIn";
 import { ArrowLeft, Bell, Globe, Shield, Sun, Moon, Monitor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
@@ -24,21 +25,7 @@ const Configuracion = () => {
 
         {/* Notifications */}
         <div className="space-y-2 mb-6">
-          <div className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border">
-            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-              <Bell size={20} className="text-accent" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Notificaciones</p>
-              <p className="text-xs text-muted-foreground">Recibir alertas de pedidos</p>
-            </div>
-            <button
-              onClick={() => { setNotifications((v) => !v); toast.success(`Notificaciones ${!notifications ? "activadas" : "desactivadas"}`); }}
-              className={`w-12 h-7 rounded-full transition-colors relative ${notifications ? "bg-accent" : "bg-muted"}`}
-            >
-              <span className={`absolute top-1 w-5 h-5 rounded-full bg-card shadow transition-transform ${notifications ? "right-1" : "left-1"}`} />
-            </button>
-          </div>
+          <PushOptIn />
         </div>
 
         {/* Theme selector — synced with global ThemeContext */}
