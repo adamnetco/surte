@@ -15,6 +15,7 @@ import DynamicThemeInjector from "@/components/DynamicThemeInjector";
 import CustomScriptInjector from "@/components/CustomScriptInjector";
 import Analytics from "@/components/seo/Analytics";
 import CartNavigationGuard from "@/components/CartNavigationGuard";
+import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 import Index from "./pages/Index";
 import Catalogo from "./pages/Catalogo";
 import Carrito from "./pages/Carrito";
@@ -56,6 +57,7 @@ const App = () => (
               <BrowserRouter>
                 <Analytics />
                 <CartNavigationGuard />
+                <OmnichannelCartListener />
                 <SwipeProvider>
                   <Routes>
                     <Route path="/" element={<Index />} />
