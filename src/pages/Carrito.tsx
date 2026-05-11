@@ -375,7 +375,7 @@ const Carrito = () => {
       const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMsg)}`;
 
       if (appliedCoupon) {
-        await supabase.from("coupons").update({ current_uses: (appliedCoupon.current_uses || 0) + 1 }).eq("id", appliedCoupon.id);
+        await supabase.rpc("redeem_coupon", { _coupon_id: appliedCoupon.id });
       }
 
       clearCart();
