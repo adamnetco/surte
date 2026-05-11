@@ -1023,6 +1023,57 @@ export type Database = {
           },
         ]
       }
+      persistent_carts: {
+        Row: {
+          cart_token: string
+          channel: string
+          created_at: string
+          expires_at: string
+          id: string
+          items: Json
+          last_activity_at: string
+          metadata: Json
+          phone: string | null
+          status: string
+          subtotal: number
+          total_items: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cart_token?: string
+          channel?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          items?: Json
+          last_activity_at?: string
+          metadata?: Json
+          phone?: string | null
+          status?: string
+          subtotal?: number
+          total_items?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cart_token?: string
+          channel?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          items?: Json
+          last_activity_at?: string
+          metadata?: Json
+          phone?: string | null
+          status?: string
+          subtotal?: number
+          total_items?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       product_media: {
         Row: {
           created_at: string
@@ -1631,6 +1682,10 @@ export type Database = {
       }
     }
     Functions: {
+      complete_persistent_cart: {
+        Args: { _cart_token: string }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1638,6 +1693,20 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_persistent_cart: {
+        Args: { _cart_token: string }
+        Returns: {
+          cart_token: string
+          channel: string
+          items: Json
+          phone: string
+          status: string
+          subtotal: number
+          total_items: number
+          updated_at: string
+          user_id: string
+        }[]
       }
       has_any_role: {
         Args: {
@@ -1671,6 +1740,19 @@ export type Database = {
         }[]
       }
       redeem_coupon: { Args: { _coupon_id: string }; Returns: boolean }
+      upsert_persistent_cart: {
+        Args: {
+          _cart_token: string
+          _channel?: string
+          _items: Json
+          _metadata?: Json
+          _phone?: string
+          _subtotal: number
+          _total_items: number
+          _user_id?: string
+        }
+        Returns: string
+      }
       validate_coupon: {
         Args: { _code: string; _order_total: number }
         Returns: {
