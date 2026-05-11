@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import type { Tables } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
+import { getCartToken, resetCartToken, setCartToken } from "@/lib/cartToken";
 
 type Product = Tables<"products">;
 
@@ -30,6 +32,7 @@ interface AddItemOptions {
 
 interface CartContextType {
   items: CartItem[];
+  cartToken: string;
   addItem: (product: Product, quantity?: number, unitPrice?: number, presentation?: { id: string; name: string }, modifiers?: CartModifier[], modifierTotal?: number, options?: AddItemOptions) => void;
   removeItem: (productId: string, presentationId?: string) => void;
   updateQuantity: (productId: string, quantity: number, presentationId?: string) => void;
@@ -38,6 +41,10 @@ interface CartContextType {
   totalPrice: number;
   isDrawerOpen: boolean;
   setDrawerOpen: (open: boolean) => void;
+  /** Hydrate the cart from a Supabase persistent_carts row (omnichannel return). */
+  hydrateFromRemote: (token: string) => Promise<boolean>;
+  /** Attach a phone number to the active cart (used after the user types one). */
+  attachPhone: (phone: string) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
