@@ -1670,6 +1670,18 @@ export type Database = {
           read_ct: number
         }[]
       }
+      redeem_coupon: { Args: { _coupon_id: string }; Returns: boolean }
+      validate_coupon: {
+        Args: { _code: string; _order_total: number }
+        Returns: {
+          code: string
+          discount_amount: number
+          discount_type: string
+          discount_value: number
+          id: string
+          min_order_amount: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "superadmin" | "editor" | "agente"
