@@ -199,24 +199,23 @@ const Carrito = () => {
     if (!couponCode.trim()) return;
     setValidatingCoupon(true);
     try {
-      const { data, error } = await supabase
-        .from("coupons")
-        .select("*")
-        .eq("code", couponCode.toUpperCase().trim())
-        .eq("is_active", true)
-        .single();
-      if (error || !data) { toast.error("Cupón no válido"); setValidatingCoupon(false); return; }
-      if (data.expires_at && new Date(data.expires_at) < new Date()) { toast.error("Cupón expirado"); setValidatingCoupon(false); return; }
-      if (data.max_uses && data.current_uses >= data.max_uses) { toast.error("Cupón agotado"); setValidatingCoupon(false); return; }
-      if (data.min_order_amount && totalPrice < Number(data.min_order_amount)) {
-        toast.error(`Pedido mínimo de ${formatPrice(Number(data.min_order_amount))} para este cupón`);
-        setValidatingCoupon(false); return;
+      const { data, error } = await supabase.rpc("validate_coupon", {
+        _code: couponCode.toUpperCase().trim(),
+        _order_total: totalPrice,
+      });
+      if (error || !data || !data[0]) {
+        const msg = error?.message || "";
+        if (msg.includes("expired_coupon")) toast.error("Cupón expirado");
+        else if (msg.includes("exhausted_coupon")) toast.error("Cupón agotado");
+        else if (msg.includes("min_order_not_met")) toast.error("Pedido mínimo no alcanzado para este cupón");
+        else toast.error("Cupón no válido");
+        setValidatingCoupon(false);
+        return;
       }
-      const disc = data.discount_type === "percentage"
-        ? Math.round(totalPrice * Number(data.discount_value) / 100)
-        : Number(data.discount_value);
+      const row = data[0];
+      const disc = Number(row.discount_amount);
       setCouponDiscount(disc);
-      setAppliedCoupon(data);
+      setAppliedCoupon({ id: row.id, code: row.code });
       toast.success(`Cupón aplicado: -${formatPrice(disc)}`);
     } catch { toast.error("Error validando cupón"); }
     setValidatingCoupon(false);
