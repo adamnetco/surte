@@ -281,6 +281,7 @@ const Carrito = () => {
       return;
     }
     const fullPhone = phone.startsWith("+") ? phone : `${countryCode}${phone.replace(/^0+/, "")}`;
+    attachPhone(fullPhone);
     setSubmitting(true);
     try {
       const grandTotal = totalPrice + finalDeliveryCost - couponDiscount;
