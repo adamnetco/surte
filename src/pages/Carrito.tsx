@@ -109,7 +109,7 @@ const COUNTRY_CODES = [
 ];
 
 const Carrito = () => {
-  const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice, clearCart, cartToken, attachPhone } = useCart();
   const { data: settings } = useAppSettings();
   const { user, isAgent } = useAuth();
   const { customer: agentCustomer, deliveryDate: agentDeliveryDate, clearAgent } = useAgent();
@@ -381,7 +381,7 @@ const Carrito = () => {
       }
 
       // Mark the persistent cart as completed (best-effort, non-blocking)
-      supabase.rpc("complete_persistent_cart", { _cart_token: cartToken }).catch(() => {});
+      try { await supabase.rpc("complete_persistent_cart", { _cart_token: cartToken }); } catch { /* ignore */ }
 
       clearCart();
       if (isAgent) clearAgent();
