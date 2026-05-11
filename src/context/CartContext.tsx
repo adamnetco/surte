@@ -84,20 +84,72 @@ function loadCart(): CartItem[] {
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>(() => loadCart());
   const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const [cartToken, setCartTokenState] = useState<string>(() => getCartToken());
   const itemsRef = useRef(items);
   itemsRef.current = items;
+  const phoneRef = useRef<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
+  const syncTimer = useRef<number | null>(null);
+  const isHydratingRef = useRef(false);
+
+  // Track auth user_id to associate carts on login
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      userIdRef.current = data.user?.id ?? null;
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      userIdRef.current = session?.user?.id ?? null;
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   // Persist whenever items change
   useEffect(() => {
     saveCart(items);
   }, [items]);
 
+  // Debounced remote sync to persistent_carts (skipped while hydrating)
+  useEffect(() => {
+    if (isHydratingRef.current) return;
+    if (syncTimer.current) window.clearTimeout(syncTimer.current);
+    syncTimer.current = window.setTimeout(() => {
+      const payload = items.map((i) => ({
+        product_id: i.product.id,
+        name: i.product.name,
+        quantity: i.quantity,
+        unit_price: i.unitPrice,
+        line_total: i.unitPrice * i.quantity,
+        image_url: i.product.image_url,
+        presentation_id: i.presentationId ?? null,
+        presentation_name: i.presentationName ?? null,
+        modifiers: i.modifiers ?? null,
+      }));
+      const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+      const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+      // Fire-and-forget — never block the UI on cart sync.
+      supabase.rpc("upsert_persistent_cart", {
+        _cart_token: cartToken,
+        _items: payload as any,
+        _subtotal: subtotal,
+        _total_items: totalItems,
+        _phone: phoneRef.current,
+        _user_id: userIdRef.current,
+        _channel: "web",
+        _metadata: {} as any,
+      }).then(({ error }) => {
+        if (error) console.warn("[cart-sync]", error.message);
+      });
+    }, 800);
+    return () => {
+      if (syncTimer.current) window.clearTimeout(syncTimer.current);
+    };
+  }, [items, cartToken]);
+
   // Warn before leaving the page when cart has items
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (itemsRef.current.length > 0) {
         e.preventDefault();
-        // Most browsers show a generic message; setting returnValue is required
         e.returnValue = "";
       }
     };
@@ -109,16 +161,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const price = unitPrice ?? product.price;
     const key = lineKey(product.id, presentation?.id);
     setItems((prev) => {
-      // If modifiers are present, always add as new line (modifiers make each line unique)
       if (modifiers && modifiers.length > 0) {
         return [...prev, {
-          product,
-          quantity,
+          product, quantity,
           unitPrice: price + (modifierTotal || 0),
-          presentationId: presentation?.id,
-          presentationName: presentation?.name,
-          modifiers,
-          modifierTotal: modifierTotal || 0,
+          presentationId: presentation?.id, presentationName: presentation?.name,
+          modifiers, modifierTotal: modifierTotal || 0,
         }];
       }
       const existing = prev.find((i) => getLineKey(i) === key && (!i.modifiers || i.modifiers.length === 0));
@@ -130,16 +178,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       }
       return [...prev, {
-        product,
-        quantity,
-        unitPrice: price,
-        presentationId: presentation?.id,
-        presentationName: presentation?.name,
+        product, quantity, unitPrice: price,
+        presentationId: presentation?.id, presentationName: presentation?.name,
       }];
     });
-    if (options?.openDrawer !== false) {
-      setDrawerOpen(true);
-    }
+    if (options?.openDrawer !== false) setDrawerOpen(true);
   }, []);
 
   const removeItem = useCallback((productId: string, presentationId?: string) => {
@@ -161,13 +204,75 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = useCallback(() => {
     setItems([]);
     localStorage.removeItem(STORAGE_KEY);
+    // Rotate the cart_token so the next cart starts fresh in Supabase
+    const next = resetCartToken();
+    setCartTokenState(next);
+  }, []);
+
+  const attachPhone = useCallback((phone: string) => {
+    const digits = (phone || "").replace(/\D/g, "");
+    phoneRef.current = digits || null;
+  }, []);
+
+  /**
+   * Hydrate the in-memory cart from a remote cart_token. Used when the
+   * user returns from WhatsApp (?cart=token) or logs in on another device.
+   * Returns true when the remote cart is found and applied.
+   */
+  const hydrateFromRemote = useCallback(async (token: string): Promise<boolean> => {
+    if (!token) return false;
+    isHydratingRef.current = true;
+    try {
+      const { data, error } = await supabase.rpc("get_persistent_cart", { _cart_token: token });
+      if (error || !data || data.length === 0) return false;
+      const remote = data[0] as any;
+      const remoteItems = Array.isArray(remote.items) ? remote.items : [];
+      if (remoteItems.length === 0) return false;
+
+      // Re-fetch the live products referenced by the remote cart so we
+      // honour current price/stock and avoid stale data.
+      const ids = Array.from(new Set(remoteItems.map((i: any) => i.product_id))).filter(Boolean);
+      const { data: prods } = await supabase
+        .from("products")
+        .select("*")
+        .in("id", ids as string[]);
+      const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
+
+      const rebuilt: CartItem[] = remoteItems
+        .map((it: any) => {
+          const p = prodMap.get(it.product_id);
+          if (!p) return null;
+          return {
+            product: p as Product,
+            quantity: Number(it.quantity) || 1,
+            unitPrice: Number(it.unit_price) || Number((p as any).price),
+            presentationId: it.presentation_id || undefined,
+            presentationName: it.presentation_name || undefined,
+            modifiers: it.modifiers || undefined,
+          } as CartItem;
+        })
+        .filter(Boolean) as CartItem[];
+
+      setCartToken(token);
+      setCartTokenState(token);
+      setItems(rebuilt);
+      if (remote.phone) phoneRef.current = remote.phone;
+      return true;
+    } finally {
+      // Allow auto-sync again after hydration settles
+      setTimeout(() => { isHydratingRef.current = false; }, 100);
+    }
   }, []);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, isDrawerOpen, setDrawerOpen }}>
+    <CartContext.Provider value={{
+      items, cartToken, addItem, removeItem, updateQuantity, clearCart,
+      totalItems, totalPrice, isDrawerOpen, setDrawerOpen,
+      hydrateFromRemote, attachPhone,
+    }}>
       {children}
     </CartContext.Provider>
   );
