@@ -29,3 +29,7 @@ project_id = "dimyhjzcwlgfczimqhet"
     verify_jwt = true
   [functions.sync-products-to-wp]
     verify_jwt = true
+  [functions.lead-capture]
+    verify_jwt = false
+  [functions.get-landing]
+    verify_jwt = false
