@@ -48,6 +48,7 @@ import Planes from "./pages/Planes";
 import Billing from "./pages/Billing";
 import Onboarding from "./pages/Onboarding";
 import CatalogosBase from "./pages/CatalogosBase";
+import Licencias from "./pages/Licencias";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +98,7 @@ const App = () => (
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/catalogos-base" element={<CatalogosBase />} />
+                    <Route path="/licencias" element={<Licencias />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
                     {/* SEO local: URLs amigables con ciudad */}
