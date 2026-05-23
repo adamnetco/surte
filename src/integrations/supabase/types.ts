@@ -197,6 +197,184 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_movements: {
+        Row: {
+          amount: number
+          cash_session_id: string
+          concept: string
+          created_at: string
+          created_by: string
+          id: string
+          movement_type: string
+          organization_id: string
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          cash_session_id: string
+          concept: string
+          created_at?: string
+          created_by: string
+          id?: string
+          movement_type: string
+          organization_id: string
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          cash_session_id?: string
+          concept?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          movement_type?: string
+          organization_id?: string
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_movements_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_registers: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          location_id: string
+          name: string
+          organization_id: string
+          printer_config: Json
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id: string
+          name: string
+          organization_id: string
+          printer_config?: Json
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string
+          name?: string
+          organization_id?: string
+          printer_config?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_registers_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_sessions: {
+        Row: {
+          cash_register_id: string
+          closed_at: string | null
+          closed_by: string | null
+          closing_amount: number | null
+          created_at: string
+          difference: number | null
+          expected_amount: number
+          id: string
+          location_id: string
+          notes: string | null
+          opened_at: string
+          opened_by: string
+          opening_amount: number
+          organization_id: string
+          status: string
+          ticket_count: number
+          total_card: number
+          total_cash: number
+          total_other: number
+          total_sales: number
+          total_transfer: number
+          updated_at: string
+        }
+        Insert: {
+          cash_register_id: string
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_amount?: number | null
+          created_at?: string
+          difference?: number | null
+          expected_amount?: number
+          id?: string
+          location_id: string
+          notes?: string | null
+          opened_at?: string
+          opened_by: string
+          opening_amount?: number
+          organization_id: string
+          status?: string
+          ticket_count?: number
+          total_card?: number
+          total_cash?: number
+          total_other?: number
+          total_sales?: number
+          total_transfer?: number
+          updated_at?: string
+        }
+        Update: {
+          cash_register_id?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_amount?: number | null
+          created_at?: string
+          difference?: number | null
+          expected_amount?: number
+          id?: string
+          location_id?: string
+          notes?: string | null
+          opened_at?: string
+          opened_by?: string
+          opening_amount?: number
+          organization_id?: string
+          status?: string
+          ticket_count?: number
+          total_card?: number
+          total_cash?: number
+          total_other?: number
+          total_sales?: number
+          total_transfer?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_sessions_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_sessions_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           color: string | null
@@ -799,6 +977,57 @@ export type Database = {
           },
         ]
       }
+      locations: {
+        Row: {
+          address: string | null
+          city: string | null
+          code: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          is_main: boolean
+          name: string
+          organization_id: string
+          phone: string | null
+          settings: Json
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          code?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_main?: boolean
+          name: string
+          organization_id: string
+          phone?: string | null
+          settings?: Json
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          code?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_main?: boolean
+          name?: string
+          organization_id?: string
+          phone?: string | null
+          settings?: Json
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       modifier_groups: {
         Row: {
           created_at: string
@@ -1112,6 +1341,7 @@ export type Database = {
           external_sync_sent_at: string | null
           external_sync_status: string
           id: string
+          location_id: string | null
           notes: string | null
           order_number: number
           organization_id: string | null
@@ -1142,6 +1372,7 @@ export type Database = {
           external_sync_sent_at?: string | null
           external_sync_status?: string
           id?: string
+          location_id?: string | null
           notes?: string | null
           order_number?: number
           organization_id?: string | null
@@ -1172,6 +1403,7 @@ export type Database = {
           external_sync_sent_at?: string | null
           external_sync_status?: string
           id?: string
+          location_id?: string | null
           notes?: string | null
           order_number?: number
           organization_id?: string | null
@@ -1399,6 +1631,227 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_order_items: {
+        Row: {
+          created_at: string
+          discount: number
+          id: string
+          modifiers: Json
+          notes: string | null
+          organization_id: string
+          pos_order_id: string
+          presentation_id: string | null
+          product_id: string | null
+          product_name: string
+          quantity: number
+          sku: string | null
+          tax_amount: number
+          tax_rate: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          discount?: number
+          id?: string
+          modifiers?: Json
+          notes?: string | null
+          organization_id: string
+          pos_order_id: string
+          presentation_id?: string | null
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          sku?: string | null
+          tax_amount?: number
+          tax_rate?: number
+          total: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          discount?: number
+          id?: string
+          modifiers?: Json
+          notes?: string | null
+          organization_id?: string
+          pos_order_id?: string
+          presentation_id?: string | null
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          sku?: string | null
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_order_items_pos_order_id_fkey"
+            columns: ["pos_order_id"]
+            isOneToOne: false
+            referencedRelation: "pos_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_orders: {
+        Row: {
+          amount_paid: number
+          cash_session_id: string
+          cashier_id: string
+          change_due: number
+          created_at: string
+          customer_document: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          customer_profile_id: string | null
+          discount: number
+          id: string
+          location_id: string
+          metadata: Json
+          notes: string | null
+          organization_id: string
+          paid_at: string | null
+          status: string
+          subtotal: number
+          tax: number
+          ticket_number: number
+          tip: number
+          total: number
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          amount_paid?: number
+          cash_session_id: string
+          cashier_id: string
+          change_due?: number
+          created_at?: string
+          customer_document?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          customer_profile_id?: string | null
+          discount?: number
+          id?: string
+          location_id: string
+          metadata?: Json
+          notes?: string | null
+          organization_id: string
+          paid_at?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number
+          ticket_number?: number
+          tip?: number
+          total?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          cash_session_id?: string
+          cashier_id?: string
+          change_due?: number
+          created_at?: string
+          customer_document?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          customer_profile_id?: string | null
+          discount?: number
+          id?: string
+          location_id?: string
+          metadata?: Json
+          notes?: string | null
+          organization_id?: string
+          paid_at?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number
+          ticket_number?: number
+          tip?: number
+          total?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_orders_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_payments: {
+        Row: {
+          amount: number
+          cash_session_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          method: string
+          organization_id: string
+          pos_order_id: string
+          received_by: string
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          cash_session_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          method: string
+          organization_id: string
+          pos_order_id: string
+          received_by: string
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          cash_session_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          method?: string
+          organization_id?: string
+          pos_order_id?: string
+          received_by?: string
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_payments_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_payments_pos_order_id_fkey"
+            columns: ["pos_order_id"]
+            isOneToOne: false
+            referencedRelation: "pos_orders"
             referencedColumns: ["id"]
           },
         ]
