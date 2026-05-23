@@ -375,6 +375,173 @@ export type Database = {
           },
         ]
       }
+      catalog_template_applications: {
+        Row: {
+          applied_at: string
+          applied_by: string | null
+          id: string
+          items_created: number
+          items_skipped: number
+          items_updated: number
+          mode: string
+          notes: string | null
+          organization_id: string
+          template_id: string
+          template_version: number
+        }
+        Insert: {
+          applied_at?: string
+          applied_by?: string | null
+          id?: string
+          items_created?: number
+          items_skipped?: number
+          items_updated?: number
+          mode?: string
+          notes?: string | null
+          organization_id: string
+          template_id: string
+          template_version: number
+        }
+        Update: {
+          applied_at?: string
+          applied_by?: string | null
+          id?: string
+          items_created?: number
+          items_skipped?: number
+          items_updated?: number
+          mode?: string
+          notes?: string | null
+          organization_id?: string
+          template_id?: string
+          template_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_template_applications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_template_applications_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalog_template_items: {
+        Row: {
+          brand: string | null
+          category_slug: string | null
+          created_at: string
+          description: string | null
+          gtin: string | null
+          id: string
+          image_url: string | null
+          name: string
+          sku: string | null
+          sort_order: number | null
+          suggested_cost: number | null
+          suggested_price: number | null
+          suggested_wholesale: number | null
+          tags: string[] | null
+          template_id: string
+          unit: string | null
+        }
+        Insert: {
+          brand?: string | null
+          category_slug?: string | null
+          created_at?: string
+          description?: string | null
+          gtin?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          sku?: string | null
+          sort_order?: number | null
+          suggested_cost?: number | null
+          suggested_price?: number | null
+          suggested_wholesale?: number | null
+          tags?: string[] | null
+          template_id: string
+          unit?: string | null
+        }
+        Update: {
+          brand?: string | null
+          category_slug?: string | null
+          created_at?: string
+          description?: string | null
+          gtin?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          sku?: string | null
+          sort_order?: number | null
+          suggested_cost?: number | null
+          suggested_price?: number | null
+          suggested_wholesale?: number | null
+          tags?: string[] | null
+          template_id?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalog_templates: {
+        Row: {
+          country_code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon_name: string | null
+          id: string
+          is_active: boolean
+          name: string
+          niche_key: string
+          total_items: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          niche_key: string
+          total_items?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          niche_key?: string
+          total_items?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string | null
@@ -4007,6 +4174,10 @@ export type Database = {
       }
     }
     Functions: {
+      apply_catalog_template: {
+        Args: { _mode?: string; _org_id: string; _template_id: string }
+        Returns: Json
+      }
       apply_stock_movement: {
         Args: {
           _movement_type: string
