@@ -92,7 +92,11 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
       wp_base_url: wpEdit.wp_base_url.replace(/\/$/, ""),
       wp_username: wpEdit.wp_username || null,
       wp_app_password: wpEdit.wp_app_password || null,
+      wp_app_user: wpEdit.wp_app_user || wpEdit.wp_username || null,
       default_post_type: wpEdit.default_post_type || "posts",
+      product_cpt: wpEdit.product_cpt || "producto",
+      revalidate_url: wpEdit.revalidate_url || null,
+      revalidate_token: wpEdit.revalidate_token || null,
     };
     const { error } = wpEdit.id
       ? await supabase.from("tenant_wp_config").update(payload).eq("id", wpEdit.id)
@@ -100,6 +104,15 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
     if (error) return toast.error(error.message);
     toast.success("WP guardado");
     setWpEdit(null);
+    qc.invalidateQueries({ queryKey: ["tenant-sites", orgId] });
+  };
+
+  const syncProducts = async (siteId: string) => {
+    toast.loading("Sincronizando productos a WP…", { id: "sync" });
+    const { data, error } = await supabase.functions.invoke("sync-products-to-wp", { body: { site_id: siteId, limit: 200 } });
+    toast.dismiss("sync");
+    if (error) return toast.error(error.message);
+    toast.success(`Sync: ${data.succeeded}/${data.total} ok, ${data.failed} fallidos`);
     qc.invalidateQueries({ queryKey: ["tenant-sites", orgId] });
   };
 
