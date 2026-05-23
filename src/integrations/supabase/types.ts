@@ -4566,6 +4566,56 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_sync_log: {
+        Row: {
+          created_at: string
+          error: string | null
+          failed: number | null
+          id: string
+          kind: string
+          organization_id: string
+          payload: Json | null
+          site_id: string
+          status: string
+          succeeded: number | null
+          total: number | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          failed?: number | null
+          id?: string
+          kind: string
+          organization_id: string
+          payload?: Json | null
+          site_id: string
+          status?: string
+          succeeded?: number | null
+          total?: number | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          failed?: number | null
+          id?: string
+          kind?: string
+          organization_id?: string
+          payload?: Json | null
+          site_id?: string
+          status?: string
+          succeeded?: number | null
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_sync_log_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_wp_config: {
         Row: {
           created_at: string
@@ -4573,11 +4623,15 @@ export type Database = {
           id: string
           last_sync_at: string | null
           organization_id: string
+          product_cpt: string | null
+          revalidate_token: string | null
+          revalidate_url: string | null
           site_id: string
           taxonomies: Json | null
           updated_at: string
           webhook_secret: string | null
           wp_app_password: string | null
+          wp_app_user: string | null
           wp_base_url: string
           wp_username: string | null
         }
@@ -4587,11 +4641,15 @@ export type Database = {
           id?: string
           last_sync_at?: string | null
           organization_id: string
+          product_cpt?: string | null
+          revalidate_token?: string | null
+          revalidate_url?: string | null
           site_id: string
           taxonomies?: Json | null
           updated_at?: string
           webhook_secret?: string | null
           wp_app_password?: string | null
+          wp_app_user?: string | null
           wp_base_url: string
           wp_username?: string | null
         }
@@ -4601,11 +4659,15 @@ export type Database = {
           id?: string
           last_sync_at?: string | null
           organization_id?: string
+          product_cpt?: string | null
+          revalidate_token?: string | null
+          revalidate_url?: string | null
           site_id?: string
           taxonomies?: Json | null
           updated_at?: string
           webhook_secret?: string | null
           wp_app_password?: string | null
+          wp_app_user?: string | null
           wp_base_url?: string
           wp_username?: string | null
         }

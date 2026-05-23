@@ -13,11 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink } from "lucide-react";
+import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink, RefreshCw, Send, Webhook } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 
 const ASTRO_HOST_IP = "185.158.133.1"; // mismo IP base de Lovable; el cliente reenvía aquí su DNS
+const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
 
 export default function Sitios() {
   const { user, role, loading } = useAuth();
@@ -91,7 +92,11 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
       wp_base_url: wpEdit.wp_base_url.replace(/\/$/, ""),
       wp_username: wpEdit.wp_username || null,
       wp_app_password: wpEdit.wp_app_password || null,
+      wp_app_user: wpEdit.wp_app_user || wpEdit.wp_username || null,
       default_post_type: wpEdit.default_post_type || "posts",
+      product_cpt: wpEdit.product_cpt || "producto",
+      revalidate_url: wpEdit.revalidate_url || null,
+      revalidate_token: wpEdit.revalidate_token || null,
     };
     const { error } = wpEdit.id
       ? await supabase.from("tenant_wp_config").update(payload).eq("id", wpEdit.id)
@@ -99,6 +104,15 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
     if (error) return toast.error(error.message);
     toast.success("WP guardado");
     setWpEdit(null);
+    qc.invalidateQueries({ queryKey: ["tenant-sites", orgId] });
+  };
+
+  const syncProducts = async (siteId: string) => {
+    toast.loading("Sincronizando productos a WP…", { id: "sync" });
+    const { data, error } = await supabase.functions.invoke("sync-products-to-wp", { body: { site_id: siteId, limit: 200 } });
+    toast.dismiss("sync");
+    if (error) return toast.error(error.message);
+    toast.success(`Sync: ${data.succeeded}/${data.total} ok, ${data.failed} fallidos`);
     qc.invalidateQueries({ queryKey: ["tenant-sites", orgId] });
   };
 
@@ -137,11 +151,14 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
               </TableCell>
               <TableCell className="text-xs">{s.tenant_domains?.length ?? 0}</TableCell>
               <TableCell><Switch checked={s.is_published} onCheckedChange={() => togglePublish(s)} /></TableCell>
-              <TableCell>
+              <TableCell className="flex gap-1 flex-wrap">
                 <Button size="sm" variant="outline" onClick={() => setWpEdit({
                   ...(s.tenant_wp_config?.[0] ?? {}),
                   site_id: s.id,
-                })}>Configurar WP</Button>
+                })}>WP</Button>
+                <Button size="sm" variant="outline" disabled={!s.tenant_wp_config?.[0]?.wp_app_password} onClick={() => syncProducts(s.id)}>
+                  <Send className="w-3 h-3 mr-1" />Sync productos
+                </Button>
               </TableCell>
             </TableRow>
           ))}
@@ -150,19 +167,31 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
       </Table>
 
       <Dialog open={!!wpEdit} onOpenChange={(o) => !o && setWpEdit(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>WordPress headless</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>WordPress headless + revalidación Astro</DialogTitle></DialogHeader>
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto">
             <div><Label>URL base WP *</Label><Input value={wpEdit?.wp_base_url ?? ""} onChange={(e) => setWpEdit({ ...wpEdit, wp_base_url: e.target.value })} placeholder="https://blog.minegocio.com" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Usuario</Label><Input value={wpEdit?.wp_username ?? ""} onChange={(e) => setWpEdit({ ...wpEdit, wp_username: e.target.value })} /></div>
+              <div><Label>Usuario WP (Application Password)</Label><Input value={wpEdit?.wp_app_user ?? wpEdit?.wp_username ?? ""} onChange={(e) => setWpEdit({ ...wpEdit, wp_app_user: e.target.value, wp_username: e.target.value })} /></div>
               <div><Label>Application Password</Label><Input type="password" value={wpEdit?.wp_app_password ?? ""} onChange={(e) => setWpEdit({ ...wpEdit, wp_app_password: e.target.value })} /></div>
             </div>
-            <div><Label>Post type</Label><Input value={wpEdit?.default_post_type ?? "posts"} onChange={(e) => setWpEdit({ ...wpEdit, default_post_type: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Post type blog</Label><Input value={wpEdit?.default_post_type ?? "posts"} onChange={(e) => setWpEdit({ ...wpEdit, default_post_type: e.target.value })} /></div>
+              <div><Label>CPT productos</Label><Input value={wpEdit?.product_cpt ?? "producto"} onChange={(e) => setWpEdit({ ...wpEdit, product_cpt: e.target.value })} /></div>
+            </div>
+            <div className="border-t pt-3 space-y-3">
+              <div className="font-medium text-sm flex items-center gap-2"><RefreshCw className="w-4 h-4" />Revalidación de Astro al publicar en WP</div>
+              <div><Label>Revalidate URL (Vercel/Netlify)</Label><Input value={wpEdit?.revalidate_url ?? ""} onChange={(e) => setWpEdit({ ...wpEdit, revalidate_url: e.target.value })} placeholder="https://misitio.vercel.app/api/revalidate" /></div>
+              <div><Label>Token compartido</Label><Input value={wpEdit?.revalidate_token ?? ""} onChange={(e) => setWpEdit({ ...wpEdit, revalidate_token: e.target.value })} placeholder="secreto-compartido" /></div>
+              {wpEdit?.site_id && (
+                <div className="text-xs bg-muted/40 rounded-md p-3 space-y-1">
+                  <p className="font-medium text-foreground flex items-center gap-1"><Webhook className="w-3 h-3" />Webhook para WP (plugin WP Webhooks o similar):</p>
+                  <code className="break-all text-[10px]">{`${SUPABASE_FN_BASE}/wp-revalidate-webhook?site_id=${wpEdit.site_id}`}</code>
+                  <p className="text-muted-foreground">Header <code>X-WP-Signature</code> = tu token, evento <code>post_published</code>.</p>
+                </div>
+              )}
+            </div>
             <Button onClick={saveWp} className="w-full">Guardar</Button>
-            {wpEdit?.webhook_secret && (
-              <p className="text-xs text-muted-foreground">Webhook secret: <code>{wpEdit.webhook_secret}</code></p>
-            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -201,8 +230,12 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
   };
 
   const markVerified = async (d: any) => {
-    await supabase.from("tenant_domains").update({ verified_at: new Date().toISOString(), ssl_status: "active" }).eq("id", d.id);
-    toast.success("Dominio verificado");
+    toast.loading("Verificando DNS…", { id: "dns" });
+    const { data, error } = await supabase.functions.invoke("verify-tenant-domain", { body: { domain_id: d.id } });
+    toast.dismiss("dns");
+    if (error) return toast.error(error.message);
+    if (data?.verified) toast.success("Dominio verificado");
+    else toast.error("TXT no encontrado todavía. Espera propagación DNS.");
     qc.invalidateQueries({ queryKey: ["tenant-domains", orgId] });
   };
 

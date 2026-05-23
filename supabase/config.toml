@@ -23,3 +23,9 @@ project_id = "dimyhjzcwlgfczimqhet"
     verify_jwt = false
   [functions.resolve-tenant]
     verify_jwt = false
+  [functions.wp-revalidate-webhook]
+    verify_jwt = false
+  [functions.verify-tenant-domain]
+    verify_jwt = true
+  [functions.sync-products-to-wp]
+    verify_jwt = true
