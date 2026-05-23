@@ -102,6 +102,7 @@ const App = () => (
                     <Route path="/catalogos-base" element={<CatalogosBase />} />
                     <Route path="/licencias" element={<Licencias />} />
                     <Route path="/gerente-ia" element={<GerenteIA />} />
+                    <Route path="/compras" element={<Compras />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
                     {/* SEO local: URLs amigables con ciudad */}
