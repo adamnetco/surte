@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_insights: {
+        Row: {
+          category: string
+          created_at: string
+          generated_at: string
+          id: string
+          message: string
+          organization_id: string
+          payload: Json
+          product_id: string | null
+          severity: string
+          status: string
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          message: string
+          organization_id: string
+          payload?: Json
+          product_id?: string | null
+          severity?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          message?: string
+          organization_id?: string
+          payload?: Json
+          product_id?: string | null
+          severity?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           id: string
@@ -1455,6 +1497,131 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      invoice_scan_items: {
+        Row: {
+          applied: boolean
+          created_at: string
+          description: string
+          gtin: string | null
+          id: string
+          line_no: number | null
+          matched_presentation_id: string | null
+          matched_product_id: string | null
+          quantity: number
+          scan_id: string
+          total: number | null
+          unit: string | null
+          unit_cost: number
+        }
+        Insert: {
+          applied?: boolean
+          created_at?: string
+          description: string
+          gtin?: string | null
+          id?: string
+          line_no?: number | null
+          matched_presentation_id?: string | null
+          matched_product_id?: string | null
+          quantity?: number
+          scan_id: string
+          total?: number | null
+          unit?: string | null
+          unit_cost?: number
+        }
+        Update: {
+          applied?: boolean
+          created_at?: string
+          description?: string
+          gtin?: string | null
+          id?: string
+          line_no?: number | null
+          matched_presentation_id?: string | null
+          matched_product_id?: string | null
+          quantity?: number
+          scan_id?: string
+          total?: number | null
+          unit?: string | null
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_scan_items_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_scans: {
+        Row: {
+          applied_at: string | null
+          applied_by: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          id: string
+          image_url: string | null
+          invoice_date: string | null
+          invoice_number: string | null
+          notes: string | null
+          organization_id: string
+          raw_ocr: Json | null
+          status: string
+          subtotal: number | null
+          supplier_name: string | null
+          supplier_nit: string | null
+          tax: number | null
+          total: number | null
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          id?: string
+          image_url?: string | null
+          invoice_date?: string | null
+          invoice_number?: string | null
+          notes?: string | null
+          organization_id: string
+          raw_ocr?: Json | null
+          status?: string
+          subtotal?: number | null
+          supplier_name?: string | null
+          supplier_nit?: string | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          id?: string
+          image_url?: string | null
+          invoice_date?: string | null
+          invoice_number?: string | null
+          notes?: string | null
+          organization_id?: string
+          raw_ocr?: Json | null
+          status?: string
+          subtotal?: number | null
+          supplier_name?: string | null
+          supplier_nit?: string | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: []
       }
       kds_tickets: {
         Row: {
@@ -4378,6 +4545,10 @@ export type Database = {
     Functions: {
       apply_catalog_template: {
         Args: { _mode?: string; _org_id: string; _template_id: string }
+        Returns: Json
+      }
+      apply_invoice_scan: {
+        Args: { _scan_id: string; _warehouse_id: string }
         Returns: Json
       }
       apply_stock_movement: {
