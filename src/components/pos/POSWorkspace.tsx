@@ -241,6 +241,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           >
             <CreditCard className="w-5 h-5 mr-2" /> Cobrar
           </Button>
+          <div className="grid grid-cols-3 gap-2">
+            <Button variant="outline" size="sm" disabled={!lastOrderId} onClick={() => setActionMode("emit")} title="Facturar último ticket">
+              <FileSignature className="w-4 h-4 mr-1" /> Facturar
+            </Button>
+            <Button variant="outline" size="sm" disabled={ticket.length === 0} onClick={() => setActionMode("quote")}>
+              <FileText className="w-4 h-4 mr-1" /> Cotizar
+            </Button>
+            <Button variant="outline" size="sm" disabled={ticket.length === 0} onClick={() => setActionMode("park")}>
+              <Pause className="w-4 h-4 mr-1" /> Suspender
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -249,6 +260,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onOpenChange={setPayOpen}
         total={totals.total}
         onConfirm={handlePaid}
+      />
+
+      <InvoiceActionsDialog
+        open={!!actionMode}
+        onOpenChange={(v) => !v && setActionMode(null)}
+        mode={actionMode ?? "emit"}
+        organizationId={organizationId}
+        locationId={session.location_id}
+        cashSessionId={session.id}
+        userId={userId}
+        ticket={ticket}
+        subtotal={totals.subtotal}
+        total={totals.total}
+        posOrderId={lastOrderId ?? undefined}
+        onDone={() => { if (actionMode !== "emit") setTicket([]); }}
       />
 
       <CloseSessionDialog
