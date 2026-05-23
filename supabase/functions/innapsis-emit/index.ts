@@ -113,14 +113,14 @@ Deno.serve(async (req) => {
       prefijo: cfg.resolution_prefix,
       numero: nextNumber,
       adquiriente: {
-        tipoIdentificacion: order.customer_doc_type ?? "13",
-        identificacion: order.customer_doc ?? "222222222222",
+        tipoIdentificacion: "13",
+        identificacion: order.customer_document ?? "222222222222",
         razonSocial: order.customer_name ?? "Consumidor Final",
         email: order.customer_email ?? null,
       },
       totales: {
         subtotal: Number(order.subtotal ?? 0),
-        impuestos: Number(order.tax_total ?? 0),
+        impuestos: Number(order.tax ?? order.tax_total ?? 0),
         total: Number(order.total ?? 0),
       },
       items: items.map((it: any, idx: number) => ({
@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
         descripcion: it.product_name ?? it.name ?? "Item",
         cantidad: Number(it.quantity ?? 1),
         precioUnitario: Number(it.unit_price ?? 0),
-        total: Number(it.total_price ?? it.line_total ?? 0),
+        total: Number(it.total ?? it.total_price ?? it.line_total ?? 0),
       })),
     };
 

@@ -44,6 +44,9 @@ import Mesas from "./pages/Mesas";
 import KDS from "./pages/KDS";
 import Inventario from "./pages/Inventario";
 import Facturacion from "./pages/Facturacion";
+import Planes from "./pages/Planes";
+import Billing from "./pages/Billing";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +92,9 @@ const App = () => (
                     <Route path="/kds" element={<KDS />} />
                     <Route path="/inventario" element={<Inventario />} />
                     <Route path="/facturacion" element={<Facturacion />} />
+                    <Route path="/planes" element={<Planes />} />
+                    <Route path="/billing" element={<Billing />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
                     {/* SEO local: URLs amigables con ciudad */}

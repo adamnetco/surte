@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText } from "lucide-react";
+import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
+import InvoiceActionsDialog from "./InvoiceActionsDialog";
 
 interface Product { id: string; name: string; price: number; image_url: string | null; stock: number; }
 interface TicketLine {
@@ -26,6 +27,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [payOpen, setPayOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
+  const [actionMode, setActionMode] = useState<"emit" | "quote" | "park" | null>(null);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -127,8 +130,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     if (perr) return toast.error(perr.message);
 
     toast.success(`Ticket #${order.ticket_number} cobrado`);
+    setLastOrderId(order.id);
     setTicket([]);
     setPayOpen(false);
+    // Auto-prompt: ¿facturar?
+    setTimeout(() => {
+      if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
+        setActionMode("emit");
+      }
+    }, 300);
   };
 
   return (
@@ -231,6 +241,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           >
             <CreditCard className="w-5 h-5 mr-2" /> Cobrar
           </Button>
+          <div className="grid grid-cols-3 gap-2">
+            <Button variant="outline" size="sm" disabled={!lastOrderId} onClick={() => setActionMode("emit")} title="Facturar último ticket">
+              <FileSignature className="w-4 h-4 mr-1" /> Facturar
+            </Button>
+            <Button variant="outline" size="sm" disabled={ticket.length === 0} onClick={() => setActionMode("quote")}>
+              <FileText className="w-4 h-4 mr-1" /> Cotizar
+            </Button>
+            <Button variant="outline" size="sm" disabled={ticket.length === 0} onClick={() => setActionMode("park")}>
+              <Pause className="w-4 h-4 mr-1" /> Suspender
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -239,6 +260,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onOpenChange={setPayOpen}
         total={totals.total}
         onConfirm={handlePaid}
+      />
+
+      <InvoiceActionsDialog
+        open={!!actionMode}
+        onOpenChange={(v) => !v && setActionMode(null)}
+        mode={actionMode ?? "emit"}
+        organizationId={organizationId}
+        locationId={session.location_id}
+        cashSessionId={session.id}
+        userId={userId}
+        ticket={ticket}
+        subtotal={totals.subtotal}
+        total={totals.total}
+        posOrderId={lastOrderId ?? undefined}
+        onDone={() => { if (actionMode !== "emit") setTicket([]); }}
       />
 
       <CloseSessionDialog
