@@ -704,6 +704,271 @@ export type Database = {
           },
         ]
       }
+      einvoice_configs: {
+        Row: {
+          api_key: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          dv: string | null
+          environment: string
+          extra: Json
+          id: string
+          is_active: boolean
+          nit: string
+          organization_id: string
+          razon_social: string | null
+          resolution_current: number | null
+          resolution_from: number | null
+          resolution_number: string | null
+          resolution_prefix: string | null
+          resolution_to: number | null
+          resolution_valid_from: string | null
+          resolution_valid_until: string | null
+          technical_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          dv?: string | null
+          environment?: string
+          extra?: Json
+          id?: string
+          is_active?: boolean
+          nit: string
+          organization_id: string
+          razon_social?: string | null
+          resolution_current?: number | null
+          resolution_from?: number | null
+          resolution_number?: string | null
+          resolution_prefix?: string | null
+          resolution_to?: number | null
+          resolution_valid_from?: string | null
+          resolution_valid_until?: string | null
+          technical_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          dv?: string | null
+          environment?: string
+          extra?: Json
+          id?: string
+          is_active?: boolean
+          nit?: string
+          organization_id?: string
+          razon_social?: string | null
+          resolution_current?: number | null
+          resolution_from?: number | null
+          resolution_number?: string | null
+          resolution_prefix?: string | null
+          resolution_to?: number | null
+          resolution_valid_from?: string | null
+          resolution_valid_until?: string | null
+          technical_key?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "einvoice_configs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      einvoice_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          invoice_id: string | null
+          message: string | null
+          organization_id: string
+          payload: Json | null
+          performed_by: string | null
+          response: Json | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          invoice_id?: string | null
+          message?: string | null
+          organization_id: string
+          payload?: Json | null
+          performed_by?: string | null
+          response?: Json | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          invoice_id?: string | null
+          message?: string | null
+          organization_id?: string
+          payload?: Json | null
+          performed_by?: string | null
+          response?: Json | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "einvoice_events_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "electronic_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "einvoice_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      electronic_invoices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cufe: string | null
+          currency: string
+          customer_email: string | null
+          customer_identification: string | null
+          customer_name: string | null
+          dian_response: Json | null
+          document_type: string
+          environment: string
+          full_number: string | null
+          id: string
+          issue_date: string
+          last_error: string | null
+          location_id: string | null
+          number: number | null
+          order_id: string | null
+          organization_id: string
+          pdf_url: string | null
+          pos_order_id: string | null
+          prefix: string | null
+          qr_url: string | null
+          request_payload: Json | null
+          status: string
+          subtotal: number
+          tax_total: number
+          total: number
+          track_id: string | null
+          updated_at: string
+          xml_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cufe?: string | null
+          currency?: string
+          customer_email?: string | null
+          customer_identification?: string | null
+          customer_name?: string | null
+          dian_response?: Json | null
+          document_type?: string
+          environment?: string
+          full_number?: string | null
+          id?: string
+          issue_date?: string
+          last_error?: string | null
+          location_id?: string | null
+          number?: number | null
+          order_id?: string | null
+          organization_id: string
+          pdf_url?: string | null
+          pos_order_id?: string | null
+          prefix?: string | null
+          qr_url?: string | null
+          request_payload?: Json | null
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          total?: number
+          track_id?: string | null
+          updated_at?: string
+          xml_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cufe?: string | null
+          currency?: string
+          customer_email?: string | null
+          customer_identification?: string | null
+          customer_name?: string | null
+          dian_response?: Json | null
+          document_type?: string
+          environment?: string
+          full_number?: string | null
+          id?: string
+          issue_date?: string
+          last_error?: string | null
+          location_id?: string | null
+          number?: number | null
+          order_id?: string | null
+          organization_id?: string
+          pdf_url?: string | null
+          pos_order_id?: string | null
+          prefix?: string | null
+          qr_url?: string | null
+          request_payload?: Json | null
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          total?: number
+          track_id?: string | null
+          updated_at?: string
+          xml_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "electronic_invoices_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "electronic_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "electronic_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "electronic_invoices_pos_order_id_fkey"
+            columns: ["pos_order_id"]
+            isOneToOne: false
+            referencedRelation: "pos_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
