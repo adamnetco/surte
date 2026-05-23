@@ -168,6 +168,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               autoFocus
             />
           </div>
+          <OfflineIndicator />
           <Button variant="outline" size="sm" onClick={() => setCloseOpen(true)}>
             <LogOut className="w-4 h-4 mr-1" /> Cierre Z
           </Button>
