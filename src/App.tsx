@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { AgentProvider } from "@/context/AgentContext";
+import { OrganizationProvider } from "@/context/OrganizationContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SwipeProvider } from "@/context/SwipeContext";
 import FloatingWhatsApp from "@/components/surte/FloatingWhatsApp";
