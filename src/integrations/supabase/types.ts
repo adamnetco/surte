@@ -4468,6 +4468,157 @@ export type Database = {
           },
         ]
       }
+      tenant_domains: {
+        Row: {
+          created_at: string
+          hostname: string
+          id: string
+          is_primary: boolean
+          notes: string | null
+          organization_id: string
+          site_id: string
+          ssl_status: string
+          updated_at: string
+          verification_token: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          hostname: string
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          organization_id: string
+          site_id: string
+          ssl_status?: string
+          updated_at?: string
+          verification_token?: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          hostname?: string
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          organization_id?: string
+          site_id?: string
+          ssl_status?: string
+          updated_at?: string
+          verification_token?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_domains_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_sites: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          default_locale: string | null
+          description: string | null
+          id: string
+          is_published: boolean
+          logo_url: string | null
+          name: string
+          organization_id: string
+          primary_color: string | null
+          settings: Json
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string
+          default_locale?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          logo_url?: string | null
+          name: string
+          organization_id: string
+          primary_color?: string | null
+          settings?: Json
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string
+          default_locale?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          logo_url?: string | null
+          name?: string
+          organization_id?: string
+          primary_color?: string | null
+          settings?: Json
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tenant_wp_config: {
+        Row: {
+          created_at: string
+          default_post_type: string | null
+          id: string
+          last_sync_at: string | null
+          organization_id: string
+          site_id: string
+          taxonomies: Json | null
+          updated_at: string
+          webhook_secret: string | null
+          wp_app_password: string | null
+          wp_base_url: string
+          wp_username: string | null
+        }
+        Insert: {
+          created_at?: string
+          default_post_type?: string | null
+          id?: string
+          last_sync_at?: string | null
+          organization_id: string
+          site_id: string
+          taxonomies?: Json | null
+          updated_at?: string
+          webhook_secret?: string | null
+          wp_app_password?: string | null
+          wp_base_url: string
+          wp_username?: string | null
+        }
+        Update: {
+          created_at?: string
+          default_post_type?: string | null
+          id?: string
+          last_sync_at?: string | null
+          organization_id?: string
+          site_id?: string
+          taxonomies?: Json | null
+          updated_at?: string
+          webhook_secret?: string | null
+          wp_app_password?: string | null
+          wp_base_url?: string
+          wp_username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_wp_config_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: true
+            referencedRelation: "tenant_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       testimonials: {
         Row: {
           content: string
@@ -4783,6 +4934,7 @@ export type Database = {
         Returns: Json
       }
       rematch_invoice_scan: { Args: { _scan_id: string }; Returns: Json }
+      resolve_tenant_by_host: { Args: { _host: string }; Returns: Json }
       revoke_activation: {
         Args: { _activation_id: string; _reason?: string }
         Returns: boolean

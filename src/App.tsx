@@ -51,6 +51,7 @@ import CatalogosBase from "./pages/CatalogosBase";
 import Licencias from "./pages/Licencias";
 import GerenteIA from "./pages/GerenteIA";
 import Compras from "./pages/Compras";
+import Sitios from "./pages/Sitios";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +104,7 @@ const App = () => (
                     <Route path="/licencias" element={<Licencias />} />
                     <Route path="/gerente-ia" element={<GerenteIA />} />
                     <Route path="/compras" element={<Compras />} />
+                    <Route path="/sitios" element={<Sitios />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
                     {/* SEO local: URLs amigables con ciudad */}

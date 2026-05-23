@@ -1,0 +1,47 @@
+---
+import { resolveTenant } from "../lib/tenant";
+const host = Astro.request.headers.get("host") ?? "";
+const tenant = await resolveTenant(host);
+if (!tenant) {
+  Astro.response.status = 404;
+}
+const title = tenant?.name ?? "Sitio no encontrado";
+const primary = tenant?.primary_color ?? "#0C4B83";
+const accent = tenant?.accent_color ?? "#F37021";
+---
+<!doctype html>
+<html lang={tenant?.default_locale ?? "es-CO"}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <link rel="canonical" href={`https://${host}${Astro.url.pathname}`} />
+    <style is:global set:html={`:root{--primary:${primary};--accent:${accent};}`}></style>
+  </head>
+  <body class="min-h-screen bg-white text-gray-900 font-sans">
+    {tenant ? (
+      <header class="border-b border-gray-100">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <a href="/" class="flex items-center gap-2 font-semibold" style={`color:${primary}`}>
+            {tenant.logo_url && <img src={tenant.logo_url} alt={tenant.name} class="h-8 w-auto" />}
+            {tenant.name}
+          </a>
+          <nav class="text-sm text-gray-600 space-x-4">
+            <a href="/">Inicio</a>
+            <a href="/blog">Blog</a>
+            <a href="/contacto">Contacto</a>
+          </nav>
+        </div>
+      </header>
+      <main class="max-w-5xl mx-auto px-4 py-8"><slot /></main>
+      <footer class="border-t border-gray-100 mt-12 py-6 text-center text-xs text-gray-500">
+        © {new Date().getFullYear()} {tenant.name} · Powered by Sistecpos
+      </footer>
+    ) : (
+      <main class="max-w-md mx-auto p-8 text-center">
+        <h1 class="text-xl font-bold mb-2">Sitio no encontrado</h1>
+        <p class="text-gray-600">El dominio <code>{host}</code> no está asociado a ningún sitio activo.</p>
+      </main>
+    )}
+  </body>
+</html>

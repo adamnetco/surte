@@ -1,0 +1,24 @@
+---
+import Base from "../../layouts/Base.astro";
+import { resolveTenant, wpPostBySlug } from "../../lib/tenant";
+
+const { slug } = Astro.params;
+const host = Astro.request.headers.get("host") ?? "";
+const tenant = await resolveTenant(host);
+let post: any = null;
+if (tenant && slug) {
+  const r = await wpPostBySlug(tenant, slug);
+  post = Array.isArray(r) ? r[0] : r;
+}
+if (!post) Astro.response.status = 404;
+---
+<Base>
+  {post ? (
+    <article class="prose prose-slate max-w-3xl mx-auto">
+      <h1 set:html={post.title.rendered} />
+      <div set:html={post.content.rendered} />
+    </article>
+  ) : (
+    <p class="text-center text-gray-600">Artículo no encontrado.</p>
+  )}
+</Base>
