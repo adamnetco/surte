@@ -21,3 +21,5 @@ project_id = "dimyhjzcwlgfczimqhet"
     verify_jwt = false
   [functions.license-heartbeat]
     verify_jwt = false
+  [functions.resolve-tenant]
+    verify_jwt = false
