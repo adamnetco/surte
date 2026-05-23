@@ -7,6 +7,8 @@ import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignatur
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
+import OfflineIndicator from "@/components/OfflineIndicator";
+import { refreshCatalogCache, getCachedProducts } from "@/lib/offline/catalog";
 
 interface Product { id: string; name: string; price: number; image_url: string | null; stock: number; }
 interface TicketLine {
@@ -33,14 +35,24 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("products")
-        .select("id,name,price,image_url,stock")
-        .eq("is_active", true)
-        .order("name")
-        .limit(200);
-      setProducts((data as Product[]) ?? []);
-      setLoading(false);
+      // Offline-first: hydrate from IndexedDB cache immediately, then refresh from network.
+      try {
+        const cached = await getCachedProducts();
+        if (cached.length) {
+          setProducts(cached as Product[]);
+          setLoading(false);
+        }
+      } catch { /* no cache yet */ }
+
+      try {
+        await refreshCatalogCache();
+        const fresh = await getCachedProducts();
+        if (fresh.length) setProducts(fresh as Product[]);
+      } catch {
+        // Offline or error — keep cached
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -156,6 +168,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               autoFocus
             />
           </div>
+          <OfflineIndicator />
           <Button variant="outline" size="sm" onClick={() => setCloseOpen(true)}>
             <LogOut className="w-4 h-4 mr-1" /> Cierre Z
           </Button>
