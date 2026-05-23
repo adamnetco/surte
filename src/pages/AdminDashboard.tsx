@@ -90,7 +90,8 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
 
-  const tabs = allTabs.filter((t) => t.roles.includes(role));
+  const { hasModule } = useOrganization();
+  const tabs = allTabs.filter((t) => t.roles.includes(role) && (!t.module || hasModule(t.module)));
 
   useEffect(() => {
     if (!loading && role === "editor") setActiveTab("orders");
