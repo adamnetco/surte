@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText } from "lucide-react";
+import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
+import InvoiceActionsDialog from "./InvoiceActionsDialog";
 
 interface Product { id: string; name: string; price: number; image_url: string | null; stock: number; }
 interface TicketLine {
@@ -26,6 +27,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [payOpen, setPayOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
+  const [actionMode, setActionMode] = useState<"emit" | "quote" | "park" | null>(null);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
