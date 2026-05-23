@@ -15,3 +15,9 @@ project_id = "dimyhjzcwlgfczimqhet"
     verify_jwt = false
   [functions.send-ycloud-whatsapp]
     verify_jwt = false
+  [functions.license-issue]
+    verify_jwt = true
+  [functions.license-activate]
+    verify_jwt = false
+  [functions.license-heartbeat]
+    verify_jwt = false
