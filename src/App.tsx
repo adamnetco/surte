@@ -42,6 +42,7 @@ import ResetPassword from "./pages/ResetPassword";
 import POS from "./pages/POS";
 import Mesas from "./pages/Mesas";
 import KDS from "./pages/KDS";
+import Inventario from "./pages/Inventario";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ const App = () => (
                     <Route path="/pos" element={<POS />} />
                     <Route path="/mesas" element={<Mesas />} />
                     <Route path="/kds" element={<KDS />} />
+                    <Route path="/inventario" element={<Inventario />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
                     {/* SEO local: URLs amigables con ciudad */}
