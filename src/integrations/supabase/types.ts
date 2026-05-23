@@ -1510,6 +1510,7 @@ export type Database = {
           matched_product_id: string | null
           quantity: number
           scan_id: string
+          supplier_sku: string | null
           total: number | null
           unit: string | null
           unit_cost: number
@@ -1525,6 +1526,7 @@ export type Database = {
           matched_product_id?: string | null
           quantity?: number
           scan_id: string
+          supplier_sku?: string | null
           total?: number | null
           unit?: string | null
           unit_cost?: number
@@ -1540,6 +1542,7 @@ export type Database = {
           matched_product_id?: string | null
           quantity?: number
           scan_id?: string
+          supplier_sku?: string | null
           total?: number | null
           unit?: string | null
           unit_cost?: number
@@ -1570,6 +1573,7 @@ export type Database = {
           raw_ocr: Json | null
           status: string
           subtotal: number | null
+          supplier_id: string | null
           supplier_name: string | null
           supplier_nit: string | null
           tax: number | null
@@ -1592,6 +1596,7 @@ export type Database = {
           raw_ocr?: Json | null
           status?: string
           subtotal?: number | null
+          supplier_id?: string | null
           supplier_name?: string | null
           supplier_nit?: string | null
           tax?: number | null
@@ -1614,6 +1619,7 @@ export type Database = {
           raw_ocr?: Json | null
           status?: string
           subtotal?: number | null
+          supplier_id?: string | null
           supplier_name?: string | null
           supplier_nit?: string | null
           tax?: number | null
@@ -1621,7 +1627,15 @@ export type Database = {
           updated_at?: string
           warehouse_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invoice_scans_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kds_tickets: {
         Row: {
@@ -3436,7 +3450,9 @@ export type Database = {
       }
       purchase_order_items: {
         Row: {
+          applied: boolean
           created_at: string
+          description: string | null
           id: string
           line_total: number
           organization_id: string
@@ -3445,10 +3461,13 @@ export type Database = {
           purchase_order_id: string
           quantity_ordered: number
           quantity_received: number
+          supplier_sku: string | null
           unit_cost: number
         }
         Insert: {
+          applied?: boolean
           created_at?: string
+          description?: string | null
           id?: string
           line_total?: number
           organization_id: string
@@ -3457,10 +3476,13 @@ export type Database = {
           purchase_order_id: string
           quantity_ordered: number
           quantity_received?: number
+          supplier_sku?: string | null
           unit_cost?: number
         }
         Update: {
+          applied?: boolean
           created_at?: string
+          description?: string | null
           id?: string
           line_total?: number
           organization_id?: string
@@ -3469,6 +3491,7 @@ export type Database = {
           purchase_order_id?: string
           quantity_ordered?: number
           quantity_received?: number
+          supplier_sku?: string | null
           unit_cost?: number
         }
         Relationships: [
@@ -3485,10 +3508,14 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          currency: string | null
           expected_at: string | null
           id: string
+          invoice_scan_id: string | null
           notes: string | null
+          order_date: string
           organization_id: string
+          po_code: string | null
           po_number: number
           received_at: string | null
           status: string
@@ -3502,10 +3529,14 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           expected_at?: string | null
           id?: string
+          invoice_scan_id?: string | null
           notes?: string | null
+          order_date?: string
           organization_id: string
+          po_code?: string | null
           po_number?: number
           received_at?: string | null
           status?: string
@@ -3519,10 +3550,14 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           expected_at?: string | null
           id?: string
+          invoice_scan_id?: string | null
           notes?: string | null
+          order_date?: string
           organization_id?: string
+          po_code?: string | null
           po_number?: number
           received_at?: string | null
           status?: string
@@ -3533,7 +3568,15 @@ export type Database = {
           updated_at?: string
           warehouse_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_invoice_scan_id_fkey"
+            columns: ["invoice_scan_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_scans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_broadcast_logs: {
         Row: {
@@ -4090,14 +4133,85 @@ export type Database = {
           },
         ]
       }
+      supplier_products: {
+        Row: {
+          created_at: string
+          currency: string | null
+          id: string
+          is_preferred: boolean
+          last_purchased_at: string | null
+          lead_time_days: number | null
+          min_order_qty: number | null
+          notes: string | null
+          organization_id: string
+          pack_size: number | null
+          product_id: string
+          supplier_id: string
+          supplier_name_ref: string | null
+          supplier_sku: string
+          unit: string | null
+          unit_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          is_preferred?: boolean
+          last_purchased_at?: string | null
+          lead_time_days?: number | null
+          min_order_qty?: number | null
+          notes?: string | null
+          organization_id: string
+          pack_size?: number | null
+          product_id: string
+          supplier_id: string
+          supplier_name_ref?: string | null
+          supplier_sku: string
+          unit?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          is_preferred?: boolean
+          last_purchased_at?: string | null
+          lead_time_days?: number | null
+          min_order_qty?: number | null
+          notes?: string | null
+          organization_id?: string
+          pack_size?: number | null
+          product_id?: string
+          supplier_id?: string
+          supplier_name_ref?: string | null
+          supplier_sku?: string
+          unit?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string | null
+          city: string | null
           contact_name: string | null
           created_at: string
+          created_by: string | null
           email: string | null
           id: string
           is_active: boolean
+          lead_time_days: number | null
           name: string
           notes: string | null
           organization_id: string
@@ -4108,11 +4222,14 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          city?: string | null
           contact_name?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
+          lead_time_days?: number | null
           name: string
           notes?: string | null
           organization_id: string
@@ -4123,11 +4240,14 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          city?: string | null
           contact_name?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
+          lead_time_days?: number | null
           name?: string
           notes?: string | null
           organization_id?: string
@@ -4647,6 +4767,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      receive_purchase_order: {
+        Args: { _po_id: string; _warehouse_id: string }
+        Returns: Json
+      }
       redeem_coupon: { Args: { _coupon_id: string }; Returns: boolean }
       register_activation: {
         Args: {
@@ -4658,6 +4782,7 @@ export type Database = {
         }
         Returns: Json
       }
+      rematch_invoice_scan: { Args: { _scan_id: string }; Returns: Json }
       revoke_activation: {
         Args: { _activation_id: string; _reason?: string }
         Returns: boolean
