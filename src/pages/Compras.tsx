@@ -281,10 +281,13 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
 
   const create = async () => {
     if (!form.supplier_id) return toast.error("Selecciona proveedor");
-    const { error } = await supabase.from("purchase_orders").insert({
-      organization_id: orgId, supplier_id: form.supplier_id, po_code: form.po_code || null,
+    const wh = warehouses?.[0]?.id;
+    if (!wh) return toast.error("Crea una bodega primero en Inventario");
+    const { error } = await supabase.from("purchase_orders").insert([{
+      organization_id: orgId, supplier_id: form.supplier_id, warehouse_id: wh,
+      po_code: form.po_code || null,
       expected_at: form.expected_at || null, notes: form.notes, status: "draft",
-    });
+    }]);
     if (error) return toast.error(error.message);
     toast.success("OC creada");
     setOpen(false);
