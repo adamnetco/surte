@@ -191,6 +191,19 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
                 </div>
               )}
             </div>
+            {wpEdit?.site_id && wpEdit?.plugin_token && (
+              <div className="border-t pt-3 space-y-2 text-xs bg-primary/5 rounded-md p-3">
+                <p className="font-medium text-sm text-primary flex items-center gap-1"><Webhook className="w-4 h-4" />Plugin WordPress oficial (recomendado)</p>
+                <p className="text-muted-foreground">Descarga el plugin, instálalo y pega estas credenciales en <em>Ajustes → Sistecpos</em>:</p>
+                <div className="grid grid-cols-[80px_1fr] gap-1 items-center">
+                  <span className="font-medium">Site ID:</span><code className="break-all text-[10px] bg-background px-1 rounded">{wpEdit.site_id}</code>
+                  <span className="font-medium">Token:</span><code className="break-all text-[10px] bg-background px-1 rounded">{wpEdit.plugin_token}</code>
+                </div>
+                <a href="/wp-plugin/sistecpos-connector.php" download className="inline-flex items-center gap-1 text-primary hover:underline">
+                  <ExternalLink className="w-3 h-3" />Descargar sistecpos-connector.php
+                </a>
+              </div>
+            )}
             <Button onClick={saveWp} className="w-full">Guardar</Button>
           </div>
         </DialogContent>
