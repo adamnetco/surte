@@ -955,6 +955,67 @@ export type Database = {
           },
         ]
       }
+      dunning_events: {
+        Row: {
+          attempt: number
+          created_at: string
+          id: string
+          invoice_id: string | null
+          next_retry_at: string | null
+          organization_id: string
+          reason: string | null
+          resolved_at: string | null
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          attempt?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          next_retry_at?: string | null
+          organization_id: string
+          reason?: string | null
+          resolved_at?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Update: {
+          attempt?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          next_retry_at?: string | null
+          organization_id?: string
+          reason?: string | null
+          resolved_at?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_events_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dunning_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dunning_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       einvoice_configs: {
         Row: {
           api_key: string
@@ -2797,6 +2858,41 @@ export type Database = {
           },
         ]
       }
+      plan_modules: {
+        Row: {
+          created_at: string
+          id: string
+          included: boolean
+          module_key: string
+          plan_id: string
+          quota_limit: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          included?: boolean
+          module_key: string
+          plan_id: string
+          quota_limit?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          included?: boolean
+          module_key?: string
+          plan_id?: string
+          quota_limit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_modules_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "saas_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pos_order_items: {
         Row: {
           created_at: string
@@ -4623,6 +4719,7 @@ export type Database = {
           id: string
           last_sync_at: string | null
           organization_id: string
+          plugin_token: string | null
           product_cpt: string | null
           revalidate_token: string | null
           revalidate_url: string | null
@@ -4641,6 +4738,7 @@ export type Database = {
           id?: string
           last_sync_at?: string | null
           organization_id: string
+          plugin_token?: string | null
           product_cpt?: string | null
           revalidate_token?: string | null
           revalidate_url?: string | null
@@ -4659,6 +4757,7 @@ export type Database = {
           id?: string
           last_sync_at?: string | null
           organization_id?: string
+          plugin_token?: string | null
           product_cpt?: string | null
           revalidate_token?: string | null
           revalidate_url?: string | null
@@ -4713,6 +4812,47 @@ export type Database = {
           sort_order?: number | null
         }
         Relationships: []
+      }
+      usage_events: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json
+          metric: string
+          module_key: string
+          organization_id: string
+          quantity: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          metric: string
+          module_key: string
+          organization_id: string
+          quantity?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          metric?: string
+          module_key?: string
+          organization_id?: string
+          quantity?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -4962,6 +5102,16 @@ export type Database = {
         Returns: Json
       }
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
+      log_usage: {
+        Args: {
+          _meta?: Json
+          _metric: string
+          _module: string
+          _org_id: string
+          _qty?: number
+        }
+        Returns: string
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
