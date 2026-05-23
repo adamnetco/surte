@@ -31,6 +31,7 @@ import GoogleReviewsTab from "@/components/admin/GoogleReviewsTab";
 import DataManagementTab from "@/components/admin/DataManagementTab";
 import ModifiersTab from "@/components/admin/ModifiersTab";
 import SeoContentTab from "@/components/admin/SeoContentTab";
+import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
 
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[] },
@@ -39,6 +40,7 @@ const allTabs = [
   { id: "categories", label: "Categorías", icon: Tag, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[] },
+  { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "hero", label: "Hero", icon: Layers, roles: ["superadmin", "admin"] as AppRole[] },
   { id: "municipalities", label: "Ciudades", icon: MapPin, roles: ["superadmin", "admin"] as AppRole[] },
@@ -160,6 +162,7 @@ const AdminDashboard = () => {
       {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
       {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
       {activeTab === "users" && <UsersTab queryClient={queryClient} />}
+      {activeTab === "crm" && <CrmLeadsTab />}
       {activeTab === "content" && <ContentTab queryClient={queryClient} />}
       {activeTab === "hero" && <HeroSlidesTab queryClient={queryClient} />}
       {activeTab === "municipalities" && <MunicipalitiesTab queryClient={queryClient} />}
