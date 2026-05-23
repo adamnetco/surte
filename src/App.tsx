@@ -40,6 +40,8 @@ import Politicas from "./pages/Politicas";
 import TratamientoDatos from "./pages/TratamientoDatos";
 import ResetPassword from "./pages/ResetPassword";
 import POS from "./pages/POS";
+import Mesas from "./pages/Mesas";
+import KDS from "./pages/KDS";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +83,8 @@ const App = () => (
                     <Route path="/pedido/:orderNumber" element={<Pedido />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/pos" element={<POS />} />
+                    <Route path="/mesas" element={<Mesas />} />
+                    <Route path="/kds" element={<KDS />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
                     {/* SEO local: URLs amigables con ciudad */}
