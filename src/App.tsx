@@ -39,6 +39,7 @@ import LandingPage from "./pages/LandingPage";
 import Politicas from "./pages/Politicas";
 import TratamientoDatos from "./pages/TratamientoDatos";
 import ResetPassword from "./pages/ResetPassword";
+import POS from "./pages/POS";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const App = () => (
                     <Route path="/p/:id" element={<ProductoDetalle />} />
                     <Route path="/pedido/:orderNumber" element={<Pedido />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/pos" element={<POS />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
                     {/* SEO local: URLs amigables con ciudad */}
