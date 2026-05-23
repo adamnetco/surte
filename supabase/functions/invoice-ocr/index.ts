@@ -1,4 +1,4 @@
-// OCR de facturas: recibe imagen base64 o URL, extrae estructura con Lovable AI (visión).
+// OCR de facturas con vinculación a proveedor y SKU del proveedor.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -9,7 +9,7 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { organization_id, image_base64, image_url, mime_type = "image/jpeg" } = await req.json();
+    const { organization_id, supplier_id, image_base64, image_url, mime_type = "image/jpeg" } = await req.json();
     if (!organization_id) return json({ error: "organization_id requerido" }, 400);
     if (!image_base64 && !image_url) return json({ error: "imagen requerida" }, 400);
 
@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "Eres un experto en OCR de facturas colombianas. Extrae proveedor, NIT, número de factura, fecha (YYYY-MM-DD), subtotal, IVA, total y todos los renglones con cantidad, descripción, costo unitario y total. Usa COP. Si un campo no es legible, devuélvelo null." },
+          { role: "system", content: "Eres un experto en OCR de facturas colombianas. Extrae proveedor, NIT, número de factura, fecha (YYYY-MM-DD), subtotal, IVA, total y todos los renglones. Por cada renglón captura: código/referencia del proveedor (supplier_sku), GTIN/EAN si aparece, descripción, cantidad, unidad, costo unitario y total. Moneda COP. Si un campo no es legible, devuélvelo null." },
           { role: "user", content: [
             { type: "text", text: "Extrae la información estructurada de esta factura de compra." },
             imageContent,
@@ -52,6 +52,7 @@ Deno.serve(async (req) => {
                   items: {
                     type: "object",
                     properties: {
+                      supplier_sku: { type: "string", nullable: true },
                       description: { type: "string" },
                       gtin: { type: "string", nullable: true },
                       quantity: { type: "number" },
@@ -85,8 +86,17 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Resolver supplier_id por NIT si no se mandó
+    let resolvedSupplierId: string | null = supplier_id ?? null;
+    if (!resolvedSupplierId && args.supplier_nit) {
+      const { data: sup } = await supabase.from("suppliers").select("id")
+        .eq("organization_id", organization_id).eq("tax_id", args.supplier_nit).maybeSingle();
+      resolvedSupplierId = sup?.id ?? null;
+    }
+
     const { data: scan, error } = await supabase.from("invoice_scans").insert({
       organization_id,
+      supplier_id: resolvedSupplierId,
       supplier_name: args.supplier_name,
       supplier_nit: args.supplier_nit,
       invoice_number: args.invoice_number,
@@ -103,6 +113,7 @@ Deno.serve(async (req) => {
     const items = (args.items ?? []).map((it: any, i: number) => ({
       scan_id: scan.id,
       line_no: i + 1,
+      supplier_sku: it.supplier_sku ?? null,
       description: it.description,
       gtin: it.gtin ?? null,
       quantity: it.quantity ?? 1,
@@ -111,10 +122,15 @@ Deno.serve(async (req) => {
       total: it.total ?? (it.unit_cost * it.quantity),
     }));
 
-    // Auto-match por GTIN o nombre
+    // Auto-match: 1) supplier_sku via supplier_products, 2) GTIN, 3) nombre
     for (const it of items) {
       let matched: string | null = null;
-      if (it.gtin) {
+      if (resolvedSupplierId && it.supplier_sku) {
+        const { data: sp } = await supabase.from("supplier_products").select("product_id")
+          .eq("supplier_id", resolvedSupplierId).eq("supplier_sku", it.supplier_sku).maybeSingle();
+        matched = sp?.product_id ?? null;
+      }
+      if (!matched && it.gtin) {
         const { data: p } = await supabase.from("products").select("id").eq("gtin", it.gtin).maybeSingle();
         matched = p?.id ?? null;
       }
@@ -128,7 +144,7 @@ Deno.serve(async (req) => {
 
     if (items.length) await supabase.from("invoice_scan_items").insert(items);
 
-    return json({ ok: true, scan_id: scan.id, items_extracted: items.length });
+    return json({ ok: true, scan_id: scan.id, supplier_id: resolvedSupplierId, items_extracted: items.length });
   } catch (e) {
     console.error(e);
     return json({ error: e instanceof Error ? e.message : "error" }, 500);
