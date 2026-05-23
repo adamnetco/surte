@@ -1,0 +1,84 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const INNAPSIS = {
+  client_id: Deno.env.get("INNAPSIS_CLIENT_ID") ?? "b899c906-fe51-4eba-a054-62ca2220452f",
+  client_secret: Deno.env.get("INNAPSIS_CLIENT_SECRET") ?? "2m68Q~zmskJYjZkZ29SjYqvqx.La8vMVVl1QtaQW",
+  policy: "B2C_1A_FE_CLIENT_CREDENTIALS_V30",
+  scope: "https://facturaeb2c.onmicrosoft.com/client-api/.default",
+  token_url: "https://facturaeb2c.b2clogin.com/facturaeb2c.onmicrosoft.com/oauth2/v2.0/token",
+  base_dev: "https://rt9g83x6z0.execute-api.us-east-1.amazonaws.com",
+  base_prod: "https://nc8sa9bmte.execute-api.us-east-1.amazonaws.com",
+};
+
+async function getToken(nit: string, apiKey: string) {
+  const url = `${INNAPSIS.token_url}?p=${INNAPSIS.policy}&saasTenantId=${encodeURIComponent(nit)}&apiKey=${encodeURIComponent(apiKey)}`;
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    client_id: INNAPSIS.client_id,
+    client_secret: INNAPSIS.client_secret,
+    scope: INNAPSIS.scope,
+  });
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
+  const json = await res.json();
+  if (!res.ok) throw new Error(`Auth failed: ${JSON.stringify(json)}`);
+  return json.access_token as string;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: c, error: ae } = await sb.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (ae || !c?.claims) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const { invoice_id, tipo_archivo = "pdf" } = await req.json();
+    if (!invoice_id) return new Response(JSON.stringify({ error: "invoice_id requerido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: inv } = await admin.from("electronic_invoices").select("*").eq("id", invoice_id).single();
+    if (!inv) return new Response(JSON.stringify({ error: "Factura no encontrada" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const { data: cfg } = await admin.from("einvoice_configs").select("*").eq("organization_id", inv.organization_id).eq("is_active", true).maybeSingle();
+    if (!cfg) return new Response(JSON.stringify({ error: "Config inactiva" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const token = await getToken(cfg.nit, cfg.api_key);
+    const baseUrl = cfg.environment === "prod" ? INNAPSIS.base_prod : INNAPSIS.base_dev;
+    const endpoint = `${baseUrl}/api/v1/emision/emision/consulteArchivo`;
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ trackId: inv.track_id, tipoArchivo: tipo_archivo }),
+    });
+    const json = await res.json().catch(() => ({}));
+
+    await admin.from("einvoice_events").insert({
+      organization_id: inv.organization_id,
+      invoice_id: inv.id,
+      event_type: "status_check",
+      status: res.ok ? "ok" : "error",
+      response: json,
+    });
+
+    return new Response(JSON.stringify({ success: res.ok, response: json }), {
+      status: res.ok ? 200 : 502,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err: any) {
+    console.error("innapsis-status error", err);
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+});

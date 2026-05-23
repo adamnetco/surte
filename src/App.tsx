@@ -43,6 +43,7 @@ import POS from "./pages/POS";
 import Mesas from "./pages/Mesas";
 import KDS from "./pages/KDS";
 import Inventario from "./pages/Inventario";
+import Facturacion from "./pages/Facturacion";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +88,7 @@ const App = () => (
                     <Route path="/mesas" element={<Mesas />} />
                     <Route path="/kds" element={<KDS />} />
                     <Route path="/inventario" element={<Inventario />} />
+                    <Route path="/facturacion" element={<Facturacion />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
                     {/* SEO local: URLs amigables con ciudad */}
