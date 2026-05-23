@@ -693,6 +693,83 @@ export type Database = {
           },
         ]
       }
+      crm_leads: {
+        Row: {
+          assigned_to: string | null
+          business_name: string | null
+          business_type: string | null
+          city: string | null
+          converted_at: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          message: string | null
+          modules_interest: string[] | null
+          notes: string | null
+          organization_id: string | null
+          phone: string | null
+          plan_interest: string | null
+          source: string
+          source_page: string | null
+          status: string
+          updated_at: string
+          utm: Json
+        }
+        Insert: {
+          assigned_to?: string | null
+          business_name?: string | null
+          business_type?: string | null
+          city?: string | null
+          converted_at?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          message?: string | null
+          modules_interest?: string[] | null
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          plan_interest?: string | null
+          source?: string
+          source_page?: string | null
+          status?: string
+          updated_at?: string
+          utm?: Json
+        }
+        Update: {
+          assigned_to?: string | null
+          business_name?: string | null
+          business_type?: string | null
+          city?: string | null
+          converted_at?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          message?: string | null
+          modules_interest?: string[] | null
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          plan_interest?: string | null
+          source?: string
+          source_page?: string | null
+          status?: string
+          updated_at?: string
+          utm?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_scripts: {
         Row: {
           created_at: string
@@ -1870,16 +1947,24 @@ export type Database = {
       landing_pages: {
         Row: {
           body_html: string | null
+          canonical_url: string | null
           city: string | null
           created_at: string
+          faq: Json
           heading: string | null
+          hero: Json
           id: string
           image_url: string | null
           is_active: boolean
+          json_ld: Json
+          locale: string
           meta_description: string | null
           meta_title: string | null
+          noindex: boolean
+          og_image_url: string | null
           organization_id: string | null
           page_type: string
+          site_scope: string
           slug: string
           sort_order: number | null
           title: string
@@ -1887,16 +1972,24 @@ export type Database = {
         }
         Insert: {
           body_html?: string | null
+          canonical_url?: string | null
           city?: string | null
           created_at?: string
+          faq?: Json
           heading?: string | null
+          hero?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
+          json_ld?: Json
+          locale?: string
           meta_description?: string | null
           meta_title?: string | null
+          noindex?: boolean
+          og_image_url?: string | null
           organization_id?: string | null
           page_type?: string
+          site_scope?: string
           slug: string
           sort_order?: number | null
           title: string
@@ -1904,16 +1997,24 @@ export type Database = {
         }
         Update: {
           body_html?: string | null
+          canonical_url?: string | null
           city?: string | null
           created_at?: string
+          faq?: Json
           heading?: string | null
+          hero?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
+          json_ld?: Json
+          locale?: string
           meta_description?: string | null
           meta_title?: string | null
+          noindex?: boolean
+          og_image_url?: string | null
           organization_id?: string | null
           page_type?: string
+          site_scope?: string
           slug?: string
           sort_order?: number | null
           title?: string
@@ -1925,6 +2026,47 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_sections: {
+        Row: {
+          block_type: string
+          created_at: string
+          data: Json
+          id: string
+          is_active: boolean
+          landing_page_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          block_type: string
+          created_at?: string
+          data?: Json
+          id?: string
+          is_active?: boolean
+          landing_page_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          block_type?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          is_active?: boolean
+          landing_page_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_sections_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
             referencedColumns: ["id"]
           },
         ]
@@ -2589,6 +2731,100 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_signup_requests: {
+        Row: {
+          amount_cop: number | null
+          business_name: string
+          business_slug: string | null
+          created_at: string
+          email: string
+          fulfilled_at: string | null
+          fulfilled_license_id: string | null
+          fulfilled_organization_id: string | null
+          full_name: string
+          id: string
+          lead_id: string | null
+          max_terminals: number
+          modules: string[]
+          nit: string | null
+          payment_provider: string | null
+          payment_reference: string | null
+          phone: string | null
+          plan: string
+          raw_payload: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cop?: number | null
+          business_name: string
+          business_slug?: string | null
+          created_at?: string
+          email: string
+          fulfilled_at?: string | null
+          fulfilled_license_id?: string | null
+          fulfilled_organization_id?: string | null
+          full_name: string
+          id?: string
+          lead_id?: string | null
+          max_terminals?: number
+          modules?: string[]
+          nit?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          phone?: string | null
+          plan: string
+          raw_payload?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cop?: number | null
+          business_name?: string
+          business_slug?: string | null
+          created_at?: string
+          email?: string
+          fulfilled_at?: string | null
+          fulfilled_license_id?: string | null
+          fulfilled_organization_id?: string | null
+          full_name?: string
+          id?: string
+          lead_id?: string | null
+          max_terminals?: number
+          modules?: string[]
+          nit?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          phone?: string | null
+          plan?: string
+          raw_payload?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_signup_requests_fulfilled_license_id_fkey"
+            columns: ["fulfilled_license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_signup_requests_fulfilled_organization_id_fkey"
+            columns: ["fulfilled_organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_signup_requests_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
             referencedColumns: ["id"]
           },
         ]
@@ -5064,6 +5300,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_landing_by_slug: {
+        Args: { _scope: string; _slug: string }
+        Returns: Json
       }
       get_persistent_cart: {
         Args: { _cart_token: string }
