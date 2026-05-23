@@ -758,6 +758,48 @@ export type Database = {
           },
         ]
       }
+      desktop_releases: {
+        Row: {
+          channel: string
+          created_by: string | null
+          download_url: string
+          id: string
+          is_current: boolean
+          platform: string
+          published_at: string
+          release_notes: string | null
+          sha256: string | null
+          size_bytes: number | null
+          version: string
+        }
+        Insert: {
+          channel?: string
+          created_by?: string | null
+          download_url: string
+          id?: string
+          is_current?: boolean
+          platform: string
+          published_at?: string
+          release_notes?: string | null
+          sha256?: string | null
+          size_bytes?: number | null
+          version: string
+        }
+        Update: {
+          channel?: string
+          created_by?: string | null
+          download_url?: string
+          id?: string
+          is_current?: boolean
+          platform?: string
+          published_at?: string
+          release_notes?: string | null
+          sha256?: string | null
+          size_bytes?: number | null
+          version?: string
+        }
+        Relationships: []
+      }
       dining_areas: {
         Row: {
           color: string | null
@@ -1638,6 +1680,166 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "landing_pages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_activations: {
+        Row: {
+          activated_at: string
+          app_version: string | null
+          hostname: string | null
+          id: string
+          last_heartbeat_at: string
+          license_id: string
+          machine_fingerprint: string
+          metadata: Json
+          platform: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+        }
+        Insert: {
+          activated_at?: string
+          app_version?: string | null
+          hostname?: string | null
+          id?: string
+          last_heartbeat_at?: string
+          license_id: string
+          machine_fingerprint: string
+          metadata?: Json
+          platform?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+        }
+        Update: {
+          activated_at?: string
+          app_version?: string | null
+          hostname?: string | null
+          id?: string
+          last_heartbeat_at?: string
+          license_id?: string
+          machine_fingerprint?: string
+          metadata?: Json
+          platform?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_activations_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_audit: {
+        Row: {
+          activation_id: string | null
+          created_at: string
+          event: string
+          id: number
+          ip: unknown
+          license_id: string | null
+          payload: Json
+          user_agent: string | null
+        }
+        Insert: {
+          activation_id?: string | null
+          created_at?: string
+          event: string
+          id?: number
+          ip?: unknown
+          license_id?: string | null
+          payload?: Json
+          user_agent?: string | null
+        }
+        Update: {
+          activation_id?: string | null
+          created_at?: string
+          event?: string
+          id?: number
+          ip?: unknown
+          license_id?: string | null
+          payload?: Json
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_audit_activation_id_fkey"
+            columns: ["activation_id"]
+            isOneToOne: false
+            referencedRelation: "license_activations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_audit_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      licenses: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          issued_at: string
+          license_key: string
+          max_terminals: number
+          metadata: Json
+          notes: string | null
+          organization_id: string
+          plan: string
+          public_key: string
+          signing_key_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          issued_at?: string
+          license_key?: string
+          max_terminals?: number
+          metadata?: Json
+          notes?: string | null
+          organization_id: string
+          plan?: string
+          public_key: string
+          signing_key_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          issued_at?: string
+          license_key?: string
+          max_terminals?: number
+          metadata?: Json
+          notes?: string | null
+          organization_id?: string
+          plan?: string
+          public_key?: string
+          signing_key_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licenses_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -4197,6 +4399,19 @@ export type Database = {
         Args: { _cart_token: string }
         Returns: boolean
       }
+      count_active_terminals: { Args: { _license_id: string }; Returns: number }
+      create_license: {
+        Args: {
+          _expires_at?: string
+          _max_terminals: number
+          _notes?: string
+          _org_id: string
+          _plan: string
+          _public_key: string
+          _signing_key_id: string
+        }
+        Returns: Json
+      }
       default_org_id: { Args: never; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -4238,6 +4453,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      heartbeat_activation: {
+        Args: { _fingerprint: string; _license_key: string }
+        Returns: Json
+      }
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
@@ -4258,6 +4477,20 @@ export type Database = {
         }[]
       }
       redeem_coupon: { Args: { _coupon_id: string }; Returns: boolean }
+      register_activation: {
+        Args: {
+          _app_version: string
+          _fingerprint: string
+          _hostname: string
+          _license_key: string
+          _platform: string
+        }
+        Returns: Json
+      }
+      revoke_activation: {
+        Args: { _activation_id: string; _reason?: string }
+        Returns: boolean
+      }
       upsert_persistent_cart: {
         Args: {
           _cart_token: string
