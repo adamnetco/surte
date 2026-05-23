@@ -38,6 +38,7 @@ const accent = tenant?.accent_color ?? "#F37021";
     {description && <meta property="og:description" content={description} />}
     <style is:global set:html={`:root{--primary:${primary};--accent:${accent};}`}></style>
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>}
+  </head>
   <body class="min-h-screen bg-white text-gray-900 font-sans">
     {tenant ? (
       <header class="border-b border-gray-100">
