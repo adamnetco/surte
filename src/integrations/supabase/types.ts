@@ -591,6 +591,119 @@ export type Database = {
           },
         ]
       }
+      dining_areas: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          location_id: string
+          name: string
+          organization_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id: string
+          name: string
+          organization_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string
+          name?: string
+          organization_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dining_areas_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dining_tables: {
+        Row: {
+          capacity: number
+          created_at: string
+          dining_area_id: string | null
+          height: number
+          id: string
+          is_active: boolean
+          label: string
+          location_id: string
+          organization_id: string
+          pos_x: number
+          pos_y: number
+          shape: string
+          status: string
+          updated_at: string
+          width: number
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          dining_area_id?: string | null
+          height?: number
+          id?: string
+          is_active?: boolean
+          label: string
+          location_id: string
+          organization_id: string
+          pos_x?: number
+          pos_y?: number
+          shape?: string
+          status?: string
+          updated_at?: string
+          width?: number
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          dining_area_id?: string | null
+          height?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          location_id?: string
+          organization_id?: string
+          pos_x?: number
+          pos_y?: number
+          shape?: string
+          status?: string
+          updated_at?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dining_tables_dining_area_id_fkey"
+            columns: ["dining_area_id"]
+            isOneToOne: false
+            referencedRelation: "dining_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dining_tables_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -865,6 +978,129 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kds_tickets: {
+        Row: {
+          bumped_by: string | null
+          created_at: string
+          dining_table_label: string | null
+          id: string
+          items: Json
+          kitchen_station_id: string | null
+          location_id: string
+          notes: string | null
+          organization_id: string
+          priority: number
+          ready_at: string | null
+          sent_at: string
+          served_at: string | null
+          started_at: string | null
+          status: string
+          table_order_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          bumped_by?: string | null
+          created_at?: string
+          dining_table_label?: string | null
+          id?: string
+          items?: Json
+          kitchen_station_id?: string | null
+          location_id: string
+          notes?: string | null
+          organization_id: string
+          priority?: number
+          ready_at?: string | null
+          sent_at?: string
+          served_at?: string | null
+          started_at?: string | null
+          status?: string
+          table_order_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bumped_by?: string | null
+          created_at?: string
+          dining_table_label?: string | null
+          id?: string
+          items?: Json
+          kitchen_station_id?: string | null
+          location_id?: string
+          notes?: string | null
+          organization_id?: string
+          priority?: number
+          ready_at?: string | null
+          sent_at?: string
+          served_at?: string | null
+          started_at?: string | null
+          status?: string
+          table_order_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kds_tickets_kitchen_station_id_fkey"
+            columns: ["kitchen_station_id"]
+            isOneToOne: false
+            referencedRelation: "kitchen_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kds_tickets_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kds_tickets_table_order_id_fkey"
+            columns: ["table_order_id"]
+            isOneToOne: false
+            referencedRelation: "table_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kitchen_stations: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          location_id: string | null
+          name: string
+          organization_id: string
+          sort_order: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          name: string
+          organization_id: string
+          sort_order?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          name?: string
+          organization_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kitchen_stations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
             referencedColumns: ["id"]
           },
         ]
@@ -2312,6 +2548,42 @@ export type Database = {
           },
         ]
       }
+      service_types: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          organization_id: string
+          requires_table: boolean
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          organization_id: string
+          requires_table?: boolean
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          organization_id?: string
+          requires_table?: boolean
+          sort_order?: number
+        }
+        Relationships: []
+      }
       shipping_zones: {
         Row: {
           city: string
@@ -2426,6 +2698,192 @@ export type Database = {
           reason?: string
         }
         Relationships: []
+      }
+      table_order_items: {
+        Row: {
+          course: number
+          created_at: string
+          created_by: string | null
+          discount: number
+          id: string
+          kitchen_station_id: string | null
+          modifiers: Json
+          notes: string | null
+          organization_id: string
+          presentation_id: string | null
+          product_id: string | null
+          product_name: string
+          quantity: number
+          ready_at: string | null
+          sent_at: string | null
+          served_at: string | null
+          sku: string | null
+          status: string
+          table_order_id: string
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          course?: number
+          created_at?: string
+          created_by?: string | null
+          discount?: number
+          id?: string
+          kitchen_station_id?: string | null
+          modifiers?: Json
+          notes?: string | null
+          organization_id: string
+          presentation_id?: string | null
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          ready_at?: string | null
+          sent_at?: string | null
+          served_at?: string | null
+          sku?: string | null
+          status?: string
+          table_order_id: string
+          total: number
+          unit_price: number
+        }
+        Update: {
+          course?: number
+          created_at?: string
+          created_by?: string | null
+          discount?: number
+          id?: string
+          kitchen_station_id?: string | null
+          modifiers?: Json
+          notes?: string | null
+          organization_id?: string
+          presentation_id?: string | null
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          ready_at?: string | null
+          sent_at?: string | null
+          served_at?: string | null
+          sku?: string | null
+          status?: string
+          table_order_id?: string
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "table_order_items_kitchen_station_id_fkey"
+            columns: ["kitchen_station_id"]
+            isOneToOne: false
+            referencedRelation: "kitchen_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_order_items_table_order_id_fkey"
+            columns: ["table_order_id"]
+            isOneToOne: false
+            referencedRelation: "table_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      table_orders: {
+        Row: {
+          billed_at: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          dining_table_id: string | null
+          discount: number
+          guest_count: number
+          id: string
+          location_id: string
+          metadata: Json
+          notes: string | null
+          opened_at: string
+          order_number: number
+          organization_id: string
+          paid_at: string | null
+          pos_order_id: string | null
+          service_type_key: string
+          status: string
+          subtotal: number
+          tip: number
+          total: number
+          updated_at: string
+          waiter_id: string | null
+        }
+        Insert: {
+          billed_at?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          dining_table_id?: string | null
+          discount?: number
+          guest_count?: number
+          id?: string
+          location_id: string
+          metadata?: Json
+          notes?: string | null
+          opened_at?: string
+          order_number?: number
+          organization_id: string
+          paid_at?: string | null
+          pos_order_id?: string | null
+          service_type_key?: string
+          status?: string
+          subtotal?: number
+          tip?: number
+          total?: number
+          updated_at?: string
+          waiter_id?: string | null
+        }
+        Update: {
+          billed_at?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          dining_table_id?: string | null
+          discount?: number
+          guest_count?: number
+          id?: string
+          location_id?: string
+          metadata?: Json
+          notes?: string | null
+          opened_at?: string
+          order_number?: number
+          organization_id?: string
+          paid_at?: string | null
+          pos_order_id?: string | null
+          service_type_key?: string
+          status?: string
+          subtotal?: number
+          tip?: number
+          total?: number
+          updated_at?: string
+          waiter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "table_orders_dining_table_id_fkey"
+            columns: ["dining_table_id"]
+            isOneToOne: false
+            referencedRelation: "dining_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       testimonials: {
         Row: {
