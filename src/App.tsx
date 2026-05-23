@@ -47,7 +47,6 @@ const App = () => (
     <ThemeProvider>
       <TooltipProvider>
         <AuthProvider>
-        <AuthProvider>
           <OrganizationProvider>
           <AgentProvider>
           <CartProvider>
