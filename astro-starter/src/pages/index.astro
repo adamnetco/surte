@@ -1,0 +1,31 @@
+---
+import Base from "../layouts/Base.astro";
+import { resolveTenant, wpPosts } from "../lib/tenant";
+
+const host = Astro.request.headers.get("host") ?? "";
+const tenant = await resolveTenant(host);
+let posts: any[] = [];
+if (tenant?.wp_base_url) {
+  try { posts = await wpPosts(tenant); } catch (e) { console.error(e); }
+}
+---
+<Base>
+  <section class="text-center py-12">
+    <h1 class="text-4xl font-bold mb-3" style={`color:var(--primary)`}>{tenant?.name}</h1>
+    <p class="text-gray-600 max-w-xl mx-auto">Bienvenido a nuestro sitio. Pide en línea y entérate de novedades.</p>
+  </section>
+
+  {posts.length > 0 && (
+    <section>
+      <h2 class="text-xl font-semibold mb-4">Últimas publicaciones</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {posts.map((p) => (
+          <a href={`/blog/${p.slug}`} class="block border border-gray-100 rounded-lg p-4 hover:shadow-sm transition">
+            <h3 class="font-semibold mb-1" set:html={p.title.rendered} />
+            <p class="text-sm text-gray-600 line-clamp-3" set:html={p.excerpt.rendered} />
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+</Base>
