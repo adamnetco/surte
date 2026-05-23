@@ -2214,6 +2214,57 @@ export type Database = {
           },
         ]
       }
+      product_stock: {
+        Row: {
+          avg_cost: number
+          created_at: string
+          id: string
+          last_movement_at: string | null
+          max_stock: number | null
+          min_stock: number
+          organization_id: string
+          presentation_id: string | null
+          product_id: string
+          quantity: number
+          reorder_point: number | null
+          reserved_quantity: number
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          avg_cost?: number
+          created_at?: string
+          id?: string
+          last_movement_at?: string | null
+          max_stock?: number | null
+          min_stock?: number
+          organization_id: string
+          presentation_id?: string | null
+          product_id: string
+          quantity?: number
+          reorder_point?: number | null
+          reserved_quantity?: number
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          avg_cost?: number
+          created_at?: string
+          id?: string
+          last_movement_at?: string | null
+          max_stock?: number | null
+          min_stock?: number
+          organization_id?: string
+          presentation_id?: string | null
+          product_id?: string
+          quantity?: number
+          reorder_point?: number | null
+          reserved_quantity?: number
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           availability: string | null
@@ -2398,6 +2449,107 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_total: number
+          organization_id: string
+          presentation_id: string | null
+          product_id: string
+          purchase_order_id: string
+          quantity_ordered: number
+          quantity_received: number
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          organization_id: string
+          presentation_id?: string | null
+          product_id: string
+          purchase_order_id: string
+          quantity_ordered: number
+          quantity_received?: number
+          unit_cost?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          organization_id?: string
+          presentation_id?: string | null
+          product_id?: string
+          purchase_order_id?: string
+          quantity_ordered?: number
+          quantity_received?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expected_at: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          po_number: number
+          received_at: string | null
+          status: string
+          subtotal: number
+          supplier_id: string
+          tax: number
+          total: number
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expected_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          po_number?: number
+          received_at?: string | null
+          status?: string
+          subtotal?: number
+          supplier_id: string
+          tax?: number
+          total?: number
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expected_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          po_number?: number
+          received_at?: string | null
+          status?: string
+          subtotal?: number
+          supplier_id?: string
+          tax?: number
+          total?: number
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: []
       }
       push_broadcast_logs: {
         Row: {
@@ -2622,6 +2774,149 @@ export type Database = {
           },
         ]
       }
+      stock_movements: {
+        Row: {
+          balance_after: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          movement_type: string
+          notes: string | null
+          organization_id: string
+          presentation_id: string | null
+          product_id: string
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          unit_cost: number
+          warehouse_id: string
+        }
+        Insert: {
+          balance_after?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type: string
+          notes?: string | null
+          organization_id: string
+          presentation_id?: string | null
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          unit_cost?: number
+          warehouse_id: string
+        }
+        Update: {
+          balance_after?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type?: string
+          notes?: string | null
+          organization_id?: string
+          presentation_id?: string | null
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          unit_cost?: number
+          warehouse_id?: string
+        }
+        Relationships: []
+      }
+      stock_transfer_items: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          presentation_id: string | null
+          product_id: string
+          quantity_received: number | null
+          quantity_sent: number
+          transfer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          presentation_id?: string | null
+          product_id: string
+          quantity_received?: number | null
+          quantity_sent: number
+          transfer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          presentation_id?: string | null
+          product_id?: string
+          quantity_received?: number | null
+          quantity_sent?: number
+          transfer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfer_items_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "stock_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_transfers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          from_warehouse_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          received_at: string | null
+          received_by: string | null
+          sent_at: string | null
+          status: string
+          to_warehouse_id: string
+          transfer_number: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          from_warehouse_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          received_at?: string | null
+          received_by?: string | null
+          sent_at?: string | null
+          status?: string
+          to_warehouse_id: string
+          transfer_number?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          from_warehouse_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          received_at?: string | null
+          received_by?: string | null
+          sent_at?: string | null
+          status?: string
+          to_warehouse_id?: string
+          transfer_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -2674,6 +2969,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          organization_id: string
+          payment_terms_days: number | null
+          phone: string | null
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          organization_id: string
+          payment_terms_days?: number | null
+          phone?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          payment_terms_days?: number | null
+          phone?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       suppressed_emails: {
         Row: {
@@ -2936,6 +3279,48 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouses: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          is_sellable: boolean
+          location_id: string
+          name: string
+          organization_id: string
+          updated_at: string
+          warehouse_type: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          is_sellable?: boolean
+          location_id: string
+          name: string
+          organization_id: string
+          updated_at?: string
+          warehouse_type?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          is_sellable?: boolean
+          location_id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+          warehouse_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       products_public: {
@@ -3038,6 +3423,21 @@ export type Database = {
       }
     }
     Functions: {
+      apply_stock_movement: {
+        Args: {
+          _movement_type: string
+          _notes?: string
+          _org_id: string
+          _presentation_id: string
+          _product_id: string
+          _quantity: number
+          _reference_id?: string
+          _reference_type?: string
+          _unit_cost?: number
+          _warehouse_id: string
+        }
+        Returns: string
+      }
       complete_persistent_cart: {
         Args: { _cart_token: string }
         Returns: boolean
