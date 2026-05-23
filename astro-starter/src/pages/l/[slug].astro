@@ -1,0 +1,90 @@
+---
+// Renderiza cualquier landing del CMS (sistecpos / surteya / tenant) por slug.
+// Uso: /l/planes, /l/sede-bogota, /l/spa-y-belleza, etc.
+import Base from "../../layouts/Base.astro";
+import { resolveTenant } from "../../lib/tenant";
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL!;
+const ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY!;
+
+const { slug } = Astro.params;
+const host = Astro.request.headers.get("host") ?? "";
+const tenant = await resolveTenant(host);
+const scope = tenant?.slug ?? "sistecpos";
+
+const res = await fetch(
+  `${SUPABASE_URL}/functions/v1/get-landing?scope=${scope}&slug=${slug}`,
+  { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
+);
+if (!res.ok) return Astro.redirect("/404", 302);
+const { page, sections } = await res.json();
+
+Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=60");
+---
+
+<Base
+  title={page.meta_title ?? page.title}
+  description={page.meta_description ?? ""}
+  ogImage={page.og_image_url ?? undefined}
+  canonical={page.canonical_url ?? undefined}
+  noindex={page.noindex}
+  jsonLd={page.json_ld}
+>
+  {page.hero?.title && (
+    <section class="px-6 py-16 text-center bg-gradient-to-b from-primary/5 to-transparent">
+      <h1 class="text-4xl md:text-6xl font-bold mb-4">{page.hero.title}</h1>
+      {page.hero.subtitle && <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">{page.hero.subtitle}</p>}
+      {page.hero.cta_label && page.hero.cta_url && (
+        <a href={page.hero.cta_url} class="inline-block mt-6 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold">
+          {page.hero.cta_label}
+        </a>
+      )}
+    </section>
+  )}
+
+  {sections?.map((s: any) => (
+    <section data-block={s.block_type} class="px-6 py-12 max-w-6xl mx-auto">
+      {s.data?.heading && <h2 class="text-3xl font-bold mb-6">{s.data.heading}</h2>}
+      {s.data?.html && <div set:html={s.data.html} />}
+      {s.block_type === "features" && Array.isArray(s.data?.items) && (
+        <div class="grid md:grid-cols-3 gap-6">
+          {s.data.items.map((it: any) => (
+            <div class="p-6 rounded-lg border">
+              {it.icon && <div class="text-3xl mb-2">{it.icon}</div>}
+              <h3 class="font-semibold mb-2">{it.title}</h3>
+              <p class="text-sm text-muted-foreground">{it.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {s.block_type === "pricing" && Array.isArray(s.data?.plans) && (
+        <div class="grid md:grid-cols-3 gap-6">
+          {s.data.plans.map((p: any) => (
+            <div class="p-6 rounded-lg border flex flex-col">
+              <h3 class="font-bold text-xl">{p.name}</h3>
+              <p class="text-3xl font-bold my-3">{p.price}</p>
+              <ul class="text-sm space-y-1 flex-1">
+                {(p.features ?? []).map((f: string) => <li>• {f}</li>)}
+              </ul>
+              {p.cta_url && <a href={p.cta_url} class="mt-4 px-4 py-2 rounded bg-primary text-primary-foreground text-center">{p.cta_label ?? "Comprar"}</a>}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  ))}
+
+  {page.faq?.length > 0 && (
+    <section class="px-6 py-12 max-w-3xl mx-auto">
+      <h2 class="text-3xl font-bold mb-6">Preguntas frecuentes</h2>
+      <div class="space-y-4">
+        {page.faq.map((q: any) => (
+          <details class="p-4 rounded-lg border">
+            <summary class="font-semibold cursor-pointer">{q.q}</summary>
+            <p class="mt-2 text-muted-foreground">{q.a}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  )}
+</Base>
