@@ -19,7 +19,8 @@ import AdminHeader from "@/components/admin/AdminHeader";
 
 export default function Compras() {
   const { user, role, loading } = useAuth();
-  const { organizationId } = useOrganization();
+  const { currentOrg } = useOrganization();
+  const organizationId = currentOrg?.id ?? "";
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [tab, setTab] = useState("suppliers");
