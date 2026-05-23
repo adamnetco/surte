@@ -1,6 +1,9 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { wireOutboxListeners } from "./lib/offline/outbox";
+
+wireOutboxListeners();
 
 createRoot(document.getElementById("root")!).render(<App />);
 
