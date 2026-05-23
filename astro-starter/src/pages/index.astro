@@ -2,21 +2,71 @@
 import Base from "../layouts/Base.astro";
 import { resolveTenant, wpPosts } from "../lib/tenant";
 
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL!;
+const ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY!;
+
 const host = Astro.request.headers.get("host") ?? "";
 const tenant = await resolveTenant(host);
+const scope = tenant?.slug ?? "sistecpos";
+
+// Try CMS home for this tenant first (sistecpos, surteya, dimanti, etc.)
+let page: any = null;
+let sections: any[] = [];
+try {
+  const res = await fetch(
+    `${SUPABASE_URL}/functions/v1/get-landing?scope=${scope}&slug=home`,
+    { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
+  );
+  if (res.ok) {
+    const json = await res.json();
+    page = json.page;
+    sections = json.sections ?? [];
+  }
+} catch (e) { console.error(e); }
+
 let posts: any[] = [];
-if (tenant?.wp_base_url) {
+if (!page && tenant?.wp_base_url) {
   try { posts = await wpPosts(tenant); } catch (e) { console.error(e); }
 }
+
+Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=60");
 ---
-<Base>
-  <section class="text-center py-12">
-    <h1 class="text-4xl font-bold mb-3" style={`color:var(--primary)`}>{tenant?.name}</h1>
-    <p class="text-gray-600 max-w-xl mx-auto">Bienvenido a nuestro sitio. Pide en línea y entérate de novedades.</p>
-  </section>
+<Base
+  title={page?.meta_title ?? page?.title ?? tenant?.name}
+  description={page?.meta_description ?? ""}
+  ogImage={page?.og_image_url ?? undefined}
+  canonical={page?.canonical_url ?? undefined}
+  jsonLd={page?.json_ld}
+>
+  {page ? (
+    <>
+      {page.hero?.title && (
+        <section class="px-6 py-16 text-center bg-gradient-to-b from-primary/5 to-transparent">
+          <h1 class="text-4xl md:text-6xl font-bold mb-4">{page.hero.title}</h1>
+          {page.hero.subtitle && <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">{page.hero.subtitle}</p>}
+          {page.hero.cta_label && page.hero.cta_url && (
+            <a href={page.hero.cta_url} class="inline-block mt-6 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold">
+              {page.hero.cta_label}
+            </a>
+          )}
+        </section>
+      )}
+      {sections?.map((s: any) => (
+        <section data-block={s.block_type} class="px-6 py-12 max-w-6xl mx-auto">
+          {s.data?.heading && <h2 class="text-3xl font-bold mb-6">{s.data.heading}</h2>}
+          {s.data?.html && <div set:html={s.data.html} />}
+        </section>
+      ))}
+    </>
+  ) : (
+    <section class="text-center py-12">
+      <h1 class="text-4xl font-bold mb-3" style={`color:var(--primary)`}>{tenant?.name}</h1>
+      <p class="text-gray-600 max-w-xl mx-auto">Bienvenido a nuestro sitio. Pide en línea y entérate de novedades.</p>
+    </section>
+  )}
 
   {posts.length > 0 && (
-    <section>
+    <section class="px-6 py-12 max-w-6xl mx-auto">
       <h2 class="text-xl font-semibold mb-4">Últimas publicaciones</h2>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {posts.map((p) => (
