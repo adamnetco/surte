@@ -130,8 +130,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     if (perr) return toast.error(perr.message);
 
     toast.success(`Ticket #${order.ticket_number} cobrado`);
+    setLastOrderId(order.id);
     setTicket([]);
     setPayOpen(false);
+    // Auto-prompt: ¿facturar?
+    setTimeout(() => {
+      if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
+        setActionMode("emit");
+      }
+    }, 300);
   };
 
   return (
