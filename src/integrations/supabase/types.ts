@@ -88,6 +88,81 @@ export type Database = {
           },
         ]
       }
+      appointments: {
+        Row: {
+          channel: string
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          customer_user_id: string | null
+          ends_at: string
+          id: string
+          metadata: Json
+          notes: string | null
+          organization_id: string
+          price: number | null
+          resource_id: string | null
+          service_id: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          customer_user_id?: string | null
+          ends_at: string
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          organization_id: string
+          price?: number | null
+          resource_id?: string | null
+          service_id?: string | null
+          starts_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          customer_user_id?: string | null
+          ends_at?: string
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          organization_id?: string
+          price?: number | null
+          resource_id?: string | null
+          service_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "service_resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       banners: {
         Row: {
           created_at: string
@@ -2426,6 +2501,42 @@ export type Database = {
           },
         ]
       }
+      modules: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          is_active: boolean
+          key: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          is_active?: boolean
+          key: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          is_active?: boolean
+          key?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       municipality_settings: {
         Row: {
           city: string
@@ -2908,6 +3019,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "organization_modules_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["key"]
+          },
           {
             foreignKeyName: "organization_modules_organization_id_fkey"
             columns: ["organization_id"]
@@ -4109,6 +4227,111 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_catalog: {
+        Row: {
+          allowed_resource_ids: string[] | null
+          buffer_minutes: number
+          category: string | null
+          cost: number | null
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          organization_id: string
+          price: number
+          requires_resource_kind: string | null
+          slug: string | null
+          sort_order: number
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          allowed_resource_ids?: string[] | null
+          buffer_minutes?: number
+          category?: string | null
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          organization_id: string
+          price?: number
+          requires_resource_kind?: string | null
+          slug?: string | null
+          sort_order?: number
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          allowed_resource_ids?: string[] | null
+          buffer_minutes?: number
+          category?: string | null
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          price?: number
+          requires_resource_kind?: string | null
+          slug?: string | null
+          sort_order?: number
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_resources: {
+        Row: {
+          capacity: number
+          color: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: string
+          name: string
+          organization_id: string
+          professional_user_id: string | null
+          schedule: Json
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name: string
+          organization_id: string
+          professional_user_id?: string | null
+          schedule?: Json
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name?: string
+          organization_id?: string
+          professional_user_id?: string | null
+          schedule?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       service_types: {
         Row: {
@@ -5317,6 +5540,19 @@ export type Database = {
           total_items: number
           updated_at: string
           user_id: string
+        }[]
+      }
+      get_resource_availability: {
+        Args: {
+          _day: string
+          _org_id: string
+          _resource_id: string
+          _slot_minutes?: number
+        }
+        Returns: {
+          is_free: boolean
+          slot_end: string
+          slot_start: string
         }[]
       }
       has_any_role: {

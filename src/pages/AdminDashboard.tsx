@@ -4,8 +4,11 @@ import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, Database } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, Database, CalendarDays, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
+import { useOrganization } from "@/context/OrganizationContext";
+import ModulesTab from "@/components/admin/ModulesTab";
+import AgendaTab from "@/components/admin/AgendaTab";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OverviewTab from "@/components/admin/OverviewTab";
 import ProductsTab from "@/components/admin/ProductsTab";
@@ -34,31 +37,33 @@ import SeoContentTab from "@/components/admin/SeoContentTab";
 import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
 
 const allTabs = [
-  { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "orders", label: "Pedidos", icon: ShoppingCart, roles: ["superadmin", "admin", "editor"] as AppRole[] },
-  { id: "products", label: "Inventario", icon: Package, roles: ["superadmin", "admin", "editor"] as AppRole[] },
-  { id: "categories", label: "Categorías", icon: Tag, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "hero", label: "Hero", icon: Layers, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "municipalities", label: "Ciudades", icon: MapPin, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "shipping", label: "Logística", icon: Truck, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "notifications", label: "Alertas", icon: Bell, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "seo", label: "SEO", icon: Search, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "seo-content", label: "SEO Long", icon: FileText, roles: ["superadmin", "admin", "editor"] as AppRole[] },
-  { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "landing", label: "SEO Pages", icon: Globe, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "presentations", label: "Presentaciones", icon: Box, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "modifiers", label: "Modificadores", icon: Settings, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "featured", label: "Destacados", icon: Star, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "coupons", label: "Cupones", icon: Ticket, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "reviews", label: "Comentarios", icon: MessageSquare, roles: ["superadmin", "admin", "editor"] as AppRole[] },
-  { id: "google-reviews", label: "Google", icon: Map, roles: ["superadmin", "admin", "editor"] as AppRole[] },
-  { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[] },
-  { id: "data", label: "Datos", icon: Database, roles: ["superadmin"] as AppRole[] },
-  { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[] },
+  { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null },
+  { id: "orders", label: "Pedidos", icon: ShoppingCart, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
+  { id: "agenda", label: "Agenda", icon: CalendarDays, roles: ["superadmin", "admin", "editor"] as AppRole[], module: "agenda" },
+  { id: "products", label: "Inventario", icon: Package, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
+  { id: "categories", label: "Categorías", icon: Tag, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "hero", label: "Hero", icon: Layers, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "municipalities", label: "Ciudades", icon: MapPin, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "shipping", label: "Logística", icon: Truck, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "notifications", label: "Alertas", icon: Bell, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "seo", label: "SEO", icon: Search, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "seo-content", label: "SEO Long", icon: FileText, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
+  { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "landing", label: "SEO Pages", icon: Globe, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "presentations", label: "Presentaciones", icon: Box, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "modifiers", label: "Modificadores", icon: Settings, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "featured", label: "Destacados", icon: Star, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "coupons", label: "Cupones", icon: Ticket, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "reviews", label: "Comentarios", icon: MessageSquare, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
+  { id: "google-reviews", label: "Google", icon: Map, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
+  { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "modules", label: "Módulos", icon: ToggleRight, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "data", label: "Datos", icon: Database, roles: ["superadmin"] as AppRole[], module: null },
+  { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[], module: null },
 ];
 
 class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
@@ -85,7 +90,8 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
 
-  const tabs = allTabs.filter((t) => t.roles.includes(role));
+  const { hasModule } = useOrganization();
+  const tabs = allTabs.filter((t) => t.roles.includes(role) && (!t.module || hasModule(t.module)));
 
   useEffect(() => {
     if (!loading && role === "editor") setActiveTab("orders");
@@ -158,6 +164,8 @@ const AdminDashboard = () => {
     <TabErrorBoundary tabName={tabs.find(t => t.id === activeTab)?.label || activeTab} key={activeTab}>
       {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
       {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
+      {activeTab === "agenda" && <AgendaTab />}
+      {activeTab === "modules" && <ModulesTab />}
       {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
       {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
       {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
