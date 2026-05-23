@@ -50,6 +50,7 @@ import Onboarding from "./pages/Onboarding";
 import CatalogosBase from "./pages/CatalogosBase";
 import Licencias from "./pages/Licencias";
 import GerenteIA from "./pages/GerenteIA";
+import Compras from "./pages/Compras";
 
 const queryClient = new QueryClient();
 
