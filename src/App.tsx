@@ -97,6 +97,7 @@ const App = () => (
               </BrowserRouter>
           </CartProvider>
           </AgentProvider>
+          </OrganizationProvider>
         </AuthProvider>
       </TooltipProvider>
     </ThemeProvider>
