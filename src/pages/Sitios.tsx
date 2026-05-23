@@ -231,7 +231,7 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
         </div>
         <div className="text-xs text-muted-foreground bg-muted/40 rounded-md p-3 space-y-1">
           <p className="font-medium text-foreground">Configuración DNS que debe hacer el cliente:</p>
-          <p>• <b>CNAME</b> <code>www</code> → <code>cname.{ASTRO_HOST_IP === "" ? "tu-host" : "vercel-dns.com"}</code></p>
+          <p>• <b>CNAME</b> <code>www</code> → <code>cname.vercel-dns.com</code></p>
           <p>• <b>A</b> <code>@</code> → <code>{ASTRO_HOST_IP}</code> (si quiere root sin www)</p>
           <p>• <b>TXT</b> <code>_lovable-tenant</code> → token mostrado por dominio (verificación)</p>
         </div>
