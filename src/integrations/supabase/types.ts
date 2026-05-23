@@ -1765,6 +1765,50 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_progress: {
+        Row: {
+          catalog_done: boolean
+          company_done: boolean
+          completed_at: string | null
+          einvoice_done: boolean
+          id: string
+          location_done: boolean
+          modules_done: boolean
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          catalog_done?: boolean
+          company_done?: boolean
+          completed_at?: string | null
+          einvoice_done?: boolean
+          id?: string
+          location_done?: boolean
+          modules_done?: boolean
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          catalog_done?: boolean
+          company_done?: boolean
+          completed_at?: string | null
+          einvoice_done?: boolean
+          id?: string
+          location_done?: boolean
+          modules_done?: boolean
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_progress_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           id: string
@@ -2074,6 +2118,73 @@ export type Database = {
         }
         Relationships: []
       }
+      parked_tickets: {
+        Row: {
+          cash_session_id: string | null
+          cashier_id: string | null
+          created_at: string
+          customer_name: string | null
+          id: string
+          items: Json
+          label: string | null
+          location_id: string | null
+          notes: string | null
+          organization_id: string
+          subtotal: number
+          total: number
+        }
+        Insert: {
+          cash_session_id?: string | null
+          cashier_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          items?: Json
+          label?: string | null
+          location_id?: string | null
+          notes?: string | null
+          organization_id: string
+          subtotal?: number
+          total?: number
+        }
+        Update: {
+          cash_session_id?: string | null
+          cashier_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          items?: Json
+          label?: string | null
+          location_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          subtotal?: number
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parked_tickets_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parked_tickets_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parked_tickets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       persistent_carts: {
         Row: {
           cart_token: string
@@ -2353,6 +2464,78 @@ export type Database = {
             columns: ["pos_order_id"]
             isOneToOne: false
             referencedRelation: "pos_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_quotes: {
+        Row: {
+          converted_order_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          items: Json
+          location_id: string | null
+          notes: string | null
+          organization_id: string
+          quote_number: number
+          status: string
+          subtotal: number
+          total: number
+          valid_until: string | null
+        }
+        Insert: {
+          converted_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          items?: Json
+          location_id?: string | null
+          notes?: string | null
+          organization_id: string
+          quote_number?: number
+          status?: string
+          subtotal?: number
+          total?: number
+          valid_until?: string | null
+        }
+        Update: {
+          converted_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          items?: Json
+          location_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          quote_number?: number
+          status?: string
+          subtotal?: number
+          total?: number
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_quotes_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_quotes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2912,6 +3095,57 @@ export type Database = {
         }
         Relationships: []
       }
+      saas_plans: {
+        Row: {
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          is_public: boolean
+          key: string
+          limits: Json
+          modules: Json
+          name: string
+          price_monthly: number
+          price_yearly: number
+          sort_order: number
+          trial_days: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          key: string
+          limits?: Json
+          modules?: Json
+          name: string
+          price_monthly?: number
+          price_yearly?: number
+          sort_order?: number
+          trial_days?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          key?: string
+          limits?: Json
+          modules?: Json
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          sort_order?: number
+          trial_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       seo_content: {
         Row: {
           body_html: string | null
@@ -3182,15 +3416,83 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          due_date: string
+          external_id: string | null
+          id: string
+          organization_id: string
+          paid_at: string | null
+          pdf_url: string | null
+          period_end: string
+          period_start: string
+          status: string
+          subscription_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          due_date: string
+          external_id?: string | null
+          id?: string
+          organization_id: string
+          paid_at?: string | null
+          pdf_url?: string | null
+          period_end: string
+          period_start: string
+          status?: string
+          subscription_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          due_date?: string
+          external_id?: string | null
+          id?: string
+          organization_id?: string
+          paid_at?: string | null
+          pdf_url?: string | null
+          period_end?: string
+          period_start?: string
+          status?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
+          billing_cycle: string
+          cancel_at_period_end: boolean
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
+          external_id: string | null
+          external_provider: string | null
           id: string
           metadata: Json
           organization_id: string
           plan: string
+          plan_id: string | null
           provider: string | null
           provider_subscription_id: string | null
           status: string
@@ -3198,13 +3500,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_cycle?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
+          external_id?: string | null
+          external_provider?: string | null
           id?: string
           metadata?: Json
           organization_id: string
           plan?: string
+          plan_id?: string | null
           provider?: string | null
           provider_subscription_id?: string | null
           status?: string
@@ -3212,13 +3519,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_cycle?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
+          external_id?: string | null
+          external_provider?: string | null
           id?: string
           metadata?: Json
           organization_id?: string
           plan?: string
+          plan_id?: string | null
           provider?: string | null
           provider_subscription_id?: string | null
           status?: string
@@ -3231,6 +3543,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: true
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "saas_plans"
             referencedColumns: ["id"]
           },
         ]
