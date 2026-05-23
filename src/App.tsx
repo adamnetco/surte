@@ -49,6 +49,7 @@ import Billing from "./pages/Billing";
 import Onboarding from "./pages/Onboarding";
 import CatalogosBase from "./pages/CatalogosBase";
 import Licencias from "./pages/Licencias";
+import GerenteIA from "./pages/GerenteIA";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,7 @@ const App = () => (
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/catalogos-base" element={<CatalogosBase />} />
                     <Route path="/licencias" element={<Licencias />} />
+                    <Route path="/gerente-ia" element={<GerenteIA />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/hub/:type/:slug" element={<Hub />} />
                     {/* SEO local: URLs amigables con ciudad */}
