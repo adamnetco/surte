@@ -230,8 +230,12 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
   };
 
   const markVerified = async (d: any) => {
-    await supabase.from("tenant_domains").update({ verified_at: new Date().toISOString(), ssl_status: "active" }).eq("id", d.id);
-    toast.success("Dominio verificado");
+    toast.loading("Verificando DNS…", { id: "dns" });
+    const { data, error } = await supabase.functions.invoke("verify-tenant-domain", { body: { domain_id: d.id } });
+    toast.dismiss("dns");
+    if (error) return toast.error(error.message);
+    if (data?.verified) toast.success("Dominio verificado");
+    else toast.error("TXT no encontrado todavía. Espera propagación DNS.");
     qc.invalidateQueries({ queryKey: ["tenant-domains", orgId] });
   };
 
