@@ -155,14 +155,19 @@ const AdminDiag = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
-  // Refresh outbox count + online status every 10s independently of the heavy check loop.
+  // Refresh outbox count + online status + lastSyncAt every 10s.
   useEffect(() => {
     const tick = async () => {
       const online = typeof navigator !== "undefined" ? navigator.onLine : true;
       let outboxPending = 0;
       try { outboxPending = await pendingCount(); } catch { /* dexie unavailable */ }
+      try {
+        const ts = await getMeta<number>("last_sync_success_at");
+        if (ts) setLastSyncAt(ts);
+      } catch { /* no-op */ }
       setHealth((h) => ({ ...h, online, outboxPending }));
     };
+    void tick();
     const id = setInterval(tick, 10_000);
     return () => clearInterval(id);
   }, []);
