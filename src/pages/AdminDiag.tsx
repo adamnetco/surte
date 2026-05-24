@@ -3,10 +3,21 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSectionAccess from "@/components/admin/AdminSectionAccess";
+import { pendingCount } from "@/lib/offline/outbox";
+import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
+import { Activity, Database, Inbox, Tag, RefreshCw } from "lucide-react";
 
 type Check = { label: string; status: "ok" | "fail" | "warn" | "info"; detail: string };
 
+interface SystemHealth {
+  backend: "ok" | "down" | "checking";
+  backendLatencyMs: number | null;
+  outboxPending: number;
+  online: boolean;
+}
+
 const SECTIONS = ["admin", "productos", "pedidos", "inventario"];
+
 
 const AdminDiag = () => {
   const { user, session, role, isAdmin, isAgent, loading } = useAuth();
@@ -18,6 +29,35 @@ const AdminDiag = () => {
   const [rolesRows, setRolesRows] = useState<any[]>([]);
   const [reason, setReason] = useState<string>("");
   const [sectionAccess, setSectionAccess] = useState<Record<string, { allowed: string[]; can: boolean }>>({});
+  const [health, setHealth] = useState<SystemHealth>({
+    backend: "checking",
+    backendLatencyMs: null,
+    outboxPending: 0,
+    online: typeof navigator !== "undefined" ? navigator.onLine : true,
+  });
+
+  const refreshHealth = async () => {
+    const online = typeof navigator !== "undefined" ? navigator.onLine : true;
+    setHealth((h) => ({ ...h, backend: "checking", online }));
+    const started = performance.now();
+    let backend: "ok" | "down" = "down";
+    let latency: number | null = null;
+    try {
+      // Cheap, RLS-safe ping. Falls back to "down" on any timeout/network error.
+      const { error } = await (supabase as any)
+        .from("admin_section_access")
+        .select("section_key", { head: true, count: "exact" })
+        .limit(1);
+      if (!error) backend = "ok";
+      latency = Math.round(performance.now() - started);
+    } catch {
+      backend = "down";
+    }
+    let outboxPending = 0;
+    try { outboxPending = await pendingCount(); } catch { /* dexie unavailable */ }
+    setHealth({ backend, backendLatencyMs: latency, outboxPending, online });
+  };
+
 
   const run = async () => {
     setRunning(true);
@@ -84,6 +124,7 @@ const AdminDiag = () => {
 
     setChecks(out);
     setRunning(false);
+    void refreshHealth();
   };
 
   useEffect(() => {
@@ -91,6 +132,19 @@ const AdminDiag = () => {
     void run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
+
+  // Refresh outbox count + online status every 10s independently of the heavy check loop.
+  useEffect(() => {
+    const tick = async () => {
+      const online = typeof navigator !== "undefined" ? navigator.onLine : true;
+      let outboxPending = 0;
+      try { outboxPending = await pendingCount(); } catch { /* dexie unavailable */ }
+      setHealth((h) => ({ ...h, online, outboxPending }));
+    };
+    const id = setInterval(tick, 10_000);
+    return () => clearInterval(id);
+  }, []);
+
 
   const color = (s: Check["status"]) =>
     s === "ok" ? "text-green-600 border-green-200 bg-green-50" :
@@ -110,10 +164,57 @@ const AdminDiag = () => {
         </div>
       </header>
 
+      {/* Salud del Sistema */}
+      <section className="rounded-lg border border-border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Activity className="w-3.5 h-3.5" /> Salud del Sistema
+          </h2>
+          <button
+            onClick={refreshHealth}
+            className="text-xs px-2 py-1 rounded-md border border-border hover:bg-muted flex items-center gap-1"
+            aria-label="Refrescar salud"
+          >
+            <RefreshCw className="w-3 h-3" /> Refrescar
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+          <div className={`rounded border p-2.5 ${
+            health.backend === "ok" ? "border-green-200 bg-green-50" :
+            health.backend === "down" ? "border-red-200 bg-red-50" :
+            "border-slate-200 bg-slate-50"
+          }`}>
+            <div className="flex items-center gap-1.5 font-semibold mb-1"><Database className="w-3 h-3" /> Backend</div>
+            <p className="opacity-90">
+              {health.backend === "ok" && `✓ Conectado${health.backendLatencyMs != null ? ` · ${health.backendLatencyMs} ms` : ""}`}
+              {health.backend === "down" && "✗ Sin respuesta"}
+              {health.backend === "checking" && "Probando…"}
+            </p>
+          </div>
+          <div className={`rounded border p-2.5 ${health.online ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}>
+            <div className="flex items-center gap-1.5 font-semibold mb-1"><Activity className="w-3 h-3" /> Red</div>
+            <p className="opacity-90">{health.online ? "✓ En línea" : "✗ Sin conexión"}</p>
+          </div>
+          <div className={`rounded border p-2.5 ${health.outboxPending > 0 ? "border-amber-200 bg-amber-50" : "border-green-200 bg-green-50"}`}>
+            <div className="flex items-center gap-1.5 font-semibold mb-1"><Inbox className="w-3 h-3" /> Outbox</div>
+            <p className="opacity-90">
+              {health.outboxPending} pendiente{health.outboxPending === 1 ? "" : "s"} de sincronizar
+            </p>
+          </div>
+          <div className="rounded border border-slate-200 bg-slate-50 p-2.5">
+            <div className="flex items-center gap-1.5 font-semibold mb-1"><Tag className="w-3 h-3" /> Versión</div>
+            <p className="opacity-90">
+              v{APP_VERSION} · <span className="text-[10px]">{APP_BUILD_DATE}</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className={`rounded-lg border p-4 ${reason.startsWith("✓") ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}>
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Motivo de autorización</p>
         <p className="text-sm font-medium">{reason || "Calculando…"}</p>
       </section>
+
 
       <section className="rounded-lg border border-border bg-card p-4 space-y-1 text-sm">
         <p><span className="text-muted-foreground">Email:</span> <code>{user?.email ?? "—"}</code></p>

@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause } from "lucide-react";
+import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause, Keyboard } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import { refreshCatalogCache, getCachedProducts } from "@/lib/offline/catalog";
+import { setMeta, getMeta } from "@/lib/offline/db";
+import { usePOSHotkeys } from "@/hooks/usePOSHotkeys";
+
 
 interface Product { id: string; name: string; price: number; image_url: string | null; stock: number; }
 interface TicketLine {
@@ -32,10 +35,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [actionMode, setActionMode] = useState<"emit" | "quote" | "park" | null>(null);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const searchRef = useRef<HTMLInputElement>(null);
 
+  const ticketCacheKey = `pos_ticket:${session.id}`;
+
+  // Hydrate catalog + persisted ticket
   useEffect(() => {
     (async () => {
-      // Offline-first: hydrate from IndexedDB cache immediately, then refresh from network.
       try {
         const cached = await getCachedProducts();
         if (cached.length) {
@@ -43,6 +49,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           setLoading(false);
         }
       } catch { /* no cache yet */ }
+
+      try {
+        const savedTicket = await getMeta<TicketLine[]>(ticketCacheKey);
+        if (savedTicket && Array.isArray(savedTicket) && savedTicket.length) {
+          setTicket(savedTicket);
+        }
+      } catch { /* no ticket cached */ }
 
       try {
         await refreshCatalogCache();
@@ -54,7 +67,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         setLoading(false);
       }
     })();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.id]);
+
+  // Persist every ticket change to IndexedDB BEFORE any backend roundtrip.
+  useEffect(() => {
+    setMeta(ticketCacheKey, ticket).catch(() => { /* dexie unavailable */ });
+  }, [ticket, ticketCacheKey]);
+
+  // Hotkeys: F2 cobrar · F3 buscar · Esc cierre Z
+  usePOSHotkeys({
+    onPay: () => { if (ticket.length > 0) setPayOpen(true); },
+    onSearch: () => searchRef.current?.focus(),
+    onEscape: () => setCloseOpen(true),
+  });
+
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -144,7 +171,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     toast.success(`Ticket #${order.ticket_number} cobrado`);
     setLastOrderId(order.id);
     setTicket([]);
+    setMeta(ticketCacheKey, []).catch(() => {});
     setPayOpen(false);
+
     // Auto-prompt: ¿facturar?
     setTimeout(() => {
       if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
@@ -161,7 +190,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar producto..."
+              ref={searchRef}
+              placeholder="Buscar producto…  (F3)"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-10"
@@ -169,8 +199,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             />
           </div>
           <OfflineIndicator />
+          <div
+            className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 py-1"
+            title="Atajos: F2 Cobrar · F3 Buscar · Esc Cierre"
+          >
+            <Keyboard className="w-3 h-3" />
+            <span><kbd className="px-1 bg-muted rounded">F2</kbd> Cobrar · <kbd className="px-1 bg-muted rounded">F3</kbd> Buscar · <kbd className="px-1 bg-muted rounded">Esc</kbd> Cierre</span>
+          </div>
           <Button variant="outline" size="sm" onClick={() => setCloseOpen(true)}>
             <LogOut className="w-4 h-4 mr-1" /> Cierre Z
+
           </Button>
         </div>
         <div className="flex-1 overflow-y-auto p-3">
