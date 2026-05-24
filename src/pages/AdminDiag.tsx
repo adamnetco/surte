@@ -164,10 +164,57 @@ const AdminDiag = () => {
         </div>
       </header>
 
+      {/* Salud del Sistema */}
+      <section className="rounded-lg border border-border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Activity className="w-3.5 h-3.5" /> Salud del Sistema
+          </h2>
+          <button
+            onClick={refreshHealth}
+            className="text-xs px-2 py-1 rounded-md border border-border hover:bg-muted flex items-center gap-1"
+            aria-label="Refrescar salud"
+          >
+            <RefreshCw className="w-3 h-3" /> Refrescar
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+          <div className={`rounded border p-2.5 ${
+            health.backend === "ok" ? "border-green-200 bg-green-50" :
+            health.backend === "down" ? "border-red-200 bg-red-50" :
+            "border-slate-200 bg-slate-50"
+          }`}>
+            <div className="flex items-center gap-1.5 font-semibold mb-1"><Database className="w-3 h-3" /> Backend</div>
+            <p className="opacity-90">
+              {health.backend === "ok" && `✓ Conectado${health.backendLatencyMs != null ? ` · ${health.backendLatencyMs} ms` : ""}`}
+              {health.backend === "down" && "✗ Sin respuesta"}
+              {health.backend === "checking" && "Probando…"}
+            </p>
+          </div>
+          <div className={`rounded border p-2.5 ${health.online ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}>
+            <div className="flex items-center gap-1.5 font-semibold mb-1"><Activity className="w-3 h-3" /> Red</div>
+            <p className="opacity-90">{health.online ? "✓ En línea" : "✗ Sin conexión"}</p>
+          </div>
+          <div className={`rounded border p-2.5 ${health.outboxPending > 0 ? "border-amber-200 bg-amber-50" : "border-green-200 bg-green-50"}`}>
+            <div className="flex items-center gap-1.5 font-semibold mb-1"><Inbox className="w-3 h-3" /> Outbox</div>
+            <p className="opacity-90">
+              {health.outboxPending} pendiente{health.outboxPending === 1 ? "" : "s"} de sincronizar
+            </p>
+          </div>
+          <div className="rounded border border-slate-200 bg-slate-50 p-2.5">
+            <div className="flex items-center gap-1.5 font-semibold mb-1"><Tag className="w-3 h-3" /> Versión</div>
+            <p className="opacity-90">
+              v{APP_VERSION} · <span className="text-[10px]">{APP_BUILD_DATE}</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className={`rounded-lg border p-4 ${reason.startsWith("✓") ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}>
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Motivo de autorización</p>
         <p className="text-sm font-medium">{reason || "Calculando…"}</p>
       </section>
+
 
       <section className="rounded-lg border border-border bg-card p-4 space-y-1 text-sm">
         <p><span className="text-muted-foreground">Email:</span> <code>{user?.email ?? "—"}</code></p>
