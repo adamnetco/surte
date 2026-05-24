@@ -29,6 +29,35 @@ const AdminDiag = () => {
   const [rolesRows, setRolesRows] = useState<any[]>([]);
   const [reason, setReason] = useState<string>("");
   const [sectionAccess, setSectionAccess] = useState<Record<string, { allowed: string[]; can: boolean }>>({});
+  const [health, setHealth] = useState<SystemHealth>({
+    backend: "checking",
+    backendLatencyMs: null,
+    outboxPending: 0,
+    online: typeof navigator !== "undefined" ? navigator.onLine : true,
+  });
+
+  const refreshHealth = async () => {
+    const online = typeof navigator !== "undefined" ? navigator.onLine : true;
+    setHealth((h) => ({ ...h, backend: "checking", online }));
+    const started = performance.now();
+    let backend: "ok" | "down" = "down";
+    let latency: number | null = null;
+    try {
+      // Cheap, RLS-safe ping. Falls back to "down" on any timeout/network error.
+      const { error } = await (supabase as any)
+        .from("admin_section_access")
+        .select("section_key", { head: true, count: "exact" })
+        .limit(1);
+      if (!error) backend = "ok";
+      latency = Math.round(performance.now() - started);
+    } catch {
+      backend = "down";
+    }
+    let outboxPending = 0;
+    try { outboxPending = await pendingCount(); } catch { /* dexie unavailable */ }
+    setHealth({ backend, backendLatencyMs: latency, outboxPending, online });
+  };
+
 
   const run = async () => {
     setRunning(true);
