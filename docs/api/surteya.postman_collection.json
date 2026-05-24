@@ -1,0 +1,278 @@
+{
+  "info": {
+    "name": "SURTÉ YA API",
+    "_postman_id": "b5b1f7b3-0000-4000-a000-000000000001",
+    "description": "Colección completa de la API REST + Edge Functions de SURTÉ YA (Lovable Cloud / Supabase). Usa las variables {{base_url}}, {{anon_key}} y {{access_token}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://dimyhjzcwlgfczimqhet.supabase.co" },
+    { "key": "anon_key", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbXloanpjd2xnZmN6aW1xaGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxODk1OTcsImV4cCI6MjA4OTc2NTU5N30.L2ERMQCCHYuJ51lhVffJaKIXKaVbwF0uGvkf-HxS6BI" },
+    { "key": "access_token", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{anon_key}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/auth/v1/signup",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"demo@surteya.co\",\n  \"password\": \"********\",\n  \"data\": { \"full_name\": \"Demo\", \"phone\": \"3001112233\", \"business_type\": \"casa\" }\n}" }
+          }
+        },
+        {
+          "name": "Login (password)",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["const j = pm.response.json();", "if (j.access_token) pm.collectionVariables.set('access_token', j.access_token);"] }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/auth/v1/token?grant_type=password",
+            "body": { "mode": "raw", "raw": "{\"email\":\"demo@surteya.co\",\"password\":\"********\"}" }
+          }
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/auth/v1/token?grant_type=refresh_token",
+            "body": { "mode": "raw", "raw": "{\"refresh_token\":\"<token>\"}" }
+          }
+        },
+        {
+          "name": "User actual",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/auth/v1/user"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catálogo",
+      "item": [
+        {
+          "name": "Listar productos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{anon_key}}" }
+            ],
+            "url": "{{base_url}}/rest/v1/products?is_active=eq.true&select=id,name,slug,price,image_url&limit=20"
+          }
+        },
+        {
+          "name": "Buscar productos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{anon_key}}" }
+            ],
+            "url": "{{base_url}}/rest/v1/products?or=(name.ilike.*pulpa*,description.ilike.*pulpa*)&limit=5"
+          }
+        },
+        {
+          "name": "Categorías",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{anon_key}}" }
+            ],
+            "url": "{{base_url}}/rest/v1/categories?is_active=eq.true&order=sort_order.asc"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Crear pedido",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Prefer", "value": "return=representation" }
+            ],
+            "url": "{{base_url}}/rest/v1/orders",
+            "body": { "mode": "raw", "raw": "{\n  \"customer_name\":\"Demo\",\n  \"customer_phone\":\"3001112233\",\n  \"customer_address\":\"Cra 1 # 2-3\",\n  \"city\":\"Bucaramanga\",\n  \"subtotal\":50000,\"delivery_price\":5000,\"total\":55000,\n  \"status\":\"pending\",\"payment_method\":\"contraentrega\"\n}" }
+          }
+        },
+        {
+          "name": "Listar mis pedidos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/rest/v1/orders?order=created_at.desc&limit=20"
+          }
+        }
+      ]
+    },
+    {
+      "name": "RPC",
+      "item": [
+        {
+          "name": "validate_coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{anon_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/rest/v1/rpc/validate_coupon",
+            "body": { "mode": "raw", "raw": "{\"_code\":\"BIENVENIDO\",\"_order_total\":80000}" }
+          }
+        },
+        {
+          "name": "has_role",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/rest/v1/rpc/has_role",
+            "body": { "mode": "raw", "raw": "{\"_user_id\":\"<uuid>\",\"_role\":\"admin\"}" }
+          }
+        },
+        {
+          "name": "upsert_persistent_cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{anon_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/rest/v1/rpc/upsert_persistent_cart",
+            "body": { "mode": "raw", "raw": "{\n  \"_cart_token\":\"<uuid-v4>\",\n  \"_items\":[{\"product_id\":\"<id>\",\"qty\":2,\"price\":12000}],\n  \"_subtotal\":24000,\n  \"_total_items\":2,\n  \"_channel\":\"web\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Edge Functions",
+      "item": [
+        {
+          "name": "lead-capture (público)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{anon_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/functions/v1/lead-capture",
+            "body": { "mode": "raw", "raw": "{\"full_name\":\"Eduardo\",\"phone\":\"3001112233\",\"source\":\"web\"}" }
+          }
+        },
+        {
+          "name": "send-whatsapp-order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/functions/v1/send-whatsapp-order",
+            "body": { "mode": "raw", "raw": "{\"order_id\":\"<uuid>\"}" }
+          }
+        },
+        {
+          "name": "cart-sync",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{anon_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/functions/v1/cart-sync",
+            "body": { "mode": "raw", "raw": "{\"cart_token\":\"<uuid>\",\"items\":[],\"subtotal\":0,\"total_items\":0,\"channel\":\"web\"}" }
+          }
+        },
+        {
+          "name": "ai-manager",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/functions/v1/ai-manager",
+            "body": { "mode": "raw", "raw": "{\"organization_id\":\"<uuid>\"}" }
+          }
+        },
+        {
+          "name": "sitemap (público)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "apikey", "value": "{{anon_key}}" }],
+            "url": "{{base_url}}/functions/v1/sitemap?site=surteya"
+          }
+        },
+        {
+          "name": "optimize-image (público)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "apikey", "value": "{{anon_key}}" }],
+            "url": "{{base_url}}/functions/v1/optimize-image?url=https://...&w=800&q=80"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Storage",
+      "item": [
+        {
+          "name": "Upload product-images",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "image/webp" }
+            ],
+            "url": "{{base_url}}/storage/v1/object/product-images/demo/test.webp",
+            "body": { "mode": "file", "file": {} }
+          }
+        }
+      ]
+    }
+  ]
+}
