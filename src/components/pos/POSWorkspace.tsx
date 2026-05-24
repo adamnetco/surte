@@ -38,6 +38,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
+  const sync = useSyncService();
 
   const ticketCacheKey = `pos_ticket:${session.id}`;
 
