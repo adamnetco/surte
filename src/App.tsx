@@ -22,6 +22,7 @@ import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 // Eager: only the home page (LCP-critical) — everything else is code-split.
 import Index from "./pages/Index";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminDiag from "./pages/AdminDiag";
 
 const Catalogo = lazy(() => import("./pages/Catalogo"));
 const Carrito = lazy(() => import("./pages/Carrito"));
@@ -103,6 +104,8 @@ const App = () => (
                     <Route path="/p/:id" element={<ProductoDetalle />} />
                     <Route path="/pedido/:orderNumber" element={<Pedido />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/admin/diag" element={<AdminDiag />} />
+                    <Route path="/admin-diag" element={<AdminDiag />} />
                     <Route path="/pos" element={<POS />} />
                     <Route path="/mesas" element={<Mesas />} />
                     <Route path="/kds" element={<KDS />} />
