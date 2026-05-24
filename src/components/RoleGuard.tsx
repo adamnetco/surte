@@ -14,10 +14,28 @@ interface RoleGuardProps {
   deniedRedirect?: string;
 }
 
+const ALLOWED_CACHE_PREFIX = "sps_section_allowed:";
+
+const readCachedAllowed = (section: string): AppRole[] | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(ALLOWED_CACHE_PREFIX + section);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as AppRole[]) : null;
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Guard de rutas: bloquea acceso si el rol del usuario no está en `allowed_roles`
  * de la sección configurada en la tabla `admin_section_access`.
- * El usuario maestro (eduardotp77@gmail.com / superadmin) siempre tiene acceso.
+ * El usuario maestro (superadmin) siempre tiene acceso.
+ *
+ * Optimización: usa caches en localStorage para `role` (AuthContext) y
+ * `allowed_roles` (esta guard) para resolver el acceso de forma síncrona en
+ * la primera renderización y evitar el "spinner de permisos".
  */
 const RoleGuard = ({
   section,
@@ -28,8 +46,8 @@ const RoleGuard = ({
 }: RoleGuardProps) => {
   const { user, role, loading } = useAuth();
   const location = useLocation();
-  const [allowed, setAllowed] = useState<AppRole[] | null>(null);
-  const [checking, setChecking] = useState(true);
+  const [allowed, setAllowed] = useState<AppRole[] | null>(() => readCachedAllowed(section));
+  const [checking, setChecking] = useState(() => readCachedAllowed(section) === null);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,16 +58,18 @@ const RoleGuard = ({
         .eq("section_key", section)
         .maybeSingle();
       if (cancelled) return;
-      if (error || !data) setAllowed(fallbackRoles);
-      else setAllowed((data.allowed_roles as AppRole[]) ?? fallbackRoles);
+      const next = (!error && data?.allowed_roles) ? (data.allowed_roles as AppRole[]) : fallbackRoles;
+      setAllowed(next);
       setChecking(false);
+      try { window.localStorage.setItem(ALLOWED_CACHE_PREFIX + section, JSON.stringify(next)); } catch { /* quota */ }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [section]);
 
-  if (loading || checking) {
+  // Si hay user + role + allowed cacheados ⇒ resolvemos sin esperar nada.
+  const hasSyncDecision = user !== null && !loading && allowed !== null;
+
+  if (!hasSyncDecision && (loading || (checking && !user))) {
     return (
       <div className="min-h-[100dvh] flex items-center justify-center text-sm text-muted-foreground">
         Verificando permisos…
@@ -61,7 +81,6 @@ const RoleGuard = ({
     return <Navigate to={redirectTo} replace state={{ from: location.pathname }} />;
   }
 
-  // Superadmin maestro siempre pasa
   const isMaster = role === "superadmin";
   const list = allowed ?? fallbackRoles;
   if (!isMaster && !list.includes(role)) {
@@ -69,12 +88,7 @@ const RoleGuard = ({
       <Navigate
         to={deniedRedirect}
         replace
-        state={{
-          denied: true,
-          section,
-          role,
-          allowed: list,
-        }}
+        state={{ denied: true, section, role, allowed: list }}
       />
     );
   }
@@ -83,3 +97,4 @@ const RoleGuard = ({
 };
 
 export default RoleGuard;
+
