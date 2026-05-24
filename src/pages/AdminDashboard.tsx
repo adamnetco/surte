@@ -235,6 +235,23 @@ const AdminDashboard = () => {
 
       {/* Mobile content */}
       <main className="lg:hidden p-4 pb-8">
+        {opsLinks.length > 0 && (
+          <div className="mb-4 -mx-4 px-4 pb-3 border-b border-border">
+            <p className="text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider mb-2">Operaciones y Multi-tenant</p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {opsLinks.map(({ path, label, icon: Icon }) => (
+                <button
+                  key={path}
+                  onClick={() => navigate(path)}
+                  className="shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors min-w-[72px]"
+                >
+                  <Icon size={18} className="text-primary" />
+                  <span className="text-[10px] font-medium text-center leading-tight">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {renderContent()}
       </main>
 
@@ -262,6 +279,25 @@ const AdminDashboard = () => {
                 )}
               </button>
             ))}
+
+            {opsLinks.length > 0 && (
+              <>
+                <div className="mt-4 px-4 pt-3 pb-1 border-t border-border">
+                  <p className="text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider">Operaciones</p>
+                </div>
+                {opsLinks.map(({ path, label, icon: Icon }) => (
+                  <button
+                    key={path}
+                    onClick={() => navigate(path)}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <Icon size={16} />
+                    <span className="flex-1 text-left">{label}</span>
+                    <ChevronRight size={14} className="opacity-50" />
+                  </button>
+                ))}
+              </>
+            )}
           </nav>
         </aside>
 
