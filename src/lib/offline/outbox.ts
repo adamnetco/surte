@@ -92,7 +92,7 @@ async function executeOp(item: OutboxItem) {
   switch (op) {
     case "pos_order_create": {
       // Idempotent: if an order with this client_uuid already exists, reuse it.
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from("pos_orders")
         .select("id")
         .eq("client_uuid", item.client_uuid)
