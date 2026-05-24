@@ -138,6 +138,24 @@ const AdminDiag = () => {
         ))}
       </section>
 
+      <section className="rounded-lg border border-border bg-card p-4">
+        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">Accesos por sección (en vivo)</h2>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {Object.entries(sectionAccess).map(([k, v]) => (
+            <div key={k} className={`rounded border p-2 ${v.can ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
+              <p className="font-semibold">{k}</p>
+              <p className="opacity-80">roles: [{v.allowed.join(", ")}]</p>
+              <p className="opacity-80">acceso: {v.can ? "✓ permitido" : "✗ denegado"}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border bg-card p-4">
+        <AdminSectionAccess />
+      </section>
+
+
       <footer className="text-xs text-muted-foreground pt-4 border-t border-border">
         Si el RPC falla pero <code>user_roles</code> tiene tu fila, la función SQL <code>get_current_user_role</code> no está deployada.
         Si <code>user_roles</code> está vacío, asigna tu rol desde el panel o ejecuta el INSERT correspondiente.
