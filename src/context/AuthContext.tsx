@@ -153,8 +153,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+const FALLBACK_AUTH: AuthContextType = {
+  user: null,
+  session: null,
+  isAdmin: false,
+  isAgent: false,
+  role: "user",
+  loading: false,
+  signIn: async () => ({ error: new Error("AuthProvider not mounted") }),
+  signUp: async () => ({ error: new Error("AuthProvider not mounted") }),
+  signOut: async () => {},
+};
+
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) {
+    if (typeof window !== "undefined") {
+      console.warn("useAuth called outside AuthProvider — returning safe fallback");
+    }
+    return FALLBACK_AUTH;
+  }
   return ctx;
 };
