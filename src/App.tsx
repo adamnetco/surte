@@ -78,8 +78,8 @@ const App = () => (
             <DynamicThemeInjector />
             <CustomScriptInjector />
                 <AgentBar />
-                <CityPickerModal />
               <BrowserRouter>
+                <CityPickerModal />
                 <Analytics />
                 <CartNavigationGuard />
                 <OmnichannelCartListener />
