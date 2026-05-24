@@ -69,7 +69,7 @@ export async function flushOutbox(): Promise<{ sent: number; failed: number; ski
         await executeOp(item);
         await offlineDB.outbox.update(item.id!, { status: "done", last_error: undefined });
         sent++;
-      } catch (e: any) {
+        await setMeta("last_sync_success_at", Date.now());
         failed++;
         const attempts = item.attempts + 1;
         const isPermanent = attempts >= MAX_ATTEMPTS;
