@@ -33,3 +33,5 @@ project_id = "dimyhjzcwlgfczimqhet"
     verify_jwt = false
   [functions.get-landing]
     verify_jwt = false
+  [functions.license-purchase-webhook]
+    verify_jwt = false
