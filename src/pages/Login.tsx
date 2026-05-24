@@ -48,7 +48,7 @@ const Login = () => {
       if (result.error) throw result.error;
       // OAuth completed (session set via lovable module) — navigate home
       toast.success("¡Bienvenido!");
-      navigate("/");
+      navigate(fromPath, { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Error al iniciar con Google");
       setGoogleLoading(false);
