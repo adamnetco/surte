@@ -3,6 +3,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { offlineDB, type OutboxItem, type OutboxOp } from "./db";
 
+const MAX_ATTEMPTS = 8;
+// Exponential backoff in ms: 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s
+const backoffDelay = (attempts: number) => Math.min(2000 * 2 ** attempts, 5 * 60_000);
+
 function uuid() {
   return (crypto as any).randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
@@ -19,7 +23,17 @@ export async function enqueue(op: OutboxOp, payload: any, organization_id: strin
     client_uuid,
   };
   await offlineDB.outbox.add(item);
-  // Try immediate flush if online; otherwise wait for "online" event
+
+  // Ask the service worker to register a Background Sync (best-effort).
+  try {
+    if ("serviceWorker" in navigator && "SyncManager" in window) {
+      const reg = await navigator.serviceWorker.ready;
+      // @ts-expect-error: sync is non-standard but supported on Chromium.
+      await reg.sync?.register("outbox-sync");
+    }
+  } catch { /* no-op */ }
+
+  // Try immediate flush if online; otherwise wait for "online" event.
   if (navigator.onLine) flushOutbox().catch(() => {});
   return client_uuid;
 }
@@ -29,57 +43,85 @@ export async function pendingCount(): Promise<number> {
 }
 
 let flushing = false;
-export async function flushOutbox(): Promise<{ sent: number; failed: number }> {
-  if (flushing || !navigator.onLine) return { sent: 0, failed: 0 };
+export async function flushOutbox(): Promise<{ sent: number; failed: number; skipped: number }> {
+  if (flushing || !navigator.onLine) return { sent: 0, failed: 0, skipped: 0 };
   flushing = true;
   let sent = 0;
   let failed = 0;
+  let skipped = 0;
   try {
     const items = await offlineDB.outbox
       .where("status")
       .anyOf("pending", "failed")
       .sortBy("created_at");
 
+    const now = Date.now();
     for (const item of items) {
+      // Respect exponential backoff window for previously failed items.
+      if (item.status === "failed" && item.attempts > 0) {
+        const nextAt = item.created_at + backoffDelay(item.attempts - 1);
+        if (now < nextAt) { skipped++; continue; }
+      }
       try {
         await offlineDB.outbox.update(item.id!, { status: "syncing", attempts: item.attempts + 1 });
         await executeOp(item);
-        await offlineDB.outbox.update(item.id!, { status: "done" });
+        await offlineDB.outbox.update(item.id!, { status: "done", last_error: undefined });
         sent++;
       } catch (e: any) {
         failed++;
+        const attempts = item.attempts + 1;
+        const isPermanent = attempts >= MAX_ATTEMPTS;
         await offlineDB.outbox.update(item.id!, {
-          status: "failed",
-          last_error: String(e?.message ?? e),
+          status: isPermanent ? "failed" : "failed",
+          attempts,
+          last_error: `${isPermanent ? "[GAVE UP] " : ""}${String(e?.message ?? e)}`,
         });
       }
     }
-    // Garbage-collect "done" items older than 1 day
+    // Garbage-collect "done" items older than 1 day.
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     await offlineDB.outbox.where("status").equals("done").and((i) => i.created_at < cutoff).delete();
   } finally {
     flushing = false;
   }
-  return { sent, failed };
+  return { sent, failed, skipped };
 }
 
 async function executeOp(item: OutboxItem) {
   const { op, payload } = item;
   switch (op) {
     case "pos_order_create": {
-      // Insert order header + items. RPC could replace this for atomicity.
-      const { data: order, error } = await supabase
+      // Idempotent: if an order with this client_uuid already exists, reuse it.
+      const { data: existing } = await supabase
         .from("pos_orders")
-        .insert({ ...payload.header, client_uuid: item.client_uuid })
         .select("id")
-        .single();
-      if (error) throw error;
-      if (payload.items?.length) {
-        const lines = payload.items.map((l: any) => ({ ...l, pos_order_id: order.id }));
-        const { error: e2 } = await supabase.from("pos_order_items").insert(lines);
-        if (e2) throw e2;
+        .eq("client_uuid", item.client_uuid)
+        .maybeSingle();
+
+      let orderId: string;
+      if (existing?.id) {
+        orderId = existing.id;
+      } else {
+        const { data: order, error } = await supabase
+          .from("pos_orders")
+          .insert({ ...payload.header, client_uuid: item.client_uuid })
+          .select("id")
+          .single();
+        if (error) throw error;
+        orderId = order.id;
+
+        if (payload.items?.length) {
+          const lines = payload.items.map((l: any) => ({ ...l, pos_order_id: orderId }));
+          const { error: e2 } = await supabase.from("pos_order_items").insert(lines);
+          if (e2) throw e2;
+        }
+        if (payload.payments?.length) {
+          const pays = payload.payments.map((p: any) => ({ ...p, pos_order_id: orderId }));
+          const { error: e3 } = await supabase.from("pos_payments").insert(pays);
+          if (e3) throw e3;
+        }
       }
-      return order.id;
+      return orderId;
     }
     case "pos_payment_register": {
       const { error } = await supabase.from("pos_payments").insert(payload);
@@ -116,11 +158,13 @@ let wired = false;
 export function wireOutboxListeners() {
   if (wired || typeof window === "undefined") return;
   wired = true;
-  window.addEventListener("online", () => {
-    flushOutbox().catch(() => {});
-  });
-  // Periodic retry every 60s while tab is open
-  setInterval(() => {
-    if (navigator.onLine) flushOutbox().catch(() => {});
-  }, 60_000);
+  window.addEventListener("online", () => { flushOutbox().catch(() => {}); });
+  // Periodic retry every 30s while the tab is open.
+  setInterval(() => { if (navigator.onLine) flushOutbox().catch(() => {}); }, 30_000);
+  // Service Worker may ask the page to flush after a `sync` event.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", (e) => {
+      if (e.data?.type === "outbox-flush") flushOutbox().catch(() => {});
+    });
+  }
 }

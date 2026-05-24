@@ -1,16 +1,11 @@
 /// <reference lib="webworker" />
-// Custom service worker logic merged into Workbox's auto-generated SW
-// via VitePWA's `injectManifest` is NOT used here — we use generateSW.
-// This file exists so push events work via a small companion SW served
-// at /sw-push.js, registered alongside the generated one.
-//
-// Most of the time this file is unused; the generated workbox SW handles
-// caching and the browser's own push handler reads from the registration
-// linked to the active SW. We listen for push and notificationclick.
+// Companion service worker: handles Web Push + Background Sync.
+// Caching is handled by Workbox's auto-generated SW.
 
+// ── Web Push ──────────────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
   if (!event.data) return;
-  let payload = { title: "SURTÉ YA", body: "Tienes una nueva notificación", url: "/", icon: "/icons/icon-192.png" };
+  let payload = { title: "SistecPOS", body: "Tienes una nueva notificación", url: "/", icon: "/icons/icon-192.png" };
   try {
     payload = { ...payload, ...event.data.json() };
   } catch {
@@ -37,4 +32,28 @@ self.addEventListener("notificationclick", (event) => {
       return clients.openWindow(target);
     })
   );
+});
+
+// ── Background Sync ───────────────────────────────────────────────────
+// The actual Supabase calls live in the page (they need the user session +
+// generated client). The SW's job is to wake an open client and ask it to
+// process the outbox. This is the recommended pattern for auth-bound work.
+async function notifyClientsToFlush() {
+  const list = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  for (const c of list) c.postMessage({ type: "outbox-flush" });
+  // If no client is open, we cannot flush from here (Supabase JS needs the
+  // session). The next page load will pick it up via wireOutboxListeners().
+}
+
+self.addEventListener("sync", (event) => {
+  if (event.tag === "outbox-sync") {
+    event.waitUntil(notifyClientsToFlush());
+  }
+});
+
+// Manual ping from the page (fallback when SyncManager is unavailable).
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "request-flush") {
+    event.waitUntil(notifyClientsToFlush());
+  }
 });
