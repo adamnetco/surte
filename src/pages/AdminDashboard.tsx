@@ -84,6 +84,22 @@ class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string 
   }
 }
 
+const operationsLinks = [
+  { path: "/sitios", label: "Sitios / Multi-tenant", icon: Building2, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/pos", label: "POS", icon: Monitor, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { path: "/mesas", label: "Mesas", icon: Utensils, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { path: "/kds", label: "KDS (Cocina)", icon: ChefHat, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { path: "/facturacion", label: "Facturación", icon: Receipt, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/compras", label: "Compras", icon: ShoppingBag, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/inventario", label: "Inventario Avanzado", icon: Warehouse, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/planes", label: "Planes", icon: CreditCard, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/billing", label: "Billing", icon: Wallet, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/licencias", label: "Licencias", icon: Key, roles: ["superadmin"] as AppRole[] },
+  { path: "/gerente-ia", label: "Gerente IA", icon: Sparkles, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/catalogos-base", label: "Catálogos Base", icon: BookOpen, roles: ["superadmin"] as AppRole[] },
+  { path: "/onboarding", label: "Onboarding", icon: Rocket, roles: ["superadmin", "admin"] as AppRole[] },
+];
+
 const AdminDashboard = () => {
   const { user, isAdmin, role, loading } = useAuth();
   const navigate = useNavigate();
@@ -92,6 +108,7 @@ const AdminDashboard = () => {
 
   const { hasModule } = useOrganization();
   const tabs = allTabs.filter((t) => t.roles.includes(role) && (!t.module || hasModule(t.module)));
+  const opsLinks = operationsLinks.filter((l) => l.roles.includes(role));
 
   useEffect(() => {
     if (!loading && role === "editor") setActiveTab("orders");
