@@ -49,7 +49,7 @@ const Login = () => {
           state: crypto.randomUUID?.() ?? String(Date.now()),
           prompt: "select_account",
         });
-        window.location.href = `/~oauth/initiate?${params.toString()}`;
+        window.open(`${window.location.origin}/~oauth/initiate?${params.toString()}`, "_top");
         return;
       }
 
