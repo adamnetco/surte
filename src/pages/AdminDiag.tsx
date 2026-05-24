@@ -60,7 +60,11 @@ const AdminDiag = () => {
     setRunning(false);
   };
 
-  useEffect(() => { void run(); /* eslint-disable-next-line */ }, [loading, role]);
+  useEffect(() => {
+    if (loading) return; // espera a que AuthContext termine antes de ejecutar checks
+    void run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const color = (s: Check["status"]) =>
     s === "ok" ? "text-green-600 border-green-200 bg-green-50" :
