@@ -1,0 +1,345 @@
+openapi: 3.1.0
+info:
+  title: SURTÉ YA API
+  version: "1.0.0"
+  description: |
+    API REST + JSON de SURTÉ YA (Lovable Cloud / Supabase).
+    Combina PostgREST (auto-generado desde Postgres) con Edge Functions (Deno).
+
+    URL base: `https://dimyhjzcwlgfczimqhet.supabase.co`
+    Auth: header `apikey` + `Authorization: Bearer <anon|access_token>`.
+servers:
+  - url: https://dimyhjzcwlgfczimqhet.supabase.co
+
+security:
+  - apiKeyHeader: []
+    bearerAuth: []
+
+components:
+  securitySchemes:
+    apiKeyHeader:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Anon publishable key.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Product:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string, nullable: true }
+        brand: { type: string, nullable: true }
+        category_id: { type: string, format: uuid, nullable: true }
+        sku: { type: string, nullable: true }
+        gtin: { type: string, nullable: true }
+        price: { type: number }
+        price_wholesale: { type: number, nullable: true }
+        original_price: { type: number, nullable: true }
+        cost_price: { type: number, nullable: true }
+        image_url: { type: string, nullable: true }
+        unit: { type: string, nullable: true }
+        stock: { type: integer, nullable: true }
+        tags: { type: array, items: { type: string } }
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
+
+    Category:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        icon: { type: string, nullable: true }
+        sort_order: { type: integer }
+        is_active: { type: boolean }
+
+    Order:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        order_number: { type: string }
+        status: { type: string, enum: [pending, confirmed, preparing, delivered, cancelled] }
+        customer_name: { type: string }
+        customer_phone: { type: string }
+        customer_address: { type: string, nullable: true }
+        city: { type: string, nullable: true }
+        subtotal: { type: number }
+        delivery_price: { type: number }
+        total: { type: number }
+        notes: { type: string, nullable: true }
+        user_id: { type: string, format: uuid, nullable: true }
+        external_sync_status: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    Session:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        expires_in: { type: integer }
+        token_type: { type: string, example: bearer }
+        user:
+          type: object
+          additionalProperties: true
+
+    LeadInput:
+      type: object
+      required: [full_name]
+      properties:
+        full_name: { type: string, maxLength: 200 }
+        email: { type: string, format: email }
+        phone: { type: string }
+        business_name: { type: string }
+        business_type: { type: string }
+        city: { type: string }
+        source: { type: string }
+        plan_interest: { type: string }
+        modules_interest: { type: array, items: { type: string } }
+        message: { type: string }
+        utm:
+          type: object
+          additionalProperties: true
+
+    Error:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: string, nullable: true }
+        hint: { type: string, nullable: true }
+
+paths:
+  /auth/v1/signup:
+    post:
+      summary: Registro con email + password
+      security: [{ apiKeyHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+                data:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Session" }}}}
+
+  /auth/v1/token:
+    post:
+      summary: Login (password) o refresh
+      security: [{ apiKeyHeader: [] }]
+      parameters:
+        - in: query
+          name: grant_type
+          required: true
+          schema: { type: string, enum: [password, refresh_token] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+                refresh_token: { type: string }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Session" }}}}
+
+  /auth/v1/user:
+    get:
+      summary: Usuario actual
+      responses:
+        "200": { description: OK }
+
+  /auth/v1/logout:
+    post:
+      summary: Logout
+      responses: { "204": { description: OK } }
+
+  /rest/v1/products:
+    get:
+      summary: Listar productos
+      parameters:
+        - in: query
+          name: select
+          schema: { type: string, example: "id,name,price" }
+        - in: query
+          name: is_active
+          schema: { type: string, example: "eq.true" }
+        - in: query
+          name: order
+          schema: { type: string, example: "created_at.desc" }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Array de productos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Product" }
+    post:
+      summary: Crear producto (admin/editor)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Product" }
+      responses:
+        "201": { description: Created }
+
+  /rest/v1/categories:
+    get:
+      summary: Listar categorías
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Category" }
+
+  /rest/v1/orders:
+    get:
+      summary: Listar pedidos del usuario actual
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Order" }
+    post:
+      summary: Crear pedido
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Order" }
+      responses:
+        "201": { description: Created }
+
+  /rest/v1/rpc/validate_coupon:
+    post:
+      summary: Validar cupón y calcular descuento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                _code: { type: string }
+                _order_total: { type: number }
+      responses:
+        "200": { description: OK }
+
+  /rest/v1/rpc/has_role:
+    post:
+      summary: ¿Usuario tiene rol?
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                _user_id: { type: string, format: uuid }
+                _role: { type: string, enum: [superadmin, admin, editor, agente, user] }
+      responses:
+        "200": { description: boolean }
+
+  /functions/v1/lead-capture:
+    post:
+      summary: Capturar lead público
+      security: [{ apiKeyHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadInput" }
+      responses:
+        "200": { description: OK }
+
+  /functions/v1/send-whatsapp-order:
+    post:
+      summary: Enviar resumen del pedido por WhatsApp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_id]
+              properties:
+                order_id: { type: string, format: uuid }
+      responses:
+        "200": { description: OK }
+
+  /functions/v1/cart-sync:
+    post:
+      summary: Sincronizar carrito omnicanal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cart_token]
+              properties:
+                cart_token: { type: string, format: uuid }
+                items: { type: array, items: { type: object, additionalProperties: true } }
+                subtotal: { type: number }
+                total_items: { type: integer }
+                phone: { type: string }
+                channel: { type: string, enum: [web, whatsapp, pos] }
+      responses:
+        "200": { description: OK }
+
+  /functions/v1/sitemap:
+    get:
+      summary: Sitemap XML dinámico
+      security: []
+      parameters:
+        - in: query
+          name: site
+          schema: { type: string }
+      responses:
+        "200": { description: XML, content: { application/xml: {} } }
+
+  /storage/v1/object/{bucket}/{path}:
+    post:
+      summary: Subir archivo a Storage
+      parameters:
+        - in: path
+          name: bucket
+          required: true
+          schema: { type: string, enum: [product-images, desktop-releases, invoices] }
+        - in: path
+          name: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          "*/*":
+            schema: { type: string, format: binary }
+      responses:
+        "200": { description: OK }

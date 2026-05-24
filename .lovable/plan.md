@@ -1,135 +1,63 @@
-# Plan de unificación de los 3 proyectos (sin romper lo vivo)
+# Plan: Backend documentado + Desarrollo local desacoplado
 
-## Mapa final
+## Objetivo
 
-```text
-┌──────────────────────────────────────────────────────────────────────┐
-│  surteya.lovable.app  →  admin.sistecpos.com  (ESTE proyecto)        │
-│  Back-office multi-tenant. organization_id por cliente.              │
-│  Aquí viven: POS, KDS, mesas, inventario, catálogo, CRM, billing,    │
-│              módulos (retail, horeca, spa, belleza, agenda...)       │
-│  Tenant semilla: SURTÉ YA (org_id existente).                        │
-└──────────────────────────────────────────────────────────────────────┘
-            │                                │
-            │ API (resolve-tenant +          │ API (get-landing +
-            │  wp-headless + cart-sync)      │  wp-headless)
-            ▼                                ▼
-┌─────────────────────────┐      ┌──────────────────────────────────┐
-│ Astro multi-tenant       │      │ sistecpos.lovable.app (separado) │
-│ Sirve N dominios:        │      │ Marketing + captación + tienda   │
-│  - surteya.com (seed)    │      │ de licencias + representantes.   │
-│  - dimanti.ventas.click  │      │ Sus 45+ landings y tienda se     │
-│    (cliente spa)         │      │ migran a tablas y se sirven      │
-│  - *.cliente.com         │      │ TAMBIÉN desde Astro como tenant  │
-│                          │      │ "sistecpos" (id-negocio propio). │
-└─────────────────────────┘      └──────────────────────────────────┘
-```
+Permitirte continuar el desarrollo de SURTÉ YA en local con otras IAs (Cursor, Claude Code, etc.), consumiendo la misma base de datos de Lovable Cloud vía una API REST clara y documentada en JSON.
 
-Clave: **nada se borra**. Cada proyecto sigue vivo hasta que su reemplazo esté validado.
+## Entregables
 
----
+### 1. Documentación de la API (`docs/api/`)
 
-## Fase 1 — Activar módulos de Dimanti en SURTÉ YA (no toca Dimanti)
+- `docs/api/README.md` — Introducción, URL base, autenticación, convenciones JSON, paginación, errores.
+- `docs/api/auth.md` — Login, signup, OAuth Google, refresh token, recuperación de contraseña.
+- `docs/api/tables.md` — Lista de las ~60 tablas (products, categories, orders, profiles, user_roles, etc.) con columnas, tipos y reglas RLS resumidas en lenguaje claro.
+- `docs/api/rpc.md` — Documentación de las 35+ funciones RPC (`has_role`, `apply_stock_movement`, `validate_coupon`, `get_persistent_cart`, `register_activation`, etc.) con payload y respuesta JSON.
+- `docs/api/edge-functions.md` — Las ~40 edge functions (ai-manager, cart-sync, sync-order, send-whatsapp-order, lead-capture, license-*, sitemap, etc.) con método, path, body y ejemplo `curl`.
+- `docs/api/storage.md` — Buckets (`product-images`, `desktop-releases`, `invoices`), políticas de acceso, ejemplo de upload.
+- `docs/api/realtime.md` — Canales activos (orders, persistent_carts, messages) y ejemplo de suscripción.
+- `docs/api/examples/` — Ejemplos `curl` y JavaScript fetch para los flujos más comunes: listar productos, crear pedido, login, subir imagen.
 
-Objetivo: traer las capacidades de spa/belleza/agenda al multi-tenant, sin migrar el proyecto Dimanti todavía.
+### 2. Colección OpenAPI + Postman
 
-1. Crear catálogo de módulos en BD (`modules`): `retail`, `horeca`, `spa`, `belleza`, `agenda`, `comandas`, `kds`, `mesas`, `representantes`.
-2. Tabla `organization_modules (organization_id, module_code, enabled, config jsonb)` para activarlos por tenant.
-3. Migrar al admin de SURTÉ YA solo los componentes spa/belleza/agenda de Dimanti vía `cross_project--copy_project_asset` (lectura). Se importan como nuevas pestañas que solo aparecen si el módulo está activo para la org.
-4. Crear tablas nuevas (no chocan con lo existente):
-   - `service_catalog` (servicios spa: nombre, duración, precio, recurso requerido)
-   - `service_resources` (cabinas, sillas, profesionales)
-   - `appointments` (cita, cliente, recurso, servicio, estado, canal)
-   - `appointment_slots` (vista materializada de disponibilidad)
-5. RLS por `organization_id`; tenant `spa` ve solo agenda, tenant `retail` no la ve.
-6. Activar `spa` + `agenda` en una org demo para validar (no en SURTÉ YA producción).
+- `docs/api/openapi.yaml` — Especificación OpenAPI 3.1 generada para los endpoints REST principales (REST autogenerado de PostgREST + edge functions).
+- `docs/api/surteya.postman_collection.json` — Colección Postman importable con variables `{{base_url}}`, `{{anon_key}}`, `{{access_token}}`.
 
-Resultado: SURTÉ YA gana el módulo spa/belleza/agenda sin tocar Dimanti.
+### 3. Setup de desarrollo local (`docs/local-dev.md`)
 
----
+Guía para clonar y ejecutar el repo en tu máquina:
 
-## Fase 2 — Migrar contenido SEO de SistecPOS al CMS (sin tumbar SistecPOS)
+- Requisitos (Node 20+, bun o npm, git).
+- `.env.local.example` con las variables públicas:
+  - `VITE_SUPABASE_URL=https://dimyhjzcwlgfczimqhet.supabase.co`
+  - `VITE_SUPABASE_PUBLISHABLE_KEY=...` (anon key, pública)
+  - `VITE_SUPABASE_PROJECT_ID=dimyhjzcwlgfczimqhet`
+- Comandos: `bun install`, `bun dev`, `bun run build`.
+- Cómo apuntar a Test vs Live.
+- Cómo conectar Cursor / Claude Code al repo y consumir la API ya documentada.
 
-Objetivo: preservar los 45+ URLs indexados de `sistecpos.lovable.app` moviéndolos a `landing_pages` + `landing_sections` (ya creadas en la fase anterior), con `site_scope = 'sistecpos'`.
+### 4. Mapa de vistas separadas (`docs/views-map.md`)
 
-1. Script de lectura `cross_project--read_project_file` por cada page de SistecPOS Lovable (Planes, Licencias, Comparativa, Módulos, Soluciones, Blog, etc.).
-2. Convertir cada page React → fila en `landing_pages` (slug, meta_title, meta_description, canonical_url, json_ld, hero) + N filas en `landing_sections` (features, pricing, faq, testimonials...).
-3. Importar productos de la tienda de SistecPOS a tablas existentes (`products` con `organization_id = sistecpos_org`).
-4. Crear `tenant_site` "sistecpos" + `tenant_domain` `sistecpos.com` apuntando a Astro.
-5. Astro ya sabe servir `/l/[slug]` desde `get-landing`. Habilitar también `/`, `/planes`, `/licencias`, `/blog/[slug]`, `/tienda/[slug]` para mantener URLs idénticas (cero ruptura SEO).
-6. `301` desde `sistecpos.lovable.app/*` hacia `sistecpos.com/*` se activa solo cuando el equivalente Astro esté verificado.
+Inventario claro de cada vista/página actual y para qué sirve, agrupadas por rol, para que puedas construirlas / iterarlas de forma aislada:
 
-Mientras tanto, **sistecpos.lovable.app sigue publicado y funcionando**.
+- **Público (storefront):** Index, Catalogo, Categorias, ProductoDetalle, Hub, Ofertas, Favoritos, Carrito, Pedido, LandingPage, MenuPage, Ayuda, Politicas.
+- **Cuenta usuario:** Login, ResetPassword, Onboarding, Perfil, MisPedidos, Unsubscribe.
+- **Admin / Backoffice:** AdminDashboard (+ tabs: Products, Orders, Inventory, Categories, Brands, Coupons, Users, Settings, SEO, Scripts, Notifications, etc.), AdminDiag, CatalogosBase, Configuracion, Sitios, Licencias, GerenteIA.
+- **Operación / POS:** POS, KDS, Mesas, Inventario, Compras, Facturacion, Billing, Planes.
 
----
+Para cada vista: ruta, componente, datos que consume (tabla/RPC/EF), rol requerido, dependencias de otros componentes. Esto te da un "tablero" para construir cada pantalla en local de forma independiente y conectarlas después sin sorpresas.
 
-## Fase 3 — Dimanti como tenant cliente de SURTÉ YA
+### 5. Cliente JS reutilizable fuera del repo (opcional pero recomendado)
 
-Objetivo: el cliente real de Dimanti pasa a vivir como tenant del multi-tenant; su sitio público lo sirve Astro.
+- `docs/api/client-snippet.ts` — Snippet copy-paste de un mini-cliente que cualquier proyecto externo (otra app Vite/Next/Node script) puede usar para hablar con la misma base, basado en `@supabase/supabase-js` + la anon key.
 
-1. Crear `organization` "Dimanti" en SURTÉ YA + `tenant_site` + `tenant_domain` `dimanti.ventas.click`.
-2. Activar módulos `spa`, `belleza`, `agenda`, `tienda` para esa org.
-3. Importar (no mover) productos, categorías, landings desde Dimanti Lovable a la org de Dimanti.
-4. Astro sirve `dimanti.ventas.click` consumiendo `get-landing` con `scope = "dimanti"`.
-5. Dimanti Lovable queda en modo "solo lectura" hasta confirmar paridad; después se archiva (no se borra).
+## Lo que NO incluye este plan
 
----
+- No modifica esquema de base de datos.
+- No cambia código de la app actual (solo añade documentación y archivos `.md` / `.yaml` / `.json` bajo `docs/`).
+- No expone claves privadas: solo se documenta la `anon key` (pública) y los flujos de auth para obtener `access_token` por usuario.
 
-## Fase 4 — SURTÉ YA como tenant semilla del Astro ✅ (en progreso)
+## Preguntas antes de implementar
 
-Hecho:
-1. ✅ `tenant_site` `surteya` + dominios `surteya.com` (primario), `www.surteya.com`, `surteya.lovable.app`.
-2. ✅ Landing `surteya-home` creada con meta/hero SEO Bucaramanga.
-3. ✅ Astro routes nuevas leyendo del mismo Supabase:
-   - `/` (home dinámica desde `landing_pages`)
-   - `/catalogo` (lista categorías + productos)
-   - `/categoria/[slug]` (productos filtrados, breadcrumbs, OG)
-   - `/producto/[slug]` (detalle + JSON-LD Schema.org/Product)
-   - `/pedido/[number]` (tracking público con `noindex`)
-   - `/carrito` → 302 redirect al webapp React (cart sigue siendo isla interactiva)
-4. ✅ `lib/store.ts` con helpers REST tipados (categorías, productos, pedidos), filtrados por `organization_id` resuelto vía tenant.
-
-Pendiente para activar:
-5. Validar paridad visual del catálogo Astro vs React en `surteya.lovable.app/catalogo`.
-6. Verificar checkout WhatsApp desde el detalle Astro (link al webapp con SKU).
-7. Cambio DNS de `surteya.com` a Astro/Vercel (ventana de mantenimiento corta).
-8. Rollback: revertir DNS al hosting Lovable actual (5 min).
-
----
-
-## Fase 5 — SistecPOS Lovable como motor de licenciamiento puro
-
-Objetivo: dejar `sistecpos.lovable.app` solo con lo que sí necesita ejecución React (checkout de licencias, panel de representantes, demos), y delegar todo el contenido SEO a Astro.
-
-1. En SistecPOS Lovable se mantienen: `Checkout`, `AgendarDemo`, `PortalRepresentantes`, `CrmInterno`.
-2. Las demás pages quedan como **redirect 301** a `sistecpos.com/...` (Astro).
-3. Edge function `license-purchase-webhook` (ya planeada) crea automáticamente la `organization` + invitación al owner en este admin.
-
----
-
-## Detalle técnico (resumen)
-
-- **DB nueva**: `modules`, `organization_modules`, `service_catalog`, `service_resources`, `appointments`, `appointment_slots`. Todo con RLS por `organization_id` usando `has_org_membership(uid, org_id)`.
-- **Edge functions nuevas**: ninguna obligatoria en Fase 1-2; reutilizamos `get-landing`, `resolve-tenant`, `lead-capture`, `wp-revalidate-webhook`. En Fase 5 se añade `license-purchase-webhook`.
-- **Importadores** (uno por proyecto fuente): scripts Node locales que usan `cross_project--read_project_file` y vuelcan a Supabase vía service-role; idempotentes (upsert por slug).
-- **Sin destruir**: cada proyecto fuente queda intacto hasta que su equivalente esté verificado en producción.
-
----
-
-## Orden de ejecución sugerido y puntos de control
-
-1. Fase 1 (módulos spa en SURTÉ YA) → demo interna ✅
-2. Fase 2 (importar landings SistecPOS al CMS, servir en Astro bajo subdominio de prueba) → revisar SEO ✅
-3. Fase 3 (Dimanti como tenant) → cliente valida ✅
-4. Fase 4 (cambio DNS surteya.com) → ventana de mantenimiento corta ✅
-5. Fase 5 (limpiar SistecPOS Lovable + redirects) ✅
-
-Cada fase es independiente y reversible.
-
----
-
-## Lo que necesito que confirmes antes de empezar Fase 1
-
-1. ¿Arrancamos por **Fase 1** (módulos spa/belleza/agenda activables por tenant en este proyecto) o prefieres ir primero por **Fase 2** (importar contenido SEO de SistecPOS al CMS)?
-2. ¿El cliente real de Dimanti ya sabe que su sitio pasará a `dimanti.ventas.click` servido por Astro, o lo manejamos como migración silenciosa con paridad 1:1?
-3. Para la importación de pages desde los otros 2 proyectos Lovable, ¿autorizas que yo lea sus archivos con las herramientas de cross-project y los vuelque a las tablas, o prefieres exportar tú manualmente?
+1. ¿Quieres que la documentación esté en español (consistente con el proyecto) o bilingüe ES/EN?: Español
+2. ¿Generamos también la colección Postman, o te basta con OpenAPI + ejemplos `curl`?: Si lo mas completo.
+3. ¿Quieres que incluya un README específico para "cómo darle este repo a Cursor/Claude Code" con el prompt inicial recomendado?: Si.
