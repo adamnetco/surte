@@ -123,66 +123,67 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const removeLine = (productId: string) => setTicket((prev) => prev.filter((l) => l.productId !== productId));
 
   const handlePaid = async (payments: { method: string; amount: number; reference?: string }[]) => {
-    // 1) create pos_order
     const amountPaid = payments.reduce((s, p) => s + p.amount, 0);
     const change = Math.max(0, amountPaid - totals.total);
 
-    const { data: order, error: oerr } = await supabase
-      .from("pos_orders")
-      .insert({
-        organization_id: organizationId,
-        location_id: session.location_id,
-        cash_session_id: session.id,
-        cashier_id: userId,
-        subtotal: totals.subtotal,
-        total: totals.total,
-        amount_paid: amountPaid,
-        change_due: change,
-        status: "paid",
-        paid_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-    if (oerr || !order) return toast.error(oerr?.message || "Error creando ticket");
-
-    // 2) items
-    const itemsPayload = ticket.map((l) => ({
+    // Build a single idempotent operation: header + items + payments share one client_uuid.
+    const header = {
       organization_id: organizationId,
-      pos_order_id: order.id,
+      location_id: session.location_id,
+      cash_session_id: session.id,
+      cashier_id: userId,
+      subtotal: totals.subtotal,
+      total: totals.total,
+      amount_paid: amountPaid,
+      change_due: change,
+      status: "paid",
+      paid_at: new Date().toISOString(),
+    };
+    const items = ticket.map((l) => ({
+      organization_id: organizationId,
       product_id: l.productId,
       product_name: l.name,
       quantity: l.quantity,
       unit_price: l.unitPrice,
       total: l.total,
     }));
-    const { error: ierr } = await supabase.from("pos_order_items").insert(itemsPayload);
-    if (ierr) return toast.error(ierr.message);
-
-    // 3) payments
-    const paysPayload = payments.map((p) => ({
+    const paymentRows = payments.map((p) => ({
       organization_id: organizationId,
-      pos_order_id: order.id,
       cash_session_id: session.id,
       method: p.method,
       amount: p.amount,
       reference: p.reference ?? null,
       received_by: userId,
     }));
-    const { error: perr } = await supabase.from("pos_payments").insert(paysPayload);
-    if (perr) return toast.error(perr.message);
 
-    toast.success(`Ticket #${order.ticket_number} cobrado`);
-    setLastOrderId(order.id);
-    setTicket([]);
-    setMeta(ticketCacheKey, []).catch(() => {});
-    setPayOpen(false);
+    try {
+      const clientUuid = await enqueue(
+        "pos_order_create",
+        { header, items, payments: paymentRows },
+        organizationId
+      );
+      setLastOrderId(clientUuid); // temp ref until sync resolves
+      setTicket([]);
+      setMeta(ticketCacheKey, []).catch(() => {});
+      setPayOpen(false);
 
-    // Auto-prompt: ¿facturar?
-    setTimeout(() => {
-      if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
-        setActionMode("emit");
+      if (navigator.onLine) {
+        toast.success("Ticket cobrado · sincronizando…");
+      } else {
+        toast.success("Ticket cobrado offline · se enviará al volver la red");
       }
-    }, 300);
+
+      // Auto-prompt: ¿facturar? (only when online; einvoice requires connectivity).
+      if (navigator.onLine) {
+        setTimeout(() => {
+          if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
+            setActionMode("emit");
+          }
+        }, 300);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "No se pudo encolar el ticket");
+    }
   };
 
   return (
