@@ -106,7 +106,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setTimeout(() => void syncAuthState(session), 0);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+    void (async () => {
+      const { data: { session }, error } = await withTimeout(
+        supabase.auth.getSession(),
+        { data: { session: null }, error: new Error("Session lookup timeout") } as Awaited<ReturnType<typeof supabase.auth.getSession>>
+      );
+
       if ((error as any)?.code === "refresh_token_not_found") {
         await supabase.auth.signOut();
         resetAuthState();
@@ -115,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       await syncAuthState(session);
-    });
+    })();
 
     return () => subscription.unsubscribe();
   }, []);
