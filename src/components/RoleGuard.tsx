@@ -67,7 +67,7 @@ const RoleGuard = ({
   if (!isMaster && !list.includes(role)) {
     return (
       <Navigate
-        to="/admin/diag"
+        to={deniedRedirect}
         replace
         state={{
           denied: true,
