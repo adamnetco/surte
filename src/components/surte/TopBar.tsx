@@ -1,9 +1,10 @@
-import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu, Sun, Moon } from "lucide-react";
+import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu, Sun, Moon, Shield } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppSettings } from "@/hooks/useStore";
 import { useCart } from "@/context/CartContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 import surteLogo from "@/assets/surte-logo.png";
 
 const CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"] as const;
@@ -27,6 +28,7 @@ const TopBar = ({ onSearch }: TopBarProps) => {
   const { data: settings } = useAppSettings();
   const { totalItems, totalPrice } = useCart();
   const { theme, toggle: toggleTheme } = useTheme();
+  const { isAdmin } = useAuth();
 
   const showPromoBanner = settings?.show_promo_banner === "true";
   const promoBannerText = settings?.promo_banner_text || "🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000";
@@ -132,6 +134,17 @@ const TopBar = ({ onSearch }: TopBarProps) => {
             >
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
+
+            {isAdmin && (
+              <button
+                onClick={() => navigate("/admin")}
+                aria-label="Panel admin"
+                title="Panel admin"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                <Shield size={16} />
+              </button>
+            )}
 
             <button
               onClick={() => navigate("/menu")}
