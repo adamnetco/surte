@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { flushOutbox, pendingCount } from "@/lib/offline/outbox";
-import { offlineDB } from "@/lib/offline/db";
+import { flushOutbox, pendingCount, enqueue as enqueueOp } from "@/lib/offline/outbox";
+import { offlineDB, getMeta, type OutboxOp } from "@/lib/offline/db";
 
 /**
  * Background sync service hook.
@@ -77,5 +77,20 @@ export function useSyncService(opts: { pollMs?: number } = {}) {
     return () => { cancelled = true; clearInterval(id); };
   }, [pollMs]);
 
-  return { ...state, flushNow: runFlush };
+  // Hydrate lastSyncAt from persisted meta on mount.
+  useEffect(() => {
+    getMeta<number>("last_sync_success_at").then((ts) => {
+      if (ts) setState((s) => ({ ...s, lastSyncAt: ts }));
+    }).catch(() => { /* dexie unavailable */ });
+  }, []);
+
+  // Enqueue helper bound to this hook for ergonomic consumption.
+  const enqueue = async (op: OutboxOp, payload: any, organization_id: string) => {
+    const uuid = await enqueueOp(op, payload, organization_id);
+    const n = await pendingCount();
+    setState((s) => ({ ...s, pending: n }));
+    return uuid;
+  };
+
+  return { ...state, flushNow: runFlush, enqueue };
 }

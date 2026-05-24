@@ -3,9 +3,11 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSectionAccess from "@/components/admin/AdminSectionAccess";
-import { pendingCount } from "@/lib/offline/outbox";
+import { pendingCount, flushOutbox } from "@/lib/offline/outbox";
+import { getMeta } from "@/lib/offline/db";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
-import { Activity, Database, Inbox, Tag, RefreshCw } from "lucide-react";
+import { Activity, Database, Inbox, Tag, RefreshCw, Wifi, WifiOff, CloudUpload } from "lucide-react";
+import { toast } from "sonner";
 
 type Check = { label: string; status: "ok" | "fail" | "warn" | "info"; detail: string };
 
@@ -29,12 +31,32 @@ const AdminDiag = () => {
   const [rolesRows, setRolesRows] = useState<any[]>([]);
   const [reason, setReason] = useState<string>("");
   const [sectionAccess, setSectionAccess] = useState<Record<string, { allowed: string[]; can: boolean }>>({});
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
+  const [forcingSync, setForcingSync] = useState(false);
   const [health, setHealth] = useState<SystemHealth>({
     backend: "checking",
     backendLatencyMs: null,
     outboxPending: 0,
     online: typeof navigator !== "undefined" ? navigator.onLine : true,
   });
+
+  const forceSync = async () => {
+    setForcingSync(true);
+    try {
+      const { sent, failed, skipped } = await flushOutbox();
+      if (sent > 0) toast.success(`${sent} operación(es) sincronizadas`);
+      if (failed > 0) toast.error(`${failed} fallaron · reintentaremos`);
+      if (sent === 0 && failed === 0) toast.info(skipped > 0 ? `${skipped} en espera (backoff)` : "Sin operaciones pendientes");
+      const ts = await getMeta<number>("last_sync_success_at");
+      if (ts) setLastSyncAt(ts);
+      const n = await pendingCount();
+      setHealth((h) => ({ ...h, outboxPending: n }));
+    } catch (e: any) {
+      toast.error(`Error: ${e?.message ?? e}`);
+    } finally {
+      setForcingSync(false);
+    }
+  };
 
   const refreshHealth = async () => {
     const online = typeof navigator !== "undefined" ? navigator.onLine : true;
@@ -133,14 +155,19 @@ const AdminDiag = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
-  // Refresh outbox count + online status every 10s independently of the heavy check loop.
+  // Refresh outbox count + online status + lastSyncAt every 10s.
   useEffect(() => {
     const tick = async () => {
       const online = typeof navigator !== "undefined" ? navigator.onLine : true;
       let outboxPending = 0;
       try { outboxPending = await pendingCount(); } catch { /* dexie unavailable */ }
+      try {
+        const ts = await getMeta<number>("last_sync_success_at");
+        if (ts) setLastSyncAt(ts);
+      } catch { /* no-op */ }
       setHealth((h) => ({ ...h, online, outboxPending }));
     };
+    void tick();
     const id = setInterval(tick, 10_000);
     return () => clearInterval(id);
   }, []);
@@ -209,6 +236,62 @@ const AdminDiag = () => {
           </div>
         </div>
       </section>
+
+      {/* Salud de Conexión (Offline-First Sync Engine) */}
+      <section className="rounded-lg border border-border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <CloudUpload className="w-3.5 h-3.5" /> Salud de Conexión
+          </h2>
+          <button
+            onClick={forceSync}
+            disabled={forcingSync || !health.online}
+            className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground disabled:opacity-50 flex items-center gap-1"
+          >
+            <RefreshCw className={`w-3 h-3 ${forcingSync ? "animate-spin" : ""}`} />
+            {forcingSync ? "Sincronizando…" : "Forzar Sincronización"}
+          </button>
+        </div>
+        <div className="overflow-hidden rounded border border-border">
+          <table className="w-full text-xs">
+            <tbody className="divide-y divide-border">
+              <tr>
+                <td className="px-3 py-2 font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Inbox className="w-3 h-3" /> Transacciones en cola
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <span className={`font-mono font-bold ${health.outboxPending > 0 ? "text-amber-600" : "text-green-600"}`}>
+                    {health.outboxPending}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 font-medium text-muted-foreground flex items-center gap-1.5">
+                  {health.online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />} Estado del nodo
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <span className={`font-semibold ${health.online ? "text-green-600" : "text-red-600"}`}>
+                    {health.online ? "Conectado" : "Desconectado"}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 font-medium text-muted-foreground flex items-center gap-1.5">
+                  <RefreshCw className="w-3 h-3" /> Último sync exitoso
+                </td>
+                <td className="px-3 py-2 text-right font-mono">
+                  {lastSyncAt ? new Date(lastSyncAt).toLocaleString("es-CO") : "—"}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2">
+          Backoff: 5s → 10s → 30s → 60s → 120s → 300s. Idempotencia por <code>client_uuid</code>.
+        </p>
+      </section>
+
+
 
       <section className={`rounded-lg border p-4 ${reason.startsWith("✓") ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}>
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Motivo de autorización</p>
