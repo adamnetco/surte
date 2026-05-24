@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { offlineDB, type OutboxItem, type OutboxOp } from "./db";
 
 const MAX_ATTEMPTS = 8;
-// Exponential backoff in ms: 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s
-const backoffDelay = (attempts: number) => Math.min(2000 * 2 ** attempts, 5 * 60_000);
+// Exponential backoff in ms: 5s, 10s, 30s, 60s, 120s, 300s, 300s, 300s
+const BACKOFF_LADDER = [5_000, 10_000, 30_000, 60_000, 120_000, 300_000];
+const backoffDelay = (attempts: number) =>
+  BACKOFF_LADDER[Math.min(attempts, BACKOFF_LADDER.length - 1)];
 
 function uuid() {
   return (crypto as any).randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
