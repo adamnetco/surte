@@ -203,6 +203,26 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             />
           </div>
           <OfflineIndicator />
+          {(sync.pending > 0 || sync.syncing) && (
+            <button
+              onClick={() => sync.flushNow()}
+              title={sync.lastError ?? (sync.online ? "Sincronizar pendientes" : "Sin conexión · en cola")}
+              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition ${
+                sync.online
+                  ? "bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {sync.syncing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : sync.online ? (
+                <CloudUpload className="h-3 w-3" />
+              ) : (
+                <CloudOff className="h-3 w-3" />
+              )}
+              <span>{sync.syncing ? "Sincronizando…" : `${sync.pending} pendiente${sync.pending === 1 ? "" : "s"}`}</span>
+            </button>
+          )}
           <div
             className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 py-1"
             title="Atajos: F2 Cobrar · F3 Buscar · Esc Cierre"
