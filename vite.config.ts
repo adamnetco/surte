@@ -49,6 +49,7 @@ export default defineConfig(({ mode }) => ({
           /^\/api\//,
         ],
         globPatterns: ["**/*.{js,css,html,woff2,svg,png,ico}"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>
