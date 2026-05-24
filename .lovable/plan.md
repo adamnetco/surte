@@ -1,49 +1,71 @@
-## Diagnóstico encontrado
+## Alcance y riesgos (léeme antes de aprobar)
 
-- El backend está activo y saludable.
-- El usuario `eduardotp77@gmail.com` existe, está confirmado, no está bloqueado y tiene rol `superadmin`.
-- La sesión sí existe en el navegador: hay refresh exitoso para ese usuario y el token pertenece a `eduardotp77@gmail.com`.
-- El bloqueo más probable ya no es la cuenta ni el rol, sino la UX/routing del login:
-  - El login navega por defecto a `/` cuando no recibe `location.state.from`, por eso después de autenticarse puede parecer que “no ingresó” al software/admin.
-  - El botón de Google deja estado “Conectando...” en casos de redirect/iframe porque no hay una pantalla clara de retorno ni verificación posterior de sesión.
-  - `/admin` depende de `RoleGuard`, pero la configuración `admin_section_access` está vacía; usa fallback, pero conviene dejar diagnóstico explícito y una ruta maestra más directa.
-  - El login mezcla registro, login, Google y recuperación en una UI básica, sin estados claros para “sesión detectada”, “redirigiendo” o “acceso admin”.
+El módulo "Clientes" en `sistecpos-colombia` no es una sola página: son **11 componentes** (`ClientPortal`, `ClientDashboardTab`, `ClientBillingTab`, `ClientContractsTab`, `ClientDownloadsTab`, `ClientPOSAccess`, `ClientPOSLogin`, `ClientSubscriptionTab`, `ClientTicketsTab`, `ClientTrainingsTab`, `TicketChatView`) + hooks (`useAuth`, `useActivityTracker`, `useWhatsAppConfig`) + dependencias de tablas Supabase que **no existen** en `sistecposcore` (tickets, contratos, descargas, entrenamientos, facturación de clientes, demos POS, suscripciones).
 
-## Plan de implementación
+Hacer todo en un turno es inviable y rompería el build. Propongo dividir en fases entregables.
 
-1. **Corregir el flujo de ingreso maestro**
-   - Cambiar el destino por defecto del login a `/admin` cuando el correo sea `eduardotp77@gmail.com` o cuando el rol detectado sea `superadmin/admin`.
-   - Después de login email/password, esperar a que la sesión quede disponible antes de navegar.
-   - Si el usuario ya tiene sesión activa al abrir `/login`, redirigirlo automáticamente a `/admin` si es admin/superadmin.
+### Decisiones que necesito confirmar
 
-2. **Arreglar Google login sin quedarse en “Conectando...”**
-   - Simplificar el flujo OAuth con `lovable.auth.signInWithOAuth("google")` y mantener `/~oauth` fuera del service worker.
-   - Añadir recuperación de estado al volver del OAuth: detectar sesión activa y navegar correctamente.
-   - Agregar timeout con acción clara: botón “Reintentar” y botón “Abrir en pestaña nueva”, no solo toast.
+1. **Backend de los datos de Clientes**: ¿los dos proyectos deben **compartir la misma base de datos Supabase** (la de `sistecpos-colombia`), o quieres que `sistecposcore` tenga **sus propias tablas** y replicar el esquema con migraciones nuevas? Esto define si es un copy/paste o una réplica completa.
+2. **Subdominios `mi.` / `pos.` / `app.`**: hoy solo está configurado `admin.sistecpos.com`. ¿Ya tienes los DNS apuntando los otros tres, o los configuras tú en Lovable después?
+3. **SSO cross-subdomain**: Supabase guarda la sesión en `localStorage` por defecto (NO se comparte entre subdominios). Para sesión real compartida hay que migrar a **cookies con `Domain=.sistecpos.com`**, lo cual requiere un endpoint propio o un edge function de auth-bridge. ¿Aceptas ese cambio o prefieres que cada subdominio mantenga su propio login (UX similar pero login independiente)?
 
-3. **Mejorar UX/UI completa del login**
-   - Rediseñar pantalla mobile-first con estética SURTÉ YA/SistecPOS: panel limpio, logo, título claro, acceso maestro/admin visible, estados de carga profesionales.
-   - Usar componentes existentes (`Input`, `Label`, botones semánticos) y tokens de diseño; sin colores hardcodeados salvo el SVG de Google.
-   - Mostrar mensajes útiles: credenciales incorrectas, email sin confirmar, redirección a admin, sesión detectada.
+## Plan en fases
 
-4. **Fortalecer guard y diagnóstico de admin**
-   - Mantener `RoleGuard` seguro, pero ajustar redirección para que un superadmin autenticado nunca quede atrapado en `/login` o `/admin/diag` por estado de carga.
-   - Añadir una verificación de permisos más tolerante a timeouts: si el usuario maestro tiene sesión y rol `superadmin`, entra directo.
+### Fase 1 — Subdomain Router + estructura (este turno)
+- Crear `src/lib/subdomain.ts` con `detectTenant()` que lea `window.location.hostname` y devuelva `'admin' | 'mi' | 'pos' | 'app' | 'www'`.
+- Envolver `App.tsx` con un selector que monte rutas distintas por tenant:
+  - `admin.*` → rutas actuales `/admin/*` + `AdminDashboard`.
+  - `pos.*` → `POSWorkspace` como raíz.
+  - `app.*` → dashboard general (homepage actual).
+  - `mi.*` → placeholder `<ClientPortalShell />` con tabs vacíos (esqueleto listo para Fase 2).
+- Login centralizado: rutas `/user/login` y `/admin/login` apuntando al mismo componente `Login` existente, con `redirect` post-auth según tenant.
+- Crear `MIGRATION_LOG.md` con sección "Fase 1" registrando archivos creados/modificados.
 
-5. **Validación final**
-   - Revisar logs/navegación después de implementar.
-   - Confirmar por código que `eduardotp77@gmail.com` queda dirigido a `/admin` tras login por email y Google.
-   - No cambiar contraseñas ni exponer claves privadas.
+### Fase 2 — Migración UI Clientes (turno aparte, tras tu OK)
+- Copiar los 11 componentes `clientes/*` con `cross_project--copy_project_asset`.
+- Adaptar imports (`@/hooks/useAuth` → nuestro `@/context/AuthContext`).
+- Stub temporal de tablas inexistentes (devolver arrays vacíos) hasta Fase 3.
+- Build verde sin datos reales.
 
-## Archivos previstos
+### Fase 3 — Esquema DB Clientes (turno aparte)
+- Migración con tablas: `client_tickets`, `client_contracts`, `client_downloads`, `client_trainings`, `client_subscriptions`, `client_billing`, `pos_demos`. RLS por `auth.uid()`.
+- Conectar componentes a tablas reales.
 
-- `src/pages/Login.tsx`
-- `src/context/AuthContext.tsx` si hace falta exponer una función de refresco de sesión/rol.
-- `src/components/RoleGuard.tsx` para robustecer redirecciones y fallback maestro.
+### Fase 4 — SSO cross-domain (turno aparte, si confirmas decisión 3)
+- Edge function `auth-bridge` que emita cookie `sb-session` con `Domain=.sistecpos.com; Secure; SameSite=Lax`.
+- Adaptador en `AuthContext` que lea esa cookie al boot.
 
-## Sin cambios previstos
+## Detalle técnico Fase 1
 
-- No tocaré `src/integrations/supabase/client.ts`.
-- No crearé tablas nuevas.
-- No modificaré claves ni secretos.
-- No habilitaré auto-confirmación de email.
+```text
+src/
+├── lib/
+│   └── subdomain.ts          # detectTenant(): 'admin'|'mi'|'pos'|'app'|'www'
+├── routes/
+│   ├── AdminRoutes.tsx       # extrae rutas /admin/* actuales
+│   ├── PosRoutes.tsx         # ruta única → POSWorkspace
+│   ├── MiRoutes.tsx          # /clientes → ClientPortalShell (placeholder)
+│   └── AppRoutes.tsx         # rutas públicas actuales (Index, Catálogo, etc.)
+├── components/
+│   └── clientes/
+│       └── ClientPortalShell.tsx   # placeholder con tabs vacíos
+└── App.tsx                   # switch por tenant
+```
+
+Reglas:
+- En dev (`localhost`, `*.lovable.app` de preview) → tenant = `app` por defecto, con `?tenant=mi` para forzar override y poder probar.
+- No tocar `src/integrations/supabase/client.ts`.
+- No borrar nada del repo `sistecpos-colombia`; solo copia.
+
+## Lo que NO haré sin tu aprobación
+- No tocaré DB (Fase 3).
+- No cambiaré el almacenamiento de sesión a cookies (Fase 4).
+- No eliminaré `sistecpos.com/clientes` (eso lo haces tú quitándolo del repo `sistecpos-colombia` después de Fase 3).
+
+## Respuesta esperada
+Responde con:
+- Decisión 1 (DB compartida o réplica)
+- Decisión 2 (DNS listos sí/no)
+- Decisión 3 (SSO real con cookie o login por subdominio)
+- ¿Arranco Fase 1?
