@@ -2,10 +2,16 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { wireOutboxListeners } from "./lib/offline/outbox";
+import { consumeHandoff } from "./lib/ssoHandoff";
 
 wireOutboxListeners();
 
-createRoot(document.getElementById("root")!).render(<App />);
+// SSO cross-subdomain: si la URL trae #sps_sso=..., instala la sesión
+// ANTES de montar React para que AuthContext arranque ya autenticado.
+void consumeHandoff().finally(() => {
+  createRoot(document.getElementById("root")!).render(<App />);
+});
+
 
 // ── PWA registration with iframe + preview-host guard ────────────
 const isInIframe = (() => {
