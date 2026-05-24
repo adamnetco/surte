@@ -1,0 +1,69 @@
+---
+import Base from "../../layouts/Base.astro";
+import { resolveTenant } from "../../lib/tenant";
+import { getOrderByNumber, formatCOP } from "../../lib/store";
+
+const host = Astro.request.headers.get("host") ?? "";
+const tenant = await resolveTenant(host);
+const orgId = tenant?.organization_id ?? "";
+const { number } = Astro.params;
+
+let order: any = null;
+if (orgId && number) order = await getOrderByNumber(orgId, number);
+if (!order) Astro.response.status = 404;
+
+// No cachear pedidos individuales
+Astro.response.headers.set("Cache-Control", "no-store");
+
+const statusLabels: Record<string, string> = {
+  pending: "Pendiente de confirmación",
+  confirmed: "Confirmado",
+  preparing: "En preparación",
+  shipped: "En camino",
+  delivered: "Entregado",
+  cancelled: "Cancelado",
+};
+---
+<Base
+  title={order ? `Pedido ${order.order_number} · ${tenant?.name}` : "Pedido no encontrado"}
+  description="Estado de tu pedido en tiempo real"
+  noindex={true}
+>
+  {order ? (
+    <article class="py-8 max-w-2xl mx-auto">
+      <h1 class="text-2xl font-bold mb-1">Pedido #{order.order_number}</h1>
+      <p class="text-gray-600 mb-6">
+        Realizado el {new Date(order.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" })}
+      </p>
+
+      <div class="border border-gray-100 rounded-lg p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-sm text-gray-500">Estado</span>
+          <span class="px-3 py-1 rounded-full text-sm font-semibold" style={`background:${tenant?.primary_color}15;color:${tenant?.primary_color}`}>
+            {statusLabels[order.status] ?? order.status}
+          </span>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span>{formatCOP(Number(order.subtotal ?? order.total))}</span></div>
+          {order.delivery_price != null && (
+            <div class="flex justify-between"><span class="text-gray-500">Domicilio</span><span>{formatCOP(Number(order.delivery_price))}</span></div>
+          )}
+          <div class="flex justify-between font-bold text-base pt-2 border-t border-gray-100"><span>Total</span><span style={`color:${tenant?.accent_color}`}>{formatCOP(Number(order.total))}</span></div>
+        </div>
+      </div>
+
+      <div class="border border-gray-100 rounded-lg p-6">
+        <h2 class="font-semibold mb-3">Datos de entrega</h2>
+        <p class="text-sm text-gray-700">{order.customer_name}</p>
+        <p class="text-sm text-gray-700">{order.customer_phone}</p>
+        {order.customer_address && <p class="text-sm text-gray-700">{order.customer_address}</p>}
+        {order.notes && <p class="text-sm text-gray-500 mt-3">Notas: {order.notes}</p>}
+      </div>
+    </article>
+  ) : (
+    <section class="py-16 text-center">
+      <h1 class="text-2xl font-bold mb-2">Pedido no encontrado</h1>
+      <p class="text-gray-600">Verifica el número de pedido o contacta soporte.</p>
+    </section>
+  )}
+</Base>

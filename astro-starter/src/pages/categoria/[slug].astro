@@ -1,0 +1,56 @@
+---
+import Base from "../../layouts/Base.astro";
+import { resolveTenant } from "../../lib/tenant";
+import { getCategoryBySlug, listProducts, formatCOP } from "../../lib/store";
+
+const host = Astro.request.headers.get("host") ?? "";
+const tenant = await resolveTenant(host);
+const orgId = tenant?.organization_id ?? "";
+const { slug } = Astro.params;
+
+let category: any = null;
+let products: any[] = [];
+if (orgId && slug) {
+  category = await getCategoryBySlug(orgId, slug);
+  if (!category) Astro.response.status = 404;
+  else products = (await listProducts(orgId)).filter((p) => p.category_id === category.id);
+}
+
+Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=60");
+
+const title = category?.meta_title ?? `${category?.name ?? "Categoría"} · ${tenant?.name ?? ""}`;
+const description = category?.meta_description ?? `Productos de ${category?.name} en ${tenant?.name}.`;
+---
+<Base
+  title={title}
+  description={description}
+  ogImage={category?.og_image_url ?? undefined}
+  canonical={`https://${host}/categoria/${slug}`}
+>
+  {category ? (
+    <section class="py-8">
+      <nav class="text-sm text-gray-500 mb-4">
+        <a href="/" class="hover:underline">Inicio</a> · <a href="/catalogo" class="hover:underline">Catálogo</a> · <span>{category.name}</span>
+      </nav>
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">{category.name}</h1>
+      <p class="text-gray-600 mb-8">{products.length} productos</p>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {products.map((p) => (
+          <a href={`/producto/${p.slug}`} class="block border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition">
+            {p.image_url && <img src={p.image_url} alt={p.name} loading="lazy" class="aspect-square object-cover w-full" />}
+            <div class="p-3">
+              <h2 class="text-sm font-medium line-clamp-2 mb-1">{p.name}</h2>
+              <p class="font-bold" style={`color:${tenant?.accent_color}`}>{formatCOP(Number(p.price))}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  ) : (
+    <section class="py-16 text-center">
+      <h1 class="text-2xl font-bold mb-2">Categoría no encontrada</h1>
+      <a href="/catalogo" class="text-primary hover:underline">Volver al catálogo</a>
+    </section>
+  )}
+</Base>

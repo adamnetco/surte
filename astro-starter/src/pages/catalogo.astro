@@ -1,0 +1,50 @@
+---
+import Base from "../layouts/Base.astro";
+import { resolveTenant } from "../lib/tenant";
+import { listCategories, listProducts, formatCOP } from "../lib/store";
+
+const host = Astro.request.headers.get("host") ?? "";
+const tenant = await resolveTenant(host);
+const orgId = tenant?.organization_id ?? "";
+
+let categories: any[] = [];
+let products: any[] = [];
+if (orgId) {
+  try {
+    [categories, products] = await Promise.all([listCategories(orgId), listProducts(orgId)]);
+  } catch (e) { console.error(e); }
+}
+
+Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=60");
+
+const title = `Catálogo · ${tenant?.name ?? ""}`;
+const description = `Catálogo completo de ${tenant?.name ?? ""}. Productos al por mayor con entrega el mismo día.`;
+---
+<Base title={title} description={description}>
+  <section class="py-8">
+    <h1 class="text-3xl md:text-4xl font-bold mb-2">Catálogo</h1>
+    <p class="text-gray-600 mb-8">{products.length} productos disponibles</p>
+
+    {categories.length > 0 && (
+      <nav class="flex flex-wrap gap-2 mb-8">
+        {categories.map((c) => (
+          <a href={`/categoria/${c.slug}`} class="px-3 py-1.5 rounded-full border border-gray-200 text-sm hover:border-primary hover:text-primary transition" style={`--primary:${tenant?.primary_color}`}>
+            {c.name}
+          </a>
+        ))}
+      </nav>
+    )}
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {products.map((p) => (
+        <a href={`/producto/${p.slug}`} class="block border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition">
+          {p.image_url && <img src={p.image_url} alt={p.name} loading="lazy" class="aspect-square object-cover w-full" />}
+          <div class="p-3">
+            <h2 class="text-sm font-medium line-clamp-2 mb-1">{p.name}</h2>
+            <p class="font-bold" style={`color:${tenant?.accent_color}`}>{formatCOP(Number(p.price))}</p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+</Base>
