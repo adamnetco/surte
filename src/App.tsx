@@ -105,8 +105,8 @@ const App = () => (
                     <Route path="/p/:id" element={<ProductoDetalle />} />
                     <Route path="/pedido/:orderNumber" element={<Pedido />} />
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
-                    <Route path="/admin/diag" element={<AdminDiag />} />
-                    <Route path="/admin-diag" element={<AdminDiag />} />
+                    <Route path="/admin/diag" element={<RoleGuard section="admin" deniedRedirect="/login"><AdminDiag /></RoleGuard>} />
+                    <Route path="/admin-diag" element={<RoleGuard section="admin" deniedRedirect="/login"><AdminDiag /></RoleGuard>} />
                     <Route path="/pos" element={<POS />} />
                     <Route path="/mesas" element={<Mesas />} />
                     <Route path="/kds" element={<KDS />} />
