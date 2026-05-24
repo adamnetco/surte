@@ -23,6 +23,7 @@ import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 import Index from "./pages/Index";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminDiag from "./pages/AdminDiag";
+import RoleGuard from "./components/RoleGuard";
 
 const Catalogo = lazy(() => import("./pages/Catalogo"));
 const Carrito = lazy(() => import("./pages/Carrito"));
