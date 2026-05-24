@@ -156,7 +156,28 @@ const ResetPassword = () => {
           </div>
         )}
 
-        {step === "update" && (
+        {step === "update" && checkingRecovery && (
+          <div className="w-full max-w-sm flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-4 text-sm text-muted-foreground">
+            <Loader2 className="animate-spin" size={18} /> Validando enlace seguro…
+          </div>
+        )}
+
+        {step === "update" && !checkingRecovery && recoveryError && !recoveryReady && (
+          <div className="w-full max-w-sm space-y-4 rounded-lg border border-destructive/30 bg-card p-4 text-center">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle size={20} className="text-destructive" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Enlace no válido</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Solicita un nuevo enlace para actualizar tu contraseña.</p>
+            </div>
+            <button type="button" onClick={() => { setStep("request"); setRecoveryError(""); }} className="w-full btn-surte py-3 text-sm">
+              Solicitar nuevo enlace
+            </button>
+          </div>
+        )}
+
+        {step === "update" && !checkingRecovery && (recoveryReady || !recoveryError) && (
           <form onSubmit={handleUpdatePassword} className="w-full max-w-sm space-y-4">
             <p className="text-sm text-muted-foreground text-center mb-2">
               Ingresa tu nueva contraseña.
