@@ -180,33 +180,35 @@ const AdminDashboard = () => {
 
   const renderContent = () => (
     <TabErrorBoundary tabName={tabs.find(t => t.id === activeTab)?.label || activeTab} key={activeTab}>
-      {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
-      {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
-      {activeTab === "agenda" && <AgendaTab />}
-      {activeTab === "modules" && <ModulesTab />}
-      {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
-      {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
-      {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
-      {activeTab === "users" && <UsersTab queryClient={queryClient} />}
-      {activeTab === "crm" && <CrmLeadsTab />}
-      {activeTab === "content" && <ContentTab queryClient={queryClient} />}
-      {activeTab === "hero" && <HeroSlidesTab queryClient={queryClient} />}
-      {activeTab === "municipalities" && <MunicipalitiesTab queryClient={queryClient} />}
-      {activeTab === "shipping" && <ShippingTab queryClient={queryClient} />}
-      {activeTab === "notifications" && <NotificationsTab queryClient={queryClient} />}
-      {activeTab === "seo" && <SeoTab settings={settings} queryClient={queryClient} />}
-      {activeTab === "seo-content" && <SeoContentTab queryClient={queryClient} />}
-      {activeTab === "inventory" && <InventoryTab products={products} categories={categories} queryClient={queryClient} />}
-      {activeTab === "landing" && <LandingPagesTab />}
-      {activeTab === "presentations" && <PresentationsTab queryClient={queryClient} />}
-      {activeTab === "modifiers" && <ModifiersTab />}
-      {activeTab === "featured" && <FeaturedSectionsTab queryClient={queryClient} />}
-      {activeTab === "coupons" && <CouponsTab queryClient={queryClient} />}
-      {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
-      {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
-      {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
-      {activeTab === "data" && <DataManagementTab />}
-      {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
+      <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Cargando módulo…</div>}>
+        {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
+        {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
+        {activeTab === "agenda" && <AgendaTab />}
+        {activeTab === "modules" && <ModulesTab />}
+        {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
+        {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
+        {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
+        {activeTab === "users" && <UsersTab queryClient={queryClient} />}
+        {activeTab === "crm" && <CrmLeadsTab />}
+        {activeTab === "content" && <ContentTab queryClient={queryClient} />}
+        {activeTab === "hero" && <HeroSlidesTab queryClient={queryClient} />}
+        {activeTab === "municipalities" && <MunicipalitiesTab queryClient={queryClient} />}
+        {activeTab === "shipping" && <ShippingTab queryClient={queryClient} />}
+        {activeTab === "notifications" && <NotificationsTab queryClient={queryClient} />}
+        {activeTab === "seo" && <SeoTab settings={settings} queryClient={queryClient} />}
+        {activeTab === "seo-content" && <SeoContentTab queryClient={queryClient} />}
+        {activeTab === "inventory" && <InventoryTab products={products} categories={categories} queryClient={queryClient} />}
+        {activeTab === "landing" && <LandingPagesTab />}
+        {activeTab === "presentations" && <PresentationsTab queryClient={queryClient} />}
+        {activeTab === "modifiers" && <ModifiersTab />}
+        {activeTab === "featured" && <FeaturedSectionsTab queryClient={queryClient} />}
+        {activeTab === "coupons" && <CouponsTab queryClient={queryClient} />}
+        {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
+        {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
+        {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
+        {activeTab === "data" && <DataManagementTab />}
+        {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
+      </Suspense>
     </TabErrorBoundary>
   );
 
