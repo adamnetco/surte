@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import AdminSectionAccess from "@/components/admin/AdminSectionAccess";
 
 type Check = { label: string; status: "ok" | "fail" | "warn" | "info"; detail: string };
 
+const SECTIONS = ["admin", "productos", "pedidos", "inventario"];
+
 const AdminDiag = () => {
   const { user, session, role, isAdmin, isAgent, loading } = useAuth();
+  const location = useLocation();
+  const deniedState = (location.state ?? {}) as { denied?: boolean; section?: string; allowed?: string[] };
   const [checks, setChecks] = useState<Check[]>([]);
   const [running, setRunning] = useState(true);
   const [rpcRole, setRpcRole] = useState<string | null>(null);
   const [rolesRows, setRolesRows] = useState<any[]>([]);
   const [reason, setReason] = useState<string>("");
+  const [sectionAccess, setSectionAccess] = useState<Record<string, { allowed: string[]; can: boolean }>>({});
 
   const run = async () => {
     setRunning(true);
