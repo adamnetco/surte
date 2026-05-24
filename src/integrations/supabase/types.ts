@@ -5473,57 +5473,6 @@ export type Database = {
           },
         ]
       }
-      public_customer_reviews: {
-        Row: {
-          admin_response: string | null
-          comment: string | null
-          created_at: string | null
-          customer_name: string | null
-          id: string | null
-          order_id: string | null
-          organization_id: string | null
-          rating: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          admin_response?: string | null
-          comment?: string | null
-          created_at?: string | null
-          customer_name?: string | null
-          id?: string | null
-          order_id?: string | null
-          organization_id?: string | null
-          rating?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          admin_response?: string | null
-          comment?: string | null
-          created_at?: string | null
-          customer_name?: string | null
-          id?: string | null
-          order_id?: string | null
-          organization_id?: string | null
-          rating?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_reviews_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_reviews_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Functions: {
       apply_catalog_template: {
