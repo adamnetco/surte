@@ -34,7 +34,25 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
+    const resetTimer = window.setTimeout(() => {
+      setGoogleLoading(false);
+      toast.error("Google no devolvió la sesión. Abre la vista previa en una pestaña nueva e inténtalo otra vez.");
+    }, 15000);
     try {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isEmbedded = window.self !== window.top;
+
+      if (isMobile && isEmbedded) {
+        const params = new URLSearchParams({
+          provider: "google",
+          redirect_uri: `${window.location.origin}${fromPath}`,
+          state: crypto.randomUUID?.() ?? String(Date.now()),
+          prompt: "select_account",
+        });
+        window.location.href = `/~oauth/initiate?${params.toString()}`;
+        return;
+      }
+
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: `${window.location.origin}${fromPath}`,
         extraParams: {
@@ -46,10 +64,12 @@ const Login = () => {
         return;
       }
       if (result.error) throw result.error;
+      window.clearTimeout(resetTimer);
       // OAuth completed (session set via lovable module) — navigate home
       toast.success("¡Bienvenido!");
       navigate(fromPath, { replace: true });
     } catch (err: any) {
+      window.clearTimeout(resetTimer);
       toast.error(err.message || "Error al iniciar con Google");
       setGoogleLoading(false);
     }
