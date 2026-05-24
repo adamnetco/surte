@@ -5581,6 +5581,7 @@ export type Database = {
         Args: { _fingerprint: string; _license_key: string }
         Returns: Json
       }
+      is_master_superadmin: { Args: { _user_id?: string }; Returns: boolean }
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
       log_usage: {
         Args: {
