@@ -23,6 +23,9 @@ import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 import Index from "./pages/Index";
 import AdminDiag from "./pages/AdminDiag";
 import RoleGuard from "./components/RoleGuard";
+import { detectTenant } from "@/lib/subdomain";
+
+const ClientPortalShell = lazy(() => import("./components/clientes/ClientPortalShell"));
 
 const Catalogo = lazy(() => import("./pages/Catalogo"));
 const Carrito = lazy(() => import("./pages/Carrito"));
@@ -67,6 +70,24 @@ const RouteFallback = () => (
   </div>
 );
 
+/**
+ * Tenant-aware home: la ruta `/` cambia de componente según el subdominio.
+ * Ver `src/lib/subdomain.ts` para el mapeo.
+ */
+const TenantHome = () => {
+  const tenant = detectTenant();
+  if (tenant === "admin") {
+    return (
+      <RoleGuard section="admin">
+        <AdminDashboard />
+      </RoleGuard>
+    );
+  }
+  if (tenant === "pos") return <POS />;
+  if (tenant === "mi") return <ClientPortalShell />;
+  return <Index />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -88,14 +109,17 @@ const App = () => (
                 <SwipeProvider>
                   <Suspense fallback={<RouteFallback />}>
                   <Routes>
-                    <Route path="/" element={<Index />} />
+                    <Route path="/" element={<TenantHome />} />
                     <Route path="/catalogo" element={<Catalogo />} />
                     <Route path="/carrito" element={<Carrito />} />
                     <Route path="/categorias" element={<Categorias />} />
                     <Route path="/menu" element={<MenuPage />} />
                     <Route path="/ofertas" element={<Ofertas />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/user/login" element={<Login />} />
+                    <Route path="/admin/login" element={<Login />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/clientes" element={<ClientPortalShell />} />
                     <Route path="/pedidos" element={<MisPedidos />} />
                     <Route path="/perfil" element={<Perfil />} />
                     <Route path="/favoritos" element={<Favoritos />} />
