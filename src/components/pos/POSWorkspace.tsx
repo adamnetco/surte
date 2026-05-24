@@ -171,7 +171,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     toast.success(`Ticket #${order.ticket_number} cobrado`);
     setLastOrderId(order.id);
     setTicket([]);
+    setMeta(ticketCacheKey, []).catch(() => {});
     setPayOpen(false);
+
     // Auto-prompt: ¿facturar?
     setTimeout(() => {
       if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
@@ -188,7 +190,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar producto..."
+              ref={searchRef}
+              placeholder="Buscar producto…  (F3)"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-10"
@@ -196,8 +199,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             />
           </div>
           <OfflineIndicator />
+          <div
+            className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 py-1"
+            title="Atajos: F2 Cobrar · F3 Buscar · Esc Cierre"
+          >
+            <Keyboard className="w-3 h-3" />
+            <span><kbd className="px-1 bg-muted rounded">F2</kbd> Cobrar · <kbd className="px-1 bg-muted rounded">F3</kbd> Buscar · <kbd className="px-1 bg-muted rounded">Esc</kbd> Cierre</span>
+          </div>
           <Button variant="outline" size="sm" onClick={() => setCloseOpen(true)}>
             <LogOut className="w-4 h-4 mr-1" /> Cierre Z
+
           </Button>
         </div>
         <div className="flex-1 overflow-y-auto p-3">
