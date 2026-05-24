@@ -3,9 +3,11 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSectionAccess from "@/components/admin/AdminSectionAccess";
-import { pendingCount } from "@/lib/offline/outbox";
+import { pendingCount, flushOutbox } from "@/lib/offline/outbox";
+import { getMeta } from "@/lib/offline/db";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
-import { Activity, Database, Inbox, Tag, RefreshCw } from "lucide-react";
+import { Activity, Database, Inbox, Tag, RefreshCw, Wifi, WifiOff, CloudUpload } from "lucide-react";
+import { toast } from "sonner";
 
 type Check = { label: string; status: "ok" | "fail" | "warn" | "info"; detail: string };
 
