@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_section_access: {
+        Row: {
+          allowed_roles: Database["public"]["Enums"]["app_role"][]
+          label: string
+          section_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          label: string
+          section_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          label?: string
+          section_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       ai_insights: {
         Row: {
           category: string
@@ -5498,6 +5522,7 @@ export type Database = {
         }
         Returns: string
       }
+      can_access_section: { Args: { _section: string }; Returns: boolean }
       complete_persistent_cart: {
         Args: { _cart_token: string }
         Returns: boolean

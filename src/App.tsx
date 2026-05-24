@@ -23,6 +23,7 @@ import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 import Index from "./pages/Index";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminDiag from "./pages/AdminDiag";
+import RoleGuard from "./components/RoleGuard";
 
 const Catalogo = lazy(() => import("./pages/Catalogo"));
 const Carrito = lazy(() => import("./pages/Carrito"));
@@ -103,9 +104,9 @@ const App = () => (
                     <Route path="/producto/:id" element={<ProductoDetalle />} />
                     <Route path="/p/:id" element={<ProductoDetalle />} />
                     <Route path="/pedido/:orderNumber" element={<Pedido />} />
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/diag" element={<AdminDiag />} />
-                    <Route path="/admin-diag" element={<AdminDiag />} />
+                    <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
+                    <Route path="/admin/diag" element={<RoleGuard section="admin" deniedRedirect="/login"><AdminDiag /></RoleGuard>} />
+                    <Route path="/admin-diag" element={<RoleGuard section="admin" deniedRedirect="/login"><AdminDiag /></RoleGuard>} />
                     <Route path="/pos" element={<POS />} />
                     <Route path="/mesas" element={<Mesas />} />
                     <Route path="/kds" element={<KDS />} />
