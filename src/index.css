@@ -6,63 +6,65 @@
 
 @layer base {
   :root {
-    --background: 210 20% 96%;
-    --foreground: 210 50% 10%;
+    /* Paleta SistecPOS — base por defecto. Cada negocio puede sobrescribirla
+       desde Ajustes (DynamicThemeInjector re-pinta estas variables en runtime). */
+    --background: 220 100% 98%;
+    --foreground: 212 60% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 50% 10%;
+    --card-foreground: 212 60% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 50% 10%;
+    --popover-foreground: 212 60% 11%;
 
-    --primary: 209 85% 28%;
+    --primary: 218 100% 54%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 100 52% 46%;
+    --secondary: 154 62% 44%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 15% 92%;
-    --muted-foreground: 210 15% 45%;
+    --muted: 220 40% 94%;
+    --muted-foreground: 215 20% 40%;
 
-    --accent: 24 90% 54%;
+    --accent: 22 100% 55%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 59% 41%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 15% 88%;
-    --input: 210 15% 88%;
-    --ring: 209 85% 28%;
+    --border: 220 30% 90%;
+    --input: 220 30% 90%;
+    --ring: 218 100% 54%;
 
     --radius: 0.75rem;
 
-    --surte-azul: 209 85% 28%;
-    --surte-azul-dark: 210 90% 15%;
-    --surte-verde: 100 52% 46%;
-    --surte-verde-light: 100 45% 55%;
-    --surte-naranja: 24 90% 54%;
-    --surte-naranja-light: 24 85% 62%;
-    --surte-navy-dark: 210 90% 15%;
-    --surte-gray-light: 0 0% 90%;
-    --surte-cream: 0 0% 94%;
+    --surte-azul: 218 100% 54%;
+    --surte-azul-dark: 212 60% 11%;
+    --surte-verde: 154 62% 44%;
+    --surte-verde-light: 154 55% 55%;
+    --surte-naranja: 22 100% 55%;
+    --surte-naranja-light: 22 95% 65%;
+    --surte-navy-dark: 212 60% 11%;
+    --surte-gray-light: 220 20% 90%;
+    --surte-cream: 220 100% 98%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(209 85% 28%), hsl(210 90% 15%));
-    --gradient-fresh: linear-gradient(135deg, hsl(100 52% 46%), hsl(100 45% 55%));
-    --gradient-cta: linear-gradient(135deg, hsl(24 90% 54%), hsl(24 85% 62%));
-    --gradient-badge: linear-gradient(135deg, hsl(100 52% 46%), hsl(100 45% 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(218 100% 54%), hsl(212 60% 11%));
+    --gradient-fresh: linear-gradient(135deg, hsl(154 62% 44%), hsl(154 55% 55%));
+    --gradient-cta: linear-gradient(135deg, hsl(22 100% 55%), hsl(22 95% 65%));
+    --gradient-badge: linear-gradient(135deg, hsl(154 62% 44%), hsl(154 55% 55%));
 
-    --shadow-card: 0 2px 12px -2px hsl(209 85% 28% / 0.06);
-    --shadow-card-hover: 0 8px 24px -4px hsl(209 85% 28% / 0.12);
-    --shadow-nav: 0 -2px 16px -4px hsl(209 85% 28% / 0.10);
+    --shadow-card: 0 2px 12px -2px hsl(218 100% 54% / 0.06);
+    --shadow-card-hover: 0 8px 24px -4px hsl(218 100% 54% / 0.12);
+    --shadow-nav: 0 -2px 16px -4px hsl(218 100% 54% / 0.10);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 209 85% 28%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 212 40% 25%;
+    --sidebar-primary: 218 100% 54%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 209 85% 28%;
+    --sidebar-accent: 220 40% 96%;
+    --sidebar-accent-foreground: 212 60% 11%;
+    --sidebar-border: 220 30% 90%;
+    --sidebar-ring: 218 100% 54%;
   }
 
   .dark {

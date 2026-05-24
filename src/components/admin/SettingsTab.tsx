@@ -9,12 +9,13 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useImageUpload } from "@/hooks/useImageUpload";
 
+// Paleta base SistecPOS. Cada negocio (id_negocio) puede personalizarla desde Ajustes.
 const DEFAULT_COLORS: Record<string, { hex: string; label: string; desc: string }> = {
-  color_primary: { hex: "#0C4B83", label: "Azul Confianza", desc: "Headers, navegación" },
-  color_secondary: { hex: "#76B833", label: "Verde Vitalidad", desc: "Frescura y productos naturales" },
-  color_accent: { hex: "#F37021", label: "Naranja Energía", desc: "CTA, promociones" },
-  color_tierra: { hex: "#8D6E63", label: "Tierra Santandereana", desc: "Fondos cálidos" },
-  color_cream: { hex: "#F0F0F0", label: "Cloud Dancer", desc: "Fondo limpio" },
+  color_primary: { hex: "#1668FF", label: "Azul SistecPOS", desc: "Headers, navegación, enlaces" },
+  color_secondary: { hex: "#2BB673", label: "Verde Éxito", desc: "Estados positivos, stock" },
+  color_accent: { hex: "#FF7A1A", label: "Naranja CTA", desc: "Botones de acción, promociones" },
+  color_tierra: { hex: "#0B1A2B", label: "Navy Texto", desc: "Tipografía principal" },
+  color_cream: { hex: "#F4F8FF", label: "Fondo Cloud", desc: "Fondo base de la app" },
 };
 
 type SettingMeta = { label: string; icon: typeof Save; type: "text" | "toggle"; group: string; description?: string };
