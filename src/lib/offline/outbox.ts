@@ -1,7 +1,7 @@
 // Outbox: queues mutations while offline and flushes them when back online.
 // Idempotent via client_uuid stored alongside each operation.
 import { supabase } from "@/integrations/supabase/client";
-import { offlineDB, type OutboxItem, type OutboxOp } from "./db";
+import { offlineDB, setMeta, type OutboxItem, type OutboxOp } from "./db";
 
 const MAX_ATTEMPTS = 8;
 // Exponential backoff in ms: 5s, 10s, 30s, 60s, 120s, 300s, 300s, 300s
