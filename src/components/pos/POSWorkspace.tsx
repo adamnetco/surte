@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause, Keyboard } from "lucide-react";
+import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause, Keyboard, CloudUpload, CloudOff, Loader2 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
@@ -11,6 +11,8 @@ import OfflineIndicator from "@/components/OfflineIndicator";
 import { refreshCatalogCache, getCachedProducts } from "@/lib/offline/catalog";
 import { setMeta, getMeta } from "@/lib/offline/db";
 import { usePOSHotkeys } from "@/hooks/usePOSHotkeys";
+import { useSyncService } from "@/hooks/useSyncService";
+import { enqueue } from "@/lib/offline/outbox";
 
 
 interface Product { id: string; name: string; price: number; image_url: string | null; stock: number; }
