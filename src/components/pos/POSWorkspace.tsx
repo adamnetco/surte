@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause, Keyboard } from "lucide-react";
+import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause, Keyboard, CloudUpload, CloudOff, Loader2 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
@@ -11,6 +11,8 @@ import OfflineIndicator from "@/components/OfflineIndicator";
 import { refreshCatalogCache, getCachedProducts } from "@/lib/offline/catalog";
 import { setMeta, getMeta } from "@/lib/offline/db";
 import { usePOSHotkeys } from "@/hooks/usePOSHotkeys";
+import { useSyncService } from "@/hooks/useSyncService";
+import { enqueue } from "@/lib/offline/outbox";
 
 
 interface Product { id: string; name: string; price: number; image_url: string | null; stock: number; }
@@ -36,6 +38,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
+  const sync = useSyncService();
 
   const ticketCacheKey = `pos_ticket:${session.id}`;
 
@@ -120,66 +123,67 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const removeLine = (productId: string) => setTicket((prev) => prev.filter((l) => l.productId !== productId));
 
   const handlePaid = async (payments: { method: string; amount: number; reference?: string }[]) => {
-    // 1) create pos_order
     const amountPaid = payments.reduce((s, p) => s + p.amount, 0);
     const change = Math.max(0, amountPaid - totals.total);
 
-    const { data: order, error: oerr } = await supabase
-      .from("pos_orders")
-      .insert({
-        organization_id: organizationId,
-        location_id: session.location_id,
-        cash_session_id: session.id,
-        cashier_id: userId,
-        subtotal: totals.subtotal,
-        total: totals.total,
-        amount_paid: amountPaid,
-        change_due: change,
-        status: "paid",
-        paid_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-    if (oerr || !order) return toast.error(oerr?.message || "Error creando ticket");
-
-    // 2) items
-    const itemsPayload = ticket.map((l) => ({
+    // Build a single idempotent operation: header + items + payments share one client_uuid.
+    const header = {
       organization_id: organizationId,
-      pos_order_id: order.id,
+      location_id: session.location_id,
+      cash_session_id: session.id,
+      cashier_id: userId,
+      subtotal: totals.subtotal,
+      total: totals.total,
+      amount_paid: amountPaid,
+      change_due: change,
+      status: "paid",
+      paid_at: new Date().toISOString(),
+    };
+    const items = ticket.map((l) => ({
+      organization_id: organizationId,
       product_id: l.productId,
       product_name: l.name,
       quantity: l.quantity,
       unit_price: l.unitPrice,
       total: l.total,
     }));
-    const { error: ierr } = await supabase.from("pos_order_items").insert(itemsPayload);
-    if (ierr) return toast.error(ierr.message);
-
-    // 3) payments
-    const paysPayload = payments.map((p) => ({
+    const paymentRows = payments.map((p) => ({
       organization_id: organizationId,
-      pos_order_id: order.id,
       cash_session_id: session.id,
       method: p.method,
       amount: p.amount,
       reference: p.reference ?? null,
       received_by: userId,
     }));
-    const { error: perr } = await supabase.from("pos_payments").insert(paysPayload);
-    if (perr) return toast.error(perr.message);
 
-    toast.success(`Ticket #${order.ticket_number} cobrado`);
-    setLastOrderId(order.id);
-    setTicket([]);
-    setMeta(ticketCacheKey, []).catch(() => {});
-    setPayOpen(false);
+    try {
+      const clientUuid = await enqueue(
+        "pos_order_create",
+        { header, items, payments: paymentRows },
+        organizationId
+      );
+      setLastOrderId(clientUuid); // temp ref until sync resolves
+      setTicket([]);
+      setMeta(ticketCacheKey, []).catch(() => {});
+      setPayOpen(false);
 
-    // Auto-prompt: ¿facturar?
-    setTimeout(() => {
-      if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
-        setActionMode("emit");
+      if (navigator.onLine) {
+        toast.success("Ticket cobrado · sincronizando…");
+      } else {
+        toast.success("Ticket cobrado offline · se enviará al volver la red");
       }
-    }, 300);
+
+      // Auto-prompt: ¿facturar? (only when online; einvoice requires connectivity).
+      if (navigator.onLine) {
+        setTimeout(() => {
+          if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
+            setActionMode("emit");
+          }
+        }, 300);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "No se pudo encolar el ticket");
+    }
   };
 
   return (
@@ -199,6 +203,26 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             />
           </div>
           <OfflineIndicator />
+          {(sync.pending > 0 || sync.syncing) && (
+            <button
+              onClick={() => sync.flushNow()}
+              title={sync.lastError ?? (sync.online ? "Sincronizar pendientes" : "Sin conexión · en cola")}
+              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition ${
+                sync.online
+                  ? "bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {sync.syncing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : sync.online ? (
+                <CloudUpload className="h-3 w-3" />
+              ) : (
+                <CloudOff className="h-3 w-3" />
+              )}
+              <span>{sync.syncing ? "Sincronizando…" : `${sync.pending} pendiente${sync.pending === 1 ? "" : "s"}`}</span>
+            </button>
+          )}
           <div
             className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 py-1"
             title="Atajos: F2 Cobrar · F3 Buscar · Esc Cierre"
