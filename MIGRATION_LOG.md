@@ -94,7 +94,43 @@ Todos viven ahora en `src/components/clientes/`:
 
 ---
 
-## Fase 4 — SSO cross-domain (pendiente)
+## Fase 4 — SSO cross-domain (completada ✅)
 
-- Edge function `auth-bridge` → cookie `sb-session; Domain=.sistecpos.com`.
-- Adaptador en `AuthContext` que la lea al boot.
+### Estrategia elegida
+**Handoff por URL fragment** en vez de cookies de dominio raíz. Motivo: el
+cliente Supabase ya está configurado con `storage: localStorage` (no se puede
+tocar `client.ts`), y `localStorage` está aislado por subdominio. Una cookie
+`Domain=.sistecpos.com` sería ignorada por el SDK.
+
+### Cómo funciona
+1. El usuario hace click en un `<TenantLink tenant="pos">…</TenantLink>` en,
+   por ejemplo, `admin.sistecpos.com`.
+2. `buildHandoffUrl()` lee la sesión actual y construye:
+   `https://pos.sistecpos.com/?sso=1#sps_sso=<base64(access+refresh+iat)>`
+3. El navegador navega. El **fragment NUNCA viaja al servidor**, así que el
+   token no se loguea en CDN ni en analytics.
+4. En el destino, `main.tsx` llama `consumeHandoff()` **antes** de montar React:
+   - Verifica TTL (60 s).
+   - `supabase.auth.setSession({ access_token, refresh_token })`.
+   - Limpia el hash con `history.replaceState`.
+5. `AuthContext` arranca ya autenticado, sin parpadeo de login.
+
+### Archivos
+- `src/lib/ssoHandoff.ts` — `buildHandoffUrl(tenant, path)`, `consumeHandoff()`, `tenantHost(t)`.
+- `src/components/TenantLink.tsx` — `<a>` que salta entre subdominios con SSO.
+- `src/main.tsx` — `consumeHandoff()` antes de `createRoot`.
+
+### Limitaciones / siguientes pasos
+- TTL del handoff: 60 s. Si el usuario tarda más, se ignora y debe re-loguear.
+- No cubre **logout global**: cerrar sesión en `admin.` no cierra `mi.`/`pos.`
+  Para eso haría falta una edge function que invalide el refresh token (lo
+  podemos añadir cuando sea necesario).
+- En dev / preview no hay subdominios reales: `TenantLink` cae a
+  `?tenant=<x>` sobre el mismo origen, conservando la sesión nativamente.
+
+---
+
+## Migración completa ✅
+Fases 1 → 4 entregadas. El portal de clientes vive en `mi.sistecpos.com`,
+con DB propia, RLS por dueño y SSO cross-subdominio funcional.
+
