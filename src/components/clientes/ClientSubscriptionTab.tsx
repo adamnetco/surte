@@ -34,7 +34,7 @@ export default function ClientSubscriptionTab() {
     if (!user) return;
     const sb = supabase as any;
     Promise.all([
-      supabase.from("licenses").select("plan_type, status, business_name, expires_at, start_date")
+      sb.from("licenses").select("plan_type, status, business_name, expires_at, start_date")
         .eq("contact_email", user.email ?? "").eq("status", "active")
         .order("created_at", { ascending: false }).limit(1),
       sb.from("support_subscriptions").select("plan, price_cop, current_period_end, target_audience")

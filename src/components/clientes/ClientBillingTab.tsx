@@ -29,11 +29,12 @@ export default function ClientBillingTab() {
   useEffect(() => {
     if (!user) return;
     async function load() {
-      const { data: licenses } = await supabase
+      const sb = supabase as any;
+      const { data: licenses } = await sb
         .from("licenses").select("id").eq("contact_email", user!.email ?? "");
       const ids = (licenses || []).map((l: any) => l.id);
       if (ids.length === 0) { setLoading(false); return; }
-      const { data } = await (supabase as any)
+      const { data } = await sb
         .from("payments")
         .select("id, amount, status, paid_at, created_at, payment_method, reference, notes")
         .in("license_id", ids)

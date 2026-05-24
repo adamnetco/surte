@@ -32,7 +32,7 @@ export default function ClientDashboardTab({ onRequestSupport }: Props = {}) {
     async function load() {
       const sb = supabase as any;
       const [licRes, ticketRes, payRes, subRes] = await Promise.all([
-        supabase.from("licenses").select("plan_type, status, expires_at")
+        sb.from("licenses").select("plan_type, status, expires_at")
           .eq("contact_email", user!.email ?? "").eq("status", "active")
           .order("created_at", { ascending: false }).limit(1),
         sb.from("client_tickets").select("id", { count: "exact", head: true })
