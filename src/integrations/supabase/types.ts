@@ -739,6 +739,171 @@ export type Database = {
           },
         ]
       }
+      client_downloads: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          download_url: string
+          file_type: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          download_url: string
+          file_type?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          download_url?: string
+          file_type?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      client_pos_sessions: {
+        Row: {
+          created_at: string
+          device: string | null
+          ended_at: string | null
+          id: string
+          ip: string | null
+          started_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device?: string | null
+          ended_at?: string | null
+          id?: string
+          ip?: string | null
+          started_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device?: string | null
+          ended_at?: string | null
+          id?: string
+          ip?: string | null
+          started_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_tickets: {
+        Row: {
+          assigned_to: string | null
+          attachments: Json
+          category: string | null
+          closed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          module: string | null
+          priority: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          attachments?: Json
+          category?: string | null
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          module?: string | null
+          priority?: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          attachments?: Json
+          category?: string | null
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          module?: string | null
+          priority?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contracts: {
+        Row: {
+          contract_type: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          notes: string | null
+          pdf_url: string | null
+          signed_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contract_type?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          pdf_url?: string | null
+          signed_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contract_type?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          pdf_url?: string | null
+          signed_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           code: string
@@ -2170,6 +2335,42 @@ export type Database = {
           },
         ]
       }
+      leads_trials: {
+        Row: {
+          business_name: string | null
+          created_at: string
+          email: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          password_hash: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_name?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          password_hash?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          password_hash?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       license_activations: {
         Row: {
           activated_at: string
@@ -2270,6 +2471,8 @@ export type Database = {
       }
       licenses: {
         Row: {
+          business_name: string | null
+          contact_email: string | null
           created_at: string
           created_by: string | null
           expires_at: string | null
@@ -2281,12 +2484,16 @@ export type Database = {
           notes: string | null
           organization_id: string
           plan: string
+          plan_type: string | null
           public_key: string
           signing_key_id: string
+          start_date: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          business_name?: string | null
+          contact_email?: string | null
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
@@ -2298,12 +2505,16 @@ export type Database = {
           notes?: string | null
           organization_id: string
           plan?: string
+          plan_type?: string | null
           public_key: string
           signing_key_id: string
+          start_date?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          business_name?: string | null
+          contact_email?: string | null
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
@@ -2315,8 +2526,10 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           plan?: string
+          plan_type?: string | null
           public_key?: string
           signing_key_id?: string
+          start_date?: string | null
           status?: string
           updated_at?: string
         }
@@ -3173,6 +3386,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          invoice_number: string | null
+          invoice_url: string | null
+          license_id: string | null
+          notes: string | null
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_number?: string | null
+          invoice_url?: string | null
+          license_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_number?: string | null
+          invoice_url?: string | null
+          license_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       persistent_carts: {
         Row: {
@@ -4837,6 +5101,42 @@ export type Database = {
         }
         Relationships: []
       }
+      support_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          notes: string | null
+          plan: string
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          plan: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          plan?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -5295,6 +5595,44 @@ export type Database = {
           sort_order?: number | null
         }
         Relationships: []
+      }
+      ticket_messages: {
+        Row: {
+          attachments: Json
+          body: string
+          created_at: string
+          id: string
+          sender_id: string | null
+          sender_role: string
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: Json
+          body: string
+          created_at?: string
+          id?: string
+          sender_id?: string | null
+          sender_role?: string
+          ticket_id: string
+        }
+        Update: {
+          attachments?: Json
+          body?: string
+          created_at?: string
+          id?: string
+          sender_id?: string | null
+          sender_role?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "client_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage_events: {
         Row: {
