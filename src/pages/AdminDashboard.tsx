@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, Database, CalendarDays, ToggleRight } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, Database, CalendarDays, ToggleRight, Building2, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Key, Sparkles, BookOpen, Rocket, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useOrganization } from "@/context/OrganizationContext";
 import ModulesTab from "@/components/admin/ModulesTab";
@@ -84,6 +84,22 @@ class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string 
   }
 }
 
+const operationsLinks = [
+  { path: "/sitios", label: "Sitios / Multi-tenant", icon: Building2, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/pos", label: "POS", icon: Monitor, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { path: "/mesas", label: "Mesas", icon: Utensils, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { path: "/kds", label: "KDS (Cocina)", icon: ChefHat, roles: ["superadmin", "admin", "editor"] as AppRole[] },
+  { path: "/facturacion", label: "Facturación", icon: Receipt, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/compras", label: "Compras", icon: ShoppingBag, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/inventario", label: "Inventario Avanzado", icon: Warehouse, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/planes", label: "Planes", icon: CreditCard, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/billing", label: "Billing", icon: Wallet, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/licencias", label: "Licencias", icon: Key, roles: ["superadmin"] as AppRole[] },
+  { path: "/gerente-ia", label: "Gerente IA", icon: Sparkles, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/catalogos-base", label: "Catálogos Base", icon: BookOpen, roles: ["superadmin"] as AppRole[] },
+  { path: "/onboarding", label: "Onboarding", icon: Rocket, roles: ["superadmin", "admin"] as AppRole[] },
+];
+
 const AdminDashboard = () => {
   const { user, isAdmin, role, loading } = useAuth();
   const navigate = useNavigate();
@@ -92,6 +108,7 @@ const AdminDashboard = () => {
 
   const { hasModule } = useOrganization();
   const tabs = allTabs.filter((t) => t.roles.includes(role) && (!t.module || hasModule(t.module)));
+  const opsLinks = operationsLinks.filter((l) => l.roles.includes(role));
 
   useEffect(() => {
     if (!loading && role === "editor") setActiveTab("orders");
@@ -218,6 +235,23 @@ const AdminDashboard = () => {
 
       {/* Mobile content */}
       <main className="lg:hidden p-4 pb-8">
+        {opsLinks.length > 0 && (
+          <div className="mb-4 -mx-4 px-4 pb-3 border-b border-border">
+            <p className="text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider mb-2">Operaciones y Multi-tenant</p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {opsLinks.map(({ path, label, icon: Icon }) => (
+                <button
+                  key={path}
+                  onClick={() => navigate(path)}
+                  className="shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors min-w-[72px]"
+                >
+                  <Icon size={18} className="text-primary" />
+                  <span className="text-[10px] font-medium text-center leading-tight">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {renderContent()}
       </main>
 
@@ -245,6 +279,25 @@ const AdminDashboard = () => {
                 )}
               </button>
             ))}
+
+            {opsLinks.length > 0 && (
+              <>
+                <div className="mt-4 px-4 pt-3 pb-1 border-t border-border">
+                  <p className="text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider">Operaciones</p>
+                </div>
+                {opsLinks.map(({ path, label, icon: Icon }) => (
+                  <button
+                    key={path}
+                    onClick={() => navigate(path)}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <Icon size={16} />
+                    <span className="flex-1 text-left">{label}</span>
+                    <ChevronRight size={14} className="opacity-50" />
+                  </button>
+                ))}
+              </>
+            )}
           </nav>
         </aside>
 
