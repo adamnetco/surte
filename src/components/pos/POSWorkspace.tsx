@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause } from "lucide-react";
+import { Search, Trash2, Plus, Minus, CreditCard, LogOut, FileText, FileSignature, Pause, Keyboard } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import { refreshCatalogCache, getCachedProducts } from "@/lib/offline/catalog";
+import { setMeta, getMeta } from "@/lib/offline/db";
+import { usePOSHotkeys } from "@/hooks/usePOSHotkeys";
+
 
 interface Product { id: string; name: string; price: number; image_url: string | null; stock: number; }
 interface TicketLine {
@@ -32,10 +35,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [actionMode, setActionMode] = useState<"emit" | "quote" | "park" | null>(null);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const searchRef = useRef<HTMLInputElement>(null);
 
+  const ticketCacheKey = `pos_ticket:${session.id}`;
+
+  // Hydrate catalog + persisted ticket
   useEffect(() => {
     (async () => {
-      // Offline-first: hydrate from IndexedDB cache immediately, then refresh from network.
       try {
         const cached = await getCachedProducts();
         if (cached.length) {
@@ -43,6 +49,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           setLoading(false);
         }
       } catch { /* no cache yet */ }
+
+      try {
+        const savedTicket = await getMeta<TicketLine[]>(ticketCacheKey);
+        if (savedTicket && Array.isArray(savedTicket) && savedTicket.length) {
+          setTicket(savedTicket);
+        }
+      } catch { /* no ticket cached */ }
 
       try {
         await refreshCatalogCache();
@@ -54,7 +67,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         setLoading(false);
       }
     })();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.id]);
+
+  // Persist every ticket change to IndexedDB BEFORE any backend roundtrip.
+  useEffect(() => {
+    setMeta(ticketCacheKey, ticket).catch(() => { /* dexie unavailable */ });
+  }, [ticket, ticketCacheKey]);
+
+  // Hotkeys: F2 cobrar · F3 buscar · Esc cierre Z
+  usePOSHotkeys({
+    onPay: () => { if (ticket.length > 0) setPayOpen(true); },
+    onSearch: () => searchRef.current?.focus(),
+    onEscape: () => setCloseOpen(true),
+  });
+
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
