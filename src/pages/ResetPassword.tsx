@@ -22,13 +22,23 @@ const ResetPassword = () => {
     let cancelled = false;
     const prepareRecoverySession = async () => {
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const searchParams = new URLSearchParams(window.location.search);
       const type = hashParams.get("type");
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
+      const code = searchParams.get("code");
 
-      if (type === "recovery" || accessToken) setStep("update");
+      if (type === "recovery" || accessToken || code) setStep("update");
 
-      if (accessToken && refreshToken) {
+      if (code) {
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
+        } catch (err: any) {
+          if (!cancelled) setRecoveryError(err?.message || "El enlace de recuperación expiró o no es válido.");
+        }
+      } else if (accessToken && refreshToken) {
         try {
           const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
           if (error) throw error;
@@ -53,7 +63,7 @@ const ResetPassword = () => {
         }
       }
 
-      if (type !== "recovery" && !accessToken && !data.session) {
+      if (type !== "recovery" && !accessToken && !code && !data.session) {
         if (!cancelled) setCheckingRecovery(false);
         return;
       }
