@@ -54,11 +54,31 @@ const AdminDiag = () => {
     out.push({ label: "AuthContext.isAdmin", status: isAdmin ? "ok" : "info", detail: String(isAdmin) });
     out.push({ label: "AuthContext.loading", status: loading ? "warn" : "ok", detail: String(loading) });
 
-    // 5. Motivo de bloqueo
+    // 5. Accesos por sección (admin_section_access + can_access_section)
+    const accessMap: Record<string, { allowed: string[]; can: boolean }> = {};
+    for (const section of SECTIONS) {
+      const { data: cfg } = await (supabase as any)
+        .from("admin_section_access")
+        .select("allowed_roles")
+        .eq("section_key", section)
+        .maybeSingle();
+      const { data: can } = await (supabase as any).rpc("can_access_section", { _section: section });
+      accessMap[section] = { allowed: (cfg?.allowed_roles as string[]) ?? [], can: Boolean(can) };
+      out.push({
+        label: `Sección "${section}"`,
+        status: can ? "ok" : "fail",
+        detail: `permitido: [${(cfg?.allowed_roles ?? []).join(", ")}] · puedes acceder: ${Boolean(can)}`,
+      });
+    }
+    setSectionAccess(accessMap);
+
+    // 6. Motivo de bloqueo
     let why = "";
-    if (loading) why = "Aún cargando AuthContext (loading=true). Espera o revisa timeouts.";
+    if (deniedState.denied) {
+      why = `Bloqueado por guard al intentar acceder a sección "${deniedState.section}". Tu rol "${role}" no está en [${(deniedState.allowed ?? []).join(", ")}].`;
+    } else if (loading) why = "Aún cargando AuthContext (loading=true). Espera o revisa timeouts.";
     else if (!sessData.session) why = "No hay sesión activa. Inicia sesión.";
-    else if (!["superadmin", "admin", "editor"].includes(role)) why = `Rol actual "${role}" no autorizado. Se requiere superadmin, admin o editor.`;
+    else if (!accessMap["admin"]?.can) why = `Rol actual "${role}" no autorizado para /admin. Roles permitidos: [${accessMap["admin"]?.allowed.join(", ")}].`;
     else why = "✓ Acceso autorizado — no hay bloqueo.";
     setReason(why);
 
