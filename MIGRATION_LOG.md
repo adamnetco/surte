@@ -67,18 +67,30 @@ Todos viven ahora en `src/components/clientes/`:
 
 ---
 
-## Fase 3 — Esquema DB Clientes (pendiente)
+## Fase 3 — Esquema DB Clientes (completada ✅)
 
-Tablas a crear con RLS por `auth.uid()`:
-`client_tickets`, `ticket_messages`, `client_pos_sessions`, `client_downloads`,
-`contracts`, `payments`, `support_subscriptions`, `leads_trials`.
+### Tablas creadas
+| Tabla | Propósito | RLS |
+|---|---|---|
+| `client_tickets` | Tickets de soporte | Dueño + admin/superadmin |
+| `ticket_messages` | Chat por ticket | Dueño del ticket + admin |
+| `payments` | Facturas y pagos | Lectura dueño · escritura admin |
+| `support_subscriptions` | Planes de soporte | Lectura dueño · escritura admin |
+| `contracts` | Contratos firmados (PDF) | Lectura dueño · escritura admin |
+| `client_downloads` | Descargas públicas | Lectura pública (activos) · escritura admin |
+| `client_pos_sessions` | Sesiones POS remotas | Dueño + admin |
+| `leads_trials` | Credenciales prueba POS | Solo admin/superadmin |
 
-RPC: `get_client_pos_sessions(_user_id uuid)`.
+### Otros cambios
+- `licenses`: añadidas `contact_email`, `business_name`, `plan_type`, `start_date`.
+- Storage: bucket privado **`ticket-attachments`** con policies por carpeta `{user_id}/...`.
+- Realtime habilitado en `client_tickets` y `ticket_messages` (chat en vivo).
+- Triggers `updated_at` y índice único case-insensitive en `leads_trials.email`.
 
-Edge function: `validate-pos-login` (valida credenciales contra
-`softwarepos.online` y, si `consent=true`, almacena en `client_pos_sessions`).
-
-Bucket Storage: `ticket-attachments` (público sólo via URL firmada).
+### Pendiente (no incluido en esta fase)
+- RPC `get_client_pos_sessions` y edge function `validate-pos-login` (se agregarán
+  cuando definamos el contrato real con `softwarepos.online`).
+- Los 71 warnings del linter son pre-existentes (no introducidos por esta migración).
 
 ---
 
