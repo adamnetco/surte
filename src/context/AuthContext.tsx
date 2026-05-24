@@ -11,7 +11,7 @@ interface AuthContextType {
   isAgent: boolean;
   role: AppRole;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; session: Session | null }>;
   signUp: (email: string, password: string, fullName: string, businessType?: string, phone?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -126,8 +126,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) await syncAuthState(data.session);
+    return { error: error as Error | null, session: data.session ?? null };
   };
 
   const signUp = async (email: string, password: string, fullName: string, businessType?: string, phone?: string) => {
@@ -160,7 +161,7 @@ const FALLBACK_AUTH: AuthContextType = {
   isAgent: false,
   role: "user",
   loading: false,
-  signIn: async () => ({ error: new Error("AuthProvider not mounted") }),
+  signIn: async () => ({ error: new Error("AuthProvider not mounted"), session: null }),
   signUp: async () => ({ error: new Error("AuthProvider not mounted") }),
   signOut: async () => {},
 };

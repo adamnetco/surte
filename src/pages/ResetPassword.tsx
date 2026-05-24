@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { mailService } from "@/utils/mailService";
-import { passwordRecoveryTemplate } from "@/utils/emailTemplates";
 import surteLogo from "@/assets/surte-logo.png";
 
 const ResetPassword = () => {
@@ -16,34 +14,79 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [checkingRecovery, setCheckingRecovery] = useState(true);
+  const [recoveryReady, setRecoveryReady] = useState(false);
+  const [recoveryError, setRecoveryError] = useState("");
 
-  // Check if we arrived via recovery link
-  useState(() => {
-    const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
-      setStep("update");
-    }
-  });
+  useEffect(() => {
+    let cancelled = false;
+    const prepareRecoverySession = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const searchParams = new URLSearchParams(window.location.search);
+      const type = hashParams.get("type");
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const code = searchParams.get("code");
+
+      if (type === "recovery" || accessToken || code) setStep("update");
+
+      if (code) {
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
+        } catch (err: any) {
+          if (!cancelled) setRecoveryError(err?.message || "El enlace de recuperación expiró o no es válido.");
+        }
+      } else if (accessToken && refreshToken) {
+        try {
+          const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          if (error) throw error;
+          window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
+        } catch (err: any) {
+          if (!cancelled) setRecoveryError(err?.message || "El enlace de recuperación expiró o no es válido.");
+        }
+      }
+
+      let data: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"] = { session: null };
+      try {
+        const sessionResult = await supabase.auth.getSession();
+        data = sessionResult.data;
+      } catch (err: any) {
+        if (!recoveryError && !cancelled) setRecoveryError(err?.message || "No se pudo validar la sesión.");
+      }
+      if (data.session) {
+        setStep("update");
+        if (!cancelled) {
+          setRecoveryError("");
+          setRecoveryReady(true);
+        }
+      }
+
+      if (type !== "recovery" && !accessToken && !code && !data.session) {
+        if (!cancelled) setCheckingRecovery(false);
+        return;
+      }
+
+      if (!data.session && !cancelled) setRecoveryError("El enlace de recuperación expiró o no es válido.");
+      if (!cancelled) setCheckingRecovery(false);
+    };
+
+    void prepareRecoverySession();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     try {
-      const resetUrl = `${window.location.origin}/reset-password#type=recovery`;
-      
-      // Send branded recovery email via Resend
-      const html = passwordRecoveryTemplate(resetUrl);
-      await mailService.send({
-        to: email,
-        subject: "🔒 Recupera tu contraseña — SURTÉ YA",
-        html,
-      });
-
-      // Also trigger Supabase's native reset (for the actual token link)
-      await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
+      if (error) throw error;
 
       setSent(true);
       toast.success("Te enviamos un correo con el enlace de recuperación");
@@ -66,6 +109,8 @@ const ResetPassword = () => {
     }
     setLoading(true);
     try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Auth session missing!");
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast.success("¡Contraseña actualizada exitosamente!");
@@ -130,7 +175,28 @@ const ResetPassword = () => {
           </div>
         )}
 
-        {step === "update" && (
+        {step === "update" && checkingRecovery && (
+          <div className="w-full max-w-sm flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-4 text-sm text-muted-foreground">
+            <Loader2 className="animate-spin" size={18} /> Validando enlace seguro…
+          </div>
+        )}
+
+        {step === "update" && !checkingRecovery && recoveryError && !recoveryReady && (
+          <div className="w-full max-w-sm space-y-4 rounded-lg border border-destructive/30 bg-card p-4 text-center">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle size={20} className="text-destructive" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Enlace no válido</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Solicita un nuevo enlace para actualizar tu contraseña.</p>
+            </div>
+            <button type="button" onClick={() => { setStep("request"); setRecoveryError(""); }} className="w-full btn-surte py-3 text-sm">
+              Solicitar nuevo enlace
+            </button>
+          </div>
+        )}
+
+        {step === "update" && !checkingRecovery && recoveryReady && (
           <form onSubmit={handleUpdatePassword} className="w-full max-w-sm space-y-4">
             <p className="text-sm text-muted-foreground text-center mb-2">
               Ingresa tu nueva contraseña.

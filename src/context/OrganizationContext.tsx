@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 export type OrgRole = "owner" | "admin" | "manager" | "cashier" | "waiter" | "kitchen" | "agent" | "member";
 
@@ -32,6 +33,7 @@ const STORAGE_KEY = "surteya:currentOrgId";
 const OrganizationContext = createContext<OrganizationContextValue | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(
@@ -39,10 +41,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   );
   const [modules, setModules] = useState<OrganizationModule[]>([]);
 
-  const loadOrgs = async () => {
+  const loadOrgs = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setOrgs([]);
         setModules([]);
@@ -57,13 +58,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         role: r.role,
       }));
       setOrgs(list);
-      if (list.length > 0 && (!currentOrgId || !list.find((o) => o.id === currentOrgId))) {
-        setCurrentOrgId(list[0].id);
-      }
+      setCurrentOrgId((prev) => (list.length > 0 && (!prev || !list.find((o) => o.id === prev)) ? list[0].id : prev));
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const loadModules = async (orgId: string) => {
     const { data, error } = await supabase
@@ -75,10 +74,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadOrgs();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => loadOrgs());
-    return () => sub.subscription.unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadOrgs]);
 
   useEffect(() => {
     if (currentOrgId) {

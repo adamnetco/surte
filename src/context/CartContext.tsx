@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { getCartToken, resetCartToken, setCartToken } from "@/lib/cartToken";
 
 type Product = Tables<"products">;
@@ -82,6 +83,7 @@ function loadCart(): CartItem[] {
 }
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>(() => loadCart());
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const [cartToken, setCartTokenState] = useState<string>(() => getCartToken());
@@ -92,16 +94,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const syncTimer = useRef<number | null>(null);
   const isHydratingRef = useRef(false);
 
-  // Track auth user_id to associate carts on login
+  // Track auth user_id to associate carts on login without competing auth token reads.
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      userIdRef.current = data.user?.id ?? null;
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      userIdRef.current = session?.user?.id ?? null;
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    userIdRef.current = user?.id ?? null;
+  }, [user]);
 
   // Persist whenever items change
   useEffect(() => {
