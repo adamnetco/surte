@@ -124,6 +124,7 @@ const AdminDiag = () => {
 
     setChecks(out);
     setRunning(false);
+    void refreshHealth();
   };
 
   useEffect(() => {
@@ -131,6 +132,19 @@ const AdminDiag = () => {
     void run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
+
+  // Refresh outbox count + online status every 10s independently of the heavy check loop.
+  useEffect(() => {
+    const tick = async () => {
+      const online = typeof navigator !== "undefined" ? navigator.onLine : true;
+      let outboxPending = 0;
+      try { outboxPending = await pendingCount(); } catch { /* dexie unavailable */ }
+      setHealth((h) => ({ ...h, online, outboxPending }));
+    };
+    const id = setInterval(tick, 10_000);
+    return () => clearInterval(id);
+  }, []);
+
 
   const color = (s: Check["status"]) =>
     s === "ok" ? "text-green-600 border-green-200 bg-green-50" :
