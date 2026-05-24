@@ -26,28 +26,31 @@ const ResetPassword = () => {
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
 
-      if (type !== "recovery" && !accessToken) {
+      if (type === "recovery" || accessToken) setStep("update");
+
+      if (accessToken && refreshToken) {
+        try {
+          const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          if (error) throw error;
+          window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
+        } catch (err: any) {
+          if (!cancelled) setRecoveryError(err?.message || "El enlace de recuperación expiró o no es válido.");
+        }
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        setStep("update");
+        if (!cancelled) setRecoveryReady(true);
+      }
+
+      if (type !== "recovery" && !accessToken && !data.session) {
         setCheckingRecovery(false);
         return;
       }
 
-      setStep("update");
-      try {
-        if (accessToken && refreshToken) {
-          const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-          if (error) throw error;
-          window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
-        }
-
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        if (!data.session) throw new Error("El enlace no trajo una sesión válida.");
-        if (!cancelled) setRecoveryReady(true);
-      } catch (err: any) {
-        if (!cancelled) setRecoveryError(err?.message || "El enlace de recuperación expiró o no es válido.");
-      } finally {
-        if (!cancelled) setCheckingRecovery(false);
-      }
+      if (!data.session && !cancelled) setRecoveryError("El enlace de recuperación expiró o no es válido.");
+      if (!cancelled) setCheckingRecovery(false);
     };
 
     void prepareRecoverySession();
