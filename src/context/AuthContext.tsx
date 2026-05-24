@@ -40,7 +40,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole("user");
   };
 
+  const normalizeRole = (value: string | null | undefined): AppRole => {
+    const validRoles: AppRole[] = ["superadmin", "admin", "editor", "agente", "user"];
+    return validRoles.includes(value as AppRole) ? (value as AppRole) : "user";
+  };
+
   const checkRole = async (userId: string) => {
+    const { data: effectiveRole, error: rpcError } = await (supabase as any).rpc("get_current_user_role");
+
+    if (!rpcError && effectiveRole) {
+      applyRole(normalizeRole(effectiveRole));
+      return;
+    }
+
     const { data, error } = await supabase
       .from("user_roles")
       .select("role")
