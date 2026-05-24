@@ -24,6 +24,7 @@ const RoleGuard = ({
   children,
   fallbackRoles = ["superadmin", "admin"],
   redirectTo = "/login",
+  deniedRedirect = "/admin/diag",
 }: RoleGuardProps) => {
   const { user, role, loading } = useAuth();
   const location = useLocation();
