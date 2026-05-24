@@ -5524,6 +5524,10 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_current_user_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       get_landing_by_slug: {
         Args: { _scope: string; _slug: string }
         Returns: Json

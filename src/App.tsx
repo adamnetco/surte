@@ -21,6 +21,7 @@ import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
 import Index from "./pages/Index";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const Catalogo = lazy(() => import("./pages/Catalogo"));
 const Carrito = lazy(() => import("./pages/Carrito"));
@@ -28,7 +29,6 @@ const Categorias = lazy(() => import("./pages/Categorias"));
 const MenuPage = lazy(() => import("./pages/MenuPage"));
 const Ofertas = lazy(() => import("./pages/Ofertas"));
 const Login = lazy(() => import("./pages/Login"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
 const Favoritos = lazy(() => import("./pages/Favoritos"));
@@ -78,8 +78,8 @@ const App = () => (
             <DynamicThemeInjector />
             <CustomScriptInjector />
                 <AgentBar />
-                <CityPickerModal />
               <BrowserRouter>
+                <CityPickerModal />
                 <Analytics />
                 <CartNavigationGuard />
                 <OmnichannelCartListener />
