@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone } from "lucide-react";
@@ -29,12 +29,14 @@ const Login = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromPath = ((location.state as { from?: string } | null)?.from || "/") as string;
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}${fromPath}`,
         extraParams: {
           prompt: "select_account",
         },
@@ -71,7 +73,7 @@ const Login = () => {
         const { error } = await signIn(email, password);
         if (error) throw error;
         toast.success("¡Bienvenido!");
-        navigate("/");
+        navigate(fromPath, { replace: true });
       }
     } catch (err: any) {
       toast.error(err.message || "Error de autenticación");
