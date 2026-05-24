@@ -5,77 +5,84 @@ hacia `sistecposcore`.
 
 ---
 
-## Fase 1 — Subdomain Router + esqueleto (en curso)
+## Fase 1 — Subdomain Router + esqueleto (completada)
 
-### Archivos creados
-
-| Archivo | Propósito |
-|---|---|
-| `src/lib/subdomain.ts` | `detectTenant()` lee `window.location.hostname` y devuelve `'admin' \| 'mi' \| 'pos' \| 'app' \| 'www'`. Soporta override en dev vía `?tenant=`. |
-| `src/components/clientes/ClientPortalShell.tsx` | Placeholder del Portal de Clientes con tabs (Resumen, Suscripción, Facturación, Contratos, Descargas, Entrenamientos, Soporte). Listo para rellenarse en Fase 2. |
-| `MIGRATION_LOG.md` | Este archivo. |
-
-### Archivos modificados
-
-| Archivo | Cambio |
-|---|---|
-| `src/App.tsx` | Añadidas rutas `/clientes` (ClientPortalShell), `/user/login` y `/admin/login` (ambas apuntan al `Login` existente). La ruta raíz `/` ahora resuelve por tenant: `pos`→POS, `mi`→Portal de Clientes, `admin`→AdminDashboard, `app`/`www`→Index. |
-
-### Rutas añadidas
-
-- `GET /clientes` → `<ClientPortalShell />` (requiere sesión; redirige a `/user/login`).
-- `GET /user/login` → `<Login />` (login unificado para clientes).
-- `GET /admin/login` → `<Login />` (login unificado para staff).
+### Archivos creados / modificados
+- `src/lib/subdomain.ts` — `detectTenant()` por hostname + override `?tenant=`.
+- `src/components/clientes/ClientPortalShell.tsx` — placeholder (ahora re-exporta `ClientPortal`).
+- `src/App.tsx` — rutas `/clientes`, `/user/login`, `/admin/login`; `/` resuelve por tenant.
 
 ### Mapeo subdominio → vista raíz
-
-| Host | Tenant | Componente en `/` |
-|---|---|---|
-| `admin.sistecpos.com` | `admin` | `AdminDashboard` (protegido por `RoleGuard`) |
-| `mi.sistecpos.com` | `mi` | `ClientPortalShell` |
-| `pos.sistecpos.com` | `pos` | `POSWorkspace` (vía `/pages/POS`) |
-| `app.sistecpos.com` | `app` | `Index` (homepage actual) |
-| `sistecpos.com` / `www` | `www` | `Index` |
-| `localhost` / `*.lovable.app` | `app` (dev) | `Index` — override con `?tenant=mi` |
-
-### Ajustes en AuthContext
-
-**Sin cambios en Fase 1.** El SSO cross-subdomain (cookie con `Domain=.sistecpos.com`)
-queda planificado para **Fase 4** porque requiere un edge function `auth-bridge` y
-cambio del storage de Supabase Auth. En Fase 1 cada subdominio mantiene su sesión
-en `localStorage` (login independiente, misma UI).
+| Host                    | Tenant  | Componente en `/`                 |
+|-------------------------|---------|-----------------------------------|
+| `admin.sistecpos.com`   | `admin` | `AdminDashboard`                  |
+| `mi.sistecpos.com`      | `mi`    | `ClientPortalShell` → `ClientPortal` |
+| `pos.sistecpos.com`     | `pos`   | `POSWorkspace`                    |
+| `app.sistecpos.com`     | `app`   | `Index`                           |
+| `sistecpos.com` / `www` | `www`   | `Index`                           |
+| dev (`localhost`)       | `app`   | override con `?tenant=mi`         |
 
 ---
 
-## Fase 2 — Migración UI Clientes (pendiente)
+## Fase 2 — Migración UI Clientes (completada ✅)
 
-Componentes a copiar desde `sistecpos-colombia/src/components/clientes/`:
+### Componentes copiados desde `sistecpos-colombia/src/components/clientes/`
+Todos viven ahora en `src/components/clientes/`:
 
-- [ ] `ClientPortal.tsx`
-- [ ] `ClientDashboardTab.tsx`
-- [ ] `ClientBillingTab.tsx`
-- [ ] `ClientContractsTab.tsx`
-- [ ] `ClientDownloadsTab.tsx`
-- [ ] `ClientPOSAccess.tsx`
-- [ ] `ClientPOSLogin.tsx`
-- [ ] `ClientSubscriptionTab.tsx`
-- [ ] `ClientTicketsTab.tsx`
-- [ ] `ClientTrainingsTab.tsx`
-- [ ] `TicketChatView.tsx`
+- [x] `ClientPortal.tsx` (orquestador con tabs lazy-loaded)
+- [x] `ClientDashboardTab.tsx`
+- [x] `ClientSubscriptionTab.tsx`
+- [x] `ClientTicketsTab.tsx`
+- [x] `ClientBillingTab.tsx`
+- [x] `ClientContractsTab.tsx`
+- [x] `ClientTrainingsTab.tsx`
+- [x] `ClientDownloadsTab.tsx`
+- [x] `ClientPOSAccess.tsx`
+- [x] `ClientPOSLogin.tsx`
+- [x] `TicketChatView.tsx`
+- [x] `ClientPortalShell.tsx` → re-export de `ClientPortal`
 
-Adaptación necesaria: reemplazar `@/hooks/useAuth` → `@/context/AuthContext`.
+### Adaptaciones aplicadas
+1. **AuthContext**: `@/hooks/useAuth` → `@/context/AuthContext` en todos los componentes.
+2. **Tablas no migradas** (Fase 3): se envuelven en `(supabase as any).from(...)` para
+   evitar errores de TypeScript. En runtime devolverán error y los componentes
+   mostrarán su estado vacío. Tablas pendientes:
+   - `client_tickets`, `ticket_messages`, `client_pos_sessions`
+   - `client_downloads`, `contracts`, `payments`, `support_subscriptions`
+   - `leads_trials`
+   - RPC `get_client_pos_sessions`
+   - Edge function `validate-pos-login`
+3. **Stubs creados** para módulos compartidos aún no migrados:
+   - `src/data/licensePlans.ts` — `planLabel(key)`
+   - `src/data/posModules.ts` — lista de módulos POS para tickets
+   - `src/hooks/useWhatsAppConfig.ts` — `buildUrl(msg)` → `wa.me`
+   - `src/components/shared/TrainingVideoHub.tsx` — placeholder
+   - `src/components/shared/SupportArticlesHub.tsx` — placeholder
+4. **Tablas existentes que sí funcionan ya**: `licenses` (consultas en
+   `ClientDashboardTab`, `ClientSubscriptionTab`, `ClientBillingTab`).
+
+### Rutas
+- `/clientes` ya muestra el **portal real** (no el placeholder anterior).
+- `mi.sistecpos.com/` redirige al mismo portal mediante `TenantHome`.
 
 ---
 
 ## Fase 3 — Esquema DB Clientes (pendiente)
 
 Tablas a crear con RLS por `auth.uid()`:
-`client_tickets`, `client_contracts`, `client_downloads`, `client_trainings`,
-`client_subscriptions`, `client_billing`, `pos_demos`.
+`client_tickets`, `ticket_messages`, `client_pos_sessions`, `client_downloads`,
+`contracts`, `payments`, `support_subscriptions`, `leads_trials`.
+
+RPC: `get_client_pos_sessions(_user_id uuid)`.
+
+Edge function: `validate-pos-login` (valida credenciales contra
+`softwarepos.online` y, si `consent=true`, almacena en `client_pos_sessions`).
+
+Bucket Storage: `ticket-attachments` (público sólo via URL firmada).
 
 ---
 
 ## Fase 4 — SSO cross-domain (pendiente)
 
-- Edge function `auth-bridge` → cookie `sb-session; Domain=.sistecpos.com; Secure; SameSite=Lax`.
+- Edge function `auth-bridge` → cookie `sb-session; Domain=.sistecpos.com`.
 - Adaptador en `AuthContext` que la lea al boot.
