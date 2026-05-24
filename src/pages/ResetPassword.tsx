@@ -38,14 +38,23 @@ const ResetPassword = () => {
         }
       }
 
-      const { data } = await supabase.auth.getSession();
+      let data: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"] = { session: null };
+      try {
+        const sessionResult = await supabase.auth.getSession();
+        data = sessionResult.data;
+      } catch (err: any) {
+        if (!recoveryError && !cancelled) setRecoveryError(err?.message || "No se pudo validar la sesión.");
+      }
       if (data.session) {
         setStep("update");
-        if (!cancelled) setRecoveryReady(true);
+        if (!cancelled) {
+          setRecoveryError("");
+          setRecoveryReady(true);
+        }
       }
 
       if (type !== "recovery" && !accessToken && !data.session) {
-        setCheckingRecovery(false);
+        if (!cancelled) setCheckingRecovery(false);
         return;
       }
 
@@ -177,7 +186,7 @@ const ResetPassword = () => {
           </div>
         )}
 
-        {step === "update" && !checkingRecovery && (recoveryReady || !recoveryError) && (
+        {step === "update" && !checkingRecovery && recoveryReady && (
           <form onSubmit={handleUpdatePassword} className="w-full max-w-sm space-y-4">
             <p className="text-sm text-muted-foreground text-center mb-2">
               Ingresa tu nueva contraseña.
