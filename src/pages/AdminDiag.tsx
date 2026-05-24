@@ -31,12 +31,32 @@ const AdminDiag = () => {
   const [rolesRows, setRolesRows] = useState<any[]>([]);
   const [reason, setReason] = useState<string>("");
   const [sectionAccess, setSectionAccess] = useState<Record<string, { allowed: string[]; can: boolean }>>({});
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
+  const [forcingSync, setForcingSync] = useState(false);
   const [health, setHealth] = useState<SystemHealth>({
     backend: "checking",
     backendLatencyMs: null,
     outboxPending: 0,
     online: typeof navigator !== "undefined" ? navigator.onLine : true,
   });
+
+  const forceSync = async () => {
+    setForcingSync(true);
+    try {
+      const { sent, failed, skipped } = await flushOutbox();
+      if (sent > 0) toast.success(`${sent} operación(es) sincronizadas`);
+      if (failed > 0) toast.error(`${failed} fallaron · reintentaremos`);
+      if (sent === 0 && failed === 0) toast.info(skipped > 0 ? `${skipped} en espera (backoff)` : "Sin operaciones pendientes");
+      const ts = await getMeta<number>("last_sync_success_at");
+      if (ts) setLastSyncAt(ts);
+      const n = await pendingCount();
+      setHealth((h) => ({ ...h, outboxPending: n }));
+    } catch (e: any) {
+      toast.error(`Error: ${e?.message ?? e}`);
+    } finally {
+      setForcingSync(false);
+    }
+  };
 
   const refreshHealth = async () => {
     const online = typeof navigator !== "undefined" ? navigator.onLine : true;
