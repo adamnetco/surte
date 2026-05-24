@@ -3,10 +3,15 @@ import { MapPin, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useLocation } from "react-router-dom";
+
+const ADMIN_PATHS = ["/admin", "/sitios", "/pos", "/mesas", "/kds", "/facturacion", "/compras", "/inventario", "/planes", "/billing", "/licencias", "/gerente-ia", "/catalogos-base", "/onboarding"];
 
 const CityPickerModal = () => {
   const [open, setOpen] = useState(false);
   const [showSkip, setShowSkip] = useState(false);
+  const { pathname } = useLocation();
+  const isAdminRoute = ADMIN_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
   const { data: municipalities } = useQuery({
     queryKey: ["municipalities"],
@@ -22,6 +27,11 @@ const CityPickerModal = () => {
   });
 
   useEffect(() => {
+    if (isAdminRoute) {
+      setOpen(false);
+      return;
+    }
+
     const saved = localStorage.getItem("surte_city");
     if (!saved) {
       setOpen(true);
@@ -29,7 +39,7 @@ const CityPickerModal = () => {
       const skipTimer = setTimeout(() => setShowSkip(true), 5000);
       return () => clearTimeout(skipTimer);
     }
-  }, []);
+  }, [isAdminRoute]);
 
   const handleSelect = (city: string) => {
     localStorage.setItem("surte_city", city);
