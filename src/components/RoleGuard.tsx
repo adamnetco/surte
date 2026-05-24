@@ -8,8 +8,10 @@ interface RoleGuardProps {
   children: ReactNode;
   /** Fallback roles si la tabla aún no respondió (por defecto superadmin+admin). */
   fallbackRoles?: AppRole[];
-  /** Ruta a la que redirigir si no está autorizado. */
+  /** Ruta a la que redirigir si NO hay sesión. */
   redirectTo?: string;
+  /** Ruta a la que redirigir si hay sesión pero el rol no está autorizado. */
+  deniedRedirect?: string;
 }
 
 /**
