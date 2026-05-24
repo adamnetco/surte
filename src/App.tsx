@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -17,43 +18,52 @@ import CustomScriptInjector from "@/components/CustomScriptInjector";
 import Analytics from "@/components/seo/Analytics";
 import CartNavigationGuard from "@/components/CartNavigationGuard";
 import OmnichannelCartListener from "@/components/OmnichannelCartListener";
+
+// Eager: only the home page (LCP-critical) — everything else is code-split.
 import Index from "./pages/Index";
-import Catalogo from "./pages/Catalogo";
-import Carrito from "./pages/Carrito";
-import Categorias from "./pages/Categorias";
-import MenuPage from "./pages/MenuPage";
-import Ofertas from "./pages/Ofertas";
-import Login from "./pages/Login";
-import AdminDashboard from "./pages/AdminDashboard";
-import MisPedidos from "./pages/MisPedidos";
-import Perfil from "./pages/Perfil";
-import Favoritos from "./pages/Favoritos";
-import Ayuda from "./pages/Ayuda";
-import Configuracion from "./pages/Configuracion";
-import ProductoDetalle from "./pages/ProductoDetalle";
-import Pedido from "./pages/Pedido";
-import NotFound from "./pages/NotFound";
-import Unsubscribe from "./pages/Unsubscribe";
-import Hub from "./pages/Hub";
-import LandingPage from "./pages/LandingPage";
-import Politicas from "./pages/Politicas";
-import TratamientoDatos from "./pages/TratamientoDatos";
-import ResetPassword from "./pages/ResetPassword";
-import POS from "./pages/POS";
-import Mesas from "./pages/Mesas";
-import KDS from "./pages/KDS";
-import Inventario from "./pages/Inventario";
-import Facturacion from "./pages/Facturacion";
-import Planes from "./pages/Planes";
-import Billing from "./pages/Billing";
-import Onboarding from "./pages/Onboarding";
-import CatalogosBase from "./pages/CatalogosBase";
-import Licencias from "./pages/Licencias";
-import GerenteIA from "./pages/GerenteIA";
-import Compras from "./pages/Compras";
-import Sitios from "./pages/Sitios";
+
+const Catalogo = lazy(() => import("./pages/Catalogo"));
+const Carrito = lazy(() => import("./pages/Carrito"));
+const Categorias = lazy(() => import("./pages/Categorias"));
+const MenuPage = lazy(() => import("./pages/MenuPage"));
+const Ofertas = lazy(() => import("./pages/Ofertas"));
+const Login = lazy(() => import("./pages/Login"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const MisPedidos = lazy(() => import("./pages/MisPedidos"));
+const Perfil = lazy(() => import("./pages/Perfil"));
+const Favoritos = lazy(() => import("./pages/Favoritos"));
+const Ayuda = lazy(() => import("./pages/Ayuda"));
+const Configuracion = lazy(() => import("./pages/Configuracion"));
+const ProductoDetalle = lazy(() => import("./pages/ProductoDetalle"));
+const Pedido = lazy(() => import("./pages/Pedido"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const Hub = lazy(() => import("./pages/Hub"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const Politicas = lazy(() => import("./pages/Politicas"));
+const TratamientoDatos = lazy(() => import("./pages/TratamientoDatos"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const POS = lazy(() => import("./pages/POS"));
+const Mesas = lazy(() => import("./pages/Mesas"));
+const KDS = lazy(() => import("./pages/KDS"));
+const Inventario = lazy(() => import("./pages/Inventario"));
+const Facturacion = lazy(() => import("./pages/Facturacion"));
+const Planes = lazy(() => import("./pages/Planes"));
+const Billing = lazy(() => import("./pages/Billing"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const CatalogosBase = lazy(() => import("./pages/CatalogosBase"));
+const Licencias = lazy(() => import("./pages/Licencias"));
+const GerenteIA = lazy(() => import("./pages/GerenteIA"));
+const Compras = lazy(() => import("./pages/Compras"));
+const Sitios = lazy(() => import("./pages/Sitios"));
 
 const queryClient = new QueryClient();
+
+const RouteFallback = () => (
+  <div className="min-h-[100dvh] flex items-center justify-center text-sm text-muted-foreground">
+    Cargando…
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -74,6 +84,7 @@ const App = () => (
                 <CartNavigationGuard />
                 <OmnichannelCartListener />
                 <SwipeProvider>
+                  <Suspense fallback={<RouteFallback />}>
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/catalogo" element={<Catalogo />} />
@@ -117,6 +128,7 @@ const App = () => (
                     <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  </Suspense>
                   <FloatingWhatsApp />
                 </SwipeProvider>
               </BrowserRouter>
