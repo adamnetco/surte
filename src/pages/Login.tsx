@@ -10,6 +10,7 @@ import { welcomeTemplate } from "@/utils/emailTemplates";
 import surteLogo from "@/assets/surte-logo.png";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
+const AUTH_WAIT_TIMEOUT_MS = 6000;
 
 type BusinessTypeOption = { value: string; label: string; icon: string };
 const BUSINESS_TYPES: BusinessTypeOption[] = [
@@ -70,14 +71,12 @@ const Login = () => {
         extraParams: { prompt: "select_account" },
       });
       if (result.redirected) {
-        // Navegador redirige a Google. Mantener "Conectando..." y dejar timeout para mostrar fallback.
         return;
       }
       if (result.error) throw result.error;
       window.clearTimeout(resetTimer);
-      // Sesión establecida en el mismo tab (tokens recibidos).
-      const { data } = await supabase.auth.getSession();
-      const dest = resolveDestination(data.session?.user?.email, null);
+      const session = await waitForAuthSession();
+      const dest = resolveDestination(session?.user?.email, null);
       toast.success("¡Bienvenido!");
       navigate(dest, { replace: true });
     } catch (err: any) {
@@ -108,11 +107,10 @@ const Login = () => {
         toast.success("¡Cuenta creada! Revisa tu email para confirmar.");
         setIsSignUp(false);
       } else {
-        const { error } = await signIn(email, password);
+        const { error, session } = await signIn(email.trim(), password);
         if (error) throw error;
-        // Esperar sesión real antes de navegar
-        const { data } = await supabase.auth.getSession();
-        const dest = resolveDestination(data.session?.user?.email ?? email, null);
+        const stableSession = session ?? await waitForAuthSession();
+        const dest = resolveDestination(stableSession?.user?.email ?? email, role);
         toast.success("¡Bienvenido!");
         redirectedRef.current = true;
         navigate(dest, { replace: true });
@@ -128,6 +126,20 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const waitForAuthSession = async () => {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < AUTH_WAIT_TIMEOUT_MS) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) return data.session;
+      } catch (err) {
+        console.warn("Session wait retry", err);
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
+    }
+    return null;
   };
 
   // Pantalla de sesión detectada (mientras se redirige)
