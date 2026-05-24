@@ -75,14 +75,25 @@ Objetivo: el cliente real de Dimanti pasa a vivir como tenant del multi-tenant; 
 
 ---
 
-## Fase 4 — SURTÉ YA como tenant semilla del Astro
+## Fase 4 — SURTÉ YA como tenant semilla del Astro ✅ (en progreso)
 
-Objetivo: que `surteya.com` lo sirva Astro multi-tenant (igual que cualquier otro cliente), y este proyecto pase a ser `admin.sistecpos.com`.
+Hecho:
+1. ✅ `tenant_site` `surteya` + dominios `surteya.com` (primario), `www.surteya.com`, `surteya.lovable.app`.
+2. ✅ Landing `surteya-home` creada con meta/hero SEO Bucaramanga.
+3. ✅ Astro routes nuevas leyendo del mismo Supabase:
+   - `/` (home dinámica desde `landing_pages`)
+   - `/catalogo` (lista categorías + productos)
+   - `/categoria/[slug]` (productos filtrados, breadcrumbs, OG)
+   - `/producto/[slug]` (detalle + JSON-LD Schema.org/Product)
+   - `/pedido/[number]` (tracking público con `noindex`)
+   - `/carrito` → 302 redirect al webapp React (cart sigue siendo isla interactiva)
+4. ✅ `lib/store.ts` con helpers REST tipados (categorías, productos, pedidos), filtrados por `organization_id` resuelto vía tenant.
 
-1. Asegurar que Astro renderiza `/`, `/catalogo`, `/producto/:slug`, `/categoria/:slug`, `/carrito`, `/pedido/:n` leyendo de las mismas tablas (mismo Supabase).
-2. Verificar paridad visual y de checkout WhatsApp.
-3. Cambiar DNS de `surteya.com` a Astro. Este proyecto pasa a responder en `admin.sistecpos.com`.
-4. Rollback: si algo falla, devolver DNS al hosting actual de Lovable (5 min).
+Pendiente para activar:
+5. Validar paridad visual del catálogo Astro vs React en `surteya.lovable.app/catalogo`.
+6. Verificar checkout WhatsApp desde el detalle Astro (link al webapp con SKU).
+7. Cambio DNS de `surteya.com` a Astro/Vercel (ventana de mantenimiento corta).
+8. Rollback: revertir DNS al hosting Lovable actual (5 min).
 
 ---
 
