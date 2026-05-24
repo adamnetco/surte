@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { mailService } from "@/utils/mailService";
-import { passwordRecoveryTemplate } from "@/utils/emailTemplates";
 import surteLogo from "@/assets/surte-logo.png";
 
 const ResetPassword = () => {
@@ -16,34 +14,57 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [checkingRecovery, setCheckingRecovery] = useState(true);
+  const [recoveryReady, setRecoveryReady] = useState(false);
+  const [recoveryError, setRecoveryError] = useState("");
 
-  // Check if we arrived via recovery link
-  useState(() => {
-    const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
+  useEffect(() => {
+    let cancelled = false;
+    const prepareRecoverySession = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const type = hashParams.get("type");
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (type !== "recovery" && !accessToken) {
+        setCheckingRecovery(false);
+        return;
+      }
+
       setStep("update");
-    }
-  });
+      try {
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          if (error) throw error;
+          window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
+        }
+
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!data.session) throw new Error("El enlace no trajo una sesión válida.");
+        if (!cancelled) setRecoveryReady(true);
+      } catch (err: any) {
+        if (!cancelled) setRecoveryError(err?.message || "El enlace de recuperación expiró o no es válido.");
+      } finally {
+        if (!cancelled) setCheckingRecovery(false);
+      }
+    };
+
+    void prepareRecoverySession();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     try {
-      const resetUrl = `${window.location.origin}/reset-password#type=recovery`;
-      
-      // Send branded recovery email via Resend
-      const html = passwordRecoveryTemplate(resetUrl);
-      await mailService.send({
-        to: email,
-        subject: "🔒 Recupera tu contraseña — SURTÉ YA",
-        html,
-      });
-
-      // Also trigger Supabase's native reset (for the actual token link)
-      await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
+      if (error) throw error;
 
       setSent(true);
       toast.success("Te enviamos un correo con el enlace de recuperación");
@@ -66,6 +87,8 @@ const ResetPassword = () => {
     }
     setLoading(true);
     try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Auth session missing!");
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast.success("¡Contraseña actualizada exitosamente!");
