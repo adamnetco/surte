@@ -1,0 +1,16 @@
+---
+// El carrito es interactivo (React). Redirigimos al webapp de Lovable
+// donde vive todo el estado (CartContext + checkout WhatsApp).
+import { resolveTenant } from "../lib/tenant";
+
+const host = Astro.request.headers.get("host") ?? "";
+const tenant = await resolveTenant(host);
+
+// Mapa tenant_slug -> webapp host
+const webappBySlug: Record<string, string> = {
+  surteya: "https://surteya.lovable.app",
+  dimanti: "https://dimanti.lovable.app",
+};
+const target = (tenant && webappBySlug[tenant.slug]) ?? "/";
+return Astro.redirect(`${target}/carrito`, 302);
+---

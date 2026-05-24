@@ -9,20 +9,23 @@ const host = Astro.request.headers.get("host") ?? "";
 const tenant = await resolveTenant(host);
 const scope = tenant?.slug ?? "sistecpos";
 
-// Try CMS home for this tenant first (sistecpos, surteya, dimanti, etc.)
+// Try CMS home: primero `${scope}-home` (slug global único), luego `home` (legacy sistecpos).
 let page: any = null;
 let sections: any[] = [];
-try {
-  const res = await fetch(
-    `${SUPABASE_URL}/functions/v1/get-landing?scope=${scope}&slug=home`,
-    { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
-  );
-  if (res.ok) {
-    const json = await res.json();
-    page = json.page;
-    sections = json.sections ?? [];
-  }
-} catch (e) { console.error(e); }
+for (const candidate of [`${scope}-home`, "home"]) {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/functions/v1/get-landing?scope=${scope}&slug=${candidate}`,
+      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
+    );
+    if (res.ok) {
+      const json = await res.json();
+      page = json.page;
+      sections = json.sections ?? [];
+      break;
+    }
+  } catch (e) { console.error(e); }
+}
 
 let posts: any[] = [];
 if (!page && tenant?.wp_base_url) {

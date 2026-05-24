@@ -1,0 +1,85 @@
+---
+import Base from "../../layouts/Base.astro";
+import { resolveTenant } from "../../lib/tenant";
+import { getProductBySlug, formatCOP } from "../../lib/store";
+
+const host = Astro.request.headers.get("host") ?? "";
+const tenant = await resolveTenant(host);
+const orgId = tenant?.organization_id ?? "";
+const { slug } = Astro.params;
+
+let p: any = null;
+if (orgId && slug) {
+  p = await getProductBySlug(orgId, slug);
+}
+if (!p) Astro.response.status = 404;
+
+Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=60");
+
+const title = p?.meta_title ?? `${p?.name ?? "Producto"} · ${tenant?.name ?? ""}`;
+const description = p?.meta_description ?? p?.description ?? "";
+const canonical = `https://${host}/producto/${slug}`;
+
+const jsonLd = p ? {
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  name: p.name,
+  description: p.description ?? undefined,
+  image: p.image_url ?? undefined,
+  sku: p.sku ?? undefined,
+  gtin: p.gtin ?? undefined,
+  brand: p.brand ? { "@type": "Brand", name: p.brand } : undefined,
+  offers: {
+    "@type": "Offer",
+    url: canonical,
+    priceCurrency: "COP",
+    price: String(p.price),
+    availability: p.availability === "out_of_stock"
+      ? "https://schema.org/OutOfStock"
+      : "https://schema.org/InStock",
+  },
+} : null;
+---
+<Base
+  title={title}
+  description={description}
+  ogImage={p?.image_url ?? undefined}
+  canonical={canonical}
+  jsonLd={jsonLd}
+>
+  {p ? (
+    <article class="py-8 grid md:grid-cols-2 gap-8">
+      <div class="border border-gray-100 rounded-lg overflow-hidden">
+        {p.image_url && <img src={p.image_url} alt={p.name} class="w-full aspect-square object-cover" />}
+      </div>
+      <div>
+        <nav class="text-sm text-gray-500 mb-3">
+          <a href="/catalogo" class="hover:underline">Catálogo</a>
+          {p.category && <> · <a href={`/categoria/${p.category.slug}`} class="hover:underline">{p.category.name}</a></>}
+        </nav>
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">{p.name}</h1>
+        {p.brand && <p class="text-sm text-gray-500 mb-4">Marca: {p.brand}</p>}
+        <div class="flex items-baseline gap-3 mb-6">
+          <span class="text-3xl font-bold" style={`color:${tenant?.accent_color}`}>{formatCOP(Number(p.price))}</span>
+          {p.original_price && Number(p.original_price) > Number(p.price) && (
+            <span class="text-lg text-gray-400 line-through">{formatCOP(Number(p.original_price))}</span>
+          )}
+        </div>
+        {p.description && <div class="prose max-w-none mb-6 text-gray-700" set:html={p.description} />}
+        <a
+          href={`https://${tenant?.slug === 'surteya' ? 'surteya.lovable.app' : host}/producto/${p.slug}`}
+          class="inline-block px-6 py-3 rounded-lg font-semibold text-white"
+          style={`background:${tenant?.accent_color}`}
+        >
+          Agregar al carrito
+        </a>
+        <p class="text-xs text-gray-500 mt-2">SKU: {p.sku ?? "—"}</p>
+      </div>
+    </article>
+  ) : (
+    <section class="py-16 text-center">
+      <h1 class="text-2xl font-bold mb-2">Producto no encontrado</h1>
+      <a href="/catalogo" class="text-primary hover:underline">Volver al catálogo</a>
+    </section>
+  )}
+</Base>
