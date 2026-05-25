@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   Search, FileText, FileSignature, Pause, Keyboard, Printer,
   CloudUpload, CloudOff, Loader2, ScanLine, CreditCard, Percent, StickyNote, ArrowLeftRight, Utensils,
+  Bike, ShoppingBag,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
