@@ -27,7 +27,7 @@ export function usePOSHotkeys(handlers: HotkeyHandlers) {
         target?.isContentEditable;
 
       const key = e.key;
-      const alwaysActive = key === "F2" || key === "F3";
+      const alwaysActive = key === "F2" || key === "F3" || key === "F12";
 
       if (!alwaysActive && isTyping) return;
 
