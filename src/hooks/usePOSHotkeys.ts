@@ -50,6 +50,10 @@ export function usePOSHotkeys(handlers: HotkeyHandlers) {
           e.preventDefault();
           handlers.onCycleMode?.();
           break;
+        case "F5":
+          e.preventDefault();
+          handlers.onTables?.();
+          break;
         case "F6":
           e.preventDefault();
           handlers.onInvoice?.();
