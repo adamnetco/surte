@@ -26,6 +26,8 @@ import RoleGuard from "./components/RoleGuard";
 import { detectTenant } from "@/lib/subdomain";
 
 const ClientPortalShell = lazy(() => import("./components/clientes/ClientPortalShell"));
+const SSOErrorScreen = lazy(() => import("./components/SSOErrorScreen"));
+
 
 const Catalogo = lazy(() => import("./pages/Catalogo"));
 const Carrito = lazy(() => import("./pages/Carrito"));
@@ -98,6 +100,8 @@ const App = () => (
           <CartProvider>
             <Toaster />
             <Sonner />
+            <Suspense fallback={null}><SSOErrorScreen /></Suspense>
+
             <DynamicThemeInjector />
             <CustomScriptInjector />
                 <AgentBar />
