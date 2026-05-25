@@ -199,10 +199,24 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col lg:flex-row bg-muted/30">
+    <div className="min-h-[100dvh] flex flex-col bg-muted/30">
+      {/* Barra de modo de venta (sticky en todas las pantallas) */}
+      <POSModeBar
+        modes={posModes.enabled}
+        active={saleMode}
+        onChange={setSaleMode}
+        rightSlot={
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-full border border-secondary/30">
+            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+            <span className="text-[12px] font-bold text-secondary whitespace-nowrap">CAJA ABIERTA</span>
+          </div>
+        }
+      />
+
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
       {/* Catalogo */}
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="p-3 bg-card border-b flex gap-2 items-center sticky top-0 z-10">
+        <div className="p-3 bg-card border-b flex gap-2 items-center sticky top-[72px] z-10">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
