@@ -5275,6 +5275,48 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_logs: {
+        Row: {
+          attempts: number
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          last_run_at: string
+          organization_id: string | null
+          payload: Json | null
+          service_name: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          last_run_at?: string
+          organization_id?: string | null
+          payload?: Json | null
+          service_name: string
+          started_at?: string
+          status: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          last_run_at?: string
+          organization_id?: string | null
+          payload?: Json | null
+          service_name?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       sync_outbox: {
         Row: {
           attempts: number
@@ -6111,6 +6153,19 @@ export type Database = {
       }
       is_master_superadmin: { Args: { _user_id?: string }; Returns: boolean }
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
+      log_sync_event: {
+        Args: {
+          _attempts?: number
+          _duration_ms?: number
+          _error_message?: string
+          _log_id: string
+          _organization_id: string
+          _payload?: Json
+          _service_name: string
+          _status: string
+        }
+        Returns: string
+      }
       log_usage: {
         Args: {
           _meta?: Json
