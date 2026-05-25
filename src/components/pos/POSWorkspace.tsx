@@ -65,7 +65,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [helpOpen, setHelpOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cashierName, setCashierName] = useState("Cajero");
+  // Ticket-level extras (presentación; se persisten con setMeta junto al ticket)
+  const [customerName, setCustomerName] = useState("");
+  const [tableLabel, setTableLabel] = useState(""); // para modo mesa/domicilio
+  const [ticketNote, setTicketNote] = useState("");
+  const [globalDiscPct, setGlobalDiscPct] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
