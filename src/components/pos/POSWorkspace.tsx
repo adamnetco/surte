@@ -240,10 +240,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   }, [products, search, activeCategory]);
 
   const totals = useMemo(() => {
-    const subtotal = ticket.reduce((s, l) => s + l.total, 0);
+    const lineSubtotal = ticket.reduce((s, l) => {
+      const lineDisc = (l.discountPct ?? 0) / 100;
+      return s + l.total * (1 - lineDisc);
+    }, 0);
+    const globalDisc = lineSubtotal * (globalDiscPct / 100);
+    const subtotal = Math.max(0, lineSubtotal - globalDisc);
     const tax = Math.round(subtotal * TAX_RATE);
-    return { subtotal, tax, total: subtotal + tax };
-  }, [ticket]);
+    return { lineSubtotal, globalDisc, subtotal, tax, total: subtotal + tax };
+  }, [ticket, globalDiscPct]);
 
   // ===== Cobro =====
   const handlePaid = async (payments: { method: string; amount: number; reference?: string }[]) => {
