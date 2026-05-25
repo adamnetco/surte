@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import {
   Search, FileText, FileSignature, Pause, Keyboard, Printer,
-  CloudUpload, CloudOff, Loader2, ScanLine, CreditCard, User, Percent, StickyNote, ArrowLeftRight,
+  CloudUpload, CloudOff, Loader2, ScanLine, CreditCard, Percent, StickyNote, ArrowLeftRight, Utensils,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
@@ -26,11 +26,14 @@ import POSCategoryTabs from "./POSCategoryTabs";
 import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
+import POSCustomerPicker from "./POSCustomerPicker";
+import TableGridSheet from "./TableGridSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/hooks/usePOSModes";
 import { POS_MODES } from "@/lib/posModes";
 import { supabase } from "@/integrations/supabase/client";
 import type { PosMode } from "@/lib/posModes";
+import type { POSCustomer } from "@/lib/posCustomer";
 
 
 interface Product {
@@ -66,8 +69,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cashierName, setCashierName] = useState("Cajero");
   // Ticket-level extras (presentación; se persisten con setMeta junto al ticket)
-  const [customerName, setCustomerName] = useState("");
-  const [tableLabel, setTableLabel] = useState(""); // para modo mesa/domicilio
+  const [customer, setCustomer] = useState<POSCustomer | null>(null);
+  const [tableLabel, setTableLabel] = useState(""); // para modo mesa
+  const [tableSheetOpen, setTableSheetOpen] = useState(false);
   const [ticketNote, setTicketNote] = useState("");
   const [globalDiscPct, setGlobalDiscPct] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -204,6 +208,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       setSaleMode(next);
       toast.info(`Modo: ${next}`);
     },
+    onTables: () => { if (saleMode === "mesa") setTableSheetOpen(true); },
     onInvoice: () => { if (lastOrderId) setActionMode("emit"); },
     onQuote: () => { if (ticket.length > 0) setActionMode("quote"); },
     onPark: () => { if (ticket.length > 0) setActionMode("park"); },
@@ -354,13 +359,25 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         }
       />
 
-      {/* Tabs de categorías */}
-      <POSCategoryTabs
-        categories={categories}
-        activeId={activeCategory}
-        onChange={setActiveCategory}
-        counts={productsByCategory}
-      />
+      {/* Tabs de categorías (60%) + Cliente (40%) */}
+      <div className="flex items-stretch border-b bg-card">
+        <div className="flex-1 min-w-0 border-r">
+          <POSCategoryTabs
+            categories={categories}
+            activeId={activeCategory}
+            onChange={setActiveCategory}
+            counts={productsByCategory}
+          />
+        </div>
+        <div className="w-[260px] sm:w-[320px] shrink-0 px-3 py-2 flex items-center">
+          <POSCustomerPicker
+            customer={customer}
+            onChange={setCustomer}
+            requireEinvoice={false}
+            compact
+          />
+        </div>
+      </div>
 
       {/* Cuerpo: catálogo + ticket */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
@@ -456,15 +473,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             </div>
 
             {/* Contexto rápido por modo */}
-            {(saleMode === "mesa" || saleMode === "domicilio") && (
-              <Input
-                value={saleMode === "mesa" ? tableLabel : customerName}
-                onChange={(e) =>
-                  saleMode === "mesa" ? setTableLabel(e.target.value) : setCustomerName(e.target.value)
-                }
-                placeholder={saleMode === "mesa" ? "Mesa Nº  (ej. 12)" : "Cliente / dirección…"}
-                className="h-8 text-xs"
-              />
+            {saleMode === "mesa" && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setTableSheetOpen(true)}
+                className="w-full h-9 justify-start gap-2 text-xs font-bold"
+              >
+                <Utensils className="w-4 h-4 text-primary" />
+                {tableLabel ? `Mesa ${tableLabel}` : "Seleccionar mesa"}
+                <kbd className="ml-auto px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F5</kbd>
+              </Button>
             )}
           </div>
 
@@ -536,24 +555,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             </Button>
 
             {/* Acciones secundarias (gastro-friendly) */}
-            <div className="grid grid-cols-4 gap-1">
-              {/* Cliente */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 text-[10px] px-1" title="Cliente">
-                    <User className="w-3.5 h-3.5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-3 space-y-2" side="top">
-                  <p className="text-xs font-semibold">Cliente</p>
-                  <Input
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Nombre o NIT"
-                    className="h-8 text-sm"
-                  />
-                </PopoverContent>
-              </Popover>
+            <div className="grid grid-cols-3 gap-1">
+              {/* Cliente vive ahora en la barra superior (POSCustomerPicker) */}
 
               {/* Descuento global */}
               <Popover>
@@ -714,6 +717,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       />
 
       <POSShortcutsOverlay open={helpOpen} onOpenChange={setHelpOpen} />
+
+      <TableGridSheet
+        open={tableSheetOpen}
+        onOpenChange={setTableSheetOpen}
+        current={tableLabel || null}
+        onPick={(t) => setTableLabel(t.label)}
+      />
     </div>
   );
 }

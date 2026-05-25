@@ -5,6 +5,7 @@ interface HotkeyHandlers {
   onPay?: () => void;       // F2
   onSearch?: () => void;    // F3
   onCycleMode?: () => void; // F4
+  onTables?: () => void;    // F5 (selector visual de mesas)
   onInvoice?: () => void;   // F6
   onQuote?: () => void;     // F7
   onPark?: () => void;      // F8
@@ -48,6 +49,10 @@ export function usePOSHotkeys(handlers: HotkeyHandlers) {
         case "F4":
           e.preventDefault();
           handlers.onCycleMode?.();
+          break;
+        case "F5":
+          e.preventDefault();
+          handlers.onTables?.();
           break;
         case "F6":
           e.preventDefault();
