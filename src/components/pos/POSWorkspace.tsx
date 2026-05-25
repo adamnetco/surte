@@ -359,13 +359,25 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         }
       />
 
-      {/* Tabs de categorías */}
-      <POSCategoryTabs
-        categories={categories}
-        activeId={activeCategory}
-        onChange={setActiveCategory}
-        counts={productsByCategory}
-      />
+      {/* Tabs de categorías (60%) + Cliente (40%) */}
+      <div className="flex items-stretch border-b bg-card">
+        <div className="flex-1 min-w-0 border-r">
+          <POSCategoryTabs
+            categories={categories}
+            activeId={activeCategory}
+            onChange={setActiveCategory}
+            counts={productsByCategory}
+          />
+        </div>
+        <div className="w-[260px] sm:w-[320px] shrink-0 px-3 py-2 flex items-center">
+          <POSCustomerPicker
+            customer={customer}
+            onChange={setCustomer}
+            requireEinvoice={false}
+            compact
+          />
+        </div>
+      </div>
 
       {/* Cuerpo: catálogo + ticket */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
