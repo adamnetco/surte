@@ -126,7 +126,7 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
                 return (
                   <div key={d.id} className="grid grid-cols-[1fr_80px_110px] items-center gap-2">
                     <span className="text-muted-foreground">
-                      {d.kind === "coin" ? "🪙" : "💵"} {d.label || COP(Number(d.value))}
+                      {d.kind === "coin" ? "🪙" : "💵"} {COP(Number(d.value))}
                     </span>
                     <Input
                       type="number"
