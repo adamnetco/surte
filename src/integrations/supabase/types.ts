@@ -6153,19 +6153,30 @@ export type Database = {
       }
       is_master_superadmin: { Args: { _user_id?: string }; Returns: boolean }
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
-      log_sync_event: {
-        Args: {
-          _attempts?: number
-          _duration_ms?: number
-          _error_message?: string
-          _log_id: string
-          _organization_id: string
-          _payload?: Json
-          _service_name: string
-          _status: string
-        }
-        Returns: string
-      }
+      log_sync_event:
+        | {
+            Args: {
+              _attempts?: number
+              _duration_ms?: number
+              _error_message?: string
+              _log_id: string
+              _organization_id: string
+              _payload?: Json
+              _service_name: string
+              _status: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_error?: string
+              p_org_id: string
+              p_payload?: Json
+              p_service: string
+              p_status: string
+            }
+            Returns: string
+          }
       log_usage: {
         Args: {
           _meta?: Json
