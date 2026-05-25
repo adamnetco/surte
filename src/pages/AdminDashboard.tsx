@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, Database, CalendarDays, ToggleRight, Building2, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Key, Sparkles, BookOpen, Rocket, ChevronRight } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, Database, CalendarDays, ToggleRight, Building2, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Key, Sparkles, BookOpen, Rocket, ChevronRight, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useOrganization } from "@/context/OrganizationContext";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -36,6 +36,7 @@ const DataManagementTab = lazy(() => import("@/components/admin/DataManagementTa
 const ModifiersTab = lazy(() => import("@/components/admin/ModifiersTab"));
 const SeoContentTab = lazy(() => import("@/components/admin/SeoContentTab"));
 const CrmLeadsTab = lazy(() => import("@/components/admin/CrmLeadsTab"));
+const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"));
 
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null },
@@ -64,6 +65,7 @@ const allTabs = [
   { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "modules", label: "Módulos", icon: ToggleRight, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "data", label: "Datos", icon: Database, roles: ["superadmin"] as AppRole[], module: null },
+  { id: "sync", label: "Sincronización", icon: RefreshCw, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[], module: null },
 ];
 
@@ -207,6 +209,7 @@ const AdminDashboard = () => {
         {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
         {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
         {activeTab === "data" && <DataManagementTab />}
+        {activeTab === "sync" && <SyncStatusTable />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
     </TabErrorBoundary>

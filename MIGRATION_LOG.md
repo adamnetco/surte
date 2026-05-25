@@ -171,3 +171,69 @@ con DB propia, RLS por dueño y SSO cross-subdominio funcional.
 | Global logout (auth-global)   | activo | 2026-05-25          | Realtime broadcast `user:<id>`               |
 | Cierre de caja (denoms COP)   | activo | 2026-05-25          | RPC close_cash_session_with_counts           |
 | cost_price auto-fill          | activo | 2026-05-25          | Trigger BEFORE INSERT/UPDATE en products     |
+
+---
+
+## Fase 6 — Sincronización profesional (resiliencia + auditoría) (2026-05-25)
+
+### a) Esquema `sync_logs`
+
+| Columna           | Tipo         | Notas                                                |
+|-------------------|--------------|------------------------------------------------------|
+| `id`              | uuid PK      | `gen_random_uuid()`                                  |
+| `organization_id` | uuid         | tenant (nullable para jobs globales)                 |
+| `service_name`    | text         | `sync-products-to-wp`, `process-email-queue`, etc.   |
+| `status`          | text         | `pending` · `success` · `error` · `partial`          |
+| `error_message`   | text         | mensaje resumido del último fallo                    |
+| `payload`         | jsonb        | parámetros de entrada + métricas de salida           |
+| `attempts`        | int          | nº de intentos consumidos (con backoff)              |
+| `duration_ms`     | int          | ms totales de la corrida                             |
+| `started_at`      | timestamptz  | inicio                                               |
+| `last_run_at`     | timestamptz  | último upsert (driver de la UI)                      |
+| `created_at`      | timestamptz  | alta                                                 |
+
+Índices: `(organization_id, service_name, last_run_at DESC)` y `(status, last_run_at DESC)`.
+
+RLS: lectura para miembros de la org (o superadmin); escritura **solo** vía RPC `log_sync_event` (SECURITY DEFINER) o service role.
+
+RPC `log_sync_event(_log_id, _organization_id, _service_name, _status, _error_message, _payload, _attempts, _duration_ms) → uuid` — upsert idempotente; si `_log_id` se proporciona y no existe, se inserta con ese id.
+
+### b) Exponential Backoff
+
+Helper compartido `supabase/functions/_shared/syncLogger.ts`:
+
+- `withRetry(fn, { delaysMs, shouldRetry, onRetry })` — política por defecto **1 s → 5 s → 30 s** (3 reintentos, 4 ejecuciones máx).
+- `isTransientHttpError(err)` — reintenta solo en errores de red, HTTP 5xx y 429; **NO** reintenta 4xx (validación, auth).
+- Cada attempt incrementa `attempts` en `sync_logs`. Si todos los intentos fallan, el item se encola en `sync_outbox` (`status='failed'`, `next_attempt_at = now()+60s`) para que `sync-outbox-flush` lo recoja en su barrido `*/2 min`.
+
+Aplicado en `sync-products-to-wp`:
+
+1. `startSyncLog` al recibir el request (status `pending`).
+2. GET por slug del CPT (idempotencia) con `withRetry`.
+3. POST de upsert (`/wp/v2/{cpt}` o `/wp/v2/{cpt}/{id}`) con `withRetry`.
+4. `finishSyncLog` con `success` / `partial` / `error` + duración + métricas.
+
+### c) Credenciales — confirmación
+
+- ✅ Ninguna credencial WP/yCloud/Innapsis se importa, lee o expone desde `src/`.
+- ✅ Las edge functions leen únicamente desde `Deno.env.get(...)` (`WP_REVALIDATE_SECRET`, `RESEND_API_KEY`, `GOOGLE_PLACES_API_KEY`, etc.) y desde `tenant_wp_config` (filtrada por RLS de membresía).
+- ✅ `wp_app_password` se almacena en `tenant_wp_config` y se compone como Basic Auth **dentro** de la edge function — nunca llega al cliente.
+- ✅ El componente `SyncStatusTable` solo consulta `sync_logs` (RLS por org) e invoca funciones vía `supabase.functions.invoke()` con el JWT del usuario.
+
+### d) UI — `SyncStatusTable`
+
+- Ubicación: `src/components/admin/SyncStatusTable.tsx`, montado en `AdminDashboard` como pestaña **"Sincronización"** (`superadmin` + `admin`).
+- Suscripción Realtime a `public.sync_logs` (refresca al instante).
+- Semáforo: verde `success` · ámbar `partial` · rojo `error` · gris `pending`.
+- Botón **"Forzar"** por servicio que invoca la edge function correspondiente; para `sync-products-to-wp` resuelve `site_id` desde `tenant_sites`.
+
+### Estado de servicios — actualización
+
+| Servicio                      | Estado | Auditoría        | Notas                              |
+|-------------------------------|--------|------------------|------------------------------------|
+| Sync WP — productos           | activo | sync_logs        | Idempotente + backoff 1/5/30 s     |
+| Sync outbox flush             | activo | sync_logs        | Cron `*/2 min`                     |
+| WP Revalidate webhook         | activo | sync_logs (opt)  | HMAC SHA-256                       |
+| Email transaccional           | activo | pgmq + sync_logs | Retries vía cola                   |
+| WhatsApp (yCloud)             | activo | sync_logs (opt)  | Trigger DB → outbox                |
+
