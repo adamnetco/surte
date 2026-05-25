@@ -555,24 +555,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             </Button>
 
             {/* Acciones secundarias (gastro-friendly) */}
-            <div className="grid grid-cols-4 gap-1">
-              {/* Cliente */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 text-[10px] px-1" title="Cliente">
-                    <User className="w-3.5 h-3.5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-3 space-y-2" side="top">
-                  <p className="text-xs font-semibold">Cliente</p>
-                  <Input
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Nombre o NIT"
-                    className="h-8 text-sm"
-                  />
-                </PopoverContent>
-              </Popover>
+            <div className="grid grid-cols-3 gap-1">
+              {/* Cliente vive ahora en la barra superior (POSCustomerPicker) */}
 
               {/* Descuento global */}
               <Popover>
