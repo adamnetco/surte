@@ -148,6 +148,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       amount_paid: amountPaid,
       change_due: change,
       status: "paid",
+      sale_mode: saleMode,
       paid_at: new Date().toISOString(),
     };
     const items = ticket.map((l) => ({
