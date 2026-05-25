@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import {
-  Search, Trash2, Plus, Minus, CreditCard, FileText, FileSignature, Pause, Keyboard,
-  CloudUpload, CloudOff, Loader2, ScanLine,
+  Search, FileText, FileSignature, Pause, Keyboard, Printer,
+  CloudUpload, CloudOff, Loader2, ScanLine, CreditCard, User, Percent, StickyNote, ArrowLeftRight,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
@@ -23,7 +26,9 @@ import POSCategoryTabs from "./POSCategoryTabs";
 import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
+import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/hooks/usePOSModes";
+import { POS_MODES } from "@/lib/posModes";
 import { supabase } from "@/integrations/supabase/client";
 import type { PosMode } from "@/lib/posModes";
 
@@ -34,10 +39,7 @@ interface Product {
   category_id?: string | null; sku?: string | null; gtin?: string | null;
 }
 interface Category { id: string; name: string; }
-interface TicketLine {
-  productId: string; name: string; unitPrice: number; quantity: number; total: number;
-  addedAt: number; // para animar nuevos ítems
-}
+type TicketLine = TicketLineData;
 interface Props {
   session: { id: string; location_id: string; cash_register_id: string; opening_amount: number; opened_at: string };
   organizationId: string;
@@ -47,6 +49,7 @@ interface Props {
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const TAX_RATE = 0; // TODO: leer de organizations.settings cuando se configure por org.
+
 
 export default function POSWorkspace({ session, organizationId, userId, onClosed }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
