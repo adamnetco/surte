@@ -74,6 +74,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [customer, setCustomer] = useState<POSCustomer | null>(null);
   const [tableLabel, setTableLabel] = useState(""); // para modo mesa
   const [tableSheetOpen, setTableSheetOpen] = useState(false);
+  const [driver, setDriver] = useState<DriverInfo | null>(null); // para modo domicilio
+  const [driverSheetOpen, setDriverSheetOpen] = useState(false);
+  const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
   const [ticketNote, setTicketNote] = useState("");
   const [globalDiscPct, setGlobalDiscPct] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
