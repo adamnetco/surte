@@ -14,6 +14,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null; session: Session | null }>;
   signUp: (email: string, password: string, fullName: string, businessType?: string, phone?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  globalSignOut: () => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -168,11 +169,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
   };
 
+  /**
+   * Cierra TODAS las sesiones del usuario en TODOS los subdominios y
+   * dispositivos. Llama a la edge function `auth-global-logout` (que invalida
+   * refresh tokens vía service-role) y emite broadcast Realtime. Las otras
+   * pestañas/subdominios reaccionarán al evento `force_logout`.
+   */
+  const globalSignOut = async (): Promise<{ error: Error | null }> => {
+    try {
+      const { error } = await supabase.functions.invoke("auth-global-logout", { body: {} });
+      // En todos los casos limpiamos la sesión local
+      await supabase.auth.signOut();
+      return { error: (error as Error) ?? null };
+    } catch (err) {
+      await supabase.auth.signOut();
+      return { error: err as Error };
+    }
+  };
+
+  // Listener Realtime: si otra pestaña / subdominio cierra sesión global,
+  // este cliente también se desloguea sin recargar.
+  useEffect(() => {
+    if (!user?.id) return;
+    const ch = supabase
+      .channel(`user:${user.id}`)
+      .on("broadcast", { event: "force_logout" }, () => {
+        void supabase.auth.signOut();
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, [user?.id]);
+
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, isAgent, role, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, isAgent, role, loading, signIn, signUp, signOut, globalSignOut }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+const FALLBACK_AUTH: AuthContextType = {
+  user: null,
+  session: null,
+  isAdmin: false,
+  isAgent: false,
+  role: "user",
+  loading: false,
+  signIn: async () => ({ error: new Error("AuthProvider not mounted"), session: null }),
+  signUp: async () => ({ error: new Error("AuthProvider not mounted") }),
+  signOut: async () => {},
+  globalSignOut: async () => ({ error: new Error("AuthProvider not mounted") }),
 };
 
 const FALLBACK_AUTH: AuthContextType = {
