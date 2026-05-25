@@ -14,6 +14,7 @@ import { usePOSHotkeys } from "@/hooks/usePOSHotkeys";
 import { useSyncService } from "@/hooks/useSyncService";
 import { enqueue } from "@/lib/offline/outbox";
 import POSModeBar from "./POSModeBar";
+import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import { usePOSModes } from "@/hooks/usePOSModes";
 import type { PosMode } from "@/lib/posModes";
 
