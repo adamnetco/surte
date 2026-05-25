@@ -33,9 +33,11 @@ export default function POSModeBar({ modes, active, onChange, rightSlot }: Props
               onClick={() => onChange(key)}
               aria-pressed={isActive}
               className={cn(
-                "relative flex-1 min-w-[72px] flex flex-col items-center justify-center gap-1 rounded-md transition-colors group",
+                "relative flex-1 min-w-[72px] flex flex-col items-center justify-center gap-1 rounded-md transition-all group border-b-[3px]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                !isActive && "hover:bg-muted/60"
+                isActive
+                  ? "bg-accent/10 border-accent shadow-[inset_0_1px_0_hsl(var(--accent)/0.25)]"
+                  : "border-transparent hover:bg-muted/60"
               )}
               title={meta.description}
             >
@@ -48,18 +50,12 @@ export default function POSModeBar({ modes, active, onChange, rightSlot }: Props
               />
               <span
                 className={cn(
-                  "text-[11px] sm:text-[13px] font-bold uppercase tracking-wide transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                  "text-[11px] sm:text-[13px] uppercase tracking-wide transition-colors",
+                  isActive ? "text-accent font-extrabold" : "text-muted-foreground font-semibold group-hover:text-primary"
                 )}
               >
                 {meta.short}
               </span>
-              <span
-                className={cn(
-                  "absolute bottom-0 left-1 right-1 h-1 rounded-t-full transition-colors",
-                  isActive ? "bg-accent" : "bg-transparent"
-                )}
-              />
             </button>
           );
         })}
