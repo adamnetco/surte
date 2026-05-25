@@ -717,6 +717,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       />
 
       <POSShortcutsOverlay open={helpOpen} onOpenChange={setHelpOpen} />
+
+      <TableGridSheet
+        open={tableSheetOpen}
+        onOpenChange={setTableSheetOpen}
+        current={tableLabel || null}
+        onPick={(t) => setTableLabel(t.label)}
+      />
     </div>
   );
 }
