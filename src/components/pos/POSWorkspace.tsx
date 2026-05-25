@@ -759,6 +759,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         current={tableLabel || null}
         onPick={(t) => setTableLabel(t.label)}
       />
+
+      <DriverPickerSheet
+        open={driverSheetOpen}
+        onOpenChange={setDriverSheetOpen}
+        value={driver}
+        onSelect={setDriver}
+        organizationId={organizationId}
+      />
+
     </div>
   );
 }
