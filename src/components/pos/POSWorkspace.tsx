@@ -42,6 +42,14 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [loading, setLoading] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
   const sync = useSyncService();
+  const { config: posModes } = usePOSModes(organizationId);
+  const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
+
+  // Mantener saleMode válido si cambian los modos habilitados.
+  useEffect(() => {
+    if (!posModes.enabled.includes(saleMode)) setSaleMode(posModes.default);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posModes.enabled.join(","), posModes.default]);
 
   const ticketCacheKey = `pos_ticket:${session.id}`;
 
