@@ -9,6 +9,8 @@ export interface CachedProduct {
   image_url: string | null;
   stock: number;
   category_id?: string | null;
+  sku?: string | null;
+  gtin?: string | null;
   updated_at?: string;
 }
 
