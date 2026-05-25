@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import {
-  Search, Trash2, Plus, Minus, CreditCard, FileText, FileSignature, Pause, Keyboard,
-  CloudUpload, CloudOff, Loader2, ScanLine,
+  Search, FileText, FileSignature, Pause, Keyboard, Printer,
+  CloudUpload, CloudOff, Loader2, ScanLine, CreditCard, User, Percent, StickyNote, ArrowLeftRight,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
@@ -23,7 +26,9 @@ import POSCategoryTabs from "./POSCategoryTabs";
 import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
+import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/hooks/usePOSModes";
+import { POS_MODES } from "@/lib/posModes";
 import { supabase } from "@/integrations/supabase/client";
 import type { PosMode } from "@/lib/posModes";
 
@@ -34,10 +39,7 @@ interface Product {
   category_id?: string | null; sku?: string | null; gtin?: string | null;
 }
 interface Category { id: string; name: string; }
-interface TicketLine {
-  productId: string; name: string; unitPrice: number; quantity: number; total: number;
-  addedAt: number; // para animar nuevos ítems
-}
+type TicketLine = TicketLineData;
 interface Props {
   session: { id: string; location_id: string; cash_register_id: string; opening_amount: number; opened_at: string };
   organizationId: string;
@@ -47,6 +49,7 @@ interface Props {
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const TAX_RATE = 0; // TODO: leer de organizations.settings cuando se configure por org.
+
 
 export default function POSWorkspace({ session, organizationId, userId, onClosed }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -62,7 +65,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [helpOpen, setHelpOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cashierName, setCashierName] = useState("Cajero");
+  // Ticket-level extras (presentación; se persisten con setMeta junto al ticket)
+  const [customerName, setCustomerName] = useState("");
+  const [tableLabel, setTableLabel] = useState(""); // para modo mesa/domicilio
+  const [ticketNote, setTicketNote] = useState("");
+  const [globalDiscPct, setGlobalDiscPct] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
@@ -231,10 +240,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   }, [products, search, activeCategory]);
 
   const totals = useMemo(() => {
-    const subtotal = ticket.reduce((s, l) => s + l.total, 0);
+    const lineSubtotal = ticket.reduce((s, l) => {
+      const lineDisc = (l.discountPct ?? 0) / 100;
+      return s + l.total * (1 - lineDisc);
+    }, 0);
+    const globalDisc = lineSubtotal * (globalDiscPct / 100);
+    const subtotal = Math.max(0, lineSubtotal - globalDisc);
     const tax = Math.round(subtotal * TAX_RATE);
-    return { subtotal, tax, total: subtotal + tax };
-  }, [ticket]);
+    return { lineSubtotal, globalDisc, subtotal, tax, total: subtotal + tax };
+  }, [ticket, globalDiscPct]);
 
   // ===== Cobro =====
   const handlePaid = async (payments: { method: string; amount: number; reference?: string }[]) => {
@@ -423,13 +437,35 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         </div>
 
         {/* Ticket (sticky card en desktop) */}
-        <aside className="lg:w-[360px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col max-h-[55dvh] lg:max-h-none">
-          <div className="p-3 border-b flex items-center gap-2">
-            <FileText className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-sm">Ticket actual</h2>
-            <span className="ml-auto text-[11px] text-muted-foreground">
-              {ticket.length} {ticket.length === 1 ? "ítem" : "ítems"}
-            </span>
+        <aside className="lg:w-[380px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col max-h-[55dvh] lg:max-h-none">
+          {/* Header con chip de modo + contexto (mesa/cliente) */}
+          <div className="p-3 border-b space-y-2">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              <h2 className="font-semibold text-sm">Ticket actual</h2>
+              <span
+                className="text-[10px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30"
+                title={POS_MODES[saleMode].description}
+              >
+                {POS_MODES[saleMode].short}
+                {saleMode === "mesa" && tableLabel && ` · ${tableLabel}`}
+              </span>
+              <span className="ml-auto text-[11px] text-muted-foreground">
+                {ticket.length} {ticket.length === 1 ? "ítem" : "ítems"}
+              </span>
+            </div>
+
+            {/* Contexto rápido por modo */}
+            {(saleMode === "mesa" || saleMode === "domicilio") && (
+              <Input
+                value={saleMode === "mesa" ? tableLabel : customerName}
+                onChange={(e) =>
+                  saleMode === "mesa" ? setTableLabel(e.target.value) : setCustomerName(e.target.value)
+                }
+                placeholder={saleMode === "mesa" ? "Mesa Nº  (ej. 12)" : "Cliente / dirección…"}
+                className="h-8 text-xs"
+              />
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
@@ -443,74 +479,197 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </div>
             ) : (
               ticket.map((l) => (
-                <div
+                <TicketLineRow
                   key={l.productId}
-                  className="bg-muted/40 rounded-lg p-2 flex items-center gap-2 animate-fade-in"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium leading-tight truncate">{l.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{COP(l.unitPrice)} c/u</p>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => updateQty(l.productId, -1)}>
-                      <Minus className="w-3 h-3" />
-                    </Button>
-                    <span className="w-6 text-center text-xs font-bold tabular-nums">{l.quantity}</span>
-                    <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => updateQty(l.productId, 1)}>
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                  </div>
-                  <div className="w-20 text-right">
-                    <p className="text-sm font-bold">{COP(l.total)}</p>
-                  </div>
-                  <button onClick={() => removeLine(l.productId)} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                  line={l}
+                  onQty={(d) => updateQty(l.productId, d)}
+                  onRemove={() => removeLine(l.productId)}
+                  onNotes={(notes) =>
+                    setTicket((prev) => prev.map((x) => (x.productId === l.productId ? { ...x, notes } : x)))
+                  }
+                  onDiscount={(pct) =>
+                    setTicket((prev) => prev.map((x) => (x.productId === l.productId ? { ...x, discountPct: pct } : x)))
+                  }
+                />
               ))
             )}
           </div>
 
-          <div className="border-t p-3 space-y-2.5 bg-card">
-            <div className="space-y-1 text-sm">
+          <div className="border-t p-3 space-y-2 bg-card">
+            {/* Totales */}
+            <div className="space-y-0.5 text-sm">
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
-                <span className="tabular-nums">{COP(totals.subtotal)}</span>
+                <span className="tabular-nums">{COP(totals.lineSubtotal)}</span>
               </div>
+              {totals.globalDisc > 0 && (
+                <div className="flex justify-between text-accent">
+                  <span>Descuento {globalDiscPct}%</span>
+                  <span className="tabular-nums">-{COP(totals.globalDisc)}</span>
+                </div>
+              )}
               {totals.tax > 0 && (
                 <div className="flex justify-between text-muted-foreground">
                   <span>IVA {(TAX_RATE * 100).toFixed(0)}%</span>
                   <span className="tabular-nums">{COP(totals.tax)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-lg font-extrabold pt-1 border-t">
+              <div className="flex justify-between text-xl font-extrabold pt-1 border-t">
                 <span>TOTAL</span>
                 <span className="text-primary tabular-nums">{COP(totals.total)}</span>
               </div>
             </div>
 
+            {/* Botón principal (cambia label según modo) */}
             <Button
               className="w-full h-14 text-base font-bold shadow-sm"
               disabled={ticket.length === 0}
               onClick={() => setPayOpen(true)}
-              style={{ background: "hsl(var(--accent))", color: "hsl(var(--accent-foreground))" }}
+              style={{
+                background: saleMode === "consumo_interno" ? "hsl(var(--primary))" : "hsl(var(--accent))",
+                color: saleMode === "consumo_interno" ? "hsl(var(--primary-foreground))" : "hsl(var(--accent-foreground))",
+              }}
             >
               <CreditCard className="w-5 h-5 mr-2" />
-              COBRAR
+              {saleMode === "consumo_interno" ? "REGISTRAR CORTESÍA" : "COBRAR"}
               <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">F2</kbd>
             </Button>
 
-            <div className="grid grid-cols-3 gap-1.5">
-              <Button variant="outline" size="sm" className="h-8 text-[11px]" disabled={!lastOrderId} onClick={() => setActionMode("emit")} title="Facturar último ticket (F6)">
-                <FileSignature className="w-3.5 h-3.5 mr-1" /> Facturar
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 text-[11px]" disabled={ticket.length === 0} onClick={() => setActionMode("quote")} title="Cotizar (F7)">
-                <FileText className="w-3.5 h-3.5 mr-1" /> Cotizar
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 text-[11px]" disabled={ticket.length === 0} onClick={() => setActionMode("park")} title="Suspender (F8)">
-                <Pause className="w-3.5 h-3.5 mr-1" /> Pausar
+            {/* Acciones secundarias (gastro-friendly) */}
+            <div className="grid grid-cols-4 gap-1">
+              {/* Cliente */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-[10px] px-1" title="Cliente">
+                    <User className="w-3.5 h-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3 space-y-2" side="top">
+                  <p className="text-xs font-semibold">Cliente</p>
+                  <Input
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Nombre o NIT"
+                    className="h-8 text-sm"
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Descuento global */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`h-8 text-[10px] px-1 ${globalDiscPct > 0 ? "border-accent text-accent" : ""}`}
+                    title="Descuento al ticket"
+                    disabled={ticket.length === 0}
+                  >
+                    <Percent className="w-3.5 h-3.5" />
+                    {globalDiscPct > 0 && <span className="ml-0.5">{globalDiscPct}</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3 space-y-2" side="top">
+                  <p className="text-xs font-semibold">Descuento ticket (%)</p>
+                  <div className="grid grid-cols-4 gap-1">
+                    {[0, 5, 10, 15, 20, 25, 30, 50].map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setGlobalDiscPct(v)}
+                        className={`text-[11px] py-1.5 rounded border ${
+                          globalDiscPct === v ? "bg-accent text-accent-foreground border-accent" : "bg-muted hover:bg-accent/20"
+                        }`}
+                      >
+                        {v}%
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Nota ticket */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`h-8 text-[10px] px-1 ${ticketNote ? "border-accent text-accent" : ""}`}
+                    title="Nota del ticket"
+                  >
+                    <StickyNote className="w-3.5 h-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-3 space-y-2" side="top">
+                  <p className="text-xs font-semibold">Nota del ticket</p>
+                  <Textarea
+                    value={ticketNote}
+                    onChange={(e) => setTicketNote(e.target.value.slice(0, 200))}
+                    placeholder="Ej. Pedido para 19h00, entregar en portería…"
+                    rows={3}
+                    className="text-sm"
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Pausar */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-[10px] px-1"
+                disabled={ticket.length === 0}
+                onClick={() => setActionMode("park")}
+                title="Pausar / Suspender (F8)"
+              >
+                <Pause className="w-3.5 h-3.5" />
               </Button>
             </div>
+
+            {/* Acciones secundarias fila 2: gastro VectorPOS */}
+            <div className="grid grid-cols-3 gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[10px]"
+                disabled={ticket.length === 0}
+                onClick={() => setActionMode("quote")}
+                title="Cotizar (F7)"
+              >
+                <FileText className="w-3 h-3 mr-1" /> Cotizar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[10px]"
+                disabled={!lastOrderId}
+                onClick={() => setActionMode("emit")}
+                title="Facturar último (F6)"
+              >
+                <FileSignature className="w-3 h-3 mr-1" /> Facturar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[10px]"
+                disabled={!lastOrderId}
+                onClick={() => window.print()}
+                title="Reimprimir última comanda"
+              >
+                <Printer className="w-3 h-3 mr-1" /> Reimprimir
+              </Button>
+            </div>
+
+            {/* Específico modo Mesa: Trasladar */}
+            {saleMode === "mesa" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-7 text-[10px] border-dashed"
+                onClick={() => navigate("/mesas")}
+                title="Trasladar mesa / productos (gestión completa)"
+              >
+                <ArrowLeftRight className="w-3 h-3 mr-1" /> Trasladar mesa / productos
+              </Button>
+            )}
           </div>
         </aside>
       </div>
