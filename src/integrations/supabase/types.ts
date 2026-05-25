@@ -4695,6 +4695,42 @@ export type Database = {
           },
         ]
       }
+      sso_handoff_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          issuer_ip: string | null
+          issuer_ua: string | null
+          nonce: string
+          refresh_token: string
+          target_tenant: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          issuer_ip?: string | null
+          issuer_ua?: string | null
+          nonce?: string
+          refresh_token: string
+          target_tenant?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          issuer_ip?: string | null
+          issuer_ua?: string | null
+          nonce?: string
+          refresh_token?: string
+          target_tenant?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           balance_after: number | null
@@ -5861,6 +5897,7 @@ export type Database = {
         Returns: string
       }
       can_access_section: { Args: { _section: string }; Returns: boolean }
+      cleanup_sso_tokens: { Args: never; Returns: number }
       complete_persistent_cart: {
         Args: { _cart_token: string }
         Returns: boolean
