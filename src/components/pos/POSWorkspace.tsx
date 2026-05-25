@@ -355,6 +355,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </div>
         </div>
       </div>
+      </div>
+
+
 
       <PaymentDialog
         open={payOpen}
