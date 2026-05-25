@@ -29,6 +29,7 @@ import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import POSCustomerPicker from "./POSCustomerPicker";
 import TableGridSheet from "./TableGridSheet";
+import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/hooks/usePOSModes";
 import { POS_MODES } from "@/lib/posModes";
