@@ -13,7 +13,7 @@ export async function refreshCatalogCache(force = false): Promise<{ cached: numb
 
   const { data: products, error } = await supabase
     .from("products")
-    .select("id,name,price,image_url,stock,category_id,updated_at")
+    .select("id,name,price,image_url,stock,category_id,sku,gtin,updated_at")
     .eq("is_active", true)
     .order("name")
     .limit(2000);
@@ -38,4 +38,8 @@ export async function refreshCatalogCache(force = false): Promise<{ cached: numb
 
 export async function getCachedProducts(): Promise<CachedProduct[]> {
   return offlineDB.products.orderBy("name").toArray();
+}
+
+export async function getCachedCategories() {
+  return offlineDB.categories.orderBy("sort_order").toArray();
 }
