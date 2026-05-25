@@ -269,13 +269,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <span>{sync.syncing ? "Sincronizando…" : `${sync.pending} pendiente${sync.pending === 1 ? "" : "s"}`}</span>
             </button>
           )}
-          <div
-            className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 py-1"
-            title="Atajos: F2 Cobrar · F3 Buscar · Esc Cierre"
+          <button
+            type="button"
+            onClick={() => setHelpOpen(true)}
+            className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 py-1 hover:border-primary hover:text-primary transition"
+            title="Ver todos los atajos (F1)"
           >
             <Keyboard className="w-3 h-3" />
-            <span><kbd className="px-1 bg-muted rounded">F2</kbd> Cobrar · <kbd className="px-1 bg-muted rounded">F3</kbd> Buscar · <kbd className="px-1 bg-muted rounded">Esc</kbd> Cierre</span>
-          </div>
+            <span><kbd className="px-1 bg-muted rounded">F1</kbd> Atajos</span>
+          </button>
           <Button variant="outline" size="sm" onClick={() => setCloseOpen(true)}>
             <LogOut className="w-4 h-4 mr-1" /> Cierre Z
 
@@ -410,6 +412,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         userId={userId}
         onClosed={onClosed}
       />
+      <POSShortcutsOverlay open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }
