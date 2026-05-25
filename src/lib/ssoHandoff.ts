@@ -1,21 +1,21 @@
 /**
- * SSO Handoff cross-subdomain para *.sistecpos.com
+ * SSO Handoff endurecido para *.sistecpos.com
  *
- * Problema: Supabase guarda la sesión en `localStorage`, que NO se comparte
- * entre subdominios. Las cookies con `Domain=.sistecpos.com` tampoco sirven
- * con la config actual (`storage: localStorage`).
- *
- * Solución: cuando un usuario autenticado salta entre subdominios usamos un
- * link `https://<dest>/?sso=1#sps_sso=<base64(payload)>`. El destino lee el
- * fragment (que jamás viaja al servidor), llama `supabase.auth.setSession()`
- * y borra el hash de la URL. El token tiene TTL corto y solo se acepta una vez.
+ * Flujo (anti-replay, single-use, anti-leak en logs):
+ *   1. Origen: `buildHandoffUrl(target)` → POST `sso-issue` con refresh_token
+ *      y JWT en Authorization. El backend persiste {access, refresh} y devuelve
+ *      un `nonce` con TTL ≤ 60 s. Solo el NONCE viaja en la URL.
+ *   2. Destino: `consumeHandoff()` (en main.tsx, antes de montar React) lee
+ *      `?sso=<nonce>`, POST `sso-consume`. El backend hace DELETE ... RETURNING
+ *      (atómico → un solo uso) y devuelve los tokens. setSession() y limpia URL.
+ *   3. Si el nonce expiró/ya fue usado → marca `window.__sso_error` y la app
+ *      muestra `SSOErrorScreen` con botón "Iniciar sesión".
  */
 import { supabase } from "@/integrations/supabase/client";
 import type { Tenant } from "@/lib/subdomain";
 
-const FRAGMENT_KEY = "sps_sso";
-const HANDOFF_TTL_MS = 60_000; // 60s, ventana corta para el redirect
 const ROOT_DOMAIN = "sistecpos.com";
+const QUERY_KEY = "sso";
 
 const HOST_MAP: Record<Tenant, string> = {
   admin: `admin.${ROOT_DOMAIN}`,
@@ -25,100 +25,110 @@ const HOST_MAP: Record<Tenant, string> = {
   www: ROOT_DOMAIN,
 };
 
-export function tenantHost(t: Tenant): string {
-  return HOST_MAP[t];
-}
-
-interface HandoffPayload {
-  access_token: string;
-  refresh_token: string;
-  iat: number;
-}
+export const tenantHost = (t: Tenant): string => HOST_MAP[t];
 
 const isProdHost = (host = window.location.hostname) =>
   host.endsWith(`.${ROOT_DOMAIN}`) || host === ROOT_DOMAIN;
 
+export type SSOError =
+  | "expired_or_used"
+  | "issue_failed"
+  | "network"
+  | "no_session";
+
+declare global {
+  interface Window {
+    __sso_error?: SSOError;
+  }
+}
+
 /**
- * Construye una URL absoluta hacia otro subdominio con la sesión actual
- * inyectada en el hash. Si no hay sesión o estamos en dev, devuelve la URL
- * sin el fragment (el usuario tendrá que loguearse en destino).
+ * Construye la URL absoluta del destino con un nonce single-use.
+ * En dev / preview usa `?tenant=` sobre el mismo origen (sesión nativa).
  */
-export async function buildHandoffUrl(
-  target: Tenant,
-  path = "/"
-): Promise<string> {
-  const host = tenantHost(target);
-  // En dev mantenemos el mismo origen y usamos query ?tenant=
+export async function buildHandoffUrl(target: Tenant, path = "/"): Promise<string> {
   if (typeof window !== "undefined" && !isProdHost()) {
     const u = new URL(path, window.location.origin);
     u.searchParams.set("tenant", target);
     return u.toString();
   }
 
-  const base = `https://${host}${path.startsWith("/") ? path : "/" + path}`;
+  const base = `https://${tenantHost(target)}${path.startsWith("/") ? path : "/" + path}`;
 
   const { data } = await supabase.auth.getSession();
   const s = data.session;
-  if (!s?.access_token || !s?.refresh_token) return base;
+  if (!s?.access_token || !s?.refresh_token) return base; // sin sesión → login en destino
 
-  const payload: HandoffPayload = {
-    access_token: s.access_token,
-    refresh_token: s.refresh_token,
-    iat: Date.now(),
-  };
-  const token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}sso=1#${FRAGMENT_KEY}=${token}`;
+  try {
+    const { data: res, error } = await supabase.functions.invoke("sso-issue", {
+      body: { refresh_token: s.refresh_token, target_tenant: target },
+    });
+    if (error || !res?.nonce) {
+      console.warn("[SSO] issue falló:", error);
+      return base;
+    }
+    const sep = base.includes("?") ? "&" : "?";
+    return `${base}${sep}${QUERY_KEY}=${encodeURIComponent(res.nonce)}`;
+  } catch (err) {
+    console.warn("[SSO] issue exception:", err);
+    return base;
+  }
 }
 
 /**
- * Lee el fragment al arrancar la app. Si trae un payload SSO válido, instala
- * la sesión y limpia el hash. Llamar UNA vez, antes de cualquier render
- * que dependa de auth. Es idempotente.
+ * Si la URL trae `?sso=<nonce>`, canjea el nonce en backend y aplica la
+ * sesión. Marca `window.__sso_error` cuando falla, para que el UI lo muestre.
  */
 export async function consumeHandoff(): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  const hash = window.location.hash || "";
-  if (!hash.includes(FRAGMENT_KEY + "=")) return false;
+
+  // Soporte legacy: limpiar cualquier fragment con tokens del esquema viejo.
+  if (window.location.hash.includes("sps_sso=")) cleanUrl();
+
+  const url = new URL(window.location.href);
+  const nonce = url.searchParams.get(QUERY_KEY);
+  if (!nonce) return false;
 
   try {
-    const raw = hash.split(FRAGMENT_KEY + "=")[1]?.split("&")[0];
-    if (!raw) return false;
-    const json = decodeURIComponent(escape(atob(raw)));
-    const payload = JSON.parse(json) as HandoffPayload;
+    const { data, error } = await supabase.functions.invoke("sso-consume", {
+      body: { nonce },
+    });
+    cleanUrl();
 
-    if (!payload.access_token || !payload.refresh_token) return false;
-    if (Date.now() - (payload.iat || 0) > HANDOFF_TTL_MS) {
-      console.warn("[SSO] Handoff expirado, ignorando");
-      cleanHash();
+    if (error) {
+      const status = (error as any)?.context?.status ?? (error as any)?.status;
+      window.__sso_error = status === 404 ? "expired_or_used" : "issue_failed";
+      console.warn("[SSO] consume falló:", error);
+      return false;
+    }
+    if (!data?.access_token || !data?.refresh_token) {
+      window.__sso_error = "expired_or_used";
       return false;
     }
 
-    const { error } = await supabase.auth.setSession({
-      access_token: payload.access_token,
-      refresh_token: payload.refresh_token,
+    const { error: setErr } = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
     });
-
-    cleanHash();
-    if (error) {
-      console.warn("[SSO] setSession falló:", error.message);
+    if (setErr) {
+      window.__sso_error = "issue_failed";
+      console.warn("[SSO] setSession falló:", setErr.message);
       return false;
     }
     return true;
   } catch (err) {
-    console.warn("[SSO] payload inválido:", err);
-    cleanHash();
+    cleanUrl();
+    window.__sso_error = "network";
+    console.warn("[SSO] consume exception:", err);
     return false;
   }
 }
 
-function cleanHash() {
+function cleanUrl() {
   try {
     const url = new URL(window.location.href);
+    url.searchParams.delete(QUERY_KEY);
     url.hash = "";
-    url.searchParams.delete("sso");
     window.history.replaceState({}, "", url.toString());
-  } catch {
-    /* noop */
-  }
+  } catch { /* noop */ }
 }
