@@ -473,15 +473,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             </div>
 
             {/* Contexto rápido por modo */}
-            {(saleMode === "mesa" || saleMode === "domicilio") && (
-              <Input
-                value={saleMode === "mesa" ? tableLabel : customerName}
-                onChange={(e) =>
-                  saleMode === "mesa" ? setTableLabel(e.target.value) : setCustomerName(e.target.value)
-                }
-                placeholder={saleMode === "mesa" ? "Mesa Nº  (ej. 12)" : "Cliente / dirección…"}
-                className="h-8 text-xs"
-              />
+            {saleMode === "mesa" && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setTableSheetOpen(true)}
+                className="w-full h-9 justify-start gap-2 text-xs font-bold"
+              >
+                <Utensils className="w-4 h-4 text-primary" />
+                {tableLabel ? `Mesa ${tableLabel}` : "Seleccionar mesa"}
+                <kbd className="ml-auto px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F5</kbd>
+              </Button>
             )}
           </div>
 
