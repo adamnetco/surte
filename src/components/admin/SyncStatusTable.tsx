@@ -80,8 +80,8 @@ export default function SyncStatusTable() {
       // Para sync-products-to-wp se requiere site_id: lo tomamos del primer tenant_site del usuario.
       let body: any = {};
       if (fnName === "sync-products-to-wp") {
-        const { data: site } = await supabase
-          .from("tenant_sites" as any)
+        const { data: site } = await (supabase as any)
+          .from("tenant_sites")
           .select("id")
           .limit(1)
           .maybeSingle();
