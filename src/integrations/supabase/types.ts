@@ -6116,6 +6116,20 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_recent_sync_logs: {
+        Args: { _limit?: number; _services?: string[] }
+        Returns: {
+          attempts: number
+          duration_ms: number
+          error_message: string
+          id: string
+          last_run_at: string
+          organization_id: string
+          payload: Json
+          service_name: string
+          status: string
+        }[]
+      }
       get_resource_availability: {
         Args: {
           _day: string
