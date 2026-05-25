@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import {
   Search, FileText, FileSignature, Pause, Keyboard, Printer,
-  CloudUpload, CloudOff, Loader2, ScanLine, CreditCard, User, Percent, StickyNote, ArrowLeftRight,
+  CloudUpload, CloudOff, Loader2, ScanLine, CreditCard, Percent, StickyNote, ArrowLeftRight, Utensils,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
@@ -26,11 +26,14 @@ import POSCategoryTabs from "./POSCategoryTabs";
 import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
+import POSCustomerPicker from "./POSCustomerPicker";
+import TableGridSheet from "./TableGridSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/hooks/usePOSModes";
 import { POS_MODES } from "@/lib/posModes";
 import { supabase } from "@/integrations/supabase/client";
 import type { PosMode } from "@/lib/posModes";
+import type { POSCustomer } from "@/lib/posCustomer";
 
 
 interface Product {
