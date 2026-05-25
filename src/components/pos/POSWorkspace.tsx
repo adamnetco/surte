@@ -208,6 +208,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       setSaleMode(next);
       toast.info(`Modo: ${next}`);
     },
+    onTables: () => { if (saleMode === "mesa") setTableSheetOpen(true); },
     onInvoice: () => { if (lastOrderId) setActionMode("emit"); },
     onQuote: () => { if (ticket.length > 0) setActionMode("quote"); },
     onPark: () => { if (ticket.length > 0) setActionMode("park"); },
