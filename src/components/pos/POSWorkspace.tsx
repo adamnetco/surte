@@ -45,6 +45,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Mantener saleMode válido si cambian los modos habilitados.
   useEffect(() => {
@@ -90,10 +91,28 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     setMeta(ticketCacheKey, ticket).catch(() => { /* dexie unavailable */ });
   }, [ticket, ticketCacheKey]);
 
-  // Hotkeys: F2 cobrar · F3 buscar · Esc cierre Z
+  // Hotkeys: F1 ayuda · F2 cobrar · F3 buscar · F4 modo · F6 facturar · F7 cotizar · F8 suspender · F9 limpiar · Esc cierre
   usePOSHotkeys({
+    onHelp: () => setHelpOpen((v) => !v),
     onPay: () => { if (ticket.length > 0) setPayOpen(true); },
     onSearch: () => searchRef.current?.focus(),
+    onCycleMode: () => {
+      if (posModes.enabled.length <= 1) return;
+      const idx = posModes.enabled.indexOf(saleMode);
+      const next = posModes.enabled[(idx + 1) % posModes.enabled.length];
+      setSaleMode(next);
+      toast.info(`Modo: ${next}`);
+    },
+    onInvoice: () => { if (lastOrderId) setActionMode("emit"); },
+    onQuote: () => { if (ticket.length > 0) setActionMode("quote"); },
+    onPark: () => { if (ticket.length > 0) setActionMode("park"); },
+    onClear: () => {
+      if (ticket.length === 0) return;
+      if (confirm("¿Limpiar el ticket actual?")) {
+        setTicket([]);
+        setMeta(ticketCacheKey, []).catch(() => {});
+      }
+    },
     onEscape: () => setCloseOpen(true),
   });
 
