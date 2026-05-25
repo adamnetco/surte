@@ -14,6 +14,7 @@ import { usePOSHotkeys } from "@/hooks/usePOSHotkeys";
 import { useSyncService } from "@/hooks/useSyncService";
 import { enqueue } from "@/lib/offline/outbox";
 import POSModeBar from "./POSModeBar";
+import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import { usePOSModes } from "@/hooks/usePOSModes";
 import type { PosMode } from "@/lib/posModes";
 
@@ -44,6 +45,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Mantener saleMode válido si cambian los modos habilitados.
   useEffect(() => {
@@ -89,10 +91,28 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     setMeta(ticketCacheKey, ticket).catch(() => { /* dexie unavailable */ });
   }, [ticket, ticketCacheKey]);
 
-  // Hotkeys: F2 cobrar · F3 buscar · Esc cierre Z
+  // Hotkeys: F1 ayuda · F2 cobrar · F3 buscar · F4 modo · F6 facturar · F7 cotizar · F8 suspender · F9 limpiar · Esc cierre
   usePOSHotkeys({
+    onHelp: () => setHelpOpen((v) => !v),
     onPay: () => { if (ticket.length > 0) setPayOpen(true); },
     onSearch: () => searchRef.current?.focus(),
+    onCycleMode: () => {
+      if (posModes.enabled.length <= 1) return;
+      const idx = posModes.enabled.indexOf(saleMode);
+      const next = posModes.enabled[(idx + 1) % posModes.enabled.length];
+      setSaleMode(next);
+      toast.info(`Modo: ${next}`);
+    },
+    onInvoice: () => { if (lastOrderId) setActionMode("emit"); },
+    onQuote: () => { if (ticket.length > 0) setActionMode("quote"); },
+    onPark: () => { if (ticket.length > 0) setActionMode("park"); },
+    onClear: () => {
+      if (ticket.length === 0) return;
+      if (confirm("¿Limpiar el ticket actual?")) {
+        setTicket([]);
+        setMeta(ticketCacheKey, []).catch(() => {});
+      }
+    },
     onEscape: () => setCloseOpen(true),
   });
 
@@ -249,13 +269,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <span>{sync.syncing ? "Sincronizando…" : `${sync.pending} pendiente${sync.pending === 1 ? "" : "s"}`}</span>
             </button>
           )}
-          <div
-            className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 py-1"
-            title="Atajos: F2 Cobrar · F3 Buscar · Esc Cierre"
+          <button
+            type="button"
+            onClick={() => setHelpOpen(true)}
+            className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 py-1 hover:border-primary hover:text-primary transition"
+            title="Ver todos los atajos (F1)"
           >
             <Keyboard className="w-3 h-3" />
-            <span><kbd className="px-1 bg-muted rounded">F2</kbd> Cobrar · <kbd className="px-1 bg-muted rounded">F3</kbd> Buscar · <kbd className="px-1 bg-muted rounded">Esc</kbd> Cierre</span>
-          </div>
+            <span><kbd className="px-1 bg-muted rounded">F1</kbd> Atajos</span>
+          </button>
           <Button variant="outline" size="sm" onClick={() => setCloseOpen(true)}>
             <LogOut className="w-4 h-4 mr-1" /> Cierre Z
 
@@ -390,6 +412,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         userId={userId}
         onClosed={onClosed}
       />
+      <POSShortcutsOverlay open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }
