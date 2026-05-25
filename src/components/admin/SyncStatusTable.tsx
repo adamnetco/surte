@@ -52,7 +52,7 @@ export default function SyncStatusTable() {
       return;
     }
     const byService = new Map<string, SyncLog>();
-    for (const log of (data ?? []) as SyncLog[]) {
+    for (const log of (data ?? []) as unknown as SyncLog[]) {
       if (!byService.has(log.service_name)) byService.set(log.service_name, log);
     }
     setRows(TRACKED_SERVICES.map((s) => ({ service_name: s.key, last: byService.get(s.key) })));
