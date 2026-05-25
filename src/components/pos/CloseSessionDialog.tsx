@@ -42,7 +42,7 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
       const [{ data: pays }, { count }, { data: dens }] = await Promise.all([
         supabase.from("pos_payments").select("method,amount").eq("cash_session_id", sessionId),
         supabase.from("pos_orders").select("id", { count: "exact", head: true }).eq("cash_session_id", sessionId).eq("status", "paid"),
-        supabase.from("cash_denominations").select("id,value,kind,label").eq("currency", "COP").eq("is_active", true).order("value", { ascending: false }),
+        supabase.from("cash_denominations").select("id,value,kind").eq("currency", "COP").eq("is_active", true).order("value", { ascending: false }),
       ]);
 
       const t: Totals = { cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: count ?? 0 };
