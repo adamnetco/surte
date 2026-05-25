@@ -338,6 +338,36 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_denominations: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          is_active: boolean
+          kind: string
+          sort_order: number
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          sort_order?: number
+          value: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          sort_order?: number
+          value?: number
+        }
+        Relationships: []
+      }
       cash_movements: {
         Row: {
           amount: number
@@ -422,6 +452,54 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_session_counts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          denomination_id: string
+          id: string
+          kind: string
+          organization_id: string | null
+          quantity: number
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          denomination_id: string
+          id?: string
+          kind?: string
+          organization_id?: string | null
+          quantity?: number
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          denomination_id?: string
+          id?: string
+          kind?: string
+          organization_id?: string | null
+          quantity?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_session_counts_denomination_id_fkey"
+            columns: ["denomination_id"]
+            isOneToOne: false
+            referencedRelation: "cash_denominations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_session_counts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -5197,6 +5275,51 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_outbox: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          max_attempts: number
+          next_attempt_at: string
+          organization_id: string | null
+          payload: Json
+          status: string
+          succeeded_at: string | null
+          target: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          organization_id?: string | null
+          payload?: Json
+          status?: string
+          succeeded_at?: string | null
+          target: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          organization_id?: string | null
+          payload?: Json
+          status?: string
+          succeeded_at?: string | null
+          target?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       table_order_items: {
         Row: {
           course: number
@@ -5897,7 +6020,12 @@ export type Database = {
         Returns: string
       }
       can_access_section: { Args: { _section: string }; Returns: boolean }
+      can_write_org: { Args: { _org_id: string }; Returns: boolean }
       cleanup_sso_tokens: { Args: never; Returns: number }
+      close_cash_session_with_counts: {
+        Args: { _counts: Json; _session_id: string }
+        Returns: Json
+      }
       complete_persistent_cart: {
         Args: { _cart_token: string }
         Returns: boolean
@@ -6067,7 +6195,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user" | "superadmin" | "editor" | "agente"
+      app_role:
+        | "admin"
+        | "user"
+        | "superadmin"
+        | "editor"
+        | "agente"
+        | "cashier"
       business_type:
         | "detal"
         | "horeca"
@@ -6201,7 +6335,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "superadmin", "editor", "agente"],
+      app_role: ["admin", "user", "superadmin", "editor", "agente", "cashier"],
       business_type: ["detal", "horeca", "minimercado", "distribuidor", "casa"],
     },
   },

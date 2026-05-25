@@ -1,71 +1,107 @@
-## Alcance y riesgos (léeme antes de aprobar)
 
-El módulo "Clientes" en `sistecpos-colombia` no es una sola página: son **11 componentes** (`ClientPortal`, `ClientDashboardTab`, `ClientBillingTab`, `ClientContractsTab`, `ClientDownloadsTab`, `ClientPOSAccess`, `ClientPOSLogin`, `ClientSubscriptionTab`, `ClientTicketsTab`, `ClientTrainingsTab`, `TicketChatView`) + hooks (`useAuth`, `useActivityTracker`, `useWhatsAppConfig`) + dependencias de tablas Supabase que **no existen** en `sistecposcore` (tickets, contratos, descargas, entrenamientos, facturación de clientes, demos POS, suscripciones).
+# Consolidación SistecPOS Core — Plan de ejecución
 
-Hacer todo en un turno es inviable y rompería el build. Propongo dividir en fases entregables.
+## Estado actual detectado
 
-### Decisiones que necesito confirmar
+Mucho de lo solicitado **ya existe** en el repo. Antes de tocar nada, este es el inventario real:
 
-1. **Backend de los datos de Clientes**: ¿los dos proyectos deben **compartir la misma base de datos Supabase** (la de `sistecpos-colombia`), o quieres que `sistecposcore` tenga **sus propias tablas** y replicar el esquema con migraciones nuevas? Esto define si es un copy/paste o una réplica completa.
-2. **Subdominios `mi.` / `pos.` / `app.`**: hoy solo está configurado `admin.sistecpos.com`. ¿Ya tienes los DNS apuntando los otros tres, o los configuras tú en Lovable después?
-3. **SSO cross-subdomain**: Supabase guarda la sesión en `localStorage` por defecto (NO se comparte entre subdominios). Para sesión real compartida hay que migrar a **cookies con `Domain=.sistecpos.com`**, lo cual requiere un endpoint propio o un edge function de auth-bridge. ¿Aceptas ese cambio o prefieres que cada subdominio mantenga su propio login (UX similar pero login independiente)?
+| Pieza pedida | Estado actual |
+|---|---|
+| `sync-products-to-wp` edge function | ✅ Existe en `supabase/functions/sync-products-to-wp` |
+| `sync-order` edge function | ✅ Existe en `supabase/functions/sync-order` |
+| `wp-revalidate-webhook` edge function | ✅ Existe (`verify_jwt=false`, sin shared secret) |
+| Tabla `profiles` extendiendo `auth.users` | ✅ Existe + trigger `handle_new_user` |
+| Enum `app_role` | ✅ Existe: `admin, user, superadmin, editor, agente`. ⚠️ Falta `cashier` (el brief pide `admin/cashier/agente`) |
+| `broadcast-whatsapp-ycloud` | ✅ Existe como broadcast manual; **no** se dispara automáticamente al confirmar pedido |
+| Templates `order-confirmation`, `registry` | ✅ Existen en `_shared/transactional-email-templates/` y están registrados |
+| `cost_price` calculado si no se provee | ❌ No hay trigger; hoy queda `NULL` |
+| Cash Denominations para cierre de caja | ❌ No existe tabla ni UI |
+| `MIGRATION_LOG.md` por servicios | ⚠️ Existe pero solo registra fases de tablas |
+| Outbox de reintentos para sync WP | ❌ No existe; los fallos se pierden |
 
-## Plan en fases
+Por tanto el trabajo real se concentra en **6 entregables**, no en reescribir lo que ya funciona.
 
-### Fase 1 — Subdomain Router + estructura (este turno)
-- Crear `src/lib/subdomain.ts` con `detectTenant()` que lea `window.location.hostname` y devuelva `'admin' | 'mi' | 'pos' | 'app' | 'www'`.
-- Envolver `App.tsx` con un selector que monte rutas distintas por tenant:
-  - `admin.*` → rutas actuales `/admin/*` + `AdminDashboard`.
-  - `pos.*` → `POSWorkspace` como raíz.
-  - `app.*` → dashboard general (homepage actual).
-  - `mi.*` → placeholder `<ClientPortalShell />` con tabs vacíos (esqueleto listo para Fase 2).
-- Login centralizado: rutas `/user/login` y `/admin/login` apuntando al mismo componente `Login` existente, con `redirect` post-auth según tenant.
-- Crear `MIGRATION_LOG.md` con sección "Fase 1" registrando archivos creados/modificados.
+---
 
-### Fase 2 — Migración UI Clientes (turno aparte, tras tu OK)
-- Copiar los 11 componentes `clientes/*` con `cross_project--copy_project_asset`.
-- Adaptar imports (`@/hooks/useAuth` → nuestro `@/context/AuthContext`).
-- Stub temporal de tablas inexistentes (devolver arrays vacíos) hasta Fase 3.
-- Build verde sin datos reales.
+## Entregables
 
-### Fase 3 — Esquema DB Clientes (turno aparte)
-- Migración con tablas: `client_tickets`, `client_contracts`, `client_downloads`, `client_trainings`, `client_subscriptions`, `client_billing`, `pos_demos`. RLS por `auth.uid()`.
-- Conectar componentes a tablas reales.
+### 1. Hardening del webhook de WordPress
+- Añadir secreto `WP_REVALIDATE_SECRET` (runtime secret, no Vault — Vault es para uso server-side en SQL, aquí lo usa una edge function).
+- `wp-revalidate-webhook` valida header `X-Sistecpos-Signature` (HMAC SHA-256 del body con el secreto) y rechaza con 401 si no coincide.
+- Mantener `verify_jwt = false` (es webhook público) pero ahora autenticado por firma.
 
-### Fase 4 — SSO cross-domain (turno aparte, si confirmas decisión 3)
-- Edge function `auth-bridge` que emita cookie `sb-session` con `Domain=.sistecpos.com; Secure; SameSite=Lax`.
-- Adaptador en `AuthContext` que lea esa cookie al boot.
+### 2. Outbox de sincronización resiliente
+Nueva tabla `public.sync_outbox`:
 
-## Detalle técnico Fase 1
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `target` | text | `wp_product`, `wp_order`, `wp_revalidate` |
+| `payload` | jsonb | Body listo para reenviar |
+| `attempts` | int | default 0 |
+| `last_error` | text | |
+| `next_attempt_at` | timestamptz | backoff exponencial |
+| `status` | text | `pending`, `succeeded`, `dead` |
+| `organization_id` | uuid | |
+| `created_at` / `updated_at` | | |
 
-```text
-src/
-├── lib/
-│   └── subdomain.ts          # detectTenant(): 'admin'|'mi'|'pos'|'app'|'www'
-├── routes/
-│   ├── AdminRoutes.tsx       # extrae rutas /admin/* actuales
-│   ├── PosRoutes.tsx         # ruta única → POSWorkspace
-│   ├── MiRoutes.tsx          # /clientes → ClientPortalShell (placeholder)
-│   └── AppRoutes.tsx         # rutas públicas actuales (Index, Catálogo, etc.)
-├── components/
-│   └── clientes/
-│       └── ClientPortalShell.tsx   # placeholder con tabs vacíos
-└── App.tsx                   # switch por tenant
+- RLS: solo `service_role` y miembros de la org pueden leer; escritura solo `service_role`.
+- `sync-products-to-wp` y `sync-order` se modifican: si la llamada HTTP a WP falla → `INSERT` en `sync_outbox` con backoff = 1, 5, 30, 120 min, max 5 intentos antes de `dead`.
+- Nueva edge function `sync-outbox-flush` que procesa pendientes vencidos.
+- `pg_cron` cada 2 min llama a `sync-outbox-flush`.
+
+### 3. Rol `cashier` + RLS de escritura org-scoped
+- `ALTER TYPE app_role ADD VALUE 'cashier'`.
+- Helper SQL `can_write_org(_org_id uuid)` que devuelve `true` solo si el usuario es `superadmin` global **o** miembro de la org con rol `admin`/`cashier`.
+- Auditoría: aplicar la nueva regla a `pos_orders`, `pos_payments`, `cash_sessions`, `cash_movements` (tablas operativas de caja).
+- **No** se tocan políticas de catálogo (`products`, `categories`) — esas ya tienen su esquema admin/editor consolidado.
+
+### 4. WhatsApp automático en `orders.status = 'confirmed'`
+- Trigger `AFTER UPDATE ON public.orders` que, cuando `OLD.status <> 'confirmed' AND NEW.status = 'confirmed'`, llama vía `pg_net.http_post` a la edge function `send-whatsapp-order` (ya existe) con el `order_id`.
+- La función ya formatea el mensaje WhatsApp; solo le pasamos el id y ella resuelve el resto.
+- Log de cada disparo en `sync_outbox` para reintento si `pg_net` reporta fallo.
+
+### 5. `cost_price` con fallback calculado
+- Trigger `BEFORE INSERT OR UPDATE` en `products`: si `cost_price IS NULL`, lo calcula como `round(price * 0.65, 2)` (margen 35% por defecto). Configurable vía `app_settings.key = 'default_cost_margin'`.
+- No sobreescribe valores existentes; solo rellena cuando viene vacío.
+
+### 6. Cash Denominations para cierre de caja
+Nuevas tablas:
+- `cash_denominations` — catálogo (valor en COP: 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000) con `is_active` y `sort_order`.
+- `cash_session_counts` — conteo por denominación al cerrar caja: `session_id`, `denomination_id`, `quantity`, `kind` (`open`/`close`).
+- RPC `close_cash_session_with_counts(_session_id uuid, _counts jsonb)` que calcula el total contado, lo compara con `expected_amount` y guarda `difference` en `cash_sessions`.
+- Seed inicial de denominaciones COP.
+
+### 7. `MIGRATION_LOG.md` por servicios
+Añadir sección final **"Estado de servicios"** con tabla viva:
+
+```
+| Servicio              | Estado  | Última verificación | Notas               |
+|-----------------------|---------|---------------------|---------------------|
+| Sync WP (productos)   | activo  | YYYY-MM-DD          | outbox + HMAC       |
+| Sync WP (pedidos)     | activo  | YYYY-MM-DD          | outbox              |
+| WP Revalidate webhook | activo  | YYYY-MM-DD          | HMAC requerido      |
+| WhatsApp on confirmed | activo  | YYYY-MM-DD          | trigger DB → pg_net |
+| Email transaccional   | activo  | YYYY-MM-DD          | pgmq queue          |
+| SSO handoff           | activo  | YYYY-MM-DD          | one-shot 60s + cron |
 ```
 
-Reglas:
-- En dev (`localhost`, `*.lovable.app` de preview) → tenant = `app` por defecto, con `?tenant=mi` para forzar override y poder probar.
-- No tocar `src/integrations/supabase/client.ts`.
-- No borrar nada del repo `sistecpos-colombia`; solo copia.
+---
 
-## Lo que NO haré sin tu aprobación
-- No tocaré DB (Fase 3).
-- No cambiaré el almacenamiento de sesión a cookies (Fase 4).
-- No eliminaré `sistecpos.com/clientes` (eso lo haces tú quitándolo del repo `sistecpos-colombia` después de Fase 3).
+## Detalles técnicos
 
-## Respuesta esperada
-Responde con:
-- Decisión 1 (DB compartida o réplica)
-- Decisión 2 (DNS listos sí/no)
-- Decisión 3 (SSO real con cookie o login por subdominio)
-- ¿Arranco Fase 1?
+- **Secrets nuevos**: `WP_REVALIDATE_SECRET` (lo pediremos vía `add_secret` cuando el usuario apruebe el plan).
+- **Migrations**: 4 archivos separados — (a) `sync_outbox` + RLS, (b) `cashier` enum + helper + RLS, (c) trigger WhatsApp en `orders`, (d) `cost_price` trigger + `cash_denominations`/`cash_session_counts` + RPC + seed.
+- **Edge functions nuevas**: `sync-outbox-flush`. Modificadas: `wp-revalidate-webhook` (HMAC), `sync-products-to-wp` y `sync-order` (escribir en outbox al fallar).
+- **pg_cron**: job `sync-outbox-flush-2min` cada 2 minutos.
+- **No se toca**: arquitectura SSO/global logout (recién consolidada), email queue, catálogo público.
+
+## Lo que queda fuera de este plan (a pedir explícito si lo necesitas)
+
+- Reescritura del UI de cierre de caja para usar las nuevas denominaciones (puedo hacerlo en una segunda iteración; aquí solo dejo el backend listo).
+- Conmutación de `broadcast-whatsapp-ycloud` masivo a YCloud Business API real (hoy usa wa.me fallback).
+- Sincronización inversa WP → Supabase (este plan es solo Supabase → WP).
+
+---
+
+¿Apruebas? Si dices que sí, ejecuto en este orden: (1) migración outbox + cashier + cash denominations + cost_price + WhatsApp trigger en una sola tanda, (2) `add_secret` para `WP_REVALIDATE_SECRET`, (3) edge functions modificadas + nueva `sync-outbox-flush`, (4) cron job, (5) update de `MIGRATION_LOG.md`.
