@@ -3360,6 +3360,8 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           name: string
+          pos_default_mode: string
+          pos_enabled_modes: string[]
           settings: Json
           slug: string
           tax_id: string | null
@@ -3375,6 +3377,8 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name: string
+          pos_default_mode?: string
+          pos_enabled_modes?: string[]
           settings?: Json
           slug: string
           tax_id?: string | null
@@ -3390,6 +3394,8 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name?: string
+          pos_default_mode?: string
+          pos_enabled_modes?: string[]
           settings?: Json
           slug?: string
           tax_id?: string | null
@@ -3696,6 +3702,7 @@ export type Database = {
           notes: string | null
           organization_id: string
           paid_at: string | null
+          sale_mode: string
           status: string
           subtotal: number
           tax: number
@@ -3724,6 +3731,7 @@ export type Database = {
           notes?: string | null
           organization_id: string
           paid_at?: string | null
+          sale_mode?: string
           status?: string
           subtotal?: number
           tax?: number
@@ -3752,6 +3760,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           paid_at?: string | null
+          sale_mode?: string
           status?: string
           subtotal?: number
           tax?: number
