@@ -13,6 +13,9 @@ import { setMeta, getMeta } from "@/lib/offline/db";
 import { usePOSHotkeys } from "@/hooks/usePOSHotkeys";
 import { useSyncService } from "@/hooks/useSyncService";
 import { enqueue } from "@/lib/offline/outbox";
+import POSModeBar from "./POSModeBar";
+import { usePOSModes } from "@/hooks/usePOSModes";
+import type { PosMode } from "@/lib/posModes";
 
 
 interface Product { id: string; name: string; price: number; image_url: string | null; stock: number; }
