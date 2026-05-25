@@ -27,7 +27,6 @@ interface Denomination {
   id: string;
   value: number;
   kind: string;
-  label: string | null;
 }
 
 export default function CloseSessionDialog({ open, onOpenChange, sessionId, openingAmount, organizationId, userId, onClosed }: Props) {
