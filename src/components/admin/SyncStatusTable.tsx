@@ -40,12 +40,10 @@ export default function SyncStatusTable() {
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
-    const { data, error } = await supabase
-      .from("sync_logs" as any)
-      .select("*")
-      .in("service_name", TRACKED_SERVICES.map((s) => s.key))
-      .order("last_run_at", { ascending: false })
-      .limit(200);
+    const { data, error } = await (supabase as any).rpc("get_recent_sync_logs", {
+      _services: TRACKED_SERVICES.map((s) => s.key),
+      _limit: 50,
+    });
     if (error) {
       console.error(error);
       setLoading(false);
