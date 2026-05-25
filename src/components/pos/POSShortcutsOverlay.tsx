@@ -8,14 +8,16 @@ interface Props {
 
 const SHORTCUTS: { key: string; label: string; hint?: string }[] = [
   { key: "F1", label: "Mostrar / ocultar esta ayuda" },
-  { key: "F2", label: "Cobrar ticket", hint: "Abre el diálogo de pago" },
+  { key: "F2 / F12", label: "Cobrar ticket", hint: "Abre el diálogo de pago" },
   { key: "F3", label: "Buscar producto", hint: "Foco en el buscador" },
+  { key: "⌘K / Ctrl+K", label: "Command Palette", hint: "Búsqueda rápida por nombre, SKU o código" },
   { key: "F4", label: "Cambiar modo de venta", hint: "Ciclar entre Mesa / Autoservicio / Domicilio / Consumo" },
   { key: "F6", label: "Facturar último ticket", hint: "Emite factura electrónica DIAN" },
   { key: "F7", label: "Generar cotización" },
   { key: "F8", label: "Suspender ticket", hint: "Guardar para retomar después" },
   { key: "F9", label: "Limpiar ticket", hint: "Pide confirmación" },
   { key: "Esc", label: "Cerrar / Cierre Z", hint: "Cierra diálogos o abre cierre de caja" },
+  { key: "Scanner", label: "Escaneo automático", hint: "El POS detecta lectores tipo teclado sin enfocar ningún campo" },
 ];
 
 export default function POSShortcutsOverlay({ open, onOpenChange }: Props) {

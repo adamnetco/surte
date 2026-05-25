@@ -37,6 +37,7 @@ export function usePOSHotkeys(handlers: HotkeyHandlers) {
           handlers.onHelp?.();
           break;
         case "F2":
+        case "F12":
           e.preventDefault();
           handlers.onPay?.();
           break;
