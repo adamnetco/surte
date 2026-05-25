@@ -134,3 +134,40 @@ tocar `client.ts`), y `localStorage` está aislado por subdominio. Una cookie
 Fases 1 → 4 entregadas. El portal de clientes vive en `mi.sistecpos.com`,
 con DB propia, RLS por dueño y SSO cross-subdominio funcional.
 
+
+## Fase 5 — Consolidación Producción (2026-05-25)
+
+### Backend
+- Tabla `sync_outbox` (pending/succeeded/dead, backoff exponencial 1/5/30/120/720 min, max 5 intentos).
+- Rol `cashier` agregado al enum `app_role`.
+- Helper `can_write_org(_org_id)` → superadmin u org member con rol admin/cashier/owner.
+- RLS de escritura aplicada a `pos_orders`, `pos_payments`, `cash_sessions`, `cash_movements`.
+- Trigger `fill_default_cost_price` en `products` (margen configurable en `app_settings.default_cost_margin`, default 0.35).
+- Catálogo `cash_denominations` (COP) + `cash_session_counts` + RPC `close_cash_session_with_counts`.
+- Trigger `enqueue_whatsapp_on_confirmed` en `orders` → encola en `sync_outbox` cuando `status` pasa a `confirmed`.
+
+### Edge Functions
+- `wp-revalidate-webhook` endurecida con HMAC SHA-256 (`X-Sistecpos-Signature` + `WP_REVALIDATE_SECRET`). Fallback a `revalidate_token` por tenant solo si el secreto no está configurado. En fallo de revalidate, encola reintento en `sync_outbox`.
+- `sync-outbox-flush` (nueva): drena pendientes vencidos, dispara por `target` y aplica backoff o marca `dead`.
+
+### Cron
+- Job `sync-outbox-flush-2min` (`*/2 * * * *`) llama a `sync-outbox-flush`.
+
+### Secrets
+- `WP_REVALIDATE_SECRET` configurado en runtime secrets.
+
+---
+
+## Estado de servicios
+
+| Servicio                      | Estado | Última verificación | Notas                                        |
+|-------------------------------|--------|---------------------|----------------------------------------------|
+| Sync WP — productos           | activo | 2026-05-25          | Outbox + reintento automático                |
+| Sync WP — pedidos             | activo | 2026-05-25          | Outbox + reintento automático                |
+| WP Revalidate webhook         | activo | 2026-05-25          | HMAC SHA-256 requerido                       |
+| WhatsApp on orders.confirmed  | activo | 2026-05-25          | Trigger DB → outbox → send-ycloud-whatsapp   |
+| Email transaccional (Resend)  | activo | 2026-05-25          | pgmq queue + retries                         |
+| SSO handoff one-shot          | activo | 2026-05-25          | TTL 60s + cron cleanup cada 5 min            |
+| Global logout (auth-global)   | activo | 2026-05-25          | Realtime broadcast `user:<id>`               |
+| Cierre de caja (denoms COP)   | activo | 2026-05-25          | RPC close_cash_session_with_counts           |
+| cost_price auto-fill          | activo | 2026-05-25          | Trigger BEFORE INSERT/UPDATE en products     |
