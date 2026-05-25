@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   Search, FileText, FileSignature, Pause, Keyboard, Printer,
   CloudUpload, CloudOff, Loader2, ScanLine, CreditCard, Percent, StickyNote, ArrowLeftRight, Utensils,
+  Bike, ShoppingBag,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import CloseSessionDialog from "./CloseSessionDialog";
@@ -28,6 +29,7 @@ import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import POSCustomerPicker from "./POSCustomerPicker";
 import TableGridSheet from "./TableGridSheet";
+import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/hooks/usePOSModes";
 import { POS_MODES } from "@/lib/posModes";
@@ -72,6 +74,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [customer, setCustomer] = useState<POSCustomer | null>(null);
   const [tableLabel, setTableLabel] = useState(""); // para modo mesa
   const [tableSheetOpen, setTableSheetOpen] = useState(false);
+  const [driver, setDriver] = useState<DriverInfo | null>(null); // para modo domicilio
+  const [driverSheetOpen, setDriverSheetOpen] = useState(false);
+  const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
   const [ticketNote, setTicketNote] = useState("");
   const [globalDiscPct, setGlobalDiscPct] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -485,7 +490,37 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <kbd className="ml-auto px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F5</kbd>
               </Button>
             )}
+
+            {saleMode === "domicilio" && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDriverSheetOpen(true)}
+                className="w-full h-9 justify-start gap-2 text-xs font-bold"
+              >
+                <Bike className="w-4 h-4 text-primary" />
+                {driver ? `Domiciliario: ${driver.name}` : "Seleccionar domiciliario"}
+                <kbd className="ml-auto px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F6</kbd>
+              </Button>
+            )}
+
+            {saleMode === "autoservicio" && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-2 h-9 rounded-md border bg-accent/10 text-accent border-accent/30">
+                  <ShoppingBag className="w-4 h-4" />
+                  <span className="text-xs font-extrabold uppercase tracking-wide">LLEVAR</span>
+                </div>
+                <Input
+                  value={pickupName}
+                  onChange={(e) => setPickupName(e.target.value)}
+                  placeholder="Recoge el cliente (nombre)"
+                  className="h-9 text-xs flex-1"
+                />
+              </div>
+            )}
           </div>
+
+
 
           <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
             {ticket.length === 0 ? (
@@ -724,6 +759,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         current={tableLabel || null}
         onPick={(t) => setTableLabel(t.label)}
       />
+
+      <DriverPickerSheet
+        open={driverSheetOpen}
+        onOpenChange={setDriverSheetOpen}
+        value={driver}
+        onSelect={setDriver}
+        organizationId={organizationId}
+      />
+
     </div>
   );
 }
