@@ -36,6 +36,7 @@ const DataManagementTab = lazy(() => import("@/components/admin/DataManagementTa
 const ModifiersTab = lazy(() => import("@/components/admin/ModifiersTab"));
 const SeoContentTab = lazy(() => import("@/components/admin/SeoContentTab"));
 const CrmLeadsTab = lazy(() => import("@/components/admin/CrmLeadsTab"));
+const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"));
 
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null },
