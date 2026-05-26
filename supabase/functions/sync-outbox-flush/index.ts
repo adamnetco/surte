@@ -117,7 +117,9 @@ Deno.serve(async (req) => {
           .eq("id", row.id);
       } else {
         const delayMin = BACKOFF_MIN[Math.min(nextAttempts - 1, BACKOFF_MIN.length - 1)];
-        const next = new Date(Date.now() + delayMin * 60_000).toISOString();
+        // Jitter ±20% para evitar thundering herd en reintentos paralelos.
+        const jitter = 1 + (Math.random() * 0.4 - 0.2);
+        const next = new Date(Date.now() + delayMin * 60_000 * jitter).toISOString();
         await supabase
           .from("sync_outbox")
           .update({ attempts: nextAttempts, last_error: res.error ?? "unknown", next_attempt_at: next })
