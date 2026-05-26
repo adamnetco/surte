@@ -77,6 +77,14 @@ const RouteFallback = () => (
  * Tenant-aware home: la ruta `/` cambia de componente según el subdominio.
  * Ver `src/lib/subdomain.ts` para el mapeo.
  */
+/**
+ * Tenant-aware home: la ruta `/` cambia de componente según el subdominio.
+ * - admin.* → AdminDashboard
+ * - pos.*   → POSWorkspace
+ * - mi.*    → ClientPortal
+ * - <slug>.sistecpos.com (surteya, futuros tenants) → Storefront (Index)
+ * - sistecpos.com / www / app → LoginRouter (portal de acceso al SaaS)
+ */
 const TenantHome = () => {
   const tenant = detectTenant();
   if (tenant === "admin") {
@@ -88,7 +96,8 @@ const TenantHome = () => {
   }
   if (tenant === "pos") return <POS />;
   if (tenant === "mi") return <ClientPortalShell />;
-  return <Index />;
+  if (isStorefrontTenant(tenant)) return <Index />;
+  return <LoginRouter />;
 };
 
 const App = () => (
