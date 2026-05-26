@@ -1,107 +1,141 @@
 
-# Consolidación SistecPOS Core — Plan de ejecución
+# Plan de Estabilización SistecPOS Core
 
-## Estado actual detectado
-
-Mucho de lo solicitado **ya existe** en el repo. Antes de tocar nada, este es el inventario real:
-
-| Pieza pedida | Estado actual |
-|---|---|
-| `sync-products-to-wp` edge function | ✅ Existe en `supabase/functions/sync-products-to-wp` |
-| `sync-order` edge function | ✅ Existe en `supabase/functions/sync-order` |
-| `wp-revalidate-webhook` edge function | ✅ Existe (`verify_jwt=false`, sin shared secret) |
-| Tabla `profiles` extendiendo `auth.users` | ✅ Existe + trigger `handle_new_user` |
-| Enum `app_role` | ✅ Existe: `admin, user, superadmin, editor, agente`. ⚠️ Falta `cashier` (el brief pide `admin/cashier/agente`) |
-| `broadcast-whatsapp-ycloud` | ✅ Existe como broadcast manual; **no** se dispara automáticamente al confirmar pedido |
-| Templates `order-confirmation`, `registry` | ✅ Existen en `_shared/transactional-email-templates/` y están registrados |
-| `cost_price` calculado si no se provee | ❌ No hay trigger; hoy queda `NULL` |
-| Cash Denominations para cierre de caja | ❌ No existe tabla ni UI |
-| `MIGRATION_LOG.md` por servicios | ⚠️ Existe pero solo registra fases de tablas |
-| Outbox de reintentos para sync WP | ❌ No existe; los fallos se pierden |
-
-Por tanto el trabajo real se concentra en **6 entregables**, no en reescribir lo que ya funciona.
+Este plan está dividido en **5 fases independientes y aprobables por separado**. Cada fase tiene un alcance acotado para evitar regresiones masivas en un sistema en producción. Recomiendo aprobar fase por fase.
 
 ---
 
-## Entregables
+## FASE 0 — Reestructura de rutas y separación tenant semilla "surteya"
 
-### 1. Hardening del webhook de WordPress
-- Añadir secreto `WP_REVALIDATE_SECRET` (runtime secret, no Vault — Vault es para uso server-side en SQL, aquí lo usa una edge function).
-- `wp-revalidate-webhook` valida header `X-Sistecpos-Signature` (HMAC SHA-256 del body con el secreto) y rechaza con 401 si no coincide.
-- Mantener `verify_jwt = false` (es webhook público) pero ahora autenticado por firma.
+**Objetivo:** Que `/` deje de ser la tienda Surteya y se convierta en el portal de acceso al sistema SistecPOS.
 
-### 2. Outbox de sincronización resiliente
-Nueva tabla `public.sync_outbox`:
+**Cambios:**
+- Nueva ruta `/` → `LoginRouter` que detecta tipo de acceso y redirige.
+- `/admin/login` → acceso superadmin/admin (panel administrativo).
+- `/user/login` → acceso cajero/cliente final.
+- Todo el contenido actual de `/` (Hero, FeaturedProducts, Catálogo Surteya, etc.) se monta bajo `/surteya/*` o se sirve sólo cuando el subdominio resuelto es `surteya.*` o cuando `tenant_domains` lo determina así.
+- `Index.tsx` se renombra a `SurteyaStorefront.tsx` y se enruta condicionalmente por tenant.
+- Tras login, redirección por rol: superadmin → `/admin`, admin → `/admin`, cajero → `/pos`, cliente → `/mi/pedidos`.
 
-| Columna | Tipo | Notas |
-|---|---|---|
-| `id` | uuid PK | |
-| `target` | text | `wp_product`, `wp_order`, `wp_revalidate` |
-| `payload` | jsonb | Body listo para reenviar |
-| `attempts` | int | default 0 |
-| `last_error` | text | |
-| `next_attempt_at` | timestamptz | backoff exponencial |
-| `status` | text | `pending`, `succeeded`, `dead` |
-| `organization_id` | uuid | |
-| `created_at` / `updated_at` | | |
+**Archivos tocados:** `src/App.tsx`, `src/pages/Index.tsx` (rename), nuevo `src/pages/LoginRouter.tsx`, nuevo `src/pages/AdminLogin.tsx`, nuevo `src/pages/UserLogin.tsx`, ajuste en `src/lib/subdomain.ts`.
 
-- RLS: solo `service_role` y miembros de la org pueden leer; escritura solo `service_role`.
-- `sync-products-to-wp` y `sync-order` se modifican: si la llamada HTTP a WP falla → `INSERT` en `sync_outbox` con backoff = 1, 5, 30, 120 min, max 5 intentos antes de `dead`.
-- Nueva edge function `sync-outbox-flush` que procesa pendientes vencidos.
-- `pg_cron` cada 2 min llama a `sync-outbox-flush`.
+⚠️ **Riesgo alto** — afecta SEO y deep-links existentes de Surteya. Antes de ejecutar necesito confirmar:
+1. ¿Surteya debe seguir accesible en producción durante la transición? (sugiero: sí, vía `surteya.sistecpos.com` o ruta `/surteya`).
+2. ¿Mantener redirect 301 de `/producto/:slug` → `/surteya/producto/:slug`?
 
-### 3. Rol `cashier` + RLS de escritura org-scoped
-- `ALTER TYPE app_role ADD VALUE 'cashier'`.
-- Helper SQL `can_write_org(_org_id uuid)` que devuelve `true` solo si el usuario es `superadmin` global **o** miembro de la org con rol `admin`/`cashier`.
-- Auditoría: aplicar la nueva regla a `pos_orders`, `pos_payments`, `cash_sessions`, `cash_movements` (tablas operativas de caja).
-- **No** se tocan políticas de catálogo (`products`, `categories`) — esas ya tienen su esquema admin/editor consolidado.
+---
 
-### 4. WhatsApp automático en `orders.status = 'confirmed'`
-- Trigger `AFTER UPDATE ON public.orders` que, cuando `OLD.status <> 'confirmed' AND NEW.status = 'confirmed'`, llama vía `pg_net.http_post` a la edge function `send-whatsapp-order` (ya existe) con el `order_id`.
-- La función ya formatea el mensaje WhatsApp; solo le pasamos el id y ella resuelve el resto.
-- Log de cada disparo en `sync_outbox` para reintento si `pg_net` reporta fallo.
+## FASE 1 — Seguridad: auditoría RLS y secretos
 
-### 5. `cost_price` con fallback calculado
-- Trigger `BEFORE INSERT OR UPDATE` en `products`: si `cost_price IS NULL`, lo calcula como `round(price * 0.65, 2)` (margen 35% por defecto). Configurable vía `app_settings.key = 'default_cost_margin'`.
-- No sobreescribe valores existentes; solo rellena cuando viene vacío.
+**RLS:**
+- Script de auditoría que liste todas las tablas en `public` sin RLS o con policies `USING (true)`.
+- Estandarizar tablas transaccionales (`orders`, `pos_orders`, `pos_order_items`, `pos_payments`, `cash_sessions`, `stock_movements`, `invoice_scans`, `purchase_orders`, etc.) al patrón:
+  ```sql
+  USING (public.is_member_of(organization_id))
+  WITH CHECK (public.can_write_org(organization_id))
+  ```
+  > Nota: la propuesta `current_setting('app.current_org_id')` requiere setear GUC en cada request — más frágil que las funciones `is_member_of`/`can_write_org` ya existentes y probadas. Recomiendo mantener estas funciones SECURITY DEFINER.
 
-### 6. Cash Denominations para cierre de caja
-Nuevas tablas:
-- `cash_denominations` — catálogo (valor en COP: 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000) con `is_active` y `sort_order`.
-- `cash_session_counts` — conteo por denominación al cerrar caja: `session_id`, `denomination_id`, `quantity`, `kind` (`open`/`close`).
-- RPC `close_cash_session_with_counts(_session_id uuid, _counts jsonb)` que calcula el total contado, lo compara con `expected_amount` y guarda `difference` en `cash_sessions`.
-- Seed inicial de denominaciones COP.
+**Secretos:**
+- Grep en `supabase/functions/**` buscando literales sospechosos (URLs hardcoded, tokens, keys).
+- Reporte de hallazgos en `MIGRATION_LOG.md`.
+- Los secretos ya configurados (RESEND_API_KEY, GOOGLE_PLACES_API_KEY, etc.) ya están en Vault — verificar uso vía `Deno.env.get()`.
 
-### 7. `MIGRATION_LOG.md` por servicios
-Añadir sección final **"Estado de servicios"** con tabla viva:
+**SSO:** revisión de `sso-issue` / `sso-consume` ya están endurecidos (nonce single-use, DELETE...RETURNING). Sólo añadir test E2E + log de auditoría en tabla `sso_audit` (nueva).
 
+---
+
+## FASE 2 — Resiliencia de sincronización
+
+**Idempotencia:**
+- `sync-products-to-wp`: añadir verificación por `wp_external_id` o hash de payload antes de POST.
+- `send-ycloud-whatsapp`: verificar `message_idempotency_key` (usar `order_number + event_type`).
+- `innapsis-emit`: ya usa `client_uuid`, validar que no se re-emita si `external_invoice_id` existe.
+
+**Exponential backoff:**
+- `sync-outbox-flush` **ya implementa** backoff [1, 5, 30, 120, 720] min. La propuesta del prompt (1s, 5s, 30s) es para reintentos in-process; el actual es para reintentos cross-job, que es lo correcto para una outbox persistente.
+- Ajuste menor: añadir jitter (±20%) para evitar thundering herd.
+- Estado `dead` ya existe → bien.
+
+**Helper compartido:** `supabase/functions/_shared/syncLogger.ts` ya existe con `withRetry`. Migrar `sync-products-to-wp` y `send-ycloud-whatsapp` para que lo usen.
+
+---
+
+## FASE 3 — Observabilidad: SyncStatusTable + DLQ
+
+**Componente nuevo:** `src/components/admin/SyncStatusTable.tsx`
+- Consume `get_recent_sync_logs(_services, _limit)` (RPC ya existente).
+- Realtime en `sync_logs` filtrado por `organization_id`.
+- Columnas: servicio, estado (badge: success/error/pending/partial), última corrida, duración, intentos, último error (tooltip).
+- Filtros por servicio y rango de tiempo.
+- Skeleton consistente con resto del admin.
+
+**Componente nuevo:** `src/components/admin/DeadLetterQueue.tsx`
+- Consume `sync_outbox` con `status='dead'`.
+- Acciones por fila: **Reintentar** (actualiza `status='pending'`, `next_attempt_at=now()`, `attempts=0`), **Ver payload** (modal JSON), **Descartar**.
+- Edge function nueva `sync-outbox-retry` para reset atómico.
+
+**Integración:** nueva tab "Sincronización" en `AdminDashboard.tsx`.
+
+---
+
+## FASE 4 — Estabilidad UI: ErrorBoundary + Skeletons
+
+**ErrorBoundary:**
+- `src/components/pos/POSErrorBoundary.tsx` envolviendo `POSWorkspace`.
+- Persiste el ticket actual en `localStorage` (`pos_ticket_recovery:${cash_session_id}`) en cada cambio.
+- Fallback UI con: "Ocurrió un error. Tu ticket está guardado." + botón "Recuperar y continuar" + botón "Reportar incidente" (insert en `error_reports`).
+
+**Skeletons:**
+- Auditoría rápida: identificar componentes que usan `useQuery`/`useEffect` sin skeleton.
+- Crear `src/components/ui/skeleton-presets.tsx` con presets: `TableSkeleton`, `CardGridSkeleton`, `FormSkeleton`.
+- Aplicar en: `AdminDashboard`, `SyncStatusTable`, `POSWorkspace` (carga inicial de catálogo), `Inventario`, `MisPedidos`.
+
+---
+
+## FASE 5 — Documentación: MIGRATION_LOG.md + views-map.md
+
+**MIGRATION_LOG.md:**
+- Snapshot del esquema final post-fases (tablas, columnas clave, RLS activas).
+- Tabla de servicios de sync con: nombre, idempotencia, backoff, dead-letter, dashboard.
+- Estado de subdominios y SSO.
+
+**docs/views-map.md** (actualizar):
+- Mapa completo de las 4 áreas (Admin / POS / Mi / KDS) con jerarquía de rutas, componentes principales, RPCs consumidas y permisos requeridos.
+- Incluye los referentes de competencia (Alegra, Bsale, Eleventa) por pantalla como guía de diseño.
+
+---
+
+## Detalles técnicos relevantes
+
+```text
+Dependencias entre fases:
+  Fase 0 ──┐
+           ├── independientes
+  Fase 1 ──┤
+  Fase 2 ──┤
+  Fase 3 ──┴── depende de Fase 2 (sync-outbox-retry)
+  Fase 4 ── independiente
+  Fase 5 ── al final
 ```
-| Servicio              | Estado  | Última verificación | Notas               |
-|-----------------------|---------|---------------------|---------------------|
-| Sync WP (productos)   | activo  | YYYY-MM-DD          | outbox + HMAC       |
-| Sync WP (pedidos)     | activo  | YYYY-MM-DD          | outbox              |
-| WP Revalidate webhook | activo  | YYYY-MM-DD          | HMAC requerido      |
-| WhatsApp on confirmed | activo  | YYYY-MM-DD          | trigger DB → pg_net |
-| Email transaccional   | activo  | YYYY-MM-DD          | pgmq queue          |
-| SSO handoff           | activo  | YYYY-MM-DD          | one-shot 60s + cron |
-```
+
+**Migraciones DB necesarias:**
+- Fase 1: posiblemente nuevas policies en tablas sin RLS (a determinar tras auditoría).
+- Fase 3: tabla nueva `error_reports` (opcional), índice en `sync_outbox(status, next_attempt_at)`.
+
+**Sin cambios destructivos** previstos. Toda alteración de RLS será aditiva (revisión + estandarización, no DROP).
 
 ---
 
-## Detalles técnicos
+## Pregunta clave antes de empezar
 
-- **Secrets nuevos**: `WP_REVALIDATE_SECRET` (lo pediremos vía `add_secret` cuando el usuario apruebe el plan).
-- **Migrations**: 4 archivos separados — (a) `sync_outbox` + RLS, (b) `cashier` enum + helper + RLS, (c) trigger WhatsApp en `orders`, (d) `cost_price` trigger + `cash_denominations`/`cash_session_counts` + RPC + seed.
-- **Edge functions nuevas**: `sync-outbox-flush`. Modificadas: `wp-revalidate-webhook` (HMAC), `sync-products-to-wp` y `sync-order` (escribir en outbox al fallar).
-- **pg_cron**: job `sync-outbox-flush-2min` cada 2 minutos.
-- **No se toca**: arquitectura SSO/global logout (recién consolidada), email queue, catálogo público.
+**¿Por dónde empezamos?** Recomiendo este orden por impacto/riesgo:
 
-## Lo que queda fuera de este plan (a pedir explícito si lo necesitas)
+1. **Fase 4** (ErrorBoundary) — máxima estabilidad, cero riesgo. **30 min.**
+2. **Fase 3** (Dashboard sync + DLQ) — observabilidad inmediata. **1-2 h.**
+3. **Fase 2** (Idempotencia + jitter) — resiliencia. **1 h.**
+4. **Fase 1** (Auditoría RLS) — requiere revisión cuidadosa. **2-3 h.**
+5. **Fase 0** (Reestructura `/` → login) — alto riesgo SEO, dejar al final con plan de redirects. **2 h + QA.**
+6. **Fase 5** (Docs) — al cierre.
 
-- Reescritura del UI de cierre de caja para usar las nuevas denominaciones (puedo hacerlo en una segunda iteración; aquí solo dejo el backend listo).
-- Conmutación de `broadcast-whatsapp-ycloud` masivo a YCloud Business API real (hoy usa wa.me fallback).
-- Sincronización inversa WP → Supabase (este plan es solo Supabase → WP).
-
----
-
-¿Apruebas? Si dices que sí, ejecuto en este orden: (1) migración outbox + cashier + cash denominations + cost_price + WhatsApp trigger en una sola tanda, (2) `add_secret` para `WP_REVALIDATE_SECRET`, (3) edge functions modificadas + nueva `sync-outbox-flush`, (4) cron job, (5) update de `MIGRATION_LOG.md`.
+Confirma con qué fase quieres que arranque y respondo las preguntas abiertas (Surteya en `/surteya` vs subdominio, mantener policies actuales vs migrar a `app.current_org_id`, etc.).
