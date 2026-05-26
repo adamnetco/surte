@@ -237,3 +237,25 @@ Aplicado en `sync-products-to-wp`:
 | Email transaccional           | activo | pgmq + sync_logs | Retries vía cola                   |
 | WhatsApp (yCloud)             | activo | sync_logs (opt)  | Trigger DB → outbox                |
 
+
+---
+
+## [2026-05-26] Estabilización producción — Fases 2/3/4
+
+### Fase 4 · Estabilidad UI
+- `src/components/pos/POSErrorBoundary.tsx` — envuelve `POSWorkspace` en `src/pages/POS.tsx`. Pantalla de fallback con botones "Recuperar y continuar" (reload preservando localStorage) y "Reintentar sin recargar".
+- `src/components/ui/skeleton-presets.tsx` — presets reutilizables: `TableSkeleton`, `CardGridSkeleton`, `FormSkeleton`, `StatGridSkeleton`.
+
+### Fase 3 · Observabilidad
+- `src/components/admin/DeadLetterQueue.tsx` — nuevo componente DLQ. Lee `sync_outbox` con `status='dead'`, suscripción Realtime, acciones por fila: **Reintentar** (vía edge function), **Ver payload**, **Descartar**.
+- Edge function `sync-outbox-retry` — reset atómico de una fila (`status='pending'`, `attempts=0`, `next_attempt_at=now()`, `last_error=null`). Requiere JWT válido.
+- `AdminDashboard` → pestaña **Sincronización** ahora renderiza `SyncStatusTable` + `DeadLetterQueue` apiladas.
+- Migración: índice `idx_sync_outbox_status_next_attempt ON sync_outbox(status, next_attempt_at) WHERE status IN ('pending','dead')`.
+
+### Fase 2 · Resiliencia
+- `sync-outbox-flush`: añadido **jitter ±20 %** al backoff exponencial para evitar thundering herd en reintentos paralelos. Backoff cross-job actual: 1, 5, 30, 120, 720 min (× jitter).
+
+### Pendientes (próximo turno)
+- **Fase 1** — auditoría RLS (85 warnings pre-existentes del linter, principalmente `SECURITY DEFINER` funciones públicas y `RLS_ENABLED_NO_POLICY`). Requiere revisión cuidadosa caso por caso.
+- **Fase 0** — reestructura `/` → `LoginRouter` con rutas `/admin/login` y `/user/login`, Surteya bajo `/surteya/*` o subdominio. Bloqueado en preguntas abiertas (ver `.lovable/plan.md`).
+- **Fase 5** — actualización completa de `docs/views-map.md`.

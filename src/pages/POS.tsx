@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Loader2, LockKeyhole } from "lucide-react";
 import OpenSessionPanel from "@/components/pos/OpenSessionPanel";
 import POSWorkspace from "@/components/pos/POSWorkspace";
+import POSErrorBoundary from "@/components/pos/POSErrorBoundary";
 
 interface Location { id: string; name: string; }
 interface Register { id: string; name: string; location_id: string; }
@@ -95,11 +96,13 @@ export default function POS() {
   }
 
   return (
-    <POSWorkspace
-      session={activeSession}
-      organizationId={currentOrg.id}
-      userId={user!.id}
-      onClosed={() => { setActiveSession(null); toast.success("Sesión cerrada"); }}
-    />
+    <POSErrorBoundary sessionId={activeSession?.id}>
+      <POSWorkspace
+        session={activeSession}
+        organizationId={currentOrg.id}
+        userId={user!.id}
+        onClosed={() => { setActiveSession(null); toast.success("Sesión cerrada"); }}
+      />
+    </POSErrorBoundary>
   );
 }
