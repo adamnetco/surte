@@ -124,6 +124,17 @@ const App = () => (
                   <Suspense fallback={<RouteFallback />}>
                   <Routes>
                     <Route path="/" element={<TenantHome />} />
+                    {/* Tenant storefront por path (futuro cambio de dominio).
+                        Cada slug aquí debe corresponder a un tenant en `tenant_domains`. */}
+                    <Route path="/surteya" element={<Index />} />
+                    <Route path="/surteya/catalogo" element={<Catalogo />} />
+                    <Route path="/surteya/carrito" element={<Carrito />} />
+                    <Route path="/surteya/categorias" element={<Categorias />} />
+                    <Route path="/surteya/menu" element={<MenuPage />} />
+                    <Route path="/surteya/ofertas" element={<Ofertas />} />
+                    <Route path="/surteya/producto/:id" element={<ProductoDetalle />} />
+                    <Route path="/surteya/p/:id" element={<ProductoDetalle />} />
+                    <Route path="/surteya/pedido/:orderNumber" element={<Pedido />} />
                     <Route path="/catalogo" element={<Catalogo />} />
                     <Route path="/carrito" element={<Carrito />} />
                     <Route path="/categorias" element={<Categorias />} />
