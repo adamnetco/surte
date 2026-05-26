@@ -21,9 +21,10 @@ import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
 import Index from "./pages/Index";
+import LoginRouter from "./pages/LoginRouter";
 import AdminDiag from "./pages/AdminDiag";
 import RoleGuard from "./components/RoleGuard";
-import { detectTenant } from "@/lib/subdomain";
+import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
 
 const ClientPortalShell = lazy(() => import("./components/clientes/ClientPortalShell"));
 const SSOErrorScreen = lazy(() => import("./components/SSOErrorScreen"));
@@ -76,6 +77,14 @@ const RouteFallback = () => (
  * Tenant-aware home: la ruta `/` cambia de componente según el subdominio.
  * Ver `src/lib/subdomain.ts` para el mapeo.
  */
+/**
+ * Tenant-aware home: la ruta `/` cambia de componente según el subdominio.
+ * - admin.* → AdminDashboard
+ * - pos.*   → POSWorkspace
+ * - mi.*    → ClientPortal
+ * - <slug>.sistecpos.com (surteya, futuros tenants) → Storefront (Index)
+ * - sistecpos.com / www / app → LoginRouter (portal de acceso al SaaS)
+ */
 const TenantHome = () => {
   const tenant = detectTenant();
   if (tenant === "admin") {
@@ -87,7 +96,8 @@ const TenantHome = () => {
   }
   if (tenant === "pos") return <POS />;
   if (tenant === "mi") return <ClientPortalShell />;
-  return <Index />;
+  if (isStorefrontTenant(tenant)) return <Index />;
+  return <LoginRouter />;
 };
 
 const App = () => (
@@ -114,6 +124,17 @@ const App = () => (
                   <Suspense fallback={<RouteFallback />}>
                   <Routes>
                     <Route path="/" element={<TenantHome />} />
+                    {/* Tenant storefront por path (futuro cambio de dominio).
+                        Cada slug aquí debe corresponder a un tenant en `tenant_domains`. */}
+                    <Route path="/surteya" element={<Index />} />
+                    <Route path="/surteya/catalogo" element={<Catalogo />} />
+                    <Route path="/surteya/carrito" element={<Carrito />} />
+                    <Route path="/surteya/categorias" element={<Categorias />} />
+                    <Route path="/surteya/menu" element={<MenuPage />} />
+                    <Route path="/surteya/ofertas" element={<Ofertas />} />
+                    <Route path="/surteya/producto/:id" element={<ProductoDetalle />} />
+                    <Route path="/surteya/p/:id" element={<ProductoDetalle />} />
+                    <Route path="/surteya/pedido/:orderNumber" element={<Pedido />} />
                     <Route path="/catalogo" element={<Catalogo />} />
                     <Route path="/carrito" element={<Carrito />} />
                     <Route path="/categorias" element={<Categorias />} />
