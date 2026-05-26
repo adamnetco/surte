@@ -96,11 +96,13 @@ export default function POS() {
   }
 
   return (
-    <POSWorkspace
-      session={activeSession}
-      organizationId={currentOrg.id}
-      userId={user!.id}
-      onClosed={() => { setActiveSession(null); toast.success("Sesión cerrada"); }}
-    />
+    <POSErrorBoundary sessionId={activeSession?.id}>
+      <POSWorkspace
+        session={activeSession}
+        organizationId={currentOrg.id}
+        userId={user!.id}
+        onClosed={() => { setActiveSession(null); toast.success("Sesión cerrada"); }}
+      />
+    </POSErrorBoundary>
   );
 }
