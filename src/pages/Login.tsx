@@ -40,12 +40,12 @@ const Login = () => {
   const redirectedRef = useRef(false);
 
   const resolveDestination = (mail?: string | null, currentRole?: string | null): string => {
-    if (fromPath && fromPath !== "/login") return fromPath;
+    if (fromPath && fromPath !== "/login" && fromPath !== "/") return fromPath;
     const isMaster = (mail ?? "").toLowerCase() === MASTER_EMAIL;
     if (isMaster) return "/admin";
     if (currentRole === "superadmin" || currentRole === "admin") return "/admin";
     if (currentRole === "agente") return "/pos";
-    return "/";
+    return "/clientes";
   };
 
   // Auto-redirect si ya hay sesión al entrar a /login
