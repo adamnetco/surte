@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Loader2, LockKeyhole } from "lucide-react";
 import OpenSessionPanel from "@/components/pos/OpenSessionPanel";
 import POSWorkspace from "@/components/pos/POSWorkspace";
+import POSErrorBoundary from "@/components/pos/POSErrorBoundary";
 
 interface Location { id: string; name: string; }
 interface Register { id: string; name: string; location_id: string; }
