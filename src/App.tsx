@@ -21,9 +21,10 @@ import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
 import Index from "./pages/Index";
+import LoginRouter from "./pages/LoginRouter";
 import AdminDiag from "./pages/AdminDiag";
 import RoleGuard from "./components/RoleGuard";
-import { detectTenant } from "@/lib/subdomain";
+import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
 
 const ClientPortalShell = lazy(() => import("./components/clientes/ClientPortalShell"));
 const SSOErrorScreen = lazy(() => import("./components/SSOErrorScreen"));
