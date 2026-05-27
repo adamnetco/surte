@@ -65,6 +65,7 @@ const GerenteIA = lazy(() => import("./pages/GerenteIA"));
 const Compras = lazy(() => import("./pages/Compras"));
 const Sitios = lazy(() => import("./pages/Sitios"));
 const SuperadminDashboard = lazy(() => import("./pages/SuperadminDashboard"));
+const TenantWorkspace = lazy(() => import("./pages/TenantWorkspace"));
 
 const queryClient = new QueryClient();
 
