@@ -233,6 +233,21 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background">
       <AdminHeader />
 
+      {role === "superadmin" && (
+        <div className="border-b border-primary/20 bg-primary/5 px-4 py-2 flex items-center justify-between gap-3">
+          <p className="text-xs text-primary flex items-center gap-1.5">
+            <Building2 size={12} /> Estás en el panel <strong>operativo</strong> de la tienda. La gestión multi-tenant vive en el panel Superadmin.
+          </p>
+          <button
+            onClick={() => navigate("/superadmin")}
+            className="text-xs font-semibold text-white bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-md whitespace-nowrap"
+          >
+            Ir al panel Superadmin →
+          </button>
+        </div>
+      )}
+
+
       {/* Mobile: horizontal tab scroll */}
       <div className="lg:hidden flex overflow-x-auto border-b border-border bg-card scrollbar-hide">
         {tabs.map(({ id, label, icon: Icon }) => (
