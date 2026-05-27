@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/context/OrganizationContext";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ type SyncLog = {
 const STATUSES = ["all", "success", "error", "partial", "pending"] as const;
 
 export default function SyncMonitor() {
+  const { currentOrg } = useOrganization();
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<typeof STATUSES[number]>("all");
@@ -29,11 +31,9 @@ export default function SyncMonitor() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("sync_logs")
-      .select("*")
-      .order("last_run_at", { ascending: false })
-      .limit(200);
+    let q = supabase.from("sync_logs").select("*").order("last_run_at", { ascending: false }).limit(200);
+    if (currentOrg?.id) q = q.eq("organization_id", currentOrg.id);
+    const { data, error } = await q;
     if (!error) setLogs((data as SyncLog[]) ?? []);
     setLoading(false);
   };
@@ -45,7 +45,8 @@ export default function SyncMonitor() {
       .on("postgres_changes", { event: "*", schema: "public", table: "sync_logs" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrg?.id]);
 
   const services = Array.from(new Set(logs.map((l) => l.service_name))).sort();
   const filtered = logs.filter(
