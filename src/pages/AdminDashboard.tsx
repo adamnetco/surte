@@ -41,6 +41,7 @@ const DeadLetterQueue = lazy(() => import("@/components/admin/DeadLetterQueue"))
 const SyncMonitor = lazy(() => import("@/components/admin/SyncMonitor"));
 const OrganizationsTab = lazy(() => import("@/components/admin/OrganizationsTab"));
 const ContactsTab = lazy(() => import("@/components/admin/ContactsTab"));
+const FiscalSettingsTab = lazy(() => import("@/components/admin/FiscalSettingsTab"));
 
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null },
@@ -72,6 +73,7 @@ const allTabs = [
   { id: "modules", label: "Módulos", icon: ToggleRight, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "data", label: "Datos", icon: Database, roles: ["superadmin"] as AppRole[], module: null },
   { id: "sync", label: "Sincronización", icon: RefreshCw, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "fiscal", label: "Fiscal", icon: Receipt, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[], module: null },
 ];
 
@@ -224,6 +226,7 @@ const AdminDashboard = () => {
             <DeadLetterQueue />
           </div>
         )}
+        {activeTab === "fiscal" && <FiscalSettingsTab />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
     </TabErrorBoundary>
