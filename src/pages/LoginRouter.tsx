@@ -42,6 +42,8 @@ const LoginRouter = () => {
   const destinationFor = (mail: string | null | undefined, r: AppRole | null): string => {
     if ((mail ?? "").toLowerCase() === MASTER_EMAIL) return "/superadmin";
     if (r === "superadmin") return "/superadmin";
+    const slug = (tienda || "").trim().toLowerCase();
+    if (slug && (r === "admin" || r === "editor")) return `/t/${slug}/admin`;
     if (r === "admin" || r === "editor") return "/admin";
     if (r === "agente") return "/pos";
     return "/clientes";

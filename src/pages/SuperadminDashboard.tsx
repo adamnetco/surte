@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, ToggleRight, Receipt, RefreshCw, Database, Key, BarChart3, Settings, LogOut, Sparkles, ShieldCheck } from "lucide-react";
+import { Building2, ToggleRight, Receipt, RefreshCw, Database, Key, BarChart3, Settings, LogOut, Sparkles, ShieldCheck, Rocket } from "lucide-react";
+import TenantOnboardingWizard from "@/components/superadmin/TenantOnboardingWizard";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
@@ -16,6 +17,7 @@ const SettingsTab = lazy(() => import("@/components/admin/SettingsTab"));
 
 type SectionId =
   | "overview"
+  | "onboarding"
   | "tiendas"
   | "modulos"
   | "fiscal"
@@ -26,7 +28,8 @@ type SectionId =
 
 const SECTIONS: Array<{ id: SectionId; label: string; icon: any; description: string }> = [
   { id: "overview", label: "Resumen SaaS", icon: BarChart3, description: "Métricas cross-tenant" },
-  { id: "tiendas", label: "Tiendas", icon: Building2, description: "Alta y gestión de organizaciones" },
+  { id: "onboarding", label: "Nueva tienda", icon: Rocket, description: "Wizard de alta atómico" },
+  { id: "tiendas", label: "Tiendas", icon: Building2, description: "Gestión de organizaciones" },
   { id: "modulos", label: "Módulos", icon: ToggleRight, description: "Habilitar capacidades por tienda" },
   { id: "fiscal", label: "Fiscal (DIAN)", icon: Receipt, description: "Resoluciones e impuestos" },
   { id: "sync", label: "Sincronización", icon: RefreshCw, description: "WP, WhatsApp, DIAN, outbox" },
@@ -69,6 +72,8 @@ const SuperadminDashboard = () => {
     switch (active) {
       case "overview":
         return <OverviewTab products={[]} orders={[]} />;
+      case "onboarding":
+        return <TenantOnboardingWizard onCreated={() => setActive("tiendas")} />;
       case "tiendas":
         return <OrganizationsTab />;
       case "modulos":
