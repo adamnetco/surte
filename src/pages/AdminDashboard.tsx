@@ -4,12 +4,11 @@ import { useAuth } from "@/context/AuthContext";
 import type { AppRole } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, Database, CalendarDays, ToggleRight, Building2, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Key, Sparkles, BookOpen, Rocket, ChevronRight, RefreshCw } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useOrganization } from "@/context/OrganizationContext";
 import AdminHeader from "@/components/admin/AdminHeader";
 
-const ModulesTab = lazy(() => import("@/components/admin/ModulesTab"));
 const AgendaTab = lazy(() => import("@/components/admin/AgendaTab"));
 const OverviewTab = lazy(() => import("@/components/admin/OverviewTab"));
 const ProductsTab = lazy(() => import("@/components/admin/ProductsTab"));
@@ -32,16 +31,10 @@ const FeaturedSectionsTab = lazy(() => import("@/components/admin/FeaturedSectio
 const MunicipalitiesTab = lazy(() => import("@/components/admin/MunicipalitiesTab"));
 const CustomerReviewsTab = lazy(() => import("@/components/admin/CustomerReviewsTab"));
 const GoogleReviewsTab = lazy(() => import("@/components/admin/GoogleReviewsTab"));
-const DataManagementTab = lazy(() => import("@/components/admin/DataManagementTab"));
 const ModifiersTab = lazy(() => import("@/components/admin/ModifiersTab"));
 const SeoContentTab = lazy(() => import("@/components/admin/SeoContentTab"));
 const CrmLeadsTab = lazy(() => import("@/components/admin/CrmLeadsTab"));
-const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"));
-const DeadLetterQueue = lazy(() => import("@/components/admin/DeadLetterQueue"));
-const SyncMonitor = lazy(() => import("@/components/admin/SyncMonitor"));
-const OrganizationsTab = lazy(() => import("@/components/admin/OrganizationsTab"));
 const ContactsTab = lazy(() => import("@/components/admin/ContactsTab"));
-const FiscalSettingsTab = lazy(() => import("@/components/admin/FiscalSettingsTab"));
 
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
@@ -92,8 +85,8 @@ class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string 
   }
 }
 
+// Solo enlaces operativos del negocio. Sitios, Licencias, Catálogos Base viven en /superadmin.
 const operationsLinks = [
-  { path: "/sitios", label: "Sitios / Multi-tenant", icon: Building2, roles: ["superadmin", "admin"] as AppRole[] },
   { path: "/pos", label: "POS", icon: Monitor, roles: ["superadmin", "admin", "editor"] as AppRole[] },
   { path: "/mesas", label: "Mesas", icon: Utensils, roles: ["superadmin", "admin", "editor"] as AppRole[] },
   { path: "/kds", label: "KDS (Cocina)", icon: ChefHat, roles: ["superadmin", "admin", "editor"] as AppRole[] },
@@ -102,9 +95,7 @@ const operationsLinks = [
   { path: "/inventario", label: "Inventario Avanzado", icon: Warehouse, roles: ["superadmin", "admin"] as AppRole[] },
   { path: "/planes", label: "Planes", icon: CreditCard, roles: ["superadmin", "admin"] as AppRole[] },
   { path: "/billing", label: "Billing", icon: Wallet, roles: ["superadmin", "admin"] as AppRole[] },
-  { path: "/licencias", label: "Licencias", icon: Key, roles: ["superadmin"] as AppRole[] },
   { path: "/gerente-ia", label: "Gerente IA", icon: Sparkles, roles: ["superadmin", "admin"] as AppRole[] },
-  { path: "/catalogos-base", label: "Catálogos Base", icon: BookOpen, roles: ["superadmin"] as AppRole[] },
   { path: "/onboarding", label: "Onboarding", icon: Rocket, roles: ["superadmin", "admin"] as AppRole[] },
 ];
 
@@ -191,13 +182,13 @@ const AdminDashboard = () => {
         {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
         {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
         {activeTab === "agenda" && <AgendaTab />}
-        {activeTab === "modules" && <ModulesTab />}
+        {/* modules tab removed — vive en /superadmin */}
         {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
         {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
         {activeTab === "users" && <UsersTab queryClient={queryClient} />}
         {activeTab === "contacts" && <ContactsTab />}
-        {activeTab === "organizations" && <OrganizationsTab />}
+        {/* organizations tab removed — vive en /superadmin */}
         {activeTab === "crm" && <CrmLeadsTab />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
         {activeTab === "hero" && <HeroSlidesTab queryClient={queryClient} />}
@@ -215,15 +206,7 @@ const AdminDashboard = () => {
         {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
         {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
         {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
-        {activeTab === "data" && <DataManagementTab />}
-        {activeTab === "sync" && (
-          <div className="space-y-4">
-            <SyncStatusTable />
-            <SyncMonitor />
-            <DeadLetterQueue />
-          </div>
-        )}
-        {activeTab === "fiscal" && <FiscalSettingsTab />}
+        {/* data / sync / fiscal removidos — viven en /superadmin */}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
     </TabErrorBoundary>
