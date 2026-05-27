@@ -43,6 +43,9 @@ const OrganizationsTab = lazy(() => import("@/components/admin/OrganizationsTab"
 const ContactsTab = lazy(() => import("@/components/admin/ContactsTab"));
 const FiscalSettingsTab = lazy(() => import("@/components/admin/FiscalSettingsTab"));
 
+// Pestañas OPERATIVAS del negocio (no multi-tenant).
+// Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
+// Fiscal global, Sincronización, Datos masivos, Ajustes globales.
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null },
   { id: "orders", label: "Pedidos", icon: ShoppingCart, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
@@ -50,7 +53,6 @@ const allTabs = [
   { id: "products", label: "Inventario", icon: Package, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
   { id: "categories", label: "Categorías", icon: Tag, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "organizations", label: "Tiendas", icon: Building2, roles: ["superadmin"] as AppRole[], module: null },
   { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "contacts", label: "Contactos", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[], module: null },
@@ -70,11 +72,6 @@ const allTabs = [
   { id: "reviews", label: "Comentarios", icon: MessageSquare, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
   { id: "google-reviews", label: "Google", icon: Map, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
   { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "modules", label: "Módulos", icon: ToggleRight, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "data", label: "Datos", icon: Database, roles: ["superadmin"] as AppRole[], module: null },
-  { id: "sync", label: "Sincronización", icon: RefreshCw, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "fiscal", label: "Fiscal", icon: Receipt, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[], module: null },
 ];
 
 class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
@@ -235,6 +232,21 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <AdminHeader />
+
+      {role === "superadmin" && (
+        <div className="border-b border-primary/20 bg-primary/5 px-4 py-2 flex items-center justify-between gap-3">
+          <p className="text-xs text-primary flex items-center gap-1.5">
+            <Building2 size={12} /> Estás en el panel <strong>operativo</strong> de la tienda. La gestión multi-tenant vive en el panel Superadmin.
+          </p>
+          <button
+            onClick={() => navigate("/superadmin")}
+            className="text-xs font-semibold text-white bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-md whitespace-nowrap"
+          >
+            Ir al panel Superadmin →
+          </button>
+        </div>
+      )}
+
 
       {/* Mobile: horizontal tab scroll */}
       <div className="lg:hidden flex overflow-x-auto border-b border-border bg-card scrollbar-hide">
