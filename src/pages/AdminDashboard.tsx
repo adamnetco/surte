@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { useOrganization } from "@/context/OrganizationContext";
 import AdminHeader from "@/components/admin/AdminHeader";
 
-const ModulesTab = lazy(() => import("@/components/admin/ModulesTab"));
 const AgendaTab = lazy(() => import("@/components/admin/AgendaTab"));
 const OverviewTab = lazy(() => import("@/components/admin/OverviewTab"));
 const ProductsTab = lazy(() => import("@/components/admin/ProductsTab"));
@@ -32,16 +31,10 @@ const FeaturedSectionsTab = lazy(() => import("@/components/admin/FeaturedSectio
 const MunicipalitiesTab = lazy(() => import("@/components/admin/MunicipalitiesTab"));
 const CustomerReviewsTab = lazy(() => import("@/components/admin/CustomerReviewsTab"));
 const GoogleReviewsTab = lazy(() => import("@/components/admin/GoogleReviewsTab"));
-const DataManagementTab = lazy(() => import("@/components/admin/DataManagementTab"));
 const ModifiersTab = lazy(() => import("@/components/admin/ModifiersTab"));
 const SeoContentTab = lazy(() => import("@/components/admin/SeoContentTab"));
 const CrmLeadsTab = lazy(() => import("@/components/admin/CrmLeadsTab"));
-const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"));
-const DeadLetterQueue = lazy(() => import("@/components/admin/DeadLetterQueue"));
-const SyncMonitor = lazy(() => import("@/components/admin/SyncMonitor"));
-const OrganizationsTab = lazy(() => import("@/components/admin/OrganizationsTab"));
 const ContactsTab = lazy(() => import("@/components/admin/ContactsTab"));
-const FiscalSettingsTab = lazy(() => import("@/components/admin/FiscalSettingsTab"));
 
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
