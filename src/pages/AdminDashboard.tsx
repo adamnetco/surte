@@ -73,6 +73,7 @@ const allTabs = [
   { id: "modules", label: "Módulos", icon: ToggleRight, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "data", label: "Datos", icon: Database, roles: ["superadmin"] as AppRole[], module: null },
   { id: "sync", label: "Sincronización", icon: RefreshCw, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "fiscal", label: "Fiscal", icon: Receipt, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "settings", label: "Ajustes", icon: Settings, roles: ["superadmin"] as AppRole[], module: null },
 ];
 
