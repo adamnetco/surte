@@ -24,6 +24,7 @@ import Index from "./pages/Index";
 import LoginRouter from "./pages/LoginRouter";
 import AdminDiag from "./pages/AdminDiag";
 import RoleGuard from "./components/RoleGuard";
+import HostGuard from "./components/HostGuard";
 import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
 
 const ClientPortalShell = lazy(() => import("./components/clientes/ClientPortalShell"));
@@ -120,63 +121,62 @@ const App = () => (
                   <Suspense fallback={<RouteFallback />}>
                   <Routes>
                     <Route path="/" element={<TenantHome />} />
-                    {/* Tenant storefront por path (futuro cambio de dominio).
-                        Cada slug aquí debe corresponder a un tenant en `tenant_domains`. */}
-                    <Route path="/surteya" element={<Index />} />
-                    <Route path="/surteya/catalogo" element={<Catalogo />} />
-                    <Route path="/surteya/carrito" element={<Carrito />} />
-                    <Route path="/surteya/categorias" element={<Categorias />} />
-                    <Route path="/surteya/menu" element={<MenuPage />} />
-                    <Route path="/surteya/ofertas" element={<Ofertas />} />
-                    <Route path="/surteya/producto/:id" element={<ProductoDetalle />} />
-                    <Route path="/surteya/p/:id" element={<ProductoDetalle />} />
-                    <Route path="/surteya/pedido/:orderNumber" element={<Pedido />} />
-                    <Route path="/catalogo" element={<Catalogo />} />
-                    <Route path="/carrito" element={<Carrito />} />
-                    <Route path="/categorias" element={<Categorias />} />
-                    <Route path="/menu" element={<MenuPage />} />
-                    <Route path="/ofertas" element={<Ofertas />} />
+
+                    {/* === Rutas universales (cualquier host) === */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/user/login" element={<Login />} />
                     <Route path="/admin/login" element={<Login />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/clientes" element={<ClientPortalShell />} />
-                    <Route path="/pedidos" element={<MisPedidos />} />
-                    <Route path="/perfil" element={<Perfil />} />
-                    <Route path="/favoritos" element={<Favoritos />} />
-                    <Route path="/ayuda" element={<Ayuda />} />
-                    <Route path="/configuracion" element={<Configuracion />} />
-                    <Route path="/producto/:id" element={<ProductoDetalle />} />
-                    <Route path="/p/:id" element={<ProductoDetalle />} />
-                    <Route path="/pedido/:orderNumber" element={<Pedido />} />
-                    <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
-                   <Route path="/superadmin/*" element={<SuperadminDashboard />} />
-                   <Route path="/t/:slug/admin" element={<TenantWorkspace />} />
-                    <Route path="/admin/diag" element={<AdminDiag />} />
-                    <Route path="/admin-diag" element={<AdminDiag />} />
-                    <Route path="/pos" element={<POS />} />
-                    <Route path="/mesas" element={<Mesas />} />
-                    <Route path="/kds" element={<KDS />} />
-                    <Route path="/inventario" element={<Inventario />} />
-                    <Route path="/facturacion" element={<Facturacion />} />
-                    <Route path="/planes" element={<Planes />} />
-                    <Route path="/billing" element={<Billing />} />
-                    <Route path="/onboarding" element={<Onboarding />} />
-                    <Route path="/catalogos-base" element={<CatalogosBase />} />
-                    <Route path="/licencias" element={<Licencias />} />
-                    <Route path="/gerente-ia" element={<GerenteIA />} />
-                    <Route path="/compras" element={<Compras />} />
-                    <Route path="/sitios" element={<Sitios />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
-                    <Route path="/hub/:type/:slug" element={<Hub />} />
-                    {/* SEO local: URLs amigables con ciudad */}
-                    <Route path="/:city/categoria/:slug" element={<Hub />} />
-                    <Route path="/:city/marca/:slug" element={<Hub />} />
-                    <Route path="/:city/etiqueta/:slug" element={<Hub />} />
-                    <Route path="/:city" element={<Hub />} />
-                    <Route path="/s/:slug" element={<LandingPage />} />
                     <Route path="/politicas" element={<Politicas />} />
                     <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
+                    <Route path="/planes" element={<Planes />} />
+
+                    {/* === Storefront (solo en hosts de tenant: surteya.sistecpos.com, …) === */}
+                    <Route path="/catalogo" element={<HostGuard require="storefront"><Catalogo /></HostGuard>} />
+                    <Route path="/carrito" element={<HostGuard require="storefront"><Carrito /></HostGuard>} />
+                    <Route path="/categorias" element={<HostGuard require="storefront"><Categorias /></HostGuard>} />
+                    <Route path="/menu" element={<HostGuard require="storefront"><MenuPage /></HostGuard>} />
+                    <Route path="/ofertas" element={<HostGuard require="storefront"><Ofertas /></HostGuard>} />
+                    <Route path="/producto/:id" element={<HostGuard require="storefront"><ProductoDetalle /></HostGuard>} />
+                    <Route path="/p/:id" element={<HostGuard require="storefront"><ProductoDetalle /></HostGuard>} />
+                    <Route path="/pedido/:orderNumber" element={<HostGuard require="storefront"><Pedido /></HostGuard>} />
+                    <Route path="/pedidos" element={<HostGuard require="storefront"><MisPedidos /></HostGuard>} />
+                    <Route path="/favoritos" element={<HostGuard require="storefront"><Favoritos /></HostGuard>} />
+                    <Route path="/perfil" element={<HostGuard require="storefront"><Perfil /></HostGuard>} />
+                    <Route path="/ayuda" element={<HostGuard require="storefront"><Ayuda /></HostGuard>} />
+                    <Route path="/configuracion" element={<HostGuard require="storefront"><Configuracion /></HostGuard>} />
+                    <Route path="/clientes" element={<HostGuard require="storefront"><ClientPortalShell /></HostGuard>} />
+
+                    {/* SEO local (hubs por ciudad) → solo en hosts de tenant */}
+                    <Route path="/hub/:type/:slug" element={<HostGuard require="storefront"><Hub /></HostGuard>} />
+                    <Route path="/:city/categoria/:slug" element={<HostGuard require="storefront"><Hub /></HostGuard>} />
+                    <Route path="/:city/marca/:slug" element={<HostGuard require="storefront"><Hub /></HostGuard>} />
+                    <Route path="/:city/etiqueta/:slug" element={<HostGuard require="storefront"><Hub /></HostGuard>} />
+                    <Route path="/:city" element={<HostGuard require="storefront"><Hub /></HostGuard>} />
+                    <Route path="/s/:slug" element={<HostGuard require="storefront"><LandingPage /></HostGuard>} />
+
+                    {/* === Operativa de un negocio (solo en su subdominio) === */}
+                    <Route path="/admin" element={<HostGuard require="storefront"><RoleGuard section="admin"><AdminDashboard /></RoleGuard></HostGuard>} />
+                    <Route path="/pos" element={<HostGuard require="storefront"><POS /></HostGuard>} />
+                    <Route path="/mesas" element={<HostGuard require="storefront"><Mesas /></HostGuard>} />
+                    <Route path="/kds" element={<HostGuard require="storefront"><KDS /></HostGuard>} />
+                    <Route path="/inventario" element={<HostGuard require="storefront"><Inventario /></HostGuard>} />
+                    <Route path="/facturacion" element={<HostGuard require="storefront"><Facturacion /></HostGuard>} />
+                    <Route path="/compras" element={<HostGuard require="storefront"><Compras /></HostGuard>} />
+                    <Route path="/gerente-ia" element={<HostGuard require="storefront"><GerenteIA /></HostGuard>} />
+                    <Route path="/onboarding" element={<HostGuard require="storefront"><Onboarding /></HostGuard>} />
+                    <Route path="/billing" element={<HostGuard require="storefront"><Billing /></HostGuard>} />
+
+                    {/* === Panel SistecPOS (solo en hosts del sistema) === */}
+                    <Route path="/superadmin/*" element={<HostGuard require="system"><SuperadminDashboard /></HostGuard>} />
+                    <Route path="/sitios" element={<HostGuard require="system"><Sitios /></HostGuard>} />
+                    <Route path="/licencias" element={<HostGuard require="system"><Licencias /></HostGuard>} />
+                    <Route path="/catalogos-base" element={<HostGuard require="system"><CatalogosBase /></HostGuard>} />
+                    <Route path="/t/:slug/admin" element={<HostGuard require="system"><TenantWorkspace /></HostGuard>} />
+                    <Route path="/admin/diag" element={<AdminDiag />} />
+                    <Route path="/admin-diag" element={<AdminDiag />} />
+
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   </Suspense>
