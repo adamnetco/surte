@@ -1,31 +1,38 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShieldCheck, Store, ArrowRight, Sparkles } from "lucide-react";
 import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { detectTenant } from "@/lib/subdomain";
 import HeadMeta from "@/components/seo/HeadMeta";
 
 /**
- * Portal de acceso público de SistecPOS (sistecpos.com / app.sistecpos.com).
- * Reemplaza al antiguo `/` que servía la tienda Surteya.
- * - Soy administrador → /admin/login
- * - Soy cajero / cliente → /user/login
- * Si ya hay sesión activa, redirige automáticamente al destino por rol.
+ * Portal de acceso público de SistecPOS.
+ * Soporta `?intent=admin|pos|cliente` para enrutar directo al login correspondiente.
+ * Si el subdominio es admin/pos/mi, también se infiere el intent automáticamente.
  */
 const LoginRouter = () => {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const { user, role, loading } = useAuth();
+  const intentParam = params.get("intent");
+  const tenant = detectTenant();
+  const inferredIntent =
+    intentParam ||
+    (tenant === "admin" ? "admin" : tenant === "pos" ? "pos" : tenant === "mi" ? "cliente" : null);
 
   useEffect(() => {
-    if (loading || !user) return;
-    if (role === "superadmin" || role === "admin") {
-      navigate("/admin", { replace: true });
-    } else if (role === "agente") {
-      navigate("/pos", { replace: true });
-    } else {
-      navigate("/clientes", { replace: true });
+    if (loading) return;
+    if (user) {
+      if (role === "superadmin" || role === "admin") navigate("/admin", { replace: true });
+      else if (role === "agente") navigate("/pos", { replace: true });
+      else navigate("/clientes", { replace: true });
+      return;
     }
-  }, [loading, user, role, navigate]);
+    if (inferredIntent === "admin") navigate("/admin/login", { replace: true });
+    else if (inferredIntent === "pos") navigate("/user/login?next=/pos", { replace: true });
+    else if (inferredIntent === "cliente") navigate("/user/login", { replace: true });
+  }, [loading, user, role, inferredIntent, navigate]);
 
   return (
     <main className="min-h-[100dvh] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white flex flex-col">

@@ -1,141 +1,80 @@
 
-# Plan de Estabilización SistecPOS Core
+# Plan: Estabilización Final + Admin Panel SistecPOS
 
-Este plan está dividido en **5 fases independientes y aprobables por separado**. Cada fase tiene un alcance acotado para evitar regresiones masivas en un sistema en producción. Recomiendo aprobar fase por fase.
+## Parte A — Pendientes de infraestructura (Fases 0-5)
 
----
+1. **DNS / Dominios**
+   - Verificar `surteya.sistecpos.com` apuntando a `185.158.133.1` (A record) + TXT `_lovable`.
+   - Confirmar `admin.sistecpos.com` ya activo (lista en project_urls).
+   - Validar `notify.sistecpos.com` (email infra): correr `email_domain--check_email_domain_status` y reportar DKIM/SPF.
 
-## FASE 0 — Reestructura de rutas y separación tenant semilla "surteya"
+2. **Cron de resiliencia**
+   - Activar `pg_cron` job que invoque `sync-outbox-flush` cada 2 min y `sync-outbox-retry` cada 10 min.
+   - Migración: `cron.schedule(...)` apuntando a edge functions vía `net.http_post` con `service_role`.
 
-**Objetivo:** Que `/` deje de ser la tienda Surteya y se convierta en el portal de acceso al sistema SistecPOS.
+3. **Cleanup SSO**
+   - Cron diario: `SELECT public.cleanup_sso_tokens();`
 
-**Cambios:**
-- Nueva ruta `/` → `LoginRouter` que detecta tipo de acceso y redirige.
-- `/admin/login` → acceso superadmin/admin (panel administrativo).
-- `/user/login` → acceso cajero/cliente final.
-- Todo el contenido actual de `/` (Hero, FeaturedProducts, Catálogo Surteya, etc.) se monta bajo `/surteya/*` o se sirve sólo cuando el subdominio resuelto es `surteya.*` o cuando `tenant_domains` lo determina así.
-- `Index.tsx` se renombra a `SurteyaStorefront.tsx` y se enruta condicionalmente por tenant.
-- Tras login, redirección por rol: superadmin → `/admin`, admin → `/admin`, cajero → `/pos`, cliente → `/mi/pedidos`.
+## Parte B — Routing canónico (refinamiento Fase 0)
 
-**Archivos tocados:** `src/App.tsx`, `src/pages/Index.tsx` (rename), nuevo `src/pages/LoginRouter.tsx`, nuevo `src/pages/AdminLogin.tsx`, nuevo `src/pages/UserLogin.tsx`, ajuste en `src/lib/subdomain.ts`.
+Estado actual: `/` ya muestra `LoginRouter` en dominios sistema y storefront en subdominios tenant. `/surteya/*` ya enrutado.
 
-⚠️ **Riesgo alto** — afecta SEO y deep-links existentes de Surteya. Antes de ejecutar necesito confirmar:
-1. ¿Surteya debe seguir accesible en producción durante la transición? (sugiero: sí, vía `surteya.sistecpos.com` o ruta `/surteya`).
-2. ¿Mantener redirect 301 de `/producto/:slug` → `/surteya/producto/:slug`?
+Refinamientos:
+- **`/` (sistecpos.com raíz)** → SIEMPRE `LoginRouter` (login unificado con detección de rol post-auth).
+- **`/surteya`** → tienda semilla path-based (fallback si no usan subdominio).
+- **`surteya.sistecpos.com`** → mismo storefront, canonical preferido (301 desde `/surteya` cuando subdominio activo).
+- **`admin.sistecpos.com`** → fuerza `LoginRouter` con `intent=admin` y redirige post-login a `/admin`.
+- **`pos.sistecpos.com`** → fuerza `LoginRouter` con `intent=pos` y redirige a `/pos`.
 
----
+Cambios concretos:
+- Añadir query param `?intent=admin|pos|cliente` al `LoginRouter` para preseleccionar destino.
+- Añadir `<link rel="canonical">` en storefront cuando se accede por `/surteya/*` apuntando a `surteya.sistecpos.com` (ya parcialmente hecho en `SurteyaRedirect`).
+- Actualizar `Login.tsx` para honrar `intent` y redirigir según rol detectado (`superadmin/admin` → `/admin`, `cashier` → `/pos`, `user` → `/clientes`).
 
-## FASE 1 — Seguridad: auditoría RLS y secretos
+## Parte C — Admin Panel (admin.sistecpos.com)
 
-**RLS:**
-- Script de auditoría que liste todas las tablas en `public` sin RLS o con policies `USING (true)`.
-- Estandarizar tablas transaccionales (`orders`, `pos_orders`, `pos_order_items`, `pos_payments`, `cash_sessions`, `stock_movements`, `invoice_scans`, `purchase_orders`, etc.) al patrón:
-  ```sql
-  USING (public.is_member_of(organization_id))
-  WITH CHECK (public.can_write_org(organization_id))
-  ```
-  > Nota: la propuesta `current_setting('app.current_org_id')` requiere setear GUC en cada request — más frágil que las funciones `is_member_of`/`can_write_org` ya existentes y probadas. Recomiendo mantener estas funciones SECURITY DEFINER.
+Auditoría de pantallas existentes vs. requeridas:
 
-**Secretos:**
-- Grep en `supabase/functions/**` buscando literales sospechosos (URLs hardcoded, tokens, keys).
-- Reporte de hallazgos en `MIGRATION_LOG.md`.
-- Los secretos ya configurados (RESEND_API_KEY, GOOGLE_PLACES_API_KEY, etc.) ya están en Vault — verificar uso vía `Deno.env.get()`.
+| Pantalla | Estado actual | Acción |
+|---|---|---|
+| Dashboard Overview | `AdminDashboard.tsx` con DLQ + métricas básicas | Ampliar: ventas totales multi-org, sync status global, licencias activas |
+| Gestión Organizaciones | Existe parcial | Crear `/admin/organizations` con alta + toggle de módulos (`organization_modules`) |
+| Inventario Maestro | Existe en `/admin/products` | Validar y enlazar a catálogos base (`catalog_templates`) |
+| CRM Contactos | Parcial | Crear `/admin/contacts` unificado clientes+proveedores con historial de orders/POs |
+| Configuración Fiscal | Falta | Crear `/admin/fiscal` (impuestos, invoice schemes, print layouts) |
+| Monitoreo Sync | `DeadLetterQueue` listo | Crear `/admin/sync-monitor` con tabla `sync_logs` + filtros por servicio |
 
-**SSO:** revisión de `sso-issue` / `sso-consume` ya están endurecidos (nonce single-use, DELETE...RETURNING). Sólo añadir test E2E + log de auditoría en tabla `sso_audit` (nueva).
+Componentes nuevos a crear:
+- `src/pages/admin/OrganizationsManager.tsx`
+- `src/pages/admin/ContactsCRM.tsx`
+- `src/pages/admin/FiscalSettings.tsx`
+- `src/pages/admin/SyncMonitor.tsx`
+- Widgets de overview: `SalesGlobalWidget`, `SyncHealthWidget`, `LicenseStatusWidget` en `AdminDashboard`.
 
----
+## Parte D — Entrega por fases (ejecución incremental)
 
-## FASE 2 — Resiliencia de sincronización
+**Sprint 1 (esta iteración):**
+- Refinar `LoginRouter` con `intent` param.
+- Crear `/admin/sync-monitor` (alto valor inmediato, usa data existente).
+- Crear widgets de overview en Dashboard.
+- Verificar dominios (check_email_domain_status).
 
-**Idempotencia:**
-- `sync-products-to-wp`: añadir verificación por `wp_external_id` o hash de payload antes de POST.
-- `send-ycloud-whatsapp`: verificar `message_idempotency_key` (usar `order_number + event_type`).
-- `innapsis-emit`: ya usa `client_uuid`, validar que no se re-emita si `external_invoice_id` existe.
+**Sprint 2:**
+- `OrganizationsManager` + módulos toggle.
+- `ContactsCRM` unificado.
 
-**Exponential backoff:**
-- `sync-outbox-flush` **ya implementa** backoff [1, 5, 30, 120, 720] min. La propuesta del prompt (1s, 5s, 30s) es para reintentos in-process; el actual es para reintentos cross-job, que es lo correcto para una outbox persistente.
-- Ajuste menor: añadir jitter (±20%) para evitar thundering herd.
-- Estado `dead` ya existe → bien.
+**Sprint 3:**
+- `FiscalSettings` (impuestos + invoice schemes).
+- Cron jobs pg_cron + cleanup SSO.
 
-**Helper compartido:** `supabase/functions/_shared/syncLogger.ts` ya existe con `withRetry`. Migrar `sync-products-to-wp` y `send-ycloud-whatsapp` para que lo usen.
+## Detalles técnicos
 
----
+- Todas las nuevas pantallas usan `max-w-7xl mx-auto`, skeleton presets, `POSErrorBoundary` analógico (crear `AdminErrorBoundary`).
+- RLS: nuevas consultas multi-org usan `is_master_superadmin()` + `is_member_of()`.
+- Tabla `sync_logs` ya existe → solo UI.
+- Realtime en `sync_logs` para Monitor en vivo.
+- Toasts top-center, `window.confirm` para acciones destructivas (memoria).
 
-## FASE 3 — Observabilidad: SyncStatusTable + DLQ
+## Confirmación
 
-**Componente nuevo:** `src/components/admin/SyncStatusTable.tsx`
-- Consume `get_recent_sync_logs(_services, _limit)` (RPC ya existente).
-- Realtime en `sync_logs` filtrado por `organization_id`.
-- Columnas: servicio, estado (badge: success/error/pending/partial), última corrida, duración, intentos, último error (tooltip).
-- Filtros por servicio y rango de tiempo.
-- Skeleton consistente con resto del admin.
-
-**Componente nuevo:** `src/components/admin/DeadLetterQueue.tsx`
-- Consume `sync_outbox` con `status='dead'`.
-- Acciones por fila: **Reintentar** (actualiza `status='pending'`, `next_attempt_at=now()`, `attempts=0`), **Ver payload** (modal JSON), **Descartar**.
-- Edge function nueva `sync-outbox-retry` para reset atómico.
-
-**Integración:** nueva tab "Sincronización" en `AdminDashboard.tsx`.
-
----
-
-## FASE 4 — Estabilidad UI: ErrorBoundary + Skeletons
-
-**ErrorBoundary:**
-- `src/components/pos/POSErrorBoundary.tsx` envolviendo `POSWorkspace`.
-- Persiste el ticket actual en `localStorage` (`pos_ticket_recovery:${cash_session_id}`) en cada cambio.
-- Fallback UI con: "Ocurrió un error. Tu ticket está guardado." + botón "Recuperar y continuar" + botón "Reportar incidente" (insert en `error_reports`).
-
-**Skeletons:**
-- Auditoría rápida: identificar componentes que usan `useQuery`/`useEffect` sin skeleton.
-- Crear `src/components/ui/skeleton-presets.tsx` con presets: `TableSkeleton`, `CardGridSkeleton`, `FormSkeleton`.
-- Aplicar en: `AdminDashboard`, `SyncStatusTable`, `POSWorkspace` (carga inicial de catálogo), `Inventario`, `MisPedidos`.
-
----
-
-## FASE 5 — Documentación: MIGRATION_LOG.md + views-map.md
-
-**MIGRATION_LOG.md:**
-- Snapshot del esquema final post-fases (tablas, columnas clave, RLS activas).
-- Tabla de servicios de sync con: nombre, idempotencia, backoff, dead-letter, dashboard.
-- Estado de subdominios y SSO.
-
-**docs/views-map.md** (actualizar):
-- Mapa completo de las 4 áreas (Admin / POS / Mi / KDS) con jerarquía de rutas, componentes principales, RPCs consumidas y permisos requeridos.
-- Incluye los referentes de competencia (Alegra, Bsale, Eleventa) por pantalla como guía de diseño.
-
----
-
-## Detalles técnicos relevantes
-
-```text
-Dependencias entre fases:
-  Fase 0 ──┐
-           ├── independientes
-  Fase 1 ──┤
-  Fase 2 ──┤
-  Fase 3 ──┴── depende de Fase 2 (sync-outbox-retry)
-  Fase 4 ── independiente
-  Fase 5 ── al final
-```
-
-**Migraciones DB necesarias:**
-- Fase 1: posiblemente nuevas policies en tablas sin RLS (a determinar tras auditoría).
-- Fase 3: tabla nueva `error_reports` (opcional), índice en `sync_outbox(status, next_attempt_at)`.
-
-**Sin cambios destructivos** previstos. Toda alteración de RLS será aditiva (revisión + estandarización, no DROP).
-
----
-
-## Pregunta clave antes de empezar
-
-**¿Por dónde empezamos?** Recomiendo este orden por impacto/riesgo:
-
-1. **Fase 4** (ErrorBoundary) — máxima estabilidad, cero riesgo. **30 min.**
-2. **Fase 3** (Dashboard sync + DLQ) — observabilidad inmediata. **1-2 h.**
-3. **Fase 2** (Idempotencia + jitter) — resiliencia. **1 h.**
-4. **Fase 1** (Auditoría RLS) — requiere revisión cuidadosa. **2-3 h.**
-5. **Fase 0** (Reestructura `/` → login) — alto riesgo SEO, dejar al final con plan de redirects. **2 h + QA.**
-6. **Fase 5** (Docs) — al cierre.
-
-Confirma con qué fase quieres que arranque y respondo las preguntas abiertas (Surteya en `/surteya` vs subdominio, mantener policies actuales vs migrar a `app.current_org_id`, etc.).
+¿Apruebas el plan y arranco con **Sprint 1** (LoginRouter `intent` + Sync Monitor + Dashboard widgets + verificación de dominios)?
