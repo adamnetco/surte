@@ -38,6 +38,7 @@ const SeoContentTab = lazy(() => import("@/components/admin/SeoContentTab"));
 const CrmLeadsTab = lazy(() => import("@/components/admin/CrmLeadsTab"));
 const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"));
 const DeadLetterQueue = lazy(() => import("@/components/admin/DeadLetterQueue"));
+const SyncMonitor = lazy(() => import("@/components/admin/SyncMonitor"));
 
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null },
@@ -213,6 +214,7 @@ const AdminDashboard = () => {
         {activeTab === "sync" && (
           <div className="space-y-4">
             <SyncStatusTable />
+            <SyncMonitor />
             <DeadLetterQueue />
           </div>
         )}
