@@ -259,3 +259,19 @@ Aplicado en `sync-products-to-wp`:
 - **Fase 1** — auditoría RLS (85 warnings pre-existentes del linter, principalmente `SECURITY DEFINER` funciones públicas y `RLS_ENABLED_NO_POLICY`). Requiere revisión cuidadosa caso por caso.
 - **Fase 0** — reestructura `/` → `LoginRouter` con rutas `/admin/login` y `/user/login`, Surteya bajo `/surteya/*` o subdominio. Bloqueado en preguntas abiertas (ver `.lovable/plan.md`).
 - **Fase 5** — actualización completa de `docs/views-map.md`.
+
+## [2026-05-27] Fase 1 · Auditoría RLS / SECURITY DEFINER
+
+### Lockdown granular de funciones
+- Migración: `REVOKE EXECUTE ... FROM PUBLIC, anon, authenticated` sobre las 41 funciones `SECURITY DEFINER` en `public.*`, seguido de `GRANT EXECUTE` granular por audiencia.
+- **anon + authenticated** (storefront público / POS desktop sin sesión): `resolve_tenant_by_host`, `get_landing_by_slug`, `validate_coupon`, `get/upsert/complete_persistent_cart`, `register_activation`, `heartbeat_activation`.
+- **authenticated**: helpers RBAC (`has_role`, `has_any_role`, `is_member_of`, `org_role`, `has_module`, `can_access_section`, `can_write_org`, `user_orgs`, `default_org_id`, `get_current_user_role`, `is_master_superadmin`), POS/inventario (`apply_stock_movement`, `receive_purchase_order`, `apply_invoice_scan`, `rematch_invoice_scan`, `apply_catalog_template`, `close_cash_session_with_counts`), cupones (`redeem_coupon`), sync (`log_sync_event` ×2, `get_recent_sync_logs`, `log_usage`), agenda (`get_resource_availability`), licencias admin (`create_license`, `revoke_activation`, `count_active_terminals`).
+- **service_role only**: `cleanup_sso_tokens`, `enqueue_email`, `read_email_batch`, `delete_email`, `move_to_dlq`.
+- **sin GRANT** (triggers internos): `handle_new_user`, `associate_guest_orders`, `auto_create_base_presentation`, `validate_product_media_type`, `update_updated_at_column`, `generate_customer_code`, `fill_default_cost_price`, `enqueue_whatsapp_on_confirmed`, `prevent_master_superadmin_demotion`, `touch_admin_section_access`, `refresh_template_total`.
+
+### sso_handoff_tokens
+- Policy `sso_handoff_tokens_no_client_access` (RESTRICTIVE, USING false) para anon + authenticated. Acceso únicamente vía edge functions con `service_role`.
+
+### Resultado linter
+- Antes: **85 warnings** (incluyendo `RLS_ENABLED_NO_POLICY` en `sso_handoff_tokens`).
+- Después: **44 warnings** residuales, todas intencionales (funciones públicas del storefront + 2 buckets públicos `product-images` / `desktop-releases`). Documentadas en security memory.
