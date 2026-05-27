@@ -81,7 +81,7 @@ export default function SuperadminSidebar() {
 
         {currentOrg ? (
           TENANT_ITEMS.map(({ sub, label, icon: Icon, desc }) => (
-            <NavLink key={sub} to={`${tenantBase}/${sub}`} className={itemCls}>
+            <NavLink key={sub || "health"} to={sub ? `${tenantBase}/${sub}` : tenantBase!} end={!sub} className={itemCls}>
               <Icon size={16} className="mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-medium leading-tight">{label}</p>
@@ -91,7 +91,7 @@ export default function SuperadminSidebar() {
           ))
         ) : (
           <p className="px-4 py-3 text-[11px] text-muted-foreground">
-            Selecciona una tienda para configurar sus parámetros.
+            Selecciona una tienda para ver su panel de salud y parametrizarla.
           </p>
         )}
 
