@@ -206,15 +206,7 @@ const AdminDashboard = () => {
         {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
         {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
         {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
-        {activeTab === "data" && <DataManagementTab />}
-        {activeTab === "sync" && (
-          <div className="space-y-4">
-            <SyncStatusTable />
-            <SyncMonitor />
-            <DeadLetterQueue />
-          </div>
-        )}
-        {activeTab === "fiscal" && <FiscalSettingsTab />}
+        {/* data / sync / fiscal removidos — viven en /superadmin */}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
     </TabErrorBoundary>
