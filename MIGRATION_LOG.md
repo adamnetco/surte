@@ -275,3 +275,29 @@ Aplicado en `sync-products-to-wp`:
 ### Resultado linter
 - Antes: **85 warnings** (incluyendo `RLS_ENABLED_NO_POLICY` en `sso_handoff_tokens`).
 - Después: **44 warnings** residuales, todas intencionales (funciones públicas del storefront + 2 buckets públicos `product-images` / `desktop-releases`). Documentadas en security memory.
+
+## [2026-05-27] Fase 5 · Documentación
+
+- `docs/views-map.md` reescrito de "SURTÉ YA" → **SistecPOS Core**:
+  - Nueva sección **0. Entrada al sistema** (subdomain detection, LoginRouter, /admin/login, /user/login, /surteya/* path fallback, SurteyaRedirect).
+  - Tab **Sincronización** documentada con `SyncStatusTable` + `DeadLetterQueue` + `sync-outbox-retry`.
+  - Sección **D. Operación / POS / ERP** ampliada con sub-componentes del POSWorkspace y mención a POSErrorBoundary.
+  - Nueva sección **E. Infraestructura transversal** (todos los providers/listeners de App.tsx, skeleton-presets).
+  - Nueva sección **F. Edge Functions activas** (categorizada por dominio, marca `sync-outbox-*` como Fases 2-3).
+  - Nueva sección **G. Seguridad postura actual** (resumen Fase 1: grants granulares, sso_handoff_tokens, buckets públicos intencionales).
+
+## Auditoría de estado de fases (cierre 2026-05-27)
+
+| Fase | Estado | Entregables verificados |
+|---|---|---|
+| 0 · Routing multi-tenant | ✅ | `src/pages/LoginRouter.tsx`, `src/components/SurteyaRedirect.tsx`, rutas `/admin/login`, `/user/login`, `/surteya/*` en `src/App.tsx`, `detectTenant()` en `src/lib/subdomain.ts` |
+| 1 · Auditoría RLS / SECURITY DEFINER | ✅ | Lockdown granular (41 funciones), policy denegada en `sso_handoff_tokens`, linter 85 → 44 (residuales intencionales documentadas en security memory) |
+| 2 · Resiliencia sync | ✅ | Jitter ±20 % en backoff exponencial de `sync-outbox-flush` |
+| 3 · Observabilidad (DLQ) | ✅ | `DeadLetterQueue.tsx` con Realtime, `sync-outbox-retry` edge function, índice `idx_sync_outbox_status_next_attempt` |
+| 4 · Estabilidad UI | ✅ | `POSErrorBoundary.tsx` envolviendo POSWorkspace, `skeleton-presets.tsx` (TableSkeleton / CardGridSkeleton / FormSkeleton / StatGridSkeleton) |
+| 5 · Documentación | ✅ | `docs/views-map.md`, `MIGRATION_LOG.md` y `security memory` actualizados |
+
+**Pendientes técnicos opcionales** (no bloqueantes):
+- Configurar DNS de `surteya.sistecpos.com` y otros subdominios de tenant.
+- Verificar dominio `notify.sistecpos.com` en panel de Cloud → Emails.
+- Cron en `sync-outbox-flush` (actualmente disparado on-demand / via Realtime).
