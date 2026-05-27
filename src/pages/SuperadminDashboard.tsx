@@ -72,6 +72,8 @@ const SuperadminDashboard = () => {
     switch (active) {
       case "overview":
         return <OverviewTab products={[]} orders={[]} />;
+      case "onboarding":
+        return <TenantOnboardingWizard onCreated={() => setActive("tiendas")} />;
       case "tiendas":
         return <OrganizationsTab />;
       case "modulos":
