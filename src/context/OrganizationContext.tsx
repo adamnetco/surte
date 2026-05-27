@@ -33,7 +33,7 @@ const STORAGE_KEY = "surteya:currentOrgId";
 const OrganizationContext = createContext<OrganizationContextValue | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [loading, setLoading] = useState(true);
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(
@@ -49,20 +49,37 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         setModules([]);
         return;
       }
-      const { data, error } = await supabase.rpc("user_orgs", { _user_id: user.id });
-      if (error) throw error;
-      const list: Organization[] = (data ?? []).map((r: any) => ({
-        id: r.organization_id,
-        slug: r.slug,
-        name: r.name,
-        role: r.role,
-      }));
+      let list: Organization[] = [];
+      if (role === "superadmin") {
+        // Superadmin ve TODAS las organizaciones activas, no solo las suyas.
+        const { data, error } = await supabase
+          .from("organizations")
+          .select("id, slug, name")
+          .eq("is_active", true)
+          .order("name");
+        if (error) throw error;
+        list = (data ?? []).map((o: any) => ({
+          id: o.id,
+          slug: o.slug,
+          name: o.name,
+          role: "owner" as OrgRole,
+        }));
+      } else {
+        const { data, error } = await supabase.rpc("user_orgs", { _user_id: user.id });
+        if (error) throw error;
+        list = (data ?? []).map((r: any) => ({
+          id: r.organization_id,
+          slug: r.slug,
+          name: r.name,
+          role: r.role,
+        }));
+      }
       setOrgs(list);
       setCurrentOrgId((prev) => (list.length > 0 && (!prev || !list.find((o) => o.id === prev)) ? list[0].id : prev));
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, role]);
 
   const loadModules = async (orgId: string) => {
     const { data, error } = await supabase

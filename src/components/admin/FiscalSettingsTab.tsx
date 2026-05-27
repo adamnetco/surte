@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOrganization } from "@/context/OrganizationContext";
 
 type Org = { id: string; name: string; slug: string };
 type EInvCfg = {
@@ -41,25 +42,12 @@ const blankCfg = (org_id: string): EInvCfg => ({
 
 const FiscalSettingsTab = () => {
   const qc = useQueryClient();
-  const [orgId, setOrgId] = useState<string>("");
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id ?? "";
   const [cfg, setCfg] = useState<EInvCfg | null>(null);
   const [saving, setSaving] = useState(false);
   const [taxes, setTaxes] = useState<TaxRate[]>([]);
   const [savingTaxes, setSavingTaxes] = useState(false);
-
-  const { data: orgs } = useQuery({
-    queryKey: ["fiscal-orgs"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("organizations").select("id,name,slug").eq("is_active", true).order("name");
-      if (error) throw error;
-      return data as Org[];
-    },
-  });
-
-  useEffect(() => {
-    if (!orgId && orgs?.length) setOrgId(orgs[0].id);
-  }, [orgs, orgId]);
 
   const { data: current, isLoading } = useQuery({
     queryKey: ["einvoice-cfg", orgId],
@@ -126,24 +114,21 @@ const FiscalSettingsTab = () => {
 
   const update = (patch: Partial<EInvCfg>) => setCfg(c => c ? { ...c, ...patch } : c);
 
+  if (!currentOrg) {
+    return (
+      <div className="border border-dashed border-border rounded-lg p-6 text-center text-sm text-muted-foreground">
+        Selecciona una tienda en el menú lateral para configurar su régimen fiscal.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Receipt className="h-5 w-5" /> Configuración Fiscal
+          <Receipt className="h-5 w-5" /> Configuración Fiscal — {currentOrg.name}
         </h2>
-        <p className="text-sm text-muted-foreground">Resolución DIAN, datos fiscales por organización e impuestos globales.</p>
-      </div>
-
-      {/* Org selector */}
-      <div className="border border-border rounded-lg p-3 bg-card">
-        <Label className="text-xs flex items-center gap-1"><Building2 className="h-3 w-3" /> Organización</Label>
-        <select
-          className="w-full mt-1 border border-border rounded-md p-2 bg-background text-sm"
-          value={orgId} onChange={e => setOrgId(e.target.value)}
-        >
-          {orgs?.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-        </select>
+        <p className="text-sm text-muted-foreground">Resolución DIAN, datos fiscales e impuestos de esta tienda.</p>
       </div>
 
       {/* E-Invoice config */}
