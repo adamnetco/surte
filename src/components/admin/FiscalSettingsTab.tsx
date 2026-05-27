@@ -105,8 +105,8 @@ const FiscalSettingsTab = () => {
       resolution_valid_until: cfg.resolution_valid_until || null,
     };
     const { error } = cfg.id
-      ? await supabase.from("einvoice_configs").update(payload).eq("id", cfg.id)
-      : await supabase.from("einvoice_configs").insert(payload);
+      ? await supabase.from("einvoice_configs").update(payload as any).eq("id", cfg.id)
+      : await supabase.from("einvoice_configs").insert(payload as any);
     setSaving(false);
     if (error) return toast.error(error.message, { position: "top-center" });
     toast.success("Configuración fiscal guardada", { position: "top-center" });
