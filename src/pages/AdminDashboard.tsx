@@ -182,7 +182,7 @@ const AdminDashboard = () => {
         {activeTab === "overview" && <OverviewTab products={products} orders={orders} />}
         {activeTab === "orders" && <OrdersTab orders={orders} queryClient={queryClient} />}
         {activeTab === "agenda" && <AgendaTab />}
-        {activeTab === "modules" && <ModulesTab />}
+        {/* modules tab removed — vive en /superadmin */}
         {activeTab === "products" && <ProductsTab products={products} categories={categories} queryClient={queryClient} />}
         {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
