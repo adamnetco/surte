@@ -155,11 +155,11 @@ const ContactsTab = () => {
           ) : (
             <div className="space-y-3">
               <div>
-                <h3 className="font-semibold">{selected.full_name || selected.name}</h3>
+                <h3 className="font-semibold">{(selected as any).full_name || (selected as any).name}</h3>
                 <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
-                  {selected.phone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{selected.phone}</div>}
-                  {selected.email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{selected.email}</div>}
-                  {selected.city && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{selected.city}</div>}
+                  {(selected as any).phone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{(selected as any).phone}</div>}
+                  {(selected as any).email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{(selected as any).email}</div>}
+                  {(selected as any).city && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{(selected as any).city}</div>}
                 </div>
               </div>
 
