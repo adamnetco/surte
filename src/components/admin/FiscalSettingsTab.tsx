@@ -82,7 +82,7 @@ const FiscalSettingsTab = () => {
       const { data, error } = await supabase
         .from("app_settings").select("value").eq("key", "tax_rates").maybeSingle();
       if (error) throw error;
-      return (data?.value as TaxRate[] | null) || [
+      return (data?.value as unknown as TaxRate[] | null) || [
         { code: "IVA19", label: "IVA 19%", rate: 19 },
         { code: "IVA5", label: "IVA 5%", rate: 5 },
         { code: "EXENTO", label: "Exento", rate: 0 },
