@@ -150,7 +150,8 @@ const App = () => (
                     <Route path="/p/:id" element={<ProductoDetalle />} />
                     <Route path="/pedido/:orderNumber" element={<Pedido />} />
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
-                    <Route path="/superadmin" element={<SuperadminDashboard />} />
+                   <Route path="/superadmin" element={<SuperadminDashboard />} />
+                   <Route path="/t/:slug/admin" element={<TenantWorkspace />} />
                     <Route path="/admin/diag" element={<AdminDiag />} />
                     <Route path="/admin-diag" element={<AdminDiag />} />
                     <Route path="/pos" element={<POS />} />
