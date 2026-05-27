@@ -39,6 +39,8 @@ const CrmLeadsTab = lazy(() => import("@/components/admin/CrmLeadsTab"));
 const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"));
 const DeadLetterQueue = lazy(() => import("@/components/admin/DeadLetterQueue"));
 const SyncMonitor = lazy(() => import("@/components/admin/SyncMonitor"));
+const OrganizationsTab = lazy(() => import("@/components/admin/OrganizationsTab"));
+const ContactsTab = lazy(() => import("@/components/admin/ContactsTab"));
 
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null },
