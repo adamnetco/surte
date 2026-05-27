@@ -1,7 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  BarChart3, Building2, Rocket, RefreshCw, Database, Settings,
-  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store,
+  BarChart3, Building2, Rocket, RefreshCw, Database,
+  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/context/OrganizationContext";
@@ -12,14 +12,14 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin", end: true, label: "Resumen SaaS", icon: BarChart3, desc: "Métricas cross-tenant" },
   { to: "/superadmin/tiendas", label: "Tiendas", icon: Building2, desc: "Gestión de organizaciones" },
   { to: "/superadmin/nueva-tienda", label: "Nueva tienda", icon: Rocket, desc: "Wizard de alta" },
-  { to: "/superadmin/sync", label: "Sincronización", icon: RefreshCw, desc: "WP, WhatsApp, DIAN" },
   { to: "/superadmin/datos", label: "Datos / Importar", icon: Database, desc: "Operaciones masivas" },
-  { to: "/superadmin/ajustes", label: "Ajustes del SaaS", icon: Settings, desc: "Config global" },
 ];
 
 const TENANT_ITEMS = [
+  { sub: "", label: "Salud del tenant", icon: HeartPulse, desc: "Estado y completitud" },
   { sub: "modulos", label: "Módulos", icon: ToggleRight, desc: "Habilitar capacidades" },
   { sub: "fiscal", label: "Fiscal (DIAN)", icon: Receipt, desc: "Resolución e impuestos" },
+  { sub: "sync", label: "Sincronización", icon: RefreshCw, desc: "WP, WhatsApp, DIAN" },
   { sub: "licencia", label: "Licencia", icon: Key, desc: "Plan y vigencia" },
 ];
 
