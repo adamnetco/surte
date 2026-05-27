@@ -1,80 +1,133 @@
 
-# Plan: Estabilización Final + Admin Panel SistecPOS
+# Plan: SaaS limpio — Login en `/`, Superadmin vs Workspace de Tienda
 
-## Parte A — Pendientes de infraestructura (Fases 0-5)
+## Problema actual
+Hoy `admin.sistecpos.com` mezcla en el mismo `AdminDashboard` tareas **multi-tenant** (Tiendas, Licencias, Sync, Fiscal global, Módulos) con tareas **operativas del negocio** (Inventario, Productos, CRM, POS). Esto confunde porque un dueño de tienda nunca debería ver "Organizaciones" ni "Sync Monitor", y el superadmin nunca debería tocar el inventario diario.
 
-1. **DNS / Dominios**
-   - Verificar `surteya.sistecpos.com` apuntando a `185.158.133.1` (A record) + TXT `_lovable`.
-   - Confirmar `admin.sistecpos.com` ya activo (lista en project_urls).
-   - Validar `notify.sistecpos.com` (email infra): correr `email_domain--check_email_domain_status` y reportar DKIM/SPF.
+## Regla de oro
+> Todo lo que sea **gestión multi-tenant** (alta de tiendas, licencias, módulos, fiscal global, sync, dominios) vive en el **Panel Superadmin**, oculto al resto.
+> Todo lo que sea **operación de UN negocio** vive en el **Workspace de Tienda**, accesible solo a usuarios de esa tienda según su rol.
 
-2. **Cron de resiliencia**
-   - Activar `pg_cron` job que invoque `sync-outbox-flush` cada 2 min y `sync-outbox-retry` cada 10 min.
-   - Migración: `cron.schedule(...)` apuntando a edge functions vía `net.http_post` con `service_role`.
+---
 
-3. **Cleanup SSO**
-   - Cron diario: `SELECT public.cleanup_sso_tokens();`
+## 1. Login unificado en `/` (admin.sistecpos.com)
 
-## Parte B — Routing canónico (refinamiento Fase 0)
+Reemplazar `LoginRouter` (las 2 cards) por **un único formulario tipo SaaS** con 3 campos:
 
-Estado actual: `/` ya muestra `LoginRouter` en dominios sistema y storefront en subdominios tenant. `/surteya/*` ya enrutado.
+```
+┌─────────────────────────────┐
+│  SistecPOS · Iniciar sesión │
+├─────────────────────────────┤
+│  Tienda (id_negocio)  [___] │  ← slug, ej: surteya
+│  Usuario / Email      [___] │
+│  Contraseña           [___] │
+│  [ Entrar ]   ¿Olvidaste?   │
+│  ─── o ───                  │
+│  [  Continuar con Google ]  │
+└─────────────────────────────┘
+```
 
-Refinamientos:
-- **`/` (sistecpos.com raíz)** → SIEMPRE `LoginRouter` (login unificado con detección de rol post-auth).
-- **`/surteya`** → tienda semilla path-based (fallback si no usan subdominio).
-- **`surteya.sistecpos.com`** → mismo storefront, canonical preferido (301 desde `/surteya` cuando subdominio activo).
-- **`admin.sistecpos.com`** → fuerza `LoginRouter` con `intent=admin` y redirige post-login a `/admin`.
-- **`pos.sistecpos.com`** → fuerza `LoginRouter` con `intent=pos` y redirige a `/pos`.
+Tras login, el backend resuelve el rol efectivo del usuario en esa tienda y redirige:
 
-Cambios concretos:
-- Añadir query param `?intent=admin|pos|cliente` al `LoginRouter` para preseleccionar destino.
-- Añadir `<link rel="canonical">` en storefront cuando se accede por `/surteya/*` apuntando a `surteya.sistecpos.com` (ya parcialmente hecho en `SurteyaRedirect`).
-- Actualizar `Login.tsx` para honrar `intent` y redirigir según rol detectado (`superadmin/admin` → `/admin`, `cashier` → `/pos`, `user` → `/clientes`).
+| Rol detectado | Redirige a |
+|---|---|
+| `superadmin` (global, sin tienda obligatoria) | `/superadmin` |
+| `owner` / `admin` de la tienda | `/t/:slug/admin` (Workspace config) |
+| `manager` / `cashier` / `waiter` | `/t/:slug/pos` (POS directo) |
+| `cliente` de la tienda | `/t/:slug/mi` (Portal cliente) |
 
-## Parte C — Admin Panel (admin.sistecpos.com)
+El campo "Tienda" se autocompleta si entran por `surteya.sistecpos.com` (o `/surteya`) — solo lo escriben en el login genérico.
 
-Auditoría de pantallas existentes vs. requeridas:
+---
 
-| Pantalla | Estado actual | Acción |
-|---|---|---|
-| Dashboard Overview | `AdminDashboard.tsx` con DLQ + métricas básicas | Ampliar: ventas totales multi-org, sync status global, licencias activas |
-| Gestión Organizaciones | Existe parcial | Crear `/admin/organizations` con alta + toggle de módulos (`organization_modules`) |
-| Inventario Maestro | Existe en `/admin/products` | Validar y enlazar a catálogos base (`catalog_templates`) |
-| CRM Contactos | Parcial | Crear `/admin/contacts` unificado clientes+proveedores con historial de orders/POs |
-| Configuración Fiscal | Falta | Crear `/admin/fiscal` (impuestos, invoice schemes, print layouts) |
-| Monitoreo Sync | `DeadLetterQueue` listo | Crear `/admin/sync-monitor` con tabla `sync_logs` + filtros por servicio |
+## 2. Dos paneles claramente separados
 
-Componentes nuevos a crear:
-- `src/pages/admin/OrganizationsManager.tsx`
-- `src/pages/admin/ContactsCRM.tsx`
-- `src/pages/admin/FiscalSettings.tsx`
-- `src/pages/admin/SyncMonitor.tsx`
-- Widgets de overview: `SalesGlobalWidget`, `SyncHealthWidget`, `LicenseStatusWidget` en `AdminDashboard`.
+### A) `/superadmin` — Panel Superadmin (solo Eduardo / rol `superadmin`)
+**Único lugar para tocar multi-tenancy.** Lo que hoy está disperso se consolida aquí:
 
-## Parte D — Entrega por fases (ejecución incremental)
+- **Overview SaaS** — KPIs cross-tenant (ventas totales red, tiendas activas, licencias por vencer, errores sync).
+- **Tiendas (Organizaciones)** — alta/baja, wizard de onboarding (paso 1 datos, paso 2 usuario owner + password inicial, paso 3 módulos activos, paso 4 dominio).
+- **Licencias** — planes, vigencias, renovaciones.
+- **Módulos por tienda** — toggles POS / Agenda / Inventario / Tienda online / Facturación / etc.
+- **Fiscal global** — DIAN, resoluciones, configuración por tienda.
+- **Monitor de Sincronización** — `sync_logs` global (WP, WhatsApp, DIAN).
+- **Dominios & SSO** — verificación de subdominios y tokens SSO.
+- **Usuarios globales** — buscar usuario, ver tiendas a las que pertenece, resetear password.
 
-**Sprint 1 (esta iteración):**
-- Refinar `LoginRouter` con `intent` param.
-- Crear `/admin/sync-monitor` (alto valor inmediato, usa data existente).
-- Crear widgets de overview en Dashboard.
-- Verificar dominios (check_email_domain_status).
+Otros roles **nunca** ven `/superadmin` (guard duro + RLS).
 
-**Sprint 2:**
-- `OrganizationsManager` + módulos toggle.
-- `ContactsCRM` unificado.
+### B) `/t/:slug/admin` — Workspace operativo del negocio (estilo POS Colombia / Cabal)
+Para `owner` / `admin` de UNA tienda. Layout inspirado en las capturas (top bar con módulos grandes + icon):
 
-**Sprint 3:**
-- `FiscalSettings` (impuestos + invoice schemes).
-- Cron jobs pg_cron + cleanup SSO.
+```
+[Clientes] [Artículos] [Kits] [Proveedores] [Reportes] [Compras] [Ventas F2] [Listas Precios] [POS]
+─────────────────────────────────────────────────────────────────────────────────────────────
+              Bienvenido a {Nombre Tienda} — accesos rápidos del día
+```
 
-## Detalles técnicos
+Tabs/secciones (solo las que el módulo está activo para esa tienda):
+- Clientes (CRM local) · Productos · Categorías/Marcas · Kits · Proveedores · Compras · Listas de Precios · Reportes · Personalización tienda online · Empleados/roles internos · Configuración (logo, WhatsApp, horarios).
 
-- Todas las nuevas pantallas usan `max-w-7xl mx-auto`, skeleton presets, `POSErrorBoundary` analógico (crear `AdminErrorBoundary`).
-- RLS: nuevas consultas multi-org usan `is_master_superadmin()` + `is_member_of()`.
-- Tabla `sync_logs` ya existe → solo UI.
-- Realtime en `sync_logs` para Monitor en vivo.
-- Toasts top-center, `window.confirm` para acciones destructivas (memoria).
+**NO aparecen** aquí: Tiendas, Licencias, Sync, Fiscal global, Módulos. Esos solo en `/superadmin`.
 
-## Confirmación
+### C) `/t/:slug/pos` — POS Workspace (ya existe)
+Para cajero/mesero. Sin cambios estructurales — solo se asegura el guard de tenant.
 
-¿Apruebas el plan y arranco con **Sprint 1** (LoginRouter `intent` + Sync Monitor + Dashboard widgets + verificación de dominios)?
+---
+
+## 3. Onboarding del id_negocio (creado por superadmin)
+
+Wizard en `/superadmin/tiendas/nueva` que en una sola transacción crea:
+
+1. `organizations` (slug = id_negocio, nombre, NIT, ciudad).
+2. Usuario `owner` en `auth.users` con email + **password inicial generado** (se muestra una sola vez + opción "enviar por email").
+3. `user_roles` → owner de esa org.
+4. `organization_modules` con los módulos seleccionados.
+5. (Opcional) Subdominio `{slug}.sistecpos.com` en `tenant_domains`.
+6. `einvoice_configs` placeholder.
+
+Al terminar muestra tarjeta: **"Tienda creada · slug: surteya · usuario: admin@surteya.com · contraseña: ABC123"** lista para entregar al cliente.
+
+---
+
+## 4. Cambios técnicos (resumen para implementación)
+
+```
+src/pages/
+  Login.tsx                    ← nuevo: form único (tienda + user + pass + Google)
+  superadmin/
+    SuperadminLayout.tsx       ← sidebar dedicado
+    Overview.tsx
+    Tiendas.tsx                ← mueve OrganizationsTab actual
+    TiendaNueva.tsx            ← wizard onboarding
+    Licencias.tsx              ← mueve de AdminDashboard
+    Modulos.tsx
+    Fiscal.tsx                 ← mueve FiscalSettingsTab
+    Sync.tsx                   ← mueve SyncMonitor
+    Dominios.tsx
+  tienda/
+    TiendaLayout.tsx           ← top bar estilo POS Colombia
+    Inicio.tsx                 ← grid de módulos activos
+    (Clientes, Productos, Reportes, etc. — reusan componentes existentes)
+
+src/components/RoleGuard.tsx   ← endurecer: superadmin-only para /superadmin/*
+src/App.tsx                    ← rutas /, /superadmin/*, /t/:slug/*
+```
+
+DB: ya existen `organizations`, `organization_modules`, `user_roles`, `einvoice_configs`, `sync_logs`. Solo hace falta:
+- RPC `login_resolve(slug, email)` que devuelva tienda + rol efectivo para redirigir tras login.
+- Trigger/función `create_tenant_with_owner(...)` para el wizard atómico.
+
+---
+
+## 5. Fases de entrega
+
+1. **F1 — Login único** (`/` con 3 campos + Google) y redirección por rol/tenant.
+2. **F2 — `/superadmin`** layout + mover Tiendas, Licencias, Módulos, Fiscal, Sync, Dominios desde `AdminDashboard`.
+3. **F3 — Wizard "Nueva tienda"** atómico con password inicial.
+4. **F4 — `/t/:slug/admin`** layout estilo POS Colombia con módulos del negocio.
+5. **F5 — Limpieza** de `AdminDashboard` viejo + guards + QA con la tienda semilla `surteya`.
+
+---
+
+¿Apruebas el plan? Si sí, arranco por **F1 + F2** (login y separación de paneles) en este mismo turno.
