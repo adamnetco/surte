@@ -42,25 +42,12 @@ const blankCfg = (org_id: string): EInvCfg => ({
 
 const FiscalSettingsTab = () => {
   const qc = useQueryClient();
-  const [orgId, setOrgId] = useState<string>("");
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id ?? "";
   const [cfg, setCfg] = useState<EInvCfg | null>(null);
   const [saving, setSaving] = useState(false);
   const [taxes, setTaxes] = useState<TaxRate[]>([]);
   const [savingTaxes, setSavingTaxes] = useState(false);
-
-  const { data: orgs } = useQuery({
-    queryKey: ["fiscal-orgs"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("organizations").select("id,name,slug").eq("is_active", true).order("name");
-      if (error) throw error;
-      return data as Org[];
-    },
-  });
-
-  useEffect(() => {
-    if (!orgId && orgs?.length) setOrgId(orgs[0].id);
-  }, [orgs, orgId]);
 
   const { data: current, isLoading } = useQuery({
     queryKey: ["einvoice-cfg", orgId],
