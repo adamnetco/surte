@@ -39,6 +39,8 @@ const CrmLeadsTab = lazy(() => import("@/components/admin/CrmLeadsTab"));
 const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"));
 const DeadLetterQueue = lazy(() => import("@/components/admin/DeadLetterQueue"));
 const SyncMonitor = lazy(() => import("@/components/admin/SyncMonitor"));
+const OrganizationsTab = lazy(() => import("@/components/admin/OrganizationsTab"));
+const ContactsTab = lazy(() => import("@/components/admin/ContactsTab"));
 
 const allTabs = [
   { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null },
@@ -47,7 +49,9 @@ const allTabs = [
   { id: "products", label: "Inventario", icon: Package, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
   { id: "categories", label: "Categorías", icon: Tag, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "organizations", label: "Tiendas", icon: Building2, roles: ["superadmin"] as AppRole[], module: null },
   { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "contacts", label: "Contactos", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "hero", label: "Hero", icon: Layers, roles: ["superadmin", "admin"] as AppRole[], module: null },
@@ -193,6 +197,8 @@ const AdminDashboard = () => {
         {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
         {activeTab === "users" && <UsersTab queryClient={queryClient} />}
+        {activeTab === "contacts" && <ContactsTab />}
+        {activeTab === "organizations" && <OrganizationsTab />}
         {activeTab === "crm" && <CrmLeadsTab />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
         {activeTab === "hero" && <HeroSlidesTab queryClient={queryClient} />}
