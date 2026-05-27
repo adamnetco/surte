@@ -226,6 +226,7 @@ const AdminDashboard = () => {
             <DeadLetterQueue />
           </div>
         )}
+        {activeTab === "fiscal" && <FiscalSettingsTab />}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
     </TabErrorBoundary>
