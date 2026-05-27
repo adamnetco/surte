@@ -3690,6 +3690,7 @@ export type Database = {
           cash_session_id: string
           cashier_id: string
           change_due: number
+          client_uuid: string | null
           created_at: string
           customer_document: string | null
           customer_name: string | null
@@ -3719,6 +3720,7 @@ export type Database = {
           cash_session_id: string
           cashier_id: string
           change_due?: number
+          client_uuid?: string | null
           created_at?: string
           customer_document?: string | null
           customer_name?: string | null
@@ -3748,6 +3750,7 @@ export type Database = {
           cash_session_id?: string
           cashier_id?: string
           change_due?: number
+          client_uuid?: string | null
           created_at?: string
           customer_document?: string | null
           customer_name?: string | null
