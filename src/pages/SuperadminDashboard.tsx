@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, ToggleRight, Receipt, RefreshCw, Database, Key, BarChart3, Settings, LogOut, Sparkles, ShieldCheck } from "lucide-react";
+import { Building2, ToggleRight, Receipt, RefreshCw, Database, Key, BarChart3, Settings, LogOut, Sparkles, ShieldCheck, Rocket } from "lucide-react";
+import TenantOnboardingWizard from "@/components/superadmin/TenantOnboardingWizard";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
