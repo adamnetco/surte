@@ -64,6 +64,7 @@ const Licencias = lazy(() => import("./pages/Licencias"));
 const GerenteIA = lazy(() => import("./pages/GerenteIA"));
 const Compras = lazy(() => import("./pages/Compras"));
 const Sitios = lazy(() => import("./pages/Sitios"));
+const SuperadminDashboard = lazy(() => import("./pages/SuperadminDashboard"));
 
 const queryClient = new QueryClient();
 
@@ -87,16 +88,10 @@ const RouteFallback = () => (
  */
 const TenantHome = () => {
   const tenant = detectTenant();
-  if (tenant === "admin") {
-    return (
-      <RoleGuard section="admin">
-        <AdminDashboard />
-      </RoleGuard>
-    );
-  }
-  if (tenant === "pos") return <POS />;
-  if (tenant === "mi") return <ClientPortalShell />;
+  // Los storefronts (surteya.*, futuros tenants) siguen mostrando la tienda.
   if (isStorefrontTenant(tenant)) return <Index />;
+  // Para admin/app/www/pos/mi → portal de login unificado.
+  // Tras autenticarse, LoginRouter redirige al panel correspondiente según rol.
   return <LoginRouter />;
 };
 
@@ -154,6 +149,7 @@ const App = () => (
                     <Route path="/p/:id" element={<ProductoDetalle />} />
                     <Route path="/pedido/:orderNumber" element={<Pedido />} />
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
+                    <Route path="/superadmin" element={<SuperadminDashboard />} />
                     <Route path="/admin/diag" element={<AdminDiag />} />
                     <Route path="/admin-diag" element={<AdminDiag />} />
                     <Route path="/pos" element={<POS />} />
