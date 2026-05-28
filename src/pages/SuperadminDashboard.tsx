@@ -103,11 +103,13 @@ const SuperadminDashboard = () => {
                 <Route index element={<OverviewTab products={[]} orders={[]} />} />
                 <Route path="tiendas" element={<OrganizationsTab />} />
                 <Route path="nueva-tienda" element={<TenantOnboardingWizard onCreated={() => navigate("/superadmin/tiendas")} />} />
+                {/* Datos globales (catálogos base, plantillas) — solo Superadmin master. */}
                 <Route path="datos" element={<DataManagementTab />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
                 <Route path="ajustes" element={<Navigate to="/superadmin/tiendas" replace />} />
+
 
                 {/* POR TIENDA (siempre /t/:slug/...) */}
                 <Route path="t/:slug" element={<RequireActiveTenant><TenantHealth /></RequireActiveTenant>} />
