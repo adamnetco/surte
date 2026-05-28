@@ -115,6 +115,8 @@ const SuperadminDashboard = () => {
                 <Route path="t/:slug" element={<RequireActiveTenant><TenantHealth /></RequireActiveTenant>} />
                 <Route path="t/:slug/modulos" element={<RequireActiveTenant><ModulesTab /></RequireActiveTenant>} />
                 <Route path="t/:slug/fiscal" element={<RequireActiveTenant><FiscalSettingsTab /></RequireActiveTenant>} />
+                <Route path="t/:slug/datos" element={<RequireActiveTenant><TenantDataIsland /></RequireActiveTenant>} />
+
                 <Route path="t/:slug/sync" element={<RequireActiveTenant><SyncSection /></RequireActiveTenant>} />
                 <Route path="t/:slug/licencia" element={<RequireActiveTenant><LicenseSection /></RequireActiveTenant>} />
                 <Route path="t/:slug/admin" element={<RequireActiveTenant><AdminRedirect /></RequireActiveTenant>} />
