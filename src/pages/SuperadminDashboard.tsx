@@ -18,6 +18,7 @@ const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"))
 const DeadLetterQueue = lazy(() => import("@/components/admin/DeadLetterQueue"));
 const DataManagementTab = lazy(() => import("@/components/admin/DataManagementTab"));
 const TenantHealth = lazy(() => import("@/components/superadmin/TenantHealth"));
+const TenantDataIsland = lazy(() => import("@/components/superadmin/TenantDataIsland"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -102,16 +103,20 @@ const SuperadminDashboard = () => {
                 <Route index element={<OverviewTab products={[]} orders={[]} />} />
                 <Route path="tiendas" element={<OrganizationsTab />} />
                 <Route path="nueva-tienda" element={<TenantOnboardingWizard onCreated={() => navigate("/superadmin/tiendas")} />} />
+                {/* Datos globales (catálogos base, plantillas) — solo Superadmin master. */}
                 <Route path="datos" element={<DataManagementTab />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
                 <Route path="ajustes" element={<Navigate to="/superadmin/tiendas" replace />} />
 
+
                 {/* POR TIENDA (siempre /t/:slug/...) */}
                 <Route path="t/:slug" element={<RequireActiveTenant><TenantHealth /></RequireActiveTenant>} />
                 <Route path="t/:slug/modulos" element={<RequireActiveTenant><ModulesTab /></RequireActiveTenant>} />
                 <Route path="t/:slug/fiscal" element={<RequireActiveTenant><FiscalSettingsTab /></RequireActiveTenant>} />
+                <Route path="t/:slug/datos" element={<RequireActiveTenant><TenantDataIsland /></RequireActiveTenant>} />
+
                 <Route path="t/:slug/sync" element={<RequireActiveTenant><SyncSection /></RequireActiveTenant>} />
                 <Route path="t/:slug/licencia" element={<RequireActiveTenant><LicenseSection /></RequireActiveTenant>} />
                 <Route path="t/:slug/admin" element={<RequireActiveTenant><AdminRedirect /></RequireActiveTenant>} />

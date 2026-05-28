@@ -1,133 +1,66 @@
+# Plan: Aislamiento estricto por tienda, auditoría UX del Superadmin, import/export modo isla y tests
 
-# Plan: SaaS limpio — Login en `/`, Superadmin vs Workspace de Tienda
+Asumo el rol de ingeniero de software responsable del diseño del sistema, infraestructura, lógica de uso y QA. Trabajo en 4 frentes que se entregan en orden.
 
-## Problema actual
-Hoy `admin.sistecpos.com` mezcla en el mismo `AdminDashboard` tareas **multi-tenant** (Tiendas, Licencias, Sync, Fiscal global, Módulos) con tareas **operativas del negocio** (Inventario, Productos, CRM, POS). Esto confunde porque un dueño de tienda nunca debería ver "Organizaciones" ni "Sync Monitor", y el superadmin nunca debería tocar el inventario diario.
+## 1) Auditoría UX/UI del Superadmin (entrega de hallazgos + fixes)
 
-## Regla de oro
-> Todo lo que sea **gestión multi-tenant** (alta de tiendas, licencias, módulos, fiscal global, sync, dominios) vive en el **Panel Superadmin**, oculto al resto.
-> Todo lo que sea **operación de UN negocio** vive en el **Workspace de Tienda**, accesible solo a usuarios de esa tienda según su rol.
+Reviso `SuperadminDashboard`, `SuperadminSidebar`, `TenantSwitcher`, `TenantHealth`, `RequireActiveTenant`, `OrganizationContext` y rutas en `App.tsx`. Foco:
 
----
+- **Ámbito siempre visible**: el switcher debe quedar fijo arriba del sidebar y resaltar visualmente cuando estoy en una vista "por tienda" vs "global".
+- **Separación clara Global ↔ Tienda** en el sidebar (dos secciones con encabezado, no items mezclados).
+- **Estado vacío inteligente**: si no hay tienda activa y entro a una ruta por-tienda, mostrar un *Empty State* con CTA "Elegir tienda" (hoy `RequireActiveTenant` redirige sin contexto).
+- **Breadcrumb** que muestre `Superadmin / {Tienda} / {Sección}` con la tienda como chip clickeable que abre el switcher.
+- **Health Dashboard**: agrupar KPIs en 3 tarjetas (Configuración, Operación 24h, Sincronización) con score y acciones rápidas por fila ("Configurar módulos", "Subir certificado DIAN", "Ver cola de sync").
+- **Listado de tiendas**: añadir columna "Health" (badge color), última venta, estado de sync; acciones rápidas (entrar al admin de la tienda, abrir health, abrir módulos).
+- **Mobile**: el switcher ya está en el header móvil; mejorar `TenantSwitcher compact` para que muestre el nombre activo truncado y un indicador de scope.
 
-## 1. Login unificado en `/` (admin.sistecpos.com)
+Entrego un documento corto `docs/ux-audit-superadmin.md` con hallazgos + decisiones, y aplico los fixes listados.
 
-Reemplazar `LoginRouter` (las 2 cards) por **un único formulario tipo SaaS** con 3 campos:
+## 2) Aislamiento por tienda — modo isla
 
-```
-┌─────────────────────────────┐
-│  SistecPOS · Iniciar sesión │
-├─────────────────────────────┤
-│  Tienda (id_negocio)  [___] │  ← slug, ej: surteya
-│  Usuario / Email      [___] │
-│  Contraseña           [___] │
-│  [ Entrar ]   ¿Olvidaste?   │
-│  ─── o ───                  │
-│  [  Continuar con Google ]  │
-└─────────────────────────────┘
-```
+Refuerzo el aislamiento que ya existe (RLS por `organization_id`) en la capa de UI y datos:
 
-Tras login, el backend resuelve el rol efectivo del usuario en esa tienda y redirige:
+- **Contexto activo por tienda**: en cualquier vista `/superadmin/t/:slug/*`, `OrganizationContext.currentOrg` se fuerza al slug de la URL (no al de localStorage). Hoy el slug de la URL y el `currentOrgId` pueden desincronizarse. Creo un hook `useTenantFromRoute()` que sincroniza ambos y muestra un banner si difieren.
+- **Guard de queries**: añado un helper `scopedFrom(table)` que envuelve `supabase.from(table).eq("organization_id", currentOrg.id)` y se usa en componentes Superadmin (al menos en los nuevos: import/export, health).
+- **Realtime aislado**: cualquier `channel` en superadmin filtra por `organization_id=eq.{id}`.
 
-| Rol detectado | Redirige a |
-|---|---|
-| `superadmin` (global, sin tienda obligatoria) | `/superadmin` |
-| `owner` / `admin` de la tienda | `/t/:slug/admin` (Workspace config) |
-| `manager` / `cashier` / `waiter` | `/t/:slug/pos` (POS directo) |
-| `cliente` de la tienda | `/t/:slug/mi` (Portal cliente) |
+## 3) Import / Export modo isla por tienda
 
-El campo "Tienda" se autocompleta si entran por `surteya.sistecpos.com` (o `/surteya`) — solo lo escriben en el login genérico.
+Hoy `DataManagementTab` es global. Creo una versión por-tienda:
 
----
+- Nueva ruta `/superadmin/t/:slug/datos` con `TenantDataIsland.tsx`.
+- **Export**: descarga ZIP con CSVs (`products.csv`, `categories.csv`, `customers.csv`, `orders.csv`, `presentations.csv`, `stock.csv`) filtrados estrictamente por `organization_id`. Nombre del archivo: `{slug}-{YYYYMMDD}.zip`.
+- **Import**: sube ZIP o CSVs sueltos; usa `dataImportUtils` (ya existe y tiene tests) y fuerza `organization_id = currentOrg.id` en cada fila antes del insert (ignora cualquier `organization_id` del CSV → previene contaminación cruzada).
+- **Validación previa**: muestra resumen (filas a crear / actualizar / con error) antes de aplicar, con confirmación `window.confirm`.
+- Quito el `DataManagementTab` global del sidebar Superadmin (o lo dejo como "Importar catálogo base", que es distinto).
 
-## 2. Dos paneles claramente separados
+## 4) Tests unitarios + smoke E2E del Superadmin
 
-### A) `/superadmin` — Panel Superadmin (solo Eduardo / rol `superadmin`)
-**Único lugar para tocar multi-tenancy.** Lo que hoy está disperso se consolida aquí:
+- **Unit (vitest)**, archivos nuevos junto a la fuente:
+  - `src/lib/tenantScope.test.ts`: helper `scopedFrom` y `useTenantFromRoute`.
+  - `src/components/superadmin/TenantSwitcher.test.tsx`: render, cambio de tienda, persistencia.
+  - `src/components/superadmin/RequireActiveTenant.test.tsx`: empty state vs render hijo.
+  - `src/lib/tenantDataIsland.test.ts`: builder ZIP, normalización de filas en import (forzar org_id).
+- **Smoke E2E (playwright)** en `e2e/superadmin.spec.ts` cubriendo el flujo: login → dashboard → crear tienda (wizard) → switcher → health → módulos → export CSV → logout. Uso el fixture ya existente.
 
-- **Overview SaaS** — KPIs cross-tenant (ventas totales red, tiendas activas, licencias por vencer, errores sync).
-- **Tiendas (Organizaciones)** — alta/baja, wizard de onboarding (paso 1 datos, paso 2 usuario owner + password inicial, paso 3 módulos activos, paso 4 dominio).
-- **Licencias** — planes, vigencias, renovaciones.
-- **Módulos por tienda** — toggles POS / Agenda / Inventario / Tienda online / Facturación / etc.
-- **Fiscal global** — DIAN, resoluciones, configuración por tienda.
-- **Monitor de Sincronización** — `sync_logs` global (WP, WhatsApp, DIAN).
-- **Dominios & SSO** — verificación de subdominios y tokens SSO.
-- **Usuarios globales** — buscar usuario, ver tiendas a las que pertenece, resetear password.
+## Detalles técnicos
 
-Otros roles **nunca** ven `/superadmin` (guard duro + RLS).
+- Nuevos archivos:
+  - `src/hooks/useTenantFromRoute.ts`
+  - `src/lib/tenantScope.ts` (`scopedFrom`)
+  - `src/lib/tenantDataIsland.ts` (export/import por org)
+  - `src/components/superadmin/TenantDataIsland.tsx`
+  - `src/components/superadmin/TenantHealthCards.tsx` (refactor visual)
+  - `docs/ux-audit-superadmin.md`
+  - Tests indicados arriba.
+- Modificados: `SuperadminSidebar`, `SuperadminDashboard` (nueva ruta `t/:slug/datos`), `OrganizationContext` (sync con URL), `RequireActiveTenant` (empty state), `TenantHealth` (usar nuevas tarjetas).
+- Dependencias: uso `jszip` (ya está en `package.json` si está; si no, lo agrego).
+- No toco RLS — el aislamiento ya está en DB; refuerzo en UI/data layer.
 
-### B) `/t/:slug/admin` — Workspace operativo del negocio (estilo POS Colombia / Cabal)
-Para `owner` / `admin` de UNA tienda. Layout inspirado en las capturas (top bar con módulos grandes + icon):
+## Entrega por iteraciones
 
-```
-[Clientes] [Artículos] [Kits] [Proveedores] [Reportes] [Compras] [Ventas F2] [Listas Precios] [POS]
-─────────────────────────────────────────────────────────────────────────────────────────────
-              Bienvenido a {Nombre Tienda} — accesos rápidos del día
-```
+1. **Iteración A**: Auditoría UX + fixes de sidebar/switcher/empty state/breadcrumb + sync URL↔contexto.
+2. **Iteración B**: Import/Export modo isla por tienda.
+3. **Iteración C**: Tests unitarios + smoke Playwright del Superadmin.
 
-Tabs/secciones (solo las que el módulo está activo para esa tienda):
-- Clientes (CRM local) · Productos · Categorías/Marcas · Kits · Proveedores · Compras · Listas de Precios · Reportes · Personalización tienda online · Empleados/roles internos · Configuración (logo, WhatsApp, horarios).
-
-**NO aparecen** aquí: Tiendas, Licencias, Sync, Fiscal global, Módulos. Esos solo en `/superadmin`.
-
-### C) `/t/:slug/pos` — POS Workspace (ya existe)
-Para cajero/mesero. Sin cambios estructurales — solo se asegura el guard de tenant.
-
----
-
-## 3. Onboarding del id_negocio (creado por superadmin)
-
-Wizard en `/superadmin/tiendas/nueva` que en una sola transacción crea:
-
-1. `organizations` (slug = id_negocio, nombre, NIT, ciudad).
-2. Usuario `owner` en `auth.users` con email + **password inicial generado** (se muestra una sola vez + opción "enviar por email").
-3. `user_roles` → owner de esa org.
-4. `organization_modules` con los módulos seleccionados.
-5. (Opcional) Subdominio `{slug}.sistecpos.com` en `tenant_domains`.
-6. `einvoice_configs` placeholder.
-
-Al terminar muestra tarjeta: **"Tienda creada · slug: surteya · usuario: admin@surteya.com · contraseña: ABC123"** lista para entregar al cliente.
-
----
-
-## 4. Cambios técnicos (resumen para implementación)
-
-```
-src/pages/
-  Login.tsx                    ← nuevo: form único (tienda + user + pass + Google)
-  superadmin/
-    SuperadminLayout.tsx       ← sidebar dedicado
-    Overview.tsx
-    Tiendas.tsx                ← mueve OrganizationsTab actual
-    TiendaNueva.tsx            ← wizard onboarding
-    Licencias.tsx              ← mueve de AdminDashboard
-    Modulos.tsx
-    Fiscal.tsx                 ← mueve FiscalSettingsTab
-    Sync.tsx                   ← mueve SyncMonitor
-    Dominios.tsx
-  tienda/
-    TiendaLayout.tsx           ← top bar estilo POS Colombia
-    Inicio.tsx                 ← grid de módulos activos
-    (Clientes, Productos, Reportes, etc. — reusan componentes existentes)
-
-src/components/RoleGuard.tsx   ← endurecer: superadmin-only para /superadmin/*
-src/App.tsx                    ← rutas /, /superadmin/*, /t/:slug/*
-```
-
-DB: ya existen `organizations`, `organization_modules`, `user_roles`, `einvoice_configs`, `sync_logs`. Solo hace falta:
-- RPC `login_resolve(slug, email)` que devuelva tienda + rol efectivo para redirigir tras login.
-- Trigger/función `create_tenant_with_owner(...)` para el wizard atómico.
-
----
-
-## 5. Fases de entrega
-
-1. **F1 — Login único** (`/` con 3 campos + Google) y redirección por rol/tenant.
-2. **F2 — `/superadmin`** layout + mover Tiendas, Licencias, Módulos, Fiscal, Sync, Dominios desde `AdminDashboard`.
-3. **F3 — Wizard "Nueva tienda"** atómico con password inicial.
-4. **F4 — `/t/:slug/admin`** layout estilo POS Colombia con módulos del negocio.
-5. **F5 — Limpieza** de `AdminDashboard` viejo + guards + QA con la tienda semilla `surteya`.
-
----
-
-¿Apruebas el plan? Si sí, arranco por **F1 + F2** (login y separación de paneles) en este mismo turno.
+¿Apruebas el plan así o ajusto alcance (por ejemplo, dejar E2E para una segunda fase, o priorizar import/export antes que la auditoría UX)?

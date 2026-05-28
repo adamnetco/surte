@@ -8,7 +8,8 @@ const LABELS: Record<string, string> = {
   tiendas: "Tiendas",
   "nueva-tienda": "Nueva tienda",
   sync: "Sincronización",
-  datos: "Datos / Importar",
+  datos: "Datos (isla)",
+
   ajustes: "Ajustes globales",
   modulos: "Módulos",
   fiscal: "Fiscal (DIAN)",
