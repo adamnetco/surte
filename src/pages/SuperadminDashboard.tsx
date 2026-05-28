@@ -18,6 +18,7 @@ const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"))
 const DeadLetterQueue = lazy(() => import("@/components/admin/DeadLetterQueue"));
 const DataManagementTab = lazy(() => import("@/components/admin/DataManagementTab"));
 const TenantHealth = lazy(() => import("@/components/superadmin/TenantHealth"));
+const TenantDataIsland = lazy(() => import("@/components/superadmin/TenantDataIsland"));
 
 const SyncSection = () => (
   <div className="space-y-4">
