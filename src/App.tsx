@@ -53,6 +53,7 @@ const Politicas = lazy(() => import("./pages/Politicas"));
 const TratamientoDatos = lazy(() => import("./pages/TratamientoDatos"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const POS = lazy(() => import("./pages/POS"));
+const PosHub = lazy(() => import("./pages/PosHub"));
 const Mesas = lazy(() => import("./pages/Mesas"));
 const KDS = lazy(() => import("./pages/KDS"));
 const Inventario = lazy(() => import("./pages/Inventario"));
@@ -158,7 +159,8 @@ const App = () => (
 
                     {/* === Operativa de un negocio (solo en su subdominio) === */}
                     <Route path="/admin" element={<HostGuard require="storefront"><RoleGuard section="admin"><AdminDashboard /></RoleGuard></HostGuard>} />
-                    <Route path="/pos" element={<HostGuard require="storefront"><POS /></HostGuard>} />
+                    <Route path="/pos" element={<HostGuard require="storefront"><PosHub /></HostGuard>} />
+                    <Route path="/pos/vender" element={<HostGuard require="storefront"><POS /></HostGuard>} />
                     <Route path="/mesas" element={<HostGuard require="storefront"><Mesas /></HostGuard>} />
                     <Route path="/kds" element={<HostGuard require="storefront"><KDS /></HostGuard>} />
                     <Route path="/inventario" element={<HostGuard require="storefront"><Inventario /></HostGuard>} />
