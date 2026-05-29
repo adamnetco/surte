@@ -47,9 +47,11 @@ describe("TenantSwitcher", () => {
     renderAt("/superadmin");
     fireEvent.click(screen.getByText("Tienda Uno"));
     fireEvent.change(screen.getByPlaceholderText("Buscar tienda…"), { target: { value: "dos" } });
-    expect(screen.queryByText("Tienda Uno")).not.toBeInTheDocument();
+    // "Tienda Uno" sigue visible solo en el trigger, no en la lista filtrada.
+    expect(screen.getAllByText("Tienda Uno")).toHaveLength(1);
     expect(screen.getByText("Tienda Dos")).toBeInTheDocument();
   });
+
 
   it("al elegir otra tienda llama switchOrg", () => {
     renderAt("/superadmin");
