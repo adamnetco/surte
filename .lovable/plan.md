@@ -1,156 +1,91 @@
-# Refactor y Optimización SistecPOS — Plan por Etapas
 
-Objetivo: dejar el sistema más rápido, mantenible y testeable, sin tocar funcionalidades en producción. Cada etapa es entregable de forma independiente y reversible. Se prioriza primero red de seguridad (tests + observabilidad), luego deuda estructural, luego performance, luego pulido.
+# Sistema de Impresión Térmica SistecPOS
 
----
+Solución completa en 4 capas: **DB → Ticket renderable → Driver WebUSB/Web Serial/Bluetooth → Agente de impresión de red**.
 
-## Etapa 0 — Línea base y guardarraíles (1 sprint)
+## 1. Base de datos (migración)
 
-Antes de refactorizar, medir y blindar.
+Nuevas tablas en `public`, con GRANTs + RLS por `organization_id` (políticas vía `is_member_of` y `can_write_org`):
 
-- **Inventario técnico**: árbol de rutas, tabla de componentes huérfanos (`ts-prune`), dependencias sin usar (`depcheck`), bundle inicial (`vite build --report`), Lighthouse de POS, Storefront y SuperAdmin.
-- **Cobertura actual**: ejecutar `vitest --coverage` y publicar % por carpeta (`src/components/pos`, `src/components/surte`, `src/pages`, `supabase/functions`).
-- **Health del backend**: `supabase--linter`, lista de tablas sin RLS, edge functions sin tests, índices faltantes en queries calientes.
-- **Tests críticos**: ampliar el e2e ya existente (POS, SuperAdmin) con flujos de Storefront (checkout WhatsApp), Onboarding y Cliente Portal. Estos son el contrato que protege el refactor.
-- **Feature flags simples**: tabla `feature_flags` + hook `useFeatureFlag` para activar/desactivar refactors por tenant.
+- `printers` — `id, organization_id, name, model (58|80mm), connection (usb|lan|bluetooth|agent), ip_address, port (9100), vendor_id, product_id, paper_width_mm, characters_per_line, codepage, cuts_paper, opens_drawer, status, last_seen_at, is_default, location_id`
+- `kitchen_stations` *(ya existe)* + nueva columna `printer_id uuid references printers`
+- `printer_routing_rules` — `id, organization_id, category_id|product_id|modifier_group_id, printer_id, copies, prints_on (ticket|kitchen|both), priority` (override flexible)
+- `print_jobs` — `id, organization_id, printer_id, pos_order_id, kind (receipt|kitchen|preorder|drawer|test), payload jsonb (ESC/POS commands + render data), status (queued|printing|done|failed|cancelled), attempts, last_error, terminal_id, created_at, processed_at`
+- `printer_terminals` — `id, organization_id, fingerprint, name, last_seen_at, capabilities jsonb` (registra cajas/cocinas que actúan como servidor de impresión)
 
-Entrega: dashboard markdown `docs/refactor-baseline.md` con métricas. Sin esto, no se empieza la Etapa 1.
+Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE public.print_jobs` para que el agente reciba trabajos al instante.
 
----
+RPC: `enqueue_print_job(_order_id, _kind)` que lee `printer_routing_rules` + `kitchen_stations` y crea N filas en `print_jobs` (una por impresora destino) con el payload precalculado.
 
-## Etapa 1 — Arquitectura de carpetas y límites de módulo (1–2 sprints)
+## 2. Renderizador de ticket (`src/modules/printing/`)
 
-Mover de "todo en `src/components/*` y `src/pages/*`" a módulos por dominio.
-
-```text
-src/
-  modules/
-    pos/         (workspace, cierre, hotkeys, offline)
-    storefront/  (catálogo, carrito, checkout)
-    admin-cms/   (productos, categorías, marcas, landings)
-    superadmin/  (tenants, health, billing)
-    clientes/    (portal, tickets, suscripción)
-    auth/        (login, SSO, guardas)
-  shared/        (ui, hooks, lib, schemas)
-  integrations/  (supabase, lovable, whatsapp, push)
+```
+src/modules/printing/
+├── lib/
+│   ├── escpos.ts          # Builder ESC/POS (init, align, bold, size, qr, barcode, cut, drawer)
+│   ├── ticketBuilder.ts   # Genera comandos ESC/POS desde pos_order
+│   ├── ticketHtml.tsx     # Render HTML 58/80mm para vista previa + fallback window.print()
+│   └── codepages.ts       # CP437/CP858/Latin1 helpers para tildes/ñ
+├── drivers/
+│   ├── webusb.ts          # navigator.usb (Epson/Star/Xprinter vendor IDs)
+│   ├── webserial.ts       # navigator.serial (fallback)
+│   ├── webbluetooth.ts    # navigator.bluetooth GATT
+│   └── agent.ts           # POST a agente local http://127.0.0.1:9101/print
+├── hooks/
+│   ├── usePrinter.ts      # Selecciona impresora por defecto del terminal
+│   └── usePrintQueue.ts   # Realtime → ejecuta jobs asignados a este terminal
+└── components/
+    ├── PrinterManager.tsx       # CRUD impresoras (admin)
+    ├── PrinterRoutingTab.tsx    # Mapeo categoría → impresora
+    ├── PrintPreviewDialog.tsx   # Vista previa + reimprimir
+    └── TerminalRegistration.tsx # Registra este equipo como server de impresión
 ```
 
-- Cada módulo expone un `index.ts` público; el resto es interno.
-- ESLint con `eslint-plugin-boundaries` para impedir imports cruzados entre módulos.
-- Rutas movidas desde `App.tsx` a `modules/*/routes.tsx` (lazy-loaded).
-- `src/pages/*` queda solo como shell que delega en módulos.
+Ticket genera: encabezado (logo, razón social, NIT), datos cliente, líneas (qty × nombre — modificadores indentados — precio), totales, método de pago, código QR de verificación, pie de página, corte de papel.
 
-No se reescribe lógica: solo se mueven archivos y se ajustan imports. Cada PR cubre 1 módulo y se valida con el e2e de Etapa 0.
+## 3. Integración POS
 
----
+- Al confirmar venta en `POSWorkspace.handlePaid`: tras `enqueue` exitoso del outbox, llamar `enqueue_print_job(order_id, 'receipt')` + `'kitchen'` si hay items con `kitchen_station_id`.
+- Si el terminal tiene impresora local configurada, intentar imprimir inmediatamente desde el navegador (WebUSB/Serial) antes de delegar al agente.
+- Botón "Reimprimir último" en POS Hub.
 
-## Etapa 2 — Capa de datos unificada (2 sprints)
+## 4. Agente de impresión (`electron/print-server/`)
 
-Hoy hay mezcla de `supabase.from(...).select(...)` directo en componentes, hooks ad-hoc y `useEffect` con fetch manual. Causa: queries duplicadas, sin caché, sin reintentos.
+Pequeño servicio Node embebido en la app Electron existente:
+- Suscripción Realtime a `print_jobs WHERE status='queued' AND printer_id IN (impresoras de este host)`.
+- Por cada job: envía bytes ESC/POS por TCP `printer.ip:9100` (LAN) o `node-usb`/`escpos-usb` (USB).
+- Marca `status='done'` o `'failed'` con `last_error`.
+- Heartbeat a `printer_terminals.last_seen_at` cada 30s.
+- También expone `POST /print` local para que el navegador delegue cuando WebUSB no esté disponible (ej. Firefox).
 
-- Adoptar **TanStack Query** como capa única de fetching.
-- Crear `src/modules/<m>/api/` con funciones puras (`listProducts(filters)`, `createOrder(payload)`) que devuelven `Promise<T>`.
-- Hooks tipo `useProductsQuery`, `useCreateOrderMutation` envuelven esas funciones con keys consistentes (`['products', tenantId, filters]`).
-- Suscripciones Realtime se conectan a la caché de Query (`queryClient.setQueryData`), no a estado local.
-- Borrar `useEffect + setState` de fetching, eliminar duplicación entre Storefront y Admin (mismo producto, dos queries distintas hoy).
+## 5. UI Admin
 
-Beneficio medible: caída de requests duplicados, navegación instantánea entre vistas, menos bugs de "datos viejos tras editar".
+Nuevo tab **Impresoras** en Admin CMS (`/admin`):
+- Lista de impresoras con estado (online/offline) — badge superior, top-center toasts.
+- Wizard "Detectar impresora" con WebUSB.
+- Test de impresión + apertura de cajón.
+- Mapeo visual: arrastrar categorías a impresoras.
+- Vincular `kitchen_stations.printer_id`.
 
----
+## 6. Detalles técnicos
 
-## Etapa 3 — Estado global y contextos (1 sprint)
+- Codificación: CP858 (incluye €, ñ, tildes). Conversión UTF-8 → bytes en `escpos.ts`.
+- Ancho: 58mm = 32 chars, 80mm = 48 chars (configurable).
+- Vendor IDs comunes preconfigurados: Epson `0x04b8`, Star `0x0519`, Xprinter `0x0483`, Bixolon `0x1504`.
+- HTTPS requerido para WebUSB/Serial/Bluetooth — ya cumplido en `*.lovable.app` y dominios custom.
+- Fallback universal: si no hay driver disponible, abre `PrintPreviewDialog` con CSS `@media print { @page { size: 58mm auto; margin: 0 } }` y dispara `window.print()`.
 
-Auditar y reducir Contexts. Hoy: `Auth`, `Cart`, `Organization`, `Agent`, `Swipe`, `Theme`.
+## 7. Skill superpowers
 
-- Mantener Context solo para identidad y tema (cambian poco, se leen en todas partes).
-- Migrar `Cart`, `Agent`, `Swipe` a **Zustand** con stores tipados y selectores. Evita re-renders globales.
-- `OrganizationContext` se reemplaza por un `useTenant()` que lee de `useTenantFromRoute` + Query (ya viene cacheado por TanStack).
-- Persistencia de carrito y sesión POS pasan al middleware `persist` de Zustand (reemplaza el localStorage manual del Persistent Cart).
+Aplico el skill `using-superpowers` para:
+1. **Brainstorm** primero (esta planificación).
+2. **TDD** en `escpos.ts` y `ticketBuilder.ts` (tests vitest con snapshots de bytes).
+3. **Debugging disciplinado** del flujo Realtime → agente.
 
----
+## 8. Orden de entrega
 
-## Etapa 4 — Tipos y validación de extremo a extremo (1 sprint)
-
-- Regenerar `src/integrations/supabase/types.ts` (automático) y eliminar todos los `any` / `as unknown as`.
-- **Zod** como contrato único: schemas en `src/shared/schemas/` consumidos por React Hook Form, edge functions (Deno), y respuestas de API.
-- Edge functions Deno: cada una valida `input` con Zod y devuelve `{ ok, data | error }` tipado. Cliente consume con `z.infer`.
-- Activar `"strict": true` y `noUncheckedIndexedAccess` en `tsconfig.app.json`. Arreglar errores por módulo, no en bloque.
-
----
-
-## Etapa 5 — UI: design system y consistencia (1–2 sprints)
-
-- Auditar usos de color literal (`text-white`, `bg-[#0C4B83]`) y reemplazar por tokens semánticos en `index.css` (`--primary`, `--success`, `--alert`). Lint con regex en CI.
-- Consolidar variantes de botón, badge, dialog en `cva` (ya parcialmente hecho). Borrar duplicados (`FloatingCart`, `FloatingWhatsApp`, `CartDrawer` comparten estilos).
-- Toasts top-center y badges top-de-imagen como wrappers (`<SistecToast>`, `<StatusBadge>`) — para no repetir clases.
-- `window.confirm` admin → componente `<ConfirmDialog>` reutilizable manteniendo el patrón obligatorio para acciones destructivas.
-- Storybook ligero (`@storybook/react-vite`) solo para `shared/ui` y componentes POS/Storefront críticos. Sirve también como QA visual.
+Esta es solo la fase 1 (migración + renderer + driver WebUSB + UI básica). El agente Electron y Bluetooth quedan como fase 2 para no inflar un solo cambio. Te confirmo cada fase antes de pasar a la siguiente.
 
 ---
 
-## Etapa 6 — Performance frontend (1 sprint)
-
-- **Bundle splitting**: cada módulo lazy con `React.lazy`. Hoy todo entra en el chunk inicial.
-- **Route prefetch** en hover/visible (TanStack Router-style) en `BottomNav` y `POSTopBar`.
-- **Imágenes**: forzar `optimize-image` EF en todo `<img>` del Storefront; `loading="lazy"` + `decoding="async"` + `width/height` explícito para evitar CLS.
-- **VirtualizedProductGrid** ya existe — extender a Admin (`ProductsTable`, `OrdersList`) cuando hay >100 filas.
-- **Memoización selectiva**: `React.memo` + `useMemo` solo donde el profiler muestra re-renders >16ms. No memoizar de más.
-- **SW push** y `useSyncService` revisados para no despertar el hilo principal en idle.
-
-Métrica objetivo: LCP Storefront < 2.0s en 4G simulado, INP POS < 100ms.
-
----
-
-## Etapa 7 — Backend: Supabase y edge functions (2 sprints)
-
-- **RLS audit**: revisar cada tabla con `supabase--linter`; documentar política por tabla en `docs/rls-matrix.md`. Cerrar permisos `anon` salvo catálogos públicos.
-- **Roles**: confirmar que ninguna verificación de admin se hace en cliente — todo vía `has_role(auth.uid(), 'admin')`.
-- **Índices**: añadir índices en columnas de filtros pesados (`orders.tenant_id`, `orders.created_at`, `products.brand_id`, `pos_sessions.status`). Validar con `EXPLAIN ANALYZE` antes/después.
-- **Edge functions**:
-  - Carpeta `_shared/` con helpers comunes (auth, cors, response, logger).
-  - Reintentos exponenciales en integraciones (YCloud, Resend, Innapsis).
-  - Tests con `deno test` para las funciones críticas (`send-whatsapp-order`, `sync-order`, `cart-sync`, `license-*`).
-- **Outbox offline POS**: revisar idempotencia (clave única por `client_op_id`) para evitar duplicados al reintentar.
-
----
-
-## Etapa 8 — Multi-tenant y SuperAdmin (1 sprint)
-
-- Garantizar `tenant_id` en toda query (helper `withTenant(query, tenantId)` obligatorio en `modules/*/api`).
-- Test unitario por módulo: "no leak entre tenants" (consulta como tenant A no devuelve filas de tenant B).
-- `TenantSwitcher` y `RequireActiveTenant` movidos a `modules/superadmin`, ya con tests.
-- Sync Test → Live como job idempotente con dry-run y diff visible antes de aplicar.
-
----
-
-## Etapa 9 — Observabilidad y calidad continua (1 sprint)
-
-- **Error tracking**: Sentry (o equivalente) con releases atadas a commit. Filtrar por módulo.
-- **Logs estructurados** en edge functions (JSON con `tenant_id`, `function`, `latency_ms`).
-- **Métricas de negocio**: panel en SuperAdmin con ventas/hora, errores de sync, sesiones POS abiertas, tasa de carritos abandonados.
-- **CI**: el pipeline e2e ya bloquea merge con PR annotations y aísla `@flaky` (hecho). Añadir job de Lighthouse-CI con presupuesto de bundle y LCP.
-
----
-
-## Etapa 10 — Documentación y handoff (continuo)
-
-- `docs/architecture.md` con diagrama por módulos.
-- `docs/api/*` ya existe — mantener al día tras Etapa 4 (schemas Zod son la fuente).
-- README por módulo (`src/modules/<m>/README.md`): propósito, entry points, dependencias, decisiones.
-- ADRs cortos (`docs/adr/NNN-titulo.md`) para cada decisión grande tomada en este refactor.
-
----
-
-## Detalles técnicos clave
-
-- **Orden no negociable**: 0 → 1 → 2 → 3 → 4. Las demás (5–10) pueden paralelizarse entre 2 equipos una vez la capa de datos (2) está estable.
-- **Estrategia de PRs**: cada etapa se divide en PRs ≤ 400 líneas; cada PR debe pasar el e2e completo y mantener cobertura ≥ baseline.
-- **Rollback**: feature flags + ramas por módulo permiten desactivar un refactor en producción sin revertir commits.
-- **Riesgos**:
-  - Etapa 2 (TanStack) toca todas las pantallas — mitigar migrando módulo por módulo, no global.
-  - Etapa 4 (`strict: true`) puede destapar bugs latentes — agendarla con margen.
-  - Etapa 7 (índices/RLS) requiere ventana de mantenimiento si la BD es grande.
-
-## Estimación total
-
-~12–14 sprints (3–4 meses) con 1 dev full-time, o ~6–8 sprints con 2 devs paralelizando desde Etapa 5.
+¿Apruebas el plan para arrancar con la **fase 1** (DB + render ESC/POS + WebUSB + tab Impresoras + integración en `handlePaid`)?
