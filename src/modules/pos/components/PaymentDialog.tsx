@@ -75,10 +75,20 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: 
     setPayments((prev) => prev.map((p, j) => (j === i ? { ...p, ...patch } : p)));
   };
 
+  const doConfirm = () => {
+    if (!canConfirm) return;
+    setSubmitting(true);
+    try {
+      onConfirm(payments.filter((p) => p.amount > 0));
+    } catch {
+      setSubmitting(false);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && canConfirm) {
       e.preventDefault();
-      onConfirm(payments.filter((p) => p.amount > 0));
+      doConfirm();
     }
   };
 
