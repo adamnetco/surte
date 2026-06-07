@@ -183,6 +183,7 @@ const App = () => (
                 <Analytics />
                 <CartNavigationGuard />
                 <OmnichannelCartListener />
+                <GlobalCommandPalette />
                 <SwipeProvider>
                   <Suspense fallback={<RouteFallback />}>
                   <Routes>
