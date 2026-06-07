@@ -296,16 +296,46 @@ export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, ki
           >
             {busy === "png" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           </Button>
-          <Button
-            size="icon"
-            onClick={handleShareWhatsApp}
-            disabled={!!busy}
-            className="bg-[#25D366] text-white hover:bg-[#1ebe57]"
-            title="Compartir por WhatsApp"
-            aria-label="Compartir por WhatsApp"
-          >
-            {busy === "share" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                disabled={!!busy}
+                className="bg-[#25D366] text-white hover:bg-[#1ebe57]"
+                title="Compartir por WhatsApp"
+                aria-label="Compartir por WhatsApp"
+              >
+                {busy === "share" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuLabel>Compartir ticket</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {isMobile && (
+                <DropdownMenuItem onClick={handleSystemShare}>
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  Elegir app… (recomendado)
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => handleOpenWhatsApp("personal")}>
+                <MessageCircle className="h-4 w-4 mr-2 text-[#25D366]" />
+                WhatsApp
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleOpenWhatsApp("business")}>
+                <Briefcase className="h-4 w-4 mr-2 text-[#075E54]" />
+                WhatsApp Business
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleCopyText}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copiar texto
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownload}>
+                <Download className="h-4 w-4 mr-2" />
+                Descargar imagen
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             size="icon"
             onClick={handlePrint}
