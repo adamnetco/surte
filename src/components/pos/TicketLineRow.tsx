@@ -172,11 +172,12 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
         </Popover>
 
         <button
+          type="button"
           onClick={onRemove}
-          className="ml-auto text-muted-foreground hover:text-destructive p-0.5"
-          title="Eliminar"
+          aria-label={`Eliminar ${line.name} del ticket`}
+          className="ml-auto inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive transition"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>
