@@ -120,6 +120,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [tabFilter, setTabFilter] = useState("");
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
 
   const { hasModule, currentOrg } = useOrganization();
@@ -129,6 +130,22 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!loading && role === "editor") setActiveTab("orders");
   }, [role, loading]);
+
+  // Sync activeTab ⇄ ?tab=... — habilita deep-linking desde el Command Palette.
+  useEffect(() => {
+    const q = searchParams.get("tab");
+    if (q && q !== activeTab && tabs.some((t) => t.id === q)) setActiveTab(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, tabs.length]);
+
+  const selectTab = (id: string) => {
+    setActiveTab(id);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", id);
+      return next;
+    }, { replace: true });
+  };
 
   useEffect(() => {
     if (!loading && !user) { toast.error("Acceso denegado"); navigate("/"); return; }
