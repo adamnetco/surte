@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/context/OrganizationContext";
 import { toast } from "sonner";
 import { Loader2, LockKeyhole } from "lucide-react";

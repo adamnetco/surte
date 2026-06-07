@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth, type AppRole } from "@/context/AuthContext";
+import { useAuth, type AppRole } from "@/modules/auth/context/AuthContext";
 import { toast } from "sonner";
 
 const ALL_ROLES: AppRole[] = ["superadmin", "admin", "editor", "agente", "user"];

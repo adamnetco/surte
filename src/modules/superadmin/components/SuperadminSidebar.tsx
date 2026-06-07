@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/context/OrganizationContext";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 const GLOBAL_ITEMS = [

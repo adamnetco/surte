@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone, ShieldCheck, ExternalLink, Loader2 } from "lucide-react";

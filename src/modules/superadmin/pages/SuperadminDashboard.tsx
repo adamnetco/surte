@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { LogOut, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 import SuperadminSidebar from "@/modules/superadmin/components/SuperadminSidebar";
 import SuperadminBreadcrumb from "@/modules/superadmin/components/SuperadminBreadcrumb";
 import TenantSwitcher from "@/modules/superadmin/components/TenantSwitcher";

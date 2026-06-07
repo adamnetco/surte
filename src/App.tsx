@@ -8,7 +8,7 @@ import AppErrorBoundary from "@/components/AppErrorBoundary";
 import { errorToMessage } from "@/lib/errors";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider } from "@/modules/auth/context/AuthContext";
 import { AgentProvider } from "@/context/AgentContext";
 import { OrganizationProvider } from "@/context/OrganizationContext";
 import { ThemeProvider } from "@/context/ThemeContext";
