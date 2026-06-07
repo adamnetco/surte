@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Receipt, CreditCard } from "lucide-react";
-import { useWhatsAppConfig } from "@/hooks/useWhatsAppConfig";
+import { useWhatsAppConfig } from "@/modules/integrations/whatsapp/useWhatsAppConfig";
 
 interface PaymentRow {
   id: string;
