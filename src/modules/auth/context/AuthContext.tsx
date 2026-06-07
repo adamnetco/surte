@@ -12,7 +12,7 @@ interface AuthContextType {
   isAgent: boolean;
   role: AppRole;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null; session: Session | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; session: Session | null; role: AppRole | null }>;
   signUp: (email: string, password: string, fullName: string, businessType?: string, phone?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   globalSignOut: () => Promise<{ error: Error | null }>;
@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return validRoles.includes(value as AppRole) ? (value as AppRole) : "user";
   };
 
-  const checkRole = async (userId: string) => {
+  const checkRole = async (userId: string): Promise<AppRole> => {
     // Hydrate from localStorage cache first → kills the "Verificando permisos…" flash.
     const cached = readCachedRole(userId);
     if (cached) applyRole(cached, userId);
@@ -80,8 +80,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     if (!rpcError && effectiveRole) {
-      applyRole(normalizeRole(effectiveRole), userId);
-      return;
+      const nextRole = normalizeRole(effectiveRole);
+      applyRole(nextRole, userId);
+      return nextRole;
     }
 
     const { data, error } = await supabase
@@ -91,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       if (!cached) applyRole("user", userId);
-      return;
+      return cached ?? "user";
     }
 
     const priority: AppRole[] = ["superadmin", "admin", "editor", "agente", "user"];
@@ -99,9 +100,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userRole = priority.find((candidate) => assignedRoles.includes(candidate)) || "user";
 
     applyRole(userRole, userId);
+    return userRole;
   };
 
-  const syncAuthState = async (nextSession: Session | null) => {
+  const syncAuthState = async (nextSession: Session | null): Promise<AppRole> => {
     // If we already have a cached role for this user, skip the "loading" splash entirely.
     const cached = readCachedRole(nextSession?.user?.id);
     if (!cached) setLoading(true);
@@ -110,14 +112,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(nextSession?.user ?? null);
 
       if (nextSession?.user) {
-        await checkRole(nextSession.user.id);
+        return await checkRole(nextSession.user.id);
       } else {
         resetAuthState();
+        return "user";
       }
     } catch (error) {
       console.warn("Auth sync failed", error);
-      if (nextSession?.user) applyRole("user", nextSession.user.id);
-      else resetAuthState();
+      if (nextSession?.user) {
+        applyRole("user", nextSession.user.id);
+      } else {
+        resetAuthState();
+      }
+      return "user";
     } finally {
       setLoading(false);
     }
@@ -171,8 +178,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error) await syncAuthState(data.session);
-    return { error: error as Error | null, session: data.session ?? null };
+    const nextRole = !error ? await syncAuthState(data.session) : null;
+    return { error: error as Error | null, session: data.session ?? null, role: nextRole };
   };
 
   const signUp = async (email: string, password: string, fullName: string, businessType?: string, phone?: string) => {
