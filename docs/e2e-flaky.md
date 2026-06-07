@@ -28,9 +28,26 @@ externa, race condition conocida) y crea un issue para estabilizarlo.
 | `e2e-flaky-nightly.yml`         | cron 07:00 UTC + manual | **Solo** `@flaky`, con 3 reintentos | No            |
 
 El job nocturno:
-- No falla el pipeline principal (`continue-on-error: true`).
+- No falla el pipeline principal (el step de Playwright usa `continue-on-error`).
 - Sube `playwright-flaky-report` y, si falla, `playwright-flaky-artifacts`
   (traces, videos, screenshots) con 30 días de retención.
+- Abre/actualiza un issue con label `flaky-nightly` cuando hay fallos para
+  que la inestabilidad quede visible.
+
+## Umbral de tasa de fallos
+
+El step `Enforce flaky threshold` (`scripts/enforce-flaky-threshold.cjs`)
+hace **fallar el job nocturno** cuando la inestabilidad supera lo aceptable,
+para que el equipo priorice la causa raíz en vez de normalizar la flakiness:
+
+| Variable                    | Default | Qué mide                                              |
+| --------------------------- | ------- | ----------------------------------------------------- |
+| `FLAKY_FAILURE_THRESHOLD`   | `30`    | % máx. de tests del suite marcados como flakey        |
+| `FLAKY_PER_TEST_THRESHOLD`  | `60`    | % máx. de intentos fallidos para un test individual   |
+
+Se ajustan en `env:` de `.github/workflows/e2e-flaky-nightly.yml`. Cuando se
+supera alguno, el job marca fallo, se publica el detalle en el Job Summary
+y se abre/actualiza el issue `flaky-nightly`.
 - Abre/actualiza un issue con label `flaky-nightly` cuando hay fallos para
   que la inestabilidad quede visible.
 
