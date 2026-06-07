@@ -348,11 +348,11 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
     if (editing && editing !== "new") {
       const { error } = await supabase.from("products").update(payload).eq("id", editing);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(errorToMessage(error)); return; }
       toast.success("Producto actualizado");
     } else {
       const { data: newProduct, error } = await supabase.from("products").insert(payload).select("id, name, price, base_unit").single();
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(errorToMessage(error)); return; }
       // Base presentation is auto-created by the DB trigger (trg_auto_base_presentation)
       toast.success("Producto creado con presentación base");
       queryClient.invalidateQueries({ queryKey: ["admin-presentations"] });
