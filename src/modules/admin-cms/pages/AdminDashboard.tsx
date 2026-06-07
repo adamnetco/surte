@@ -329,37 +329,72 @@ const AdminDashboard = () => {
       <div className="hidden lg:flex">
         {/* Sidebar */}
         <aside className="w-56 xl:w-64 shrink-0 border-r border-border bg-card min-h-[calc(100vh-56px)] sticky top-[56px] overflow-y-auto">
+          <div className="sticky top-0 z-10 bg-card border-b border-border p-2">
+            <div className="relative">
+              <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={tabFilter}
+                onChange={(e) => setTabFilter(e.target.value)}
+                placeholder="Buscar módulo…"
+                className="w-full pl-7 pr-2 py-1.5 text-xs bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
           <nav className="py-2">
-            {tabs.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors relative ${
-                  activeTab === id
-                    ? "bg-primary/10 text-primary border-r-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                <Icon size={16} />
-                {label}
-                {id === "orders" && pendingCount > 0 && (
-                  <span className="ml-auto w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-bold">
-                    {pendingCount}
-                  </span>
-                )}
-              </button>
-            ))}
+            {(() => {
+              const q = tabFilter.trim().toLowerCase();
+              const filtered = q ? tabs.filter((t) => t.label.toLowerCase().includes(q)) : tabs;
+              const renderTabBtn = ({ id, label, icon: Icon }: typeof tabs[number]) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium transition-colors relative ${
+                    activeTab === id
+                      ? "bg-primary/10 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <Icon size={16} />
+                  {label}
+                  {id === "orders" && pendingCount > 0 && (
+                    <span className="ml-auto w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-bold">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+              );
 
-            {opsLinks.length > 0 && (
+              if (q) {
+                return filtered.length > 0
+                  ? filtered.map(renderTabBtn)
+                  : <p className="px-4 py-3 text-xs text-muted-foreground">Sin resultados</p>;
+              }
+
+              return GROUP_ORDER.map((group) => {
+                const groupTabs = filtered.filter((t) => t.group === group);
+                if (groupTabs.length === 0) return null;
+                return (
+                  <div key={group} className="mb-1">
+                    <p className="px-4 pt-3 pb-1 text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider">
+                      {GROUP_LABELS[group]}
+                    </p>
+                    {groupTabs.map(renderTabBtn)}
+                  </div>
+                );
+              });
+            })()}
+
+            {opsLinks.length > 0 && !tabFilter && (
               <>
-                <div className="mt-4 px-4 pt-3 pb-1 border-t border-border">
-                  <p className="text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider">Operaciones</p>
+                <div className="mt-3 px-4 pt-3 pb-1 border-t border-border">
+                  <p className="text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider">Atajos operativos</p>
                 </div>
                 {opsLinks.map(({ path, label, icon: Icon }) => (
                   <button
                     key={path}
                     onClick={() => navigate(path)}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                   >
                     <Icon size={16} />
                     <span className="flex-1 text-left">{label}</span>
@@ -370,6 +405,7 @@ const AdminDashboard = () => {
             )}
           </nav>
         </aside>
+
 
         {/* Content area */}
         <main className="flex-1 p-6 pb-8 min-w-0 overflow-x-hidden">
