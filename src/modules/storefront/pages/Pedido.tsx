@@ -5,7 +5,7 @@ import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
 import { Package, Clock, CheckCircle, Truck, XCircle, MessageCircle, Copy } from "lucide-react";
 import { motion } from "framer-motion";
-import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { toast } from "sonner";
 import { useAppSettings } from "@/hooks/useStore";
 import { useEffect } from "react";

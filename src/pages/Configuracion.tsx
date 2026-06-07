@@ -3,7 +3,7 @@ import BottomNav from "@/modules/storefront/components/BottomNav";
 import PushOptIn from "@/components/PushOptIn";
 import { ArrowLeft, Bell, Globe, Shield, Sun, Moon, Monitor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/context/ThemeContext";

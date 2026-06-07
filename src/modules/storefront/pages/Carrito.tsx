@@ -14,10 +14,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink, Ticket, X, CheckCircle2, CalendarIcon, Clock, Banknote, CreditCard, Truck, Navigation } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { trackPurchase } from "@/components/seo/Analytics";
+import { trackPurchase } from "@/modules/marketing/seo/Analytics";
 import { mailService } from "@/utils/mailService";
 import { orderConfirmationTemplate } from "@/utils/emailTemplates";
 

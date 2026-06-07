@@ -2,7 +2,7 @@ import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
 import { User, Package, Heart, HelpCircle, LogIn, Settings, LogOut, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { toast } from "sonner";
 
