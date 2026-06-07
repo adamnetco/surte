@@ -86,6 +86,25 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
+  // Captura global de errores: cualquier query/mutation que falle y no tenga
+  // handler propio termina aquí. Las mutations con onError local NO se duplican
+  // porque sonner deduplica por id.
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // Solo molestar al usuario si la query ya tenía datos antes (refetch fallido)
+      // o si fue invocada explícitamente (no en hover/prefetch).
+      if (query.state.data === undefined && query.meta?.silent !== true) {
+        const msg = errorToMessage(error);
+        toast.error(msg, { id: `q:${String(query.queryHash)}` });
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _vars, _ctx, mutation) => {
+      if (mutation.options.onError) return; // ya manejado a nivel local
+      toast.error(errorToMessage(error));
+    },
+  }),
 });
 
 const RouteFallback = () => (
