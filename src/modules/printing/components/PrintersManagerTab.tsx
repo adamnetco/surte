@@ -337,6 +337,35 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
                   </div>
                 </>
               )}
+              {editing.connection === "bluetooth" && (
+                <div className="col-span-2">
+                  <Label>Dirección Bluetooth (MAC)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={editing.bluetooth_address ?? ""}
+                      onChange={(e) => setEditing({ ...editing, bluetooth_address: e.target.value })}
+                      placeholder="AA:BB:CC:DD:EE:FF"
+                    />
+                    <Button type="button" variant="outline" onClick={scanBle} disabled={bleLoading}>
+                      <Search className="h-4 w-4 mr-1" />Buscar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Usa "Buscar" para listar dispositivos pareados con el agente.</p>
+                </div>
+              )}
+              {(editing.connection === "usb" || editing.connection === "agent") && (
+                <div className="col-span-2">
+                  <Label>Nombre de impresora en el SO (fallback spooler)</Label>
+                  <Input
+                    value={editing.os_printer_name ?? ""}
+                    onChange={(e) => setEditing({ ...editing, os_printer_name: e.target.value })}
+                    placeholder="Ej: XP-80C, EPSON_TM_T20"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Se usa con <code>lp -o raw</code> (Linux/macOS) o <code>Out-Printer</code> (Windows) si libusb falla.
+                  </p>
+                </div>
+              )}
               <label className="flex items-center gap-2 text-sm col-span-2">
                 <input type="checkbox" checked={!!editing.cuts_paper} onChange={(e) => setEditing({ ...editing, cuts_paper: e.target.checked })} />
                 Corta papel automáticamente
