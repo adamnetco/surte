@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import AdminSectionAccess from "@/components/admin/AdminSectionAccess";
+import AdminSectionAccess from "@/modules/admin-cms/components/AdminSectionAccess";
 import { pendingCount, flushOutbox } from "@/lib/offline/outbox";
 import { getMeta } from "@/lib/offline/db";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
