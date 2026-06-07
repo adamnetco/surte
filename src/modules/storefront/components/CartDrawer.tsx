@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/modules/cart/context/CartContext";
 import { ShoppingCart, Trash2, Minus, Plus, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";

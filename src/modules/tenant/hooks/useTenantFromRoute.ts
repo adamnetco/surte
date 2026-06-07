@@ -11,7 +11,7 @@
  */
 import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 export function useTenantFromRoute() {
   const { slug } = useParams<{ slug: string }>();

@@ -10,7 +10,7 @@ let mockState: any = {
   loading: false,
 };
 
-vi.mock("@/context/OrganizationContext", () => ({
+vi.mock("@/modules/platform/context/OrganizationContext", () => ({
   useOrganization: () => ({ ...mockState, switchOrg }),
 }));
 

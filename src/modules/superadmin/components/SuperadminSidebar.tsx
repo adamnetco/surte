@@ -5,7 +5,7 @@ import {
   ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { cn } from "@/lib/utils";
 

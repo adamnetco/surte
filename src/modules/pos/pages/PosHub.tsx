@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/modules/auth/context/AuthContext";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import {
   ShoppingCart, Wallet, FileText, Boxes, Truck, BarChart3, Megaphone,
   Users, UserPlus, Settings, Shield, LogOut, Loader2, Utensils, ChefHat, Power,

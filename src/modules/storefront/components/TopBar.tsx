@@ -2,8 +2,8 @@ import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu, Sun, M
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
-import { useCart } from "@/context/CartContext";
-import { useTheme } from "@/context/ThemeContext";
+import { useCart } from "@/modules/cart/context/CartContext";
+import { useTheme } from "@/modules/platform/context/ThemeContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import surteLogo from "@/assets/surte-logo.png";
 

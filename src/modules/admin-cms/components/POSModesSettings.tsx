@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Save, Store, Sparkles } from "lucide-react";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { usePOSModes } from "@/modules/pos/hooks/usePOSModes";
 import { POS_MODES, ALL_POS_MODES, type PosMode } from "@/modules/pos/lib/posModes";
 import { POS_BUSINESS_PRESETS, type PosBusinessPreset } from "@/modules/pos/lib/posBusinessPresets";

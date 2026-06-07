@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2 } from "lucide-react";
 import { toast } from "sonner";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 
 const AgendaTab = lazy(() => import("@/modules/admin-cms/components/AgendaTab"));

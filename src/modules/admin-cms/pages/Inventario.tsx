@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 

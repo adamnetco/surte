@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Heart, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/modules/cart/context/CartContext";
 import { useFavorites } from "@/modules/storefront/hooks/useFavorites";
 import { toast } from "sonner";
 import PriceTiers from "./PriceTiers";

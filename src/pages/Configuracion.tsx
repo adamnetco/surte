@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useTheme } from "@/context/ThemeContext";
+import { useTheme } from "@/modules/platform/context/ThemeContext";
 
 const Configuracion = () => {
   const navigate = useNavigate();

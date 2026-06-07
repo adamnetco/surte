@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useProducts } from "@/modules/storefront/hooks/useStore";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/modules/cart/context/CartContext";
 import { useFavorites } from "@/modules/storefront/hooks/useFavorites";
 import { useProfile, getPriceForType } from "@/modules/auth/hooks/useProfile";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
