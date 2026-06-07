@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, Save, X, MapPin, Pencil, ExternalLink, Link as LinkIcon, AlertCircle, Search, Image as ImageIcon, Upload, Loader2, Eye, BarChart3 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useImageUpload } from "@/hooks/useImageUpload";
+import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 
 const genSlug = (city: string) =>
   city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");

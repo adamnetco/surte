@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useImageUpload } from "@/hooks/useImageUpload";
+import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import POSModesSettings from "@/modules/admin-cms/components/POSModesSettings";
 
 // Paleta base SistecPOS. Cada negocio (id_negocio) puede personalizarla desde Ajustes.

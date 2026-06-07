@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 
 declare global {
   interface Window {

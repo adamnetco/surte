@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
-import { useProducts } from "@/hooks/useStore";
+import { useProducts } from "@/modules/storefront/hooks/useStore";
 import { useCart } from "@/context/CartContext";
-import { useFavorites } from "@/hooks/useFavorites";
-import { useProfile, getPriceForType } from "@/hooks/useProfile";
-import { useAppSettings } from "@/hooks/useStore";
+import { useFavorites } from "@/modules/storefront/hooks/useFavorites";
+import { useProfile, getPriceForType } from "@/modules/auth/hooks/useProfile";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { Heart, Plus, X, ChevronLeft, ChevronRight, ShoppingCart, Check } from "lucide-react";
 import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 import { toast } from "sonner";

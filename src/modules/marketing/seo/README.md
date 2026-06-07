@@ -12,7 +12,7 @@ SEO and analytics primitives used across the storefront, admin, and auth surface
 ## Rules
 
 - Consumers MUST import from `@/modules/marketing/seo` (barrel) — never from deep paths.
-- No cross-module imports. Only depends on `@/hooks/useStore`, `@/components/ui/*`, and `react-router-dom`.
+- No cross-module imports. Only depends on `@/modules/storefront/hooks/useStore`, `@/components/ui/*`, and `react-router-dom`.
 - Keep `BASE_URL` / canonical domain logic centralized here.
 
 ## Next module

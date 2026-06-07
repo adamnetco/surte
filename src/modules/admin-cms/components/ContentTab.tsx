@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useImageUpload } from "@/hooks/useImageUpload";
+import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { Plus, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Star, MessageSquareQuote, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";

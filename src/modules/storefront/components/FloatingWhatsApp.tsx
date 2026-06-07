@@ -1,6 +1,6 @@
 import { MessageCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useState } from "react";
 
 const FloatingWhatsApp = () => {

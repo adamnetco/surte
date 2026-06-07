@@ -1,7 +1,7 @@
 import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu, Sun, Moon, Shield } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useCart } from "@/context/CartContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";

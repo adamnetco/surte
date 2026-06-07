@@ -7,7 +7,7 @@ import { Package, Clock, CheckCircle, Truck, XCircle, MessageCircle, Copy } from
 import { motion } from "framer-motion";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { toast } from "sonner";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useEffect } from "react";
 
 const formatPrice = (price: number) =>

@@ -10,7 +10,7 @@ import ProductCard from "@/modules/storefront/components/ProductCard";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import JsonLd, { buildBreadcrumbSchema } from "@/modules/marketing/seo/JsonLd";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
-import { useProducts, useAppSettings } from "@/hooks/useStore";
+import { useProducts, useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { Package } from "lucide-react";
 import { motion } from "framer-motion";
 

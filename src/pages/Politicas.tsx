@@ -3,7 +3,7 @@ import BottomNav from "@/modules/storefront/components/BottomNav";
 import StoreFooter from "@/modules/storefront/components/StoreFooter";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 
 const Politicas = () => {
   const { data: settings } = useAppSettings();

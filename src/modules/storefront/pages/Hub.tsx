@@ -9,7 +9,7 @@ import StoreFooter from "@/modules/storefront/components/StoreFooter";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import JsonLd, { buildProductListSchema, buildBreadcrumbSchema, buildFaqSchema } from "@/modules/marketing/seo/JsonLd";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
-import { useProducts, useCategories, useAppSettings } from "@/hooks/useStore";
+import { useProducts, useCategories, useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowUpDown, Package } from "lucide-react";

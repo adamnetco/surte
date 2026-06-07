@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/CartContext";
-import { useFavorites } from "@/hooks/useFavorites";
+import { useFavorites } from "@/modules/storefront/hooks/useFavorites";
 import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Share2, CheckCircle2, ChevronLeft, ChevronRight, Play, FileText, X, Download, Eye, Box, Layers } from "lucide-react";
 import ModifierPicker, { type SelectedModifier } from "@/modules/storefront/components/ModifierPicker";
 import ProductSwipeOverlay from "@/modules/storefront/components/ProductSwipeOverlay";
@@ -14,11 +14,11 @@ import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
 import FloatingCart from "@/modules/storefront/components/FloatingCart";
 import { motion, AnimatePresence } from "framer-motion";
-import { useProfile, getPriceForType } from "@/hooks/useProfile";
+import { useProfile, getPriceForType } from "@/modules/auth/hooks/useProfile";
 import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/modules/marketing/seo/JsonLd";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
-import { useAppSettings, useInactiveBrands } from "@/hooks/useStore";
+import { useAppSettings, useInactiveBrands } from "@/modules/storefront/hooks/useStore";
 import { trackViewProduct, trackAddToCart } from "@/modules/marketing/seo/Analytics";
 
 const formatPrice = (price: number) =>

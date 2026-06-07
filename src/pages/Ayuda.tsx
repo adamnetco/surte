@@ -4,7 +4,7 @@ import { ArrowLeft, MessageCircle, Mail, Phone, ChevronDown } from "lucide-react
 import { useNavigate } from "react-router-dom";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useState } from "react";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 
 const faqs = [
   { q: "¿Cuál es el pedido mínimo?", a: "El pedido mínimo es de $40.000 COP y puede variar según configuración de la tienda." },

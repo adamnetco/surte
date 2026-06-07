@@ -4,7 +4,7 @@ import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
 import ProductCard from "@/modules/storefront/components/ProductCard";
 import VirtualizedProductGrid from "@/modules/storefront/components/VirtualizedProductGrid";
-import { useProducts, useCategories } from "@/hooks/useStore";
+import { useProducts, useCategories } from "@/modules/storefront/hooks/useStore";
 import FloatingCart from "@/modules/storefront/components/FloatingCart";
 import { ArrowUpDown, Package } from "lucide-react";
 import { motion } from "framer-motion";

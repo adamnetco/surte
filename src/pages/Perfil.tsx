@@ -8,7 +8,7 @@ import BottomNav from "@/modules/storefront/components/BottomNav";
 import { ArrowLeft, Save, User, Phone, MapPin, Building2, Loader2, Store } from "lucide-react";
 import { toast } from "sonner";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
-import type { BusinessType } from "@/hooks/useProfile";
+import type { BusinessType } from "@/modules/auth/hooks/useProfile";
 
 const businessTypes: { value: BusinessType; label: string; desc: string }[] = [
   { value: "detal", label: "Detal", desc: "Compras personales o pequeñas cantidades" },

@@ -1,4 +1,4 @@
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useNavigate } from "react-router-dom";
 import { Phone, Mail, MapPin, MessageCircle, ExternalLink, Star } from "lucide-react";
 
