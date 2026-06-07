@@ -195,8 +195,20 @@ export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, ki
             {content}
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
+          <Button variant="outline" onClick={handleDownload} disabled={!!busy}>
+            {busy === "png" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+            PNG
+          </Button>
+          <Button
+            onClick={handleShareWhatsApp}
+            disabled={!!busy}
+            className="bg-[#25D366] text-white hover:bg-[#1ebe57]"
+          >
+            {busy === "share" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Share2 className="h-4 w-4 mr-1" />}
+            WhatsApp
+          </Button>
           <Button onClick={handlePrint}><Printer className="h-4 w-4 mr-1" /> Imprimir</Button>
         </DialogFooter>
       </DialogContent>
