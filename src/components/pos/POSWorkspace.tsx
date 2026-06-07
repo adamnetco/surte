@@ -12,6 +12,10 @@ import {
   Bike, ShoppingBag,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import OfflineIndicator from "@/components/OfflineIndicator";
