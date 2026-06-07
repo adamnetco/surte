@@ -1,8 +1,12 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Save, X, MapPin, Upload, Pencil } from "lucide-react";
+import { Plus, Trash2, Save, X, MapPin, Upload, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { shippingZoneSchema, type ShippingZoneFormValues } from "@/lib/schemas";
+import { errorToMessage } from "@/lib/errors";
 
 const useCities = () => useQuery({
   queryKey: ["admin-municipality-cities"],
@@ -13,10 +17,12 @@ const useCities = () => useQuery({
   },
 });
 
+const DEFAULT_CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
+
 const ShippingTab = ({ queryClient }: { queryClient: any }) => {
   const { data: cities = [] } = useCities();
-  const CITIES = cities.length > 0 ? cities : ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
-  
+  const CITIES = cities.length > 0 ? cities : DEFAULT_CITIES;
+
   const { data: zones, isLoading } = useQuery({
     queryKey: ["admin-shipping-zones"],
     queryFn: async () => {
@@ -27,28 +33,41 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
   });
 
   const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({ city: "Bucaramanga", neighborhood: "", delivery_price: "" });
   const [filterCity, setFilterCity] = useState("");
   const [search, setSearch] = useState("");
   const [bulkText, setBulkText] = useState("");
   const [showBulk, setShowBulk] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+  const defaultValues: ShippingZoneFormValues = {
+    city: CITIES[0] || "Bucaramanga",
+    neighborhood: "",
+    delivery_price: 0,
+  };
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ShippingZoneFormValues>({
+    resolver: zodResolver(shippingZoneSchema),
+    defaultValues,
+    mode: "onBlur",
+  });
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["admin-shipping-zones"] });
     queryClient.invalidateQueries({ queryKey: ["shipping-zones"] });
   };
 
-  const save = async () => {
-    if (!form.neighborhood.trim()) { toast.error("Barrio es obligatorio"); return; }
-    setSaving(true);
+  const onSubmit = async (values: ShippingZoneFormValues) => {
     const payload = {
-      city: form.city,
-      neighborhood: form.neighborhood.trim(),
-      delivery_price: Number(form.delivery_price) || 0,
+      city: values.city,
+      neighborhood: values.neighborhood.trim(),
+      delivery_price: values.delivery_price,
       is_active: true,
     };
-
     try {
       if (editing && editing !== "new") {
         const { error } = await supabase.from("shipping_zones").update(payload).eq("id", editing);
@@ -61,43 +80,59 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
       }
       invalidate();
       setEditing(null);
-      setForm({ city: "Bucaramanga", neighborhood: "", delivery_price: "" });
-    } catch (err: any) {
-      toast.error(err.message || "Error al guardar");
-    } finally {
-      setSaving(false);
+      reset(defaultValues);
+    } catch (err) {
+      toast.error(errorToMessage(err));
     }
   };
 
   const del = async (id: string) => {
     if (!confirm("¿Eliminar zona?")) return;
-    const { error } = await supabase.from("shipping_zones").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    invalidate();
-    toast.success("Zona eliminada");
+    try {
+      const { error } = await supabase.from("shipping_zones").delete().eq("id", id);
+      if (error) throw error;
+      invalidate();
+      toast.success("Zona eliminada");
+    } catch (err) {
+      toast.error(errorToMessage(err));
+    }
   };
 
   const bulkImport = async () => {
     const lines = bulkText.split("\n").filter(l => l.trim());
     if (!lines.length) { toast.error("No hay líneas para importar"); return; }
-    setSaving(true);
+    setBulkSaving(true);
     const rows: any[] = [];
-    for (const line of lines) {
+    const errs: string[] = [];
+    lines.forEach((line, idx) => {
       const parts = line.split(/[,;\t]/).map(s => s.trim());
-      if (parts.length < 2) continue;
+      if (parts.length < 2) { errs.push(`Línea ${idx + 1}: faltan columnas`); return; }
       const [city, neighborhood, price] = parts;
       const matchedCity = CITIES.find(c => c.toLowerCase() === city.toLowerCase());
-      if (!matchedCity) continue;
-      rows.push({ city: matchedCity, neighborhood, delivery_price: Number(price) || 0, is_active: true });
+      if (!matchedCity) { errs.push(`Línea ${idx + 1}: ciudad "${city}" no válida`); return; }
+      if (!neighborhood || neighborhood.length < 2) { errs.push(`Línea ${idx + 1}: barrio inválido`); return; }
+      const priceNum = Number(price);
+      if (!Number.isFinite(priceNum) || priceNum < 0) { errs.push(`Línea ${idx + 1}: precio inválido`); return; }
+      rows.push({ city: matchedCity, neighborhood, delivery_price: priceNum, is_active: true });
+    });
+    if (rows.length === 0) {
+      toast.error(errs[0] || "No se encontraron filas válidas");
+      setBulkSaving(false);
+      return;
     }
-    if (rows.length === 0) { toast.error("No se encontraron filas válidas"); setSaving(false); return; }
-    const { error } = await supabase.from("shipping_zones").insert(rows);
-    if (error) { toast.error(error.message); setSaving(false); return; }
-    toast.success(`${rows.length} zonas importadas`);
-    invalidate();
-    setShowBulk(false);
-    setBulkText("");
-    setSaving(false);
+    try {
+      const { error } = await supabase.from("shipping_zones").insert(rows);
+      if (error) throw error;
+      const skipped = errs.length;
+      toast.success(`${rows.length} zonas importadas${skipped ? ` · ${skipped} líneas ignoradas` : ""}`);
+      invalidate();
+      setShowBulk(false);
+      setBulkText("");
+    } catch (err) {
+      toast.error(errorToMessage(err));
+    } finally {
+      setBulkSaving(false);
+    }
   };
 
   const filtered = zones?.filter(z => {
@@ -105,6 +140,14 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
     if (search && !z.neighborhood.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const fieldCls = (hasError: boolean) =>
+    `w-full bg-muted rounded-lg px-3 py-2.5 text-sm border focus:outline-none transition-colors ${
+      hasError ? "border-destructive" : "border-transparent focus:border-accent"
+    }`;
+
+  const Err = ({ msg }: { msg?: string }) =>
+    msg ? <p className="text-[11px] text-destructive font-medium mt-0.5">{msg}</p> : null;
 
   return (
     <div className="space-y-4">
@@ -114,7 +157,10 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
           <button onClick={() => setShowBulk(!showBulk)} className="text-xs px-3 py-2 bg-muted rounded-lg flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
             <Upload size={14} /> CSV
           </button>
-          <button onClick={() => { setForm({ city: "Bucaramanga", neighborhood: "", delivery_price: "" }); setEditing("new"); }} className="btn-surte text-xs px-3 py-2 flex items-center gap-1">
+          <button
+            onClick={() => { reset(defaultValues); setEditing("new"); }}
+            className="btn-surte text-xs px-3 py-2 flex items-center gap-1"
+          >
             <Plus size={14} /> Nueva
           </button>
         </div>
@@ -124,11 +170,18 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
       {showBulk && (
         <div className="bg-card rounded-xl p-4 border border-border space-y-3">
           <p className="text-xs text-muted-foreground">Formato: <code className="bg-muted px-1 rounded">Ciudad, Barrio, Precio</code> (una línea por zona)</p>
-          <textarea value={bulkText} onChange={(e) => setBulkText(e.target.value)} rows={5} placeholder={"Bucaramanga, Cabecera, 5000\nFloridablanca, Cañaveral, 6000"} className="w-full bg-muted rounded-lg px-3 py-2 text-sm font-mono border border-transparent focus:border-accent focus:outline-none transition-colors" />
+          <textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            rows={5}
+            placeholder={"Bucaramanga, Cabecera, 5000\nFloridablanca, Cañaveral, 6000"}
+            className="w-full bg-muted rounded-lg px-3 py-2 text-sm font-mono border border-transparent focus:border-accent focus:outline-none transition-colors"
+          />
           <div className="flex gap-2">
             <button onClick={() => setShowBulk(false)} className="flex-1 bg-muted rounded-lg py-2 text-sm text-muted-foreground">Cancelar</button>
-            <button onClick={bulkImport} disabled={saving} className="flex-1 btn-surte py-2 text-sm flex items-center justify-center gap-1 disabled:opacity-50">
-              <Upload size={14} /> {saving ? "Importando..." : "Importar"}
+            <button onClick={bulkImport} disabled={bulkSaving} className="flex-1 btn-surte py-2 text-sm flex items-center justify-center gap-1 disabled:opacity-50">
+              {bulkSaving ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+              {bulkSaving ? "Importando..." : "Importar"}
             </button>
           </div>
         </div>
@@ -136,20 +189,42 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
 
       {/* Edit form */}
       {editing && (
-        <div className="bg-card rounded-xl p-4 border border-accent/30 space-y-3">
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="bg-card rounded-xl p-4 border border-accent/30 space-y-3">
           <div className="flex justify-between">
             <span className="font-heading font-semibold text-sm text-foreground">{editing === "new" ? "Nueva" : "Editar"} Zona</span>
-            <button onClick={() => setEditing(null)}><X size={18} className="text-muted-foreground" /></button>
+            <button type="button" onClick={() => { setEditing(null); reset(defaultValues); }}><X size={18} className="text-muted-foreground" /></button>
           </div>
-          <select value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors">
-            {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <input value={form.neighborhood} onChange={(e) => setForm({ ...form, neighborhood: e.target.value })} placeholder="Barrio *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
-          <input type="number" value={form.delivery_price} onChange={(e) => setForm({ ...form, delivery_price: e.target.value })} placeholder="Precio domicilio (COP)" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
-          <button onClick={save} disabled={saving} className="btn-surte w-full text-sm py-2.5 flex items-center justify-center gap-1 disabled:opacity-50">
-            <Save size={14} /> {saving ? "Guardando..." : "Guardar"}
+          <div>
+            <select {...register("city")} aria-invalid={!!errors.city} className={fieldCls(!!errors.city)}>
+              {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <Err msg={errors.city?.message} />
+          </div>
+          <div>
+            <input
+              {...register("neighborhood")}
+              placeholder="Barrio *"
+              aria-invalid={!!errors.neighborhood}
+              className={fieldCls(!!errors.neighborhood)}
+            />
+            <Err msg={errors.neighborhood?.message} />
+          </div>
+          <div>
+            <input
+              type="number"
+              step="any"
+              {...register("delivery_price", { valueAsNumber: true })}
+              placeholder="Precio domicilio (COP)"
+              aria-invalid={!!errors.delivery_price}
+              className={fieldCls(!!errors.delivery_price)}
+            />
+            <Err msg={errors.delivery_price?.message} />
+          </div>
+          <button type="submit" disabled={isSubmitting} className="btn-surte w-full text-sm py-2.5 flex items-center justify-center gap-1 disabled:opacity-50">
+            {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            {isSubmitting ? "Guardando..." : "Guardar"}
           </button>
-        </div>
+        </form>
       )}
 
       {/* Filters */}
@@ -175,7 +250,10 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
             <span className="text-sm font-heading font-bold text-foreground">
               {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(z.delivery_price)}
             </span>
-            <button onClick={() => { setForm({ city: z.city, neighborhood: z.neighborhood, delivery_price: String(z.delivery_price) }); setEditing(z.id); }} className="text-muted-foreground hover:text-foreground transition-colors p-1">
+            <button
+              onClick={() => { reset({ city: z.city, neighborhood: z.neighborhood, delivery_price: Number(z.delivery_price) || 0 }); setEditing(z.id); }}
+              className="text-muted-foreground hover:text-foreground transition-colors p-1"
+            >
               <Pencil size={14} />
             </button>
             <button onClick={() => del(z.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
