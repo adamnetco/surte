@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 import { useLocation, useNavigate, UNSAFE_NavigationContext } from "react-router-dom";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/modules/cart/context/CartContext";
 import {
   AlertDialog,
   AlertDialogAction,

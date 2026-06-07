@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Check, ChevronsUpDown, Search, Building2 } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { cn } from "@/lib/utils";
 
 /**

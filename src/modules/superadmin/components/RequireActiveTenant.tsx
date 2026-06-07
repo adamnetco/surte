@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, useParams } from "react-router-dom";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Building2 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 

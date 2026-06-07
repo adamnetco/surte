@@ -1,5 +1,5 @@
 import { ShoppingCart } from "lucide-react";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/modules/cart/context/CartContext";
 import CartDrawer from "./CartDrawer";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";

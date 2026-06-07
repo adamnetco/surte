@@ -1,6 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { Globe2, Store, ChevronRight } from "lucide-react";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import TenantSwitcher from "./TenantSwitcher";
 
 const LABELS: Record<string, string> = {

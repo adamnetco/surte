@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
-import { useOrganization } from "@/context/OrganizationContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { toast } from "sonner";
 import { ArrowLeft, Upload, Download, PlayCircle, Plus, Trash2, FileSpreadsheet, ShieldAlert, Loader2 } from "lucide-react";
 import * as XLSX from "xlsx";

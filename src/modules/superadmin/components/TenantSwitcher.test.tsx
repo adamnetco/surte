@@ -6,7 +6,7 @@ import TenantSwitcher from "@/modules/superadmin/components/TenantSwitcher";
 const switchOrg = vi.fn();
 let mockOrg: any = { id: "o1", slug: "tienda-uno", name: "Tienda Uno", role: "owner" };
 
-vi.mock("@/context/OrganizationContext", () => ({
+vi.mock("@/modules/platform/context/OrganizationContext", () => ({
   useOrganization: () => ({
     orgs: [
       { id: "o1", slug: "tienda-uno", name: "Tienda Uno", role: "owner" },

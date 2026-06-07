@@ -5,7 +5,7 @@ import { format, addDays, isWeekend } from "date-fns";
 import { es } from "date-fns/locale";
 import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/modules/cart/context/CartContext";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useAgent } from "@/modules/pos/context/AgentContext";

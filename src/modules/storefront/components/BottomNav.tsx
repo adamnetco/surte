@@ -1,6 +1,6 @@
 import { Home, Star, ShoppingCart, Grid3X3, Menu } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/modules/cart/context/CartContext";
 
 const navItems = [
   { icon: Home, label: "Inicio", path: "/" },
