@@ -1,6 +1,6 @@
 import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
-import PushOptIn from "@/components/PushOptIn";
+import PushOptIn from "@/modules/notifications/components/PushOptIn";
 import { ArrowLeft, Bell, Globe, Shield, Sun, Moon, Monitor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
