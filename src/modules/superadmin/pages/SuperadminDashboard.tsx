@@ -3,11 +3,11 @@ import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { LogOut, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import SuperadminSidebar from "@/components/superadmin/SuperadminSidebar";
-import SuperadminBreadcrumb from "@/components/superadmin/SuperadminBreadcrumb";
-import TenantSwitcher from "@/components/superadmin/TenantSwitcher";
-import RequireActiveTenant from "@/components/superadmin/RequireActiveTenant";
-import TenantOnboardingWizard from "@/components/superadmin/TenantOnboardingWizard";
+import SuperadminSidebar from "@/modules/superadmin/components/SuperadminSidebar";
+import SuperadminBreadcrumb from "@/modules/superadmin/components/SuperadminBreadcrumb";
+import TenantSwitcher from "@/modules/superadmin/components/TenantSwitcher";
+import RequireActiveTenant from "@/modules/superadmin/components/RequireActiveTenant";
+import TenantOnboardingWizard from "@/modules/superadmin/components/TenantOnboardingWizard";
 
 const OverviewTab = lazy(() => import("@/modules/admin-cms/components/OverviewTab"));
 const OrganizationsTab = lazy(() => import("@/modules/admin-cms/components/OrganizationsTab"));
@@ -17,8 +17,8 @@ const SyncMonitor = lazy(() => import("@/modules/admin-cms/components/SyncMonito
 const SyncStatusTable = lazy(() => import("@/modules/admin-cms/components/SyncStatusTable"));
 const DeadLetterQueue = lazy(() => import("@/modules/admin-cms/components/DeadLetterQueue"));
 const DataManagementTab = lazy(() => import("@/modules/admin-cms/components/DataManagementTab"));
-const TenantHealth = lazy(() => import("@/components/superadmin/TenantHealth"));
-const TenantDataIsland = lazy(() => import("@/components/superadmin/TenantDataIsland"));
+const TenantHealth = lazy(() => import("@/modules/superadmin/components/TenantHealth"));
+const TenantDataIsland = lazy(() => import("@/modules/superadmin/components/TenantDataIsland"));
 
 const SyncSection = () => (
   <div className="space-y-4">
