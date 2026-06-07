@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Heart, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
@@ -13,7 +14,7 @@ type Product = Tables<"products">;
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
-const ProductCard = ({ product }: { product: Product }) => {
+const ProductCardBase = ({ product }: { product: Product }) => {
   const { addItem } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const navigate = useNavigate();
