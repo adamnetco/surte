@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Printer, Usb, Wifi, Bluetooth, ServerCog, TestTube2, Trash2, CheckCircle2 } from "lucide-react";
+import { Plus, Printer, Usb, Wifi, Bluetooth, ServerCog, TestTube2, Trash2, CheckCircle2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { EscPosBuilder } from "../lib/escpos";
 import { isWebUsbSupported, requestUsbPrinter, printOnceUsb, listAuthorizedUsbPrinters } from "../drivers/webusb";
