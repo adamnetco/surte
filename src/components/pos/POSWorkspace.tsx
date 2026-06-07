@@ -578,13 +578,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
             {/* Botón principal (cambia label según modo) */}
             <Button
-              className="w-full h-14 text-base font-bold shadow-sm"
+              variant={saleMode === "consumo_interno" ? "cta-primary" : "cta"}
+              className="w-full h-14 text-base"
               disabled={ticket.length === 0}
               onClick={() => setPayOpen(true)}
-              style={{
-                background: saleMode === "consumo_interno" ? "hsl(var(--primary))" : "hsl(var(--accent))",
-                color: saleMode === "consumo_interno" ? "hsl(var(--primary-foreground))" : "hsl(var(--accent-foreground))",
-              }}
             >
               <CreditCard className="w-5 h-5 mr-2" />
               {saleMode === "consumo_interno" ? "REGISTRAR CORTESÍA" : "COBRAR"}
