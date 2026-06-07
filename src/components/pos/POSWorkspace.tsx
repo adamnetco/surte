@@ -834,6 +834,18 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         </AlertDialogContent>
       </AlertDialog>
 
+      <SaleCompleteDialog
+        open={!!saleComplete}
+        onOpenChange={(v) => { if (!v) setSaleComplete(null); }}
+        total={saleComplete?.total ?? 0}
+        amountPaid={saleComplete?.amountPaid ?? 0}
+        change={saleComplete?.change ?? 0}
+        canEmitInvoice={!!lastOrderId && navigator.onLine}
+        onNewSale={() => setSaleComplete(null)}
+        onPrint={() => { window.print(); }}
+        onEmitInvoice={() => { setSaleComplete(null); setActionMode("emit"); }}
+      />
+
     </div>
   );
 }
