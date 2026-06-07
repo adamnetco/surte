@@ -27,11 +27,16 @@ export async function enqueue(op: OutboxOp, payload: any, organization_id: strin
   await offlineDB.outbox.add(item);
 
   // Ask the service worker to register a Background Sync (best-effort).
+  // Fire-and-forget: serviceWorker.ready can hang on uncontrolled previews/PWAs,
+  // and the POS checkout must close immediately after the sale is queued.
   try {
     if ("serviceWorker" in navigator && "SyncManager" in window) {
-      const reg = await navigator.serviceWorker.ready;
-      // @ts-expect-error: sync is non-standard but supported on Chromium.
-      await reg.sync?.register("outbox-sync");
+      navigator.serviceWorker.ready
+        .then((reg) => {
+          // @ts-expect-error: sync is non-standard but supported on Chromium.
+          return reg.sync?.register("outbox-sync");
+        })
+        .catch(() => {});
     }
   } catch { /* no-op */ }
 
