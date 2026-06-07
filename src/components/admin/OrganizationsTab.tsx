@@ -361,34 +361,49 @@ const OrganizationsTab = () => {
               <DialogTitle>Nueva organización</DialogTitle>
               <DialogDescription>Da de alta una tienda nueva en SistecPOS.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <form onSubmit={onCreate} noValidate className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="org-name">Nombre comercial</Label>
                 <Input
                   id="org-name"
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  {...register("name")}
                   placeholder="Mi Tienda S.A.S."
                   autoFocus
+                  aria-invalid={!!errors.name}
                 />
+                {errors.name && (
+                  <p role="alert" className="text-xs text-destructive">{errors.name.message}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="org-slug">Slug (URL)</Label>
                 <Input
                   id="org-slug"
-                  value={form.slug}
-                  onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
+                  {...register("slug", {
+                    onChange: (e) => {
+                      const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+                      setValue("slug", v, { shouldValidate: true });
+                    },
+                  })}
                   placeholder="mi-tienda"
                   aria-describedby="slug-hint"
+                  aria-invalid={!!errors.slug}
                 />
-                <p id="slug-hint" className="text-xs text-muted-foreground">
-                  Solo minúsculas, números y guiones. Aparecerá en la URL.
-                </p>
+                {errors.slug ? (
+                  <p role="alert" className="text-xs text-destructive">{errors.slug.message}</p>
+                ) : (
+                  <p id="slug-hint" className="text-xs text-muted-foreground">
+                    Solo minúsculas, números y guiones. Aparecerá en la URL.
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Tipo de negocio</Label>
-                  <Select value={form.business_type} onValueChange={(v) => setForm((f) => ({ ...f, business_type: v }))}>
+                  <Select
+                    value={businessType}
+                    onValueChange={(v) => setValue("business_type", v as OrganizationFormValues["business_type"], { shouldValidate: true })}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {BUSINESS_TYPES.map((b) => (
@@ -396,14 +411,18 @@ const OrganizationsTab = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.business_type && (
+                    <p role="alert" className="text-xs text-destructive">{errors.business_type.message}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>País</Label>
                   <Select
-                    value={form.country}
+                    value={country}
                     onValueChange={(v) => {
                       const c = COUNTRIES.find((x) => x.value === v);
-                      setForm((f) => ({ ...f, country: v, currency: c?.currency || f.currency }));
+                      setValue("country", v, { shouldValidate: true });
+                      if (c) setValue("currency", c.currency, { shouldValidate: true });
                     }}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -413,22 +432,25 @@ const OrganizationsTab = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.country && (
+                    <p role="alert" className="text-xs text-destructive">{errors.country.message}</p>
+                  )}
                 </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>
-                Cancelar
-              </Button>
-              <Button onClick={createOrg} disabled={saving}>
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" aria-hidden />
-                ) : (
-                  <Save className="h-4 w-4 mr-1.5" aria-hidden />
-                )}
-                Crear tienda
-              </Button>
-            </DialogFooter>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} disabled={isSubmitting}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" aria-hidden />
+                  ) : (
+                    <Save className="h-4 w-4 mr-1.5" aria-hidden />
+                  )}
+                  Crear tienda
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
 
