@@ -252,6 +252,8 @@ const App = () => (
                     <Route path="/t/:slug/admin" element={<HostGuard require="system"><TenantWorkspace /></HostGuard>} />
                     <Route path="/admin/diag" element={<AdminDiag />} />
                     <Route path="/admin-diag" element={<AdminDiag />} />
+                    <Route path="/auth-status" element={<AuthStatus />} />
+                    <Route path="/admin/auth-status" element={<AuthStatus />} />
 
                     <Route path="*" element={<NotFound />} />
                   </Routes>
