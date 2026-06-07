@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
 
 type TileColor =
   | "primary" | "secondary" | "accent" | "destructive"
