@@ -169,6 +169,17 @@ const AdminDashboard = () => {
     staleTime: 30_000,
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ["admin-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("app_settings").select("*");
+      if (error) throw error;
+      return data;
+    },
+    enabled: hasAdminAccess,
+    staleTime: 10 * 60_000,
+  });
+
   useEffect(() => {
     if (!hasAdminAccess) return;
     const channel = supabase
