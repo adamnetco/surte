@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { buildReceipt, buildKitchen, type TicketData } from "../lib/ticketBuilder";
 import { listAuthorizedUsbPrinters, printOnceUsb } from "../drivers/webusb";
-import { pingAgent, printViaAgent } from "../drivers/agent";
+import { pingAgent, printViaAgent, getAgentCapabilities } from "../drivers/agent";
 import { isWebBluetoothSupported, requestBluetoothPrinter, printOnceBluetooth } from "../drivers/webbluetooth";
 import { toast } from "sonner";
 
@@ -168,35 +168,63 @@ async function renderJobFromOrder(job: PrintJobRow, printer: any): Promise<Uint8
 }
 
 async function dispatchToPrinter(printer: any, bytes: Uint8Array) {
-  // Preferencia: agente local (LAN/USB nativo) si está vivo
-  if (printer.connection === "lan" || printer.connection === "agent") {
-    if (await pingAgent()) {
-      await printViaAgent({
-        printer_id: printer.id,
-        ip_address: printer.ip_address,
-        port: printer.port,
-        connection: printer.connection === "agent" ? "usb" : "lan",
-        escpos_b64: bytesToB64(bytes),
-      });
-      return;
-    }
-    if (printer.connection === "lan") throw new Error("Agente local no disponible para impresora LAN");
-  }
+  const caps = await getAgentCapabilities().catch(() => null);
+  const agentUp = !!caps;
+  const escpos_b64 = bytesToB64(bytes);
 
-  // USB directo desde el navegador
-  if (printer.connection === "usb" || printer.connection === "browser") {
-    const devices = await listAuthorizedUsbPrinters();
-    if (!devices.length) throw new Error("Conecta y autoriza la impresora USB primero en Configuración → Impresoras");
-    const dev = devices[0];
-    await printOnceUsb(dev, bytes);
+  // ---- LAN ----
+  if (printer.connection === "lan") {
+    if (!agentUp) throw new Error("Agente local no disponible para impresora LAN");
+    await printViaAgent({
+      printer_id: printer.id,
+      connection: "lan",
+      ip_address: printer.ip_address,
+      port: printer.port,
+      escpos_b64,
+    });
     return;
   }
 
-  // Bluetooth — requiere gesto del usuario, no podemos imprimir silenciosamente desde realtime.
-  // El emparejamiento se hace desde Configuración → Impresoras → Probar.
+  // ---- USB ----
+  if (printer.connection === "usb" || printer.connection === "agent" || printer.connection === "browser") {
+    // 1) Preferir agente nativo (libusb o spooler RAW) cuando esté disponible.
+    if (agentUp && (caps?.usb_native || caps?.usb_spooler)) {
+      try {
+        await printViaAgent({
+          printer_id: printer.id,
+          connection: "usb",
+          vendor_id: printer.vendor_id,
+          product_id: printer.product_id,
+          printer_name: printer.os_printer_name ?? printer.name,
+          escpos_b64,
+        });
+        return;
+      } catch (e) {
+        console.warn("[printing] agente USB falló, intentando WebUSB:", e);
+      }
+    }
+    // 2) Fallback WebUSB directo desde el navegador.
+    const devices = await listAuthorizedUsbPrinters();
+    if (!devices.length) throw new Error("Conecta y autoriza la impresora USB en Configuración → Impresoras (o instala el agente de SURTÉ YA Desktop para impresión en background).");
+    await printOnceUsb(devices[0], bytes);
+    return;
+  }
+
+  // ---- Bluetooth ----
   if (printer.connection === "bluetooth") {
-    if (!isWebBluetoothSupported()) throw new Error("Bluetooth no soportado en este navegador");
-    throw new Error("Impresoras Bluetooth requieren imprimir desde el botón POS (no se pueden activar desde cola en segundo plano)");
+    // 1) Preferir agente nativo (noble) — sí puede imprimir desde cola en background.
+    if (agentUp && caps?.bluetooth) {
+      await printViaAgent({
+        printer_id: printer.id,
+        connection: "bluetooth",
+        bluetooth_address: printer.bluetooth_address,
+        escpos_b64,
+      });
+      return;
+    }
+    // 2) Fallback: requiere gesto del usuario — no podemos imprimir silenciosamente desde Realtime.
+    if (!isWebBluetoothSupported()) throw new Error("Bluetooth no soportado: instala SURTÉ YA Desktop para imprimir en background.");
+    throw new Error("Sin agente Bluetooth: usa el botón 'Imprimir' en POS (Web Bluetooth requiere gesto del usuario).");
   }
 
   throw new Error(`Conexión no soportada en este terminal: ${printer.connection}`);
