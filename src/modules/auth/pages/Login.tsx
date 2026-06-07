@@ -9,6 +9,7 @@ import { mailService } from "@/modules/email/mailService";
 import { welcomeTemplate } from "@/modules/email/emailTemplates";
 import surteLogo from "@/assets/surte-logo.png";
 import { useTenantBrand } from "@/modules/auth/hooks/useTenantBrand";
+import { verifySignupTenantLink } from "@/modules/auth/lib/verifySignupTenantLink";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
 const AUTH_WAIT_TIMEOUT_MS = 6000;
