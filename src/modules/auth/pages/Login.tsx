@@ -123,6 +123,16 @@ const Login = () => {
   };
 
   const [backendDown, setBackendDown] = useState(false);
+  const [hasStaleTokens, setHasStaleTokens] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stale = Object.keys(localStorage).some(
+        (k) => k.startsWith("sb-") && /auth-token/.test(k)
+      );
+      setHasStaleTokens(stale);
+    } catch { /* noop */ }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
