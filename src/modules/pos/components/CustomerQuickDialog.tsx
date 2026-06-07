@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Mail, MessageCircle, ChevronDown, ChevronUp, FileText, Loader2 } from "lucide-react";
-import type { POSCustomer } from "@/lib/posCustomer";
+import type { POSCustomer } from "@/modules/pos/lib/posCustomer";
 import { posCustomerSchema, type POSCustomerFormValues } from "@/lib/schemas";
 
 interface Props {

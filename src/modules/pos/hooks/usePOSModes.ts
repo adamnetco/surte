@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ALL_POS_MODES, type PosMode } from "@/lib/posModes";
+import { ALL_POS_MODES, type PosMode } from "@/modules/pos/lib/posModes";
 
 export interface POSModesConfig {
   enabled: PosMode[];

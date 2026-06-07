@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { UserPlus, UserCircle2, X, MessageCircle, Mail, Pencil, Search } from "lucide-react";
-import { CONSUMIDOR_FINAL, isConsumidorFinal, type POSCustomer } from "@/lib/posCustomer";
+import { CONSUMIDOR_FINAL, isConsumidorFinal, type POSCustomer } from "@/modules/pos/lib/posCustomer";
 import CustomerQuickDialog from "./CustomerQuickDialog";
 
 interface Props {

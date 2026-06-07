@@ -6,7 +6,7 @@ import { useOrganization } from "@/context/OrganizationContext";
 import { Loader2, LockKeyhole, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import TableOrderDrawer from "@/components/pos/TableOrderDrawer";
+import TableOrderDrawer from "@/modules/pos/components/TableOrderDrawer";
 
 interface Area { id: string; name: string; color: string | null; }
 interface Table {

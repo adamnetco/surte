@@ -1,4 +1,4 @@
-import { POS_MODES, type PosMode } from "@/lib/posModes";
+import { POS_MODES, type PosMode } from "@/modules/pos/lib/posModes";
 import { cn } from "@/lib/utils";
 
 interface Props {
