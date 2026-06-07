@@ -134,7 +134,34 @@ const TenantHome = () => {
   return <LoginRouter />;
 };
 
+/** Captura errores async no manejados (promesas) y los muestra al usuario. */
+const GlobalErrorListeners = () => {
+  useEffect(() => {
+    const onUnhandled = (event: PromiseRejectionEvent) => {
+      // eslint-disable-next-line no-console
+      console.error("[unhandledrejection]", event.reason);
+      const msg = errorToMessage(event.reason);
+      // No spammear: dedupe por mensaje
+      toast.error(msg, { id: `unhandled:${msg}` });
+    };
+    const onError = (event: ErrorEvent) => {
+      // Solo logueamos: los errores de render los atrapa el ErrorBoundary,
+      // y los de scripts de 3eros no son accionables para el usuario final.
+      // eslint-disable-next-line no-console
+      console.error("[window.onerror]", event.error ?? event.message);
+    };
+    window.addEventListener("unhandledrejection", onUnhandled);
+    window.addEventListener("error", onError);
+    return () => {
+      window.removeEventListener("unhandledrejection", onUnhandled);
+      window.removeEventListener("error", onError);
+    };
+  }, []);
+  return null;
+};
+
 const App = () => (
+  <AppErrorBoundary label="root">
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
@@ -144,6 +171,7 @@ const App = () => (
           <CartProvider>
             <Toaster />
             <Sonner />
+            <GlobalErrorListeners />
             <Suspense fallback={null}><SSOErrorScreen /></Suspense>
 
             <DynamicThemeInjector />
