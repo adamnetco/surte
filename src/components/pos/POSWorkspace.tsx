@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
+import SaleCompleteDialog from "./SaleCompleteDialog";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
@@ -72,6 +73,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [actionMode, setActionMode] = useState<"emit" | "quote" | "park" | null>(null);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const [saleComplete, setSaleComplete] = useState<{ total: number; amountPaid: number; change: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -318,20 +320,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         toast.success("Ticket cobrado offline · se enviará al volver la red");
       }
 
-      if (navigator.onLine) {
-        setTimeout(() => {
-          if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
-            setActionMode("emit");
-          }
-        }, 300);
-      }
+      // Pantalla de cierre de venta (reemplaza confirm() nativo bloqueante).
+      setSaleComplete({ total: totals.total, amountPaid, change });
     } catch (e: any) {
       toast.error(e?.message || "No se pudo encolar el ticket");
     }
   };
 
   const shiftLabel = `Caja #${session.cash_register_id.slice(0, 4).toUpperCase()}`;
-  const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || clearConfirmOpen || !!actionMode;
+  const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || clearConfirmOpen || !!actionMode || !!saleComplete;
 
   return (
     <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden">
@@ -836,6 +833,18 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SaleCompleteDialog
+        open={!!saleComplete}
+        onOpenChange={(v) => { if (!v) setSaleComplete(null); }}
+        total={saleComplete?.total ?? 0}
+        amountPaid={saleComplete?.amountPaid ?? 0}
+        change={saleComplete?.change ?? 0}
+        canEmitInvoice={!!lastOrderId && navigator.onLine}
+        onNewSale={() => setSaleComplete(null)}
+        onPrint={() => { window.print(); }}
+        onEmitInvoice={() => { setSaleComplete(null); setActionMode("emit"); }}
+      />
 
     </div>
   );
