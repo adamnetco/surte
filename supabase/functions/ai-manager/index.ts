@@ -40,23 +40,25 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!membership) return json({ error: "Forbidden" }, 403);
 
-    // Datos contextuales: top productos por margen débil + bajo stock
+    // Datos contextuales — TODOS filtrados estrictamente por organization_id.
     const { data: products } = await supabase
       .from("products")
       .select("id,name,price,cost_price,price_wholesale,brand,category_id")
+      .eq("organization_id", organization_id)
       .eq("is_active", true)
       .limit(80);
 
     const { data: stock } = await supabase
       .from("product_stock")
       .select("product_id,quantity,avg_cost")
+      .eq("organization_id", organization_id)
       .limit(200);
 
-    // Snapshot ventas últimos 30 días
     const since = new Date(Date.now() - 30 * 86400000).toISOString();
     const { data: orderItems } = await supabase
       .from("order_items")
       .select("product_id,quantity,unit_price,created_at")
+      .eq("organization_id", organization_id)
       .gte("created_at", since)
       .limit(500);
 
