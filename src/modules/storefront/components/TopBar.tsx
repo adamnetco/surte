@@ -37,7 +37,13 @@ const TopBar = ({ onSearch }: TopBarProps) => {
   const { data: settings } = useAppSettings();
   const { totalItems, totalPrice } = useCart();
   const { theme, toggle: toggleTheme } = useTheme();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Sesión cerrada");
+    navigate("/");
+  };
 
   const showPromoBanner = settings?.show_promo_banner === "true";
   const promoBannerText = settings?.promo_banner_text || "🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000";
