@@ -272,6 +272,22 @@ const Login = () => {
             <div className="border-t border-border flex-1" />
           </div>
 
+          {backendDown && (
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <p className="font-medium mb-1">El servidor de autenticación está intermitente</p>
+              <p className="opacity-80 mb-2">
+                Puede haber un token caducado en este navegador. Limpia la sesión local e intenta de nuevo.
+              </p>
+              <button
+                type="button"
+                onClick={clearStaleAuthAndReload}
+                className="px-2.5 py-1.5 rounded-md bg-amber-200 font-medium hover:bg-amber-300"
+              >
+                Limpiar sesión local y recargar
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-3">
             {isSignUp && (
               <>
