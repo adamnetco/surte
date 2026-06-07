@@ -22,7 +22,7 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   total: number;
-  onConfirm: (payments: Pay[]) => void;
+  onConfirm: (payments: Pay[]) => void | Promise<void>;
 }
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
@@ -75,11 +75,11 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: 
     setPayments((prev) => prev.map((p, j) => (j === i ? { ...p, ...patch } : p)));
   };
 
-  const doConfirm = () => {
+  const doConfirm = async () => {
     if (!canConfirm) return;
     setSubmitting(true);
     try {
-      onConfirm(payments.filter((p) => p.amount > 0));
+      await onConfirm(payments.filter((p) => p.amount > 0));
     } catch {
       setSubmitting(false);
     }
