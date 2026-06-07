@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 
 /**
  * Convierte un hex (#RRGGBB) a triplete HSL "H S% L%" compatible con

@@ -1,4 +1,4 @@
-import { useProducts } from "@/hooks/useStore";
+import { useProducts } from "@/modules/storefront/hooks/useStore";
 import ProductCard from "./ProductCard";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Layers } from "lucide-react";

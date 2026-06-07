@@ -1,5 +1,5 @@
 import { Tag, TrendingDown, Crown } from "lucide-react";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);

@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import SortableList from "./SortableList";
 import CategoryIcon, { AVAILABLE_ICONS, isCustomSvgUrl } from "@/modules/storefront/components/CategoryIcon";
-import { useImageUpload } from "@/hooks/useImageUpload";
+import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { categorySchema, type CategoryFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 

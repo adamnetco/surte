@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { useCategories } from "@/hooks/useStore";
+import { useCategories } from "@/modules/storefront/hooks/useStore";
 import { useNavigate } from "react-router-dom";
 import CategoryIcon from "./CategoryIcon";
 import { motion } from "framer-motion";

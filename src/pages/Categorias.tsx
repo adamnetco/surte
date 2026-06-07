@@ -1,6 +1,6 @@
 import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
-import { useCategories } from "@/hooks/useStore";
+import { useCategories } from "@/modules/storefront/hooks/useStore";
 import { useNavigate } from "react-router-dom";
 import CategoryIcon from "@/modules/storefront/components/CategoryIcon";
 import { ChevronRight } from "lucide-react";

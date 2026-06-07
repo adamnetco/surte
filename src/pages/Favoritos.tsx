@@ -1,8 +1,8 @@
 import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
 import ProductCard from "@/modules/storefront/components/ProductCard";
-import { useProducts } from "@/hooks/useStore";
-import { useFavorites } from "@/hooks/useFavorites";
+import { useProducts } from "@/modules/storefront/hooks/useStore";
+import { useFavorites } from "@/modules/storefront/hooks/useFavorites";
 import { Heart, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";

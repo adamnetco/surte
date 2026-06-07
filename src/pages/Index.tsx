@@ -14,7 +14,7 @@ import NotificationBanner from "@/modules/storefront/components/NotificationBann
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Flame, Truck, Shield, Star } from "lucide-react";
-import { useAppSettings } from "@/hooks/useStore";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import JsonLd, { buildLocalBusinessSchema, buildWebSiteSchema } from "@/modules/marketing/seo/JsonLd";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";

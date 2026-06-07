@@ -2,12 +2,12 @@ import { memo } from "react";
 import { Heart, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
-import { useFavorites } from "@/hooks/useFavorites";
+import { useFavorites } from "@/modules/storefront/hooks/useFavorites";
 import { toast } from "sonner";
 import PriceTiers from "./PriceTiers";
 import type { Tables } from "@/integrations/supabase/types";
-import { useProfile, getPriceForType } from "@/hooks/useProfile";
-import { useAppSettings } from "@/hooks/useStore";
+import { useProfile, getPriceForType } from "@/modules/auth/hooks/useProfile";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 
 type Product = Tables<"products">;
 
