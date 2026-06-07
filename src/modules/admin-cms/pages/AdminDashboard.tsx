@@ -35,6 +35,7 @@ const ModifiersTab = lazy(() => import("@/modules/admin-cms/components/Modifiers
 const SeoContentTab = lazy(() => import("@/modules/admin-cms/components/SeoContentTab"));
 const CrmLeadsTab = lazy(() => import("@/modules/admin-cms/components/CrmLeadsTab"));
 const ContactsTab = lazy(() => import("@/modules/admin-cms/components/ContactsTab"));
+const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersManagerTab").then(m => ({ default: m.PrintersManagerTab })));
 
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
