@@ -5,7 +5,6 @@ import { useOrganization } from "@/modules/platform/context/OrganizationContext"
 import {
   ShoppingCart, Wallet, FileText, Boxes, Truck, BarChart3, Megaphone,
   Users, UserPlus, Settings, Shield, LogOut, Loader2, Utensils, ChefHat, Power,
-  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
