@@ -67,7 +67,7 @@ export default function POSTopBar({
           {rightExtras}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" title="Configuración POS">
+              <Button variant="ghost" size="icon" className="h-10 w-10 focus-visible:ring-2 focus-visible:ring-ring" aria-label="Abrir configuración del POS">
                 <Settings className="w-4 h-4" />
               </Button>
             </SheetTrigger>

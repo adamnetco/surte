@@ -12,6 +12,10 @@ import {
   Bike, ShoppingBag,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import OfflineIndicator from "@/components/OfflineIndicator";
@@ -64,6 +68,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [payOpen, setPayOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [actionMode, setActionMode] = useState<"emit" | "quote" | "park" | null>(null);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -219,10 +224,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     onPark: () => { if (ticket.length > 0) setActionMode("park"); },
     onClear: () => {
       if (ticket.length === 0) return;
-      if (confirm("¿Limpiar el ticket actual?")) {
-        setTicket([]);
-        setMeta(ticketCacheKey, []).catch(() => {});
-      }
+      setClearConfirmOpen(true);
     },
     onEscape: () => setCloseOpen(true),
   });
@@ -325,7 +327,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   };
 
   const shiftLabel = `Caja #${session.cash_register_id.slice(0, 4).toUpperCase()}`;
-  const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || !!actionMode;
+  const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || clearConfirmOpen || !!actionMode;
 
   return (
     <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden">
@@ -767,6 +769,31 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onSelect={setDriver}
         organizationId={organizationId}
       />
+
+      <AlertDialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Limpiar el ticket actual?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán {ticket.length} {ticket.length === 1 ? "línea" : "líneas"} del ticket en curso.
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setTicket([]);
+                setMeta(ticketCacheKey, []).catch(() => {});
+                setClearConfirmOpen(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Sí, limpiar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

@@ -45,12 +45,24 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
           </p>
         </div>
         <div className="flex items-center gap-0.5">
-          <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => onQty(-1)}>
-            <Minus className="w-3 h-3" />
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-9 w-9 focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => onQty(-1)}
+            aria-label={`Reducir cantidad de ${line.name}`}
+          >
+            <Minus className="w-4 h-4" />
           </Button>
-          <span className="w-6 text-center text-xs font-bold tabular-nums">{line.quantity}</span>
-          <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => onQty(1)}>
-            <Plus className="w-3 h-3" />
+          <span className="w-7 text-center text-sm font-bold tabular-nums" aria-live="polite">{line.quantity}</span>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-9 w-9 focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => onQty(1)}
+            aria-label={`Aumentar cantidad de ${line.name}`}
+          >
+            <Plus className="w-4 h-4" />
           </Button>
         </div>
         <div className="w-20 text-right">
@@ -70,10 +82,11 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
         <Popover>
           <PopoverTrigger asChild>
             <button
-              className={`flex items-center gap-1 text-[10px] px-1.5 h-5 rounded border transition ${
+              type="button"
+              aria-label={hasNote ? `Editar nota: ${line.notes}` : "Añadir nota para cocina"}
+              className={`flex items-center gap-1 text-[11px] px-2 h-7 rounded border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 hasNote ? "border-accent text-accent bg-accent/10" : "border-border text-muted-foreground hover:text-foreground"
               }`}
-              title="Nota para cocina"
             >
               <StickyNote className="w-3 h-3" />
               Nota
@@ -113,10 +126,11 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
         <Popover>
           <PopoverTrigger asChild>
             <button
-              className={`flex items-center gap-1 text-[10px] px-1.5 h-5 rounded border transition ${
+              type="button"
+              aria-label={hasDisc ? `Editar descuento ${line.discountPct}%` : "Aplicar descuento de línea"}
+              className={`flex items-center gap-1 text-[11px] px-2 h-7 rounded border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 hasDisc ? "border-accent text-accent bg-accent/10" : "border-border text-muted-foreground hover:text-foreground"
               }`}
-              title="Descuento de línea"
             >
               <Percent className="w-3 h-3" />
               {hasDisc ? `${line.discountPct}%` : "Desc"}
@@ -158,11 +172,12 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
         </Popover>
 
         <button
+          type="button"
           onClick={onRemove}
-          className="ml-auto text-muted-foreground hover:text-destructive p-0.5"
-          title="Eliminar"
+          aria-label={`Eliminar ${line.name} del ticket`}
+          className="ml-auto inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive transition"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>

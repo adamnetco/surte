@@ -50,8 +50,10 @@ function CategoryChip({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
+      aria-label={typeof count === "number" ? `${label} (${count} productos)` : label}
       className={cn(
-        "shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full border text-xs font-semibold transition-all active:scale-95",
+        "shrink-0 inline-flex items-center gap-1.5 px-3 h-10 rounded-full border text-xs font-semibold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
         active
           ? "bg-primary text-primary-foreground border-primary shadow-sm"
           : "bg-muted/40 text-muted-foreground border-transparent hover:text-foreground hover:bg-muted"
