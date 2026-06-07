@@ -327,7 +327,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   };
 
   const shiftLabel = `Caja #${session.cash_register_id.slice(0, 4).toUpperCase()}`;
-  const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || !!actionMode;
+  const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || clearConfirmOpen || !!actionMode;
 
   return (
     <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden">
