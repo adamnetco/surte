@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Printer, Usb, Wifi, Bluetooth, ServerCog, TestTube2, Trash2, CheckCircle2 } from "lucide-react";
+import { Plus, Printer, Usb, Wifi, Bluetooth, ServerCog, TestTube2, Trash2, CheckCircle2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { EscPosBuilder } from "../lib/escpos";
 import { isWebUsbSupported, requestUsbPrinter, printOnceUsb, listAuthorizedUsbPrinters } from "../drivers/webusb";
@@ -30,6 +30,8 @@ interface PrinterRow {
   characters_per_line: number;
   codepage: string;
   cuts_paper: boolean;
+  bluetooth_address?: string | null;
+  os_printer_name?: string | null;
   opens_drawer: boolean;
   role: "receipt" | "kitchen" | "bar" | "label" | "any";
   is_default: boolean;
@@ -43,6 +45,8 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<PrinterRow> | null>(null);
   const [agentOnline, setAgentOnline] = useState<boolean | null>(null);
+  const [blePairings, setBlePairings] = useState<Array<{ address: string; name?: string; pairedAt?: string }> | null>(null);
+  const [bleLoading, setBleLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -76,6 +80,8 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
       codepage: editing.codepage ?? "CP858",
       cuts_paper: editing.cuts_paper ?? true,
       opens_drawer: editing.opens_drawer ?? false,
+      bluetooth_address: editing.bluetooth_address ?? null,
+      os_printer_name: editing.os_printer_name ?? null,
       role: editing.role ?? "receipt",
       is_default: editing.is_default ?? false,
       is_active: editing.is_active ?? true,
@@ -170,6 +176,36 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
     }
   };
 
+  const scanBle = async () => {
+    setBleLoading(true);
+    try {
+      if (!(await pingAgent())) throw new Error("Agente local offline. Inicia el agente para escanear BLE.");
+      const r = await fetch("http://127.0.0.1:9101/ble/pairings");
+      if (!r.ok) throw new Error(`Agente respondió ${r.status}`);
+      const j = await r.json();
+      const list = (j?.pairings ?? []) as Array<{ address: string; name?: string; pairedAt?: string }>;
+      setBlePairings(list);
+      if (!list.length) toast.info("Sin dispositivos BLE pareados. Empareja la impresora desde el SO primero.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo consultar BLE");
+      setBlePairings([]);
+    } finally {
+      setBleLoading(false);
+    }
+  };
+
+  const pickBlePairing = (p: { address: string; name?: string }) => {
+    setEditing((cur) => ({
+      ...(cur ?? { paper_width_mm: 80, role: "receipt" }),
+      connection: "bluetooth",
+      bluetooth_address: p.address,
+      name: cur?.name || p.name || `BLE ${p.address}`,
+      model: cur?.model || p.name || null,
+    }));
+    setBlePairings(null);
+    toast.success("Dispositivo BLE seleccionado");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -183,6 +219,9 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
             Agente local: {agentOnline === null ? "…" : agentOnline ? "ONLINE" : "offline"}
           </Badge>
           <Button variant="outline" onClick={detectUsb}><Usb className="h-4 w-4 mr-1" />Detectar USB</Button>
+          <Button variant="outline" onClick={scanBle} disabled={bleLoading}>
+            <Bluetooth className="h-4 w-4 mr-1" />{bleLoading ? "Escaneando…" : "Escanear BLE"}
+          </Button>
           <Button onClick={() => setEditing({ paper_width_mm: 80, connection: "usb", role: "receipt" })}>
             <Plus className="h-4 w-4 mr-1" />Nueva
           </Button>
@@ -298,6 +337,35 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
                   </div>
                 </>
               )}
+              {editing.connection === "bluetooth" && (
+                <div className="col-span-2">
+                  <Label>Dirección Bluetooth (MAC)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={editing.bluetooth_address ?? ""}
+                      onChange={(e) => setEditing({ ...editing, bluetooth_address: e.target.value })}
+                      placeholder="AA:BB:CC:DD:EE:FF"
+                    />
+                    <Button type="button" variant="outline" onClick={scanBle} disabled={bleLoading}>
+                      <Search className="h-4 w-4 mr-1" />Buscar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Usa "Buscar" para listar dispositivos pareados con el agente.</p>
+                </div>
+              )}
+              {(editing.connection === "usb" || editing.connection === "agent") && (
+                <div className="col-span-2">
+                  <Label>Nombre de impresora en el SO (fallback spooler)</Label>
+                  <Input
+                    value={editing.os_printer_name ?? ""}
+                    onChange={(e) => setEditing({ ...editing, os_printer_name: e.target.value })}
+                    placeholder="Ej: XP-80C, EPSON_TM_T20"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Se usa con <code>lp -o raw</code> (Linux/macOS) o <code>Out-Printer</code> (Windows) si libusb falla.
+                  </p>
+                </div>
+              )}
               <label className="flex items-center gap-2 text-sm col-span-2">
                 <input type="checkbox" checked={!!editing.cuts_paper} onChange={(e) => setEditing({ ...editing, cuts_paper: e.target.checked })} />
                 Corta papel automáticamente
@@ -315,6 +383,48 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
             <Button onClick={save}>Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* BLE pairings picker */}
+      <Dialog open={blePairings !== null} onOpenChange={(v) => !v && setBlePairings(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Dispositivos BLE pareados</DialogTitle>
+          </DialogHeader>
+          {blePairings && blePairings.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-4">
+              No hay impresoras BLE pareadas con el agente todavía.
+              Empareja la impresora desde el sistema operativo y vuelve a escanear.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-auto">
+              {blePairings?.map((p) => (
+                <button
+                  key={p.address}
+                  onClick={() => pickBlePairing(p)}
+                  className="w-full text-left p-3 rounded-md border hover:bg-accent transition-colors"
+                >
+                  <div className="font-medium flex items-center gap-2">
+                    <Bluetooth className="h-4 w-4" />
+                    {p.name || "Sin nombre"}
+                  </div>
+                  <div className="text-xs text-muted-foreground font-mono">{p.address}</div>
+                  {p.pairedAt && (
+                    <div className="text-[10px] text-muted-foreground mt-1">
+                      Pareado: {new Date(p.pairedAt).toLocaleString("es-CO")}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlePairings(null)}>Cerrar</Button>
+            <Button variant="outline" onClick={scanBle} disabled={bleLoading}>
+              <Search className="h-4 w-4 mr-1" />Refrescar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
