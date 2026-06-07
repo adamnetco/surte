@@ -287,6 +287,76 @@ export const posCustomerSchema = z
 export type POSCustomerFormValues = z.infer<typeof posCustomerSchema>;
 
 /* ============================================================
+ * Coupon
+ * ============================================================ */
+
+export const couponSchema = z
+  .object({
+    code: z
+      .string()
+      .trim()
+      .min(3, "Mínimo 3 caracteres")
+      .max(30, "Máximo 30 caracteres")
+      .regex(/^[A-Z0-9_-]+$/, "Solo mayúsculas, números, guiones y guión bajo"),
+    discount_type: z.enum(["percentage", "fixed"], {
+      errorMap: () => ({ message: "Tipo de descuento inválido" }),
+    }),
+    discount_value: requiredNumber(10_000_000),
+    min_order_amount: optionalNumber(99_999_999),
+    max_uses: optionalNumber(1_000_000),
+    is_active: z.boolean().default(true),
+    /** Formato YYYY-MM-DD desde <input type="date">. */
+    expires_at: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida")
+      .optional()
+      .or(z.literal("")),
+  })
+  .superRefine((data, ctx) => {
+    if (data.discount_type === "percentage" && data.discount_value > 100) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["discount_value"],
+        message: "El porcentaje no puede superar 100",
+      });
+    }
+    if (data.discount_value <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["discount_value"],
+        message: "Debe ser mayor que 0",
+      });
+    }
+    if (data.expires_at) {
+      // Validamos día completo en el futuro (23:59 del día seleccionado).
+      const exp = new Date(data.expires_at + "T23:59:59");
+      if (exp.getTime() < Date.now()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["expires_at"],
+          message: "La fecha de expiración debe ser futura",
+        });
+      }
+    }
+  });
+export type CouponFormValues = z.infer<typeof couponSchema>;
+
+/* ============================================================
+ * Shipping zone
+ * ============================================================ */
+
+export const shippingZoneSchema = z.object({
+  city: z.string().trim().min(2, "Selecciona una ciudad").max(60),
+  neighborhood: z
+    .string()
+    .trim()
+    .min(2, "Mínimo 2 caracteres")
+    .max(80, "Máximo 80 caracteres"),
+  delivery_price: requiredNumber(10_000_000),
+});
+export type ShippingZoneFormValues = z.infer<typeof shippingZoneSchema>;
+
+/* ============================================================
  * Util: primer error humano de un ZodError → mensaje "campo: error"
  * ============================================================ */
 export function firstZodMessage(err: z.ZodError): string {

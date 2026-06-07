@@ -1,19 +1,45 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Pencil, Trash2, Save, X, Ticket, Loader2, Copy } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { couponSchema, type CouponFormValues } from "@/lib/schemas";
+import { errorToMessage } from "@/lib/errors";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
+const defaultValues: CouponFormValues = {
+  code: "",
+  discount_type: "percentage",
+  discount_value: 0 as unknown as number, // se reemplaza al escribir
+  min_order_amount: undefined,
+  max_uses: undefined,
+  is_active: true,
+  expires_at: "",
+};
+
 const CouponsTab = ({ queryClient }: { queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    code: "", discount_type: "percentage", discount_value: "", min_order_amount: "",
-    max_uses: "", is_active: true, expires_at: "",
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CouponFormValues>({
+    resolver: zodResolver(couponSchema),
+    defaultValues,
+    mode: "onBlur",
   });
+
+  const discountType = watch("discount_type");
+  const isActive = watch("is_active");
 
   const { data: coupons, isLoading } = useQuery({
     queryKey: ["admin-coupons"],
@@ -25,37 +51,33 @@ const CouponsTab = ({ queryClient }: { queryClient: any }) => {
   });
 
   const resetForm = () => {
-    setForm({ code: "", discount_type: "percentage", discount_value: "", min_order_amount: "", max_uses: "", is_active: true, expires_at: "" });
+    reset(defaultValues);
     setEditing(null);
   };
 
   const editCoupon = (c: any) => {
-    setForm({
+    reset({
       code: c.code,
       discount_type: c.discount_type,
-      discount_value: String(c.discount_value),
-      min_order_amount: c.min_order_amount ? String(c.min_order_amount) : "",
-      max_uses: c.max_uses ? String(c.max_uses) : "",
-      is_active: c.is_active,
+      discount_value: Number(c.discount_value),
+      min_order_amount: c.min_order_amount ?? undefined,
+      max_uses: c.max_uses ?? undefined,
+      is_active: !!c.is_active,
       expires_at: c.expires_at ? c.expires_at.split("T")[0] : "",
     });
     setEditing(c.id);
   };
 
-  const saveCoupon = async () => {
-    if (!form.code.trim() || !form.discount_value) {
-      toast.error("Código y valor de descuento son obligatorios");
-      return;
-    }
+  const onSubmit = async (values: CouponFormValues) => {
     try {
       const payload = {
-        code: form.code.toUpperCase().trim(),
-        discount_type: form.discount_type,
-        discount_value: Number(form.discount_value),
-        min_order_amount: form.min_order_amount ? Number(form.min_order_amount) : 0,
-        max_uses: form.max_uses ? Number(form.max_uses) : null,
-        is_active: form.is_active,
-        expires_at: form.expires_at ? new Date(form.expires_at + "T23:59:59").toISOString() : null,
+        code: values.code.toUpperCase().trim(),
+        discount_type: values.discount_type,
+        discount_value: values.discount_value,
+        min_order_amount: values.min_order_amount ?? 0,
+        max_uses: values.max_uses ?? null,
+        is_active: values.is_active,
+        expires_at: values.expires_at ? new Date(values.expires_at + "T23:59:59").toISOString() : null,
       };
       if (editing && editing !== "new") {
         const { error } = await supabase.from("coupons").update(payload).eq("id", editing);
@@ -68,18 +90,30 @@ const CouponsTab = ({ queryClient }: { queryClient: any }) => {
       }
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      toast.error(errorToMessage(err));
     }
   };
 
   const deleteCoupon = async (id: string) => {
     if (!confirm("¿Eliminar este cupón?")) return;
-    const { error } = await supabase.from("coupons").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Cupón eliminado");
-    queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
+    try {
+      const { error } = await supabase.from("coupons").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Cupón eliminado");
+      queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
+    } catch (err) {
+      toast.error(errorToMessage(err));
+    }
   };
+
+  const fieldCls = (hasError: boolean, extra = "") =>
+    `w-full bg-muted rounded-lg px-3 py-2 text-sm outline-none border focus:ring-2 focus:ring-ring ${
+      hasError ? "border-destructive ring-destructive/30" : "border-transparent"
+    } ${extra}`;
+
+  const Err = ({ msg }: { msg?: string }) =>
+    msg ? <p className="text-[11px] text-destructive font-medium mt-0.5">{msg}</p> : null;
 
   return (
     <div className="space-y-4">
@@ -88,58 +122,66 @@ const CouponsTab = ({ queryClient }: { queryClient: any }) => {
           <h2 className="font-heading font-bold text-base text-foreground">Cupones de Descuento</h2>
           <p className="text-xs text-muted-foreground">Gestiona códigos promocionales</p>
         </div>
-        <button onClick={() => { resetForm(); setEditing("new"); }} className="flex items-center gap-1 bg-accent text-accent-foreground px-3 py-2 rounded-xl text-xs font-semibold">
+        <button onClick={() => { reset(defaultValues); setEditing("new"); }} className="flex items-center gap-1 bg-accent text-accent-foreground px-3 py-2 rounded-xl text-xs font-semibold">
           <Plus size={14} /> Crear Cupón
         </button>
       </div>
 
       {/* Form */}
       {editing && (
-        <div className="bg-card border border-accent/30 rounded-xl p-3 space-y-2.5">
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="bg-card border border-accent/30 rounded-xl p-3 space-y-2.5">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[10px] text-muted-foreground font-medium mb-0.5 block">Código *</label>
               <input
-                value={form.code}
-                onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+                {...register("code", {
+                  onChange: (e) => setValue("code", e.target.value.toUpperCase(), { shouldValidate: true }),
+                })}
                 placeholder="SURTE20"
-                className="w-full bg-muted rounded-lg px-3 py-2 text-sm uppercase font-mono outline-none focus:ring-2 focus:ring-ring"
+                aria-invalid={!!errors.code}
+                className={fieldCls(!!errors.code, "uppercase font-mono")}
               />
+              <Err msg={errors.code?.message} />
             </div>
             <div>
               <label className="text-[10px] text-muted-foreground font-medium mb-0.5 block">Tipo</label>
               <select
-                value={form.discount_type}
-                onChange={(e) => setForm({ ...form, discount_type: e.target.value })}
-                className="w-full bg-muted rounded-lg px-3 py-2 text-sm outline-none"
+                {...register("discount_type")}
+                aria-invalid={!!errors.discount_type}
+                className={fieldCls(!!errors.discount_type)}
               >
                 <option value="percentage">Porcentaje (%)</option>
                 <option value="fixed">Monto Fijo ($)</option>
               </select>
+              <Err msg={errors.discount_type?.message} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[10px] text-muted-foreground font-medium mb-0.5 block">
-                Valor * {form.discount_type === "percentage" ? "(%)" : "(COP)"}
+                Valor * {discountType === "percentage" ? "(%)" : "(COP)"}
               </label>
               <input
                 type="number"
-                value={form.discount_value}
-                onChange={(e) => setForm({ ...form, discount_value: e.target.value })}
-                placeholder={form.discount_type === "percentage" ? "20" : "10000"}
-                className="w-full bg-muted rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                step="any"
+                {...register("discount_value", { valueAsNumber: true })}
+                placeholder={discountType === "percentage" ? "20" : "10000"}
+                aria-invalid={!!errors.discount_value}
+                className={fieldCls(!!errors.discount_value)}
               />
+              <Err msg={errors.discount_value?.message} />
             </div>
             <div>
               <label className="text-[10px] text-muted-foreground font-medium mb-0.5 block">Pedido Mínimo (COP)</label>
               <input
                 type="number"
-                value={form.min_order_amount}
-                onChange={(e) => setForm({ ...form, min_order_amount: e.target.value })}
+                step="any"
+                {...register("min_order_amount")}
                 placeholder="50000"
-                className="w-full bg-muted rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                aria-invalid={!!errors.min_order_amount}
+                className={fieldCls(!!errors.min_order_amount)}
               />
+              <Err msg={errors.min_order_amount?.message} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -147,35 +189,38 @@ const CouponsTab = ({ queryClient }: { queryClient: any }) => {
               <label className="text-[10px] text-muted-foreground font-medium mb-0.5 block">Máx. Usos</label>
               <input
                 type="number"
-                value={form.max_uses}
-                onChange={(e) => setForm({ ...form, max_uses: e.target.value })}
+                step="1"
+                {...register("max_uses")}
                 placeholder="Ilimitado"
-                className="w-full bg-muted rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                aria-invalid={!!errors.max_uses}
+                className={fieldCls(!!errors.max_uses)}
               />
+              <Err msg={errors.max_uses?.message} />
             </div>
             <div>
               <label className="text-[10px] text-muted-foreground font-medium mb-0.5 block">Expira</label>
               <input
                 type="date"
-                value={form.expires_at}
-                onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
-                className="w-full bg-muted rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                {...register("expires_at")}
+                aria-invalid={!!errors.expires_at}
+                className={fieldCls(!!errors.expires_at)}
               />
+              <Err msg={errors.expires_at?.message} />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
-            <span className="text-xs text-muted-foreground">Activo</span>
+            <Switch checked={isActive} onCheckedChange={(v) => setValue("is_active", v, { shouldDirty: true })} />
+            <span className="text-xs text-muted-foreground">{isActive ? "Activo" : "Inactivo"}</span>
           </div>
           <div className="flex gap-2">
-            <button onClick={resetForm} className="flex-1 bg-muted rounded-xl py-2 text-sm text-muted-foreground font-medium flex items-center justify-center gap-1">
+            <button type="button" onClick={resetForm} className="flex-1 bg-muted rounded-xl py-2 text-sm text-muted-foreground font-medium flex items-center justify-center gap-1">
               <X size={14} /> Cancelar
             </button>
-            <button onClick={saveCoupon} className="flex-1 bg-accent text-accent-foreground rounded-xl py-2 text-sm font-semibold flex items-center justify-center gap-1">
-              <Save size={14} /> Guardar
+            <button type="submit" disabled={isSubmitting} className="flex-1 bg-accent text-accent-foreground rounded-xl py-2 text-sm font-semibold flex items-center justify-center gap-1 disabled:opacity-60">
+              {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Guardar
             </button>
           </div>
-        </div>
+        </form>
       )}
 
       {/* List */}
