@@ -75,4 +75,4 @@ const CategoryGrid = () => {
   );
 };
 
-export default CategoryGrid;
+export default memo(CategoryGrid);
