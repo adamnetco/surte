@@ -20,14 +20,14 @@ import {
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import SaleCompleteDialog from "./SaleCompleteDialog";
-import OfflineIndicator from "@/components/OfflineIndicator";
+import OfflineIndicator from "@/modules/offline/components/OfflineIndicator";
 import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
-} from "@/lib/offline/catalog";
-import { setMeta, getMeta } from "@/lib/offline/db";
+} from "@/modules/offline/lib/catalog";
+import { setMeta, getMeta } from "@/modules/offline/lib/db";
 import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
 import { useSyncService } from "@/modules/integrations/sync/useSyncService";
-import { enqueue } from "@/lib/offline/outbox";
+import { enqueue } from "@/modules/offline/lib/outbox";
 import POSTopBar from "./POSTopBar";
 import POSCategoryTabs from "./POSCategoryTabs";
 import POSCommandPalette from "./POSCommandPalette";

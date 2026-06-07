@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { pendingCount } from "@/lib/offline/outbox";
+import { pendingCount } from "@/modules/offline/lib/outbox";
 
 export function useOnlineStatus() {
   const [online, setOnline] = useState<boolean>(

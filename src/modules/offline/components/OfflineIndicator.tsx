@@ -1,6 +1,6 @@
 import { Wifi, WifiOff, CloudUpload } from "lucide-react";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
-import { flushOutbox } from "@/lib/offline/outbox";
+import { useOnlineStatus } from "@/modules/offline/hooks/useOnlineStatus";
+import { flushOutbox } from "@/modules/offline/lib/outbox";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 

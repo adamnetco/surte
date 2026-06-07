@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { flushOutbox, pendingCount, enqueue as enqueueOp } from "@/lib/offline/outbox";
-import { offlineDB, getMeta, type OutboxOp } from "@/lib/offline/db";
+import { flushOutbox, pendingCount, enqueue as enqueueOp } from "@/modules/offline/lib/outbox";
+import { offlineDB, getMeta, type OutboxOp } from "@/modules/offline/lib/db";
 
 /**
  * Background sync service hook.
