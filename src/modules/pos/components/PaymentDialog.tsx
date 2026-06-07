@@ -220,10 +220,12 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: 
             variant="cta"
             className="w-full h-12 text-base"
             disabled={!canConfirm}
-            onClick={() => onConfirm(payments.filter((p) => p.amount > 0))}
+            onClick={doConfirm}
           >
-            Confirmar cobro
-            <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
+            {submitting ? "Procesando…" : "Confirmar cobro"}
+            {!submitting && (
+              <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
+            )}
           </Button>
         </div>
       </DialogContent>
