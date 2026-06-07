@@ -41,34 +41,45 @@ const KitchenRoutingTab = lazy(() => import("@/modules/printing/components/Kitch
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
 // Fiscal global, Sincronización, Datos masivos, Ajustes globales.
+type TabGroup = "ventas" | "catalogo" | "clientes" | "contenido" | "marketing" | "operacion";
+const GROUP_LABELS: Record<TabGroup, string> = {
+  ventas: "Ventas",
+  catalogo: "Catálogo",
+  clientes: "Clientes",
+  contenido: "Contenido",
+  marketing: "Marketing y SEO",
+  operacion: "Operación",
+};
+const GROUP_ORDER: TabGroup[] = ["ventas", "catalogo", "clientes", "contenido", "marketing", "operacion"];
+
 const allTabs = [
-  { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null },
-  { id: "orders", label: "Pedidos", icon: ShoppingCart, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
-  { id: "agenda", label: "Agenda", icon: CalendarDays, roles: ["superadmin", "admin", "editor"] as AppRole[], module: "agenda" },
-  { id: "products", label: "Inventario", icon: Package, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
-  { id: "categories", label: "Categorías", icon: Tag, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "contacts", label: "Contactos", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "hero", label: "Hero", icon: Layers, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "municipalities", label: "Ciudades", icon: MapPin, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "shipping", label: "Logística", icon: Truck, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "notifications", label: "Alertas", icon: Bell, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "seo", label: "SEO", icon: Search, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "seo-content", label: "SEO Long", icon: FileText, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
-  { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "landing", label: "SEO Pages", icon: Globe, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "presentations", label: "Presentaciones", icon: Box, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "modifiers", label: "Modificadores", icon: Settings, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "featured", label: "Destacados", icon: Star, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "coupons", label: "Cupones", icon: Ticket, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "reviews", label: "Comentarios", icon: MessageSquare, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
-  { id: "google-reviews", label: "Google", icon: Map, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
-  { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "printers", label: "Impresoras", icon: Printer, roles: ["superadmin", "admin"] as AppRole[], module: null },
-  { id: "kitchen-routing", label: "Cocina", icon: ChefHat, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "overview", label: "Resumen", icon: BarChart3, roles: ["superadmin", "admin"] as AppRole[], module: null as string | null, group: "ventas" as TabGroup },
+  { id: "orders", label: "Pedidos", icon: ShoppingCart, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null, group: "ventas" as TabGroup },
+  { id: "agenda", label: "Agenda", icon: CalendarDays, roles: ["superadmin", "admin", "editor"] as AppRole[], module: "agenda", group: "ventas" as TabGroup },
+  { id: "products", label: "Inventario", icon: Package, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null, group: "catalogo" as TabGroup },
+  { id: "categories", label: "Categorías", icon: Tag, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
+  { id: "brands", label: "Marcas", icon: Handshake, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
+  { id: "presentations", label: "Presentaciones", icon: Box, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
+  { id: "modifiers", label: "Modificadores", icon: Settings, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
+  { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
+  { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
+  { id: "contacts", label: "Contactos", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
+  { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
+  { id: "reviews", label: "Comentarios", icon: MessageSquare, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null, group: "clientes" as TabGroup },
+  { id: "google-reviews", label: "Google", icon: Map, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null, group: "clientes" as TabGroup },
+  { id: "notifications", label: "Alertas", icon: Bell, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
+  { id: "content", label: "Contenido", icon: FileText, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "contenido" as TabGroup },
+  { id: "hero", label: "Hero", icon: Layers, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "contenido" as TabGroup },
+  { id: "featured", label: "Destacados", icon: Star, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "contenido" as TabGroup },
+  { id: "landing", label: "SEO Pages", icon: Globe, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "contenido" as TabGroup },
+  { id: "seo", label: "SEO", icon: Search, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "marketing" as TabGroup },
+  { id: "seo-content", label: "SEO Long", icon: FileText, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null, group: "marketing" as TabGroup },
+  { id: "coupons", label: "Cupones", icon: Ticket, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "marketing" as TabGroup },
+  { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "marketing" as TabGroup },
+  { id: "municipalities", label: "Ciudades", icon: MapPin, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
+  { id: "shipping", label: "Logística", icon: Truck, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
+  { id: "printers", label: "Impresoras", icon: Printer, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
+  { id: "kitchen-routing", label: "Cocina", icon: ChefHat, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
 ];
 
 class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
@@ -107,7 +118,9 @@ const AdminDashboard = () => {
   const { user, isAdmin, role, loading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const [tabFilter, setTabFilter] = useState("");
   const queryClient = useQueryClient();
+
 
   const { hasModule, currentOrg } = useOrganization();
   const tabs = allTabs.filter((t) => t.roles.includes(role) && (!t.module || hasModule(t.module)));
@@ -316,37 +329,72 @@ const AdminDashboard = () => {
       <div className="hidden lg:flex">
         {/* Sidebar */}
         <aside className="w-56 xl:w-64 shrink-0 border-r border-border bg-card min-h-[calc(100vh-56px)] sticky top-[56px] overflow-y-auto">
+          <div className="sticky top-0 z-10 bg-card border-b border-border p-2">
+            <div className="relative">
+              <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={tabFilter}
+                onChange={(e) => setTabFilter(e.target.value)}
+                placeholder="Buscar módulo…"
+                className="w-full pl-7 pr-2 py-1.5 text-xs bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
           <nav className="py-2">
-            {tabs.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors relative ${
-                  activeTab === id
-                    ? "bg-primary/10 text-primary border-r-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                <Icon size={16} />
-                {label}
-                {id === "orders" && pendingCount > 0 && (
-                  <span className="ml-auto w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-bold">
-                    {pendingCount}
-                  </span>
-                )}
-              </button>
-            ))}
+            {(() => {
+              const q = tabFilter.trim().toLowerCase();
+              const filtered = q ? tabs.filter((t) => t.label.toLowerCase().includes(q)) : tabs;
+              const renderTabBtn = ({ id, label, icon: Icon }: typeof tabs[number]) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium transition-colors relative ${
+                    activeTab === id
+                      ? "bg-primary/10 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <Icon size={16} />
+                  {label}
+                  {id === "orders" && pendingCount > 0 && (
+                    <span className="ml-auto w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-bold">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+              );
 
-            {opsLinks.length > 0 && (
+              if (q) {
+                return filtered.length > 0
+                  ? filtered.map(renderTabBtn)
+                  : <p className="px-4 py-3 text-xs text-muted-foreground">Sin resultados</p>;
+              }
+
+              return GROUP_ORDER.map((group) => {
+                const groupTabs = filtered.filter((t) => t.group === group);
+                if (groupTabs.length === 0) return null;
+                return (
+                  <div key={group} className="mb-1">
+                    <p className="px-4 pt-3 pb-1 text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider">
+                      {GROUP_LABELS[group]}
+                    </p>
+                    {groupTabs.map(renderTabBtn)}
+                  </div>
+                );
+              });
+            })()}
+
+            {opsLinks.length > 0 && !tabFilter && (
               <>
-                <div className="mt-4 px-4 pt-3 pb-1 border-t border-border">
-                  <p className="text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider">Operaciones</p>
+                <div className="mt-3 px-4 pt-3 pb-1 border-t border-border">
+                  <p className="text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider">Atajos operativos</p>
                 </div>
                 {opsLinks.map(({ path, label, icon: Icon }) => (
                   <button
                     key={path}
                     onClick={() => navigate(path)}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                   >
                     <Icon size={16} />
                     <span className="flex-1 text-left">{label}</span>
@@ -357,6 +405,7 @@ const AdminDashboard = () => {
             )}
           </nav>
         </aside>
+
 
         {/* Content area */}
         <main className="flex-1 p-6 pb-8 min-w-0 overflow-x-hidden">
