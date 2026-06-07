@@ -29,6 +29,8 @@ import MarginCalculator from "./MarginCalculator";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { productSchema, firstZodMessage } from "@/lib/schemas";
+import { errorToMessage } from "@/lib/errors";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
