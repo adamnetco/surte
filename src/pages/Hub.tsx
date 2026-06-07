@@ -308,7 +308,7 @@ const Hub = () => {
         {(seoLong?.heading || seoLong?.body_html) && (
           <section className="mt-10 border-t border-border pt-6 prose prose-sm max-w-none prose-headings:font-heading prose-headings:text-foreground prose-p:text-muted-foreground">
             {seoLong?.heading && <h2>{seoLong.heading}</h2>}
-            {seoLong?.body_html && <div dangerouslySetInnerHTML={{ __html: seoLong.body_html }} />}
+            {seoLong?.body_html && <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(seoLong.body_html) }} />}
           </section>
         )}
       </main>

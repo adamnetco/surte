@@ -131,7 +131,7 @@ const LandingPage = () => {
         {page.body_html && (
           <div
             className="prose prose-sm max-w-none text-muted-foreground mb-6"
-            dangerouslySetInnerHTML={{ __html: page.body_html }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.body_html) }}
           />
         )}
 

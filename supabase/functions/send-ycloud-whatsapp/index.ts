@@ -18,6 +18,39 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // verify_jwt=true en config.toml; aquí además exigimos rol mínimo o
+    // que la llamada venga de otra edge function con service role key.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const isServiceCall = token === serviceKey;
+    if (!isServiceCall) {
+      const sb = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: claims } = await sb.auth.getClaims(token);
+      const userId = claims?.claims?.sub;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: allowed } = await supabase.rpc("has_any_role", {
+        _user_id: userId,
+        _roles: ["admin", "superadmin", "agente"],
+      });
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+
     // Get YCloud credentials from app_settings
     const { data: settingsRows } = await supabase
       .from("app_settings")
