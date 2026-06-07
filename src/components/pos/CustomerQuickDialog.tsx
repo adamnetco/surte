@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Mail, MessageCircle, ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { Mail, MessageCircle, ChevronDown, ChevronUp, FileText, Loader2 } from "lucide-react";
 import type { POSCustomer } from "@/lib/posCustomer";
-import { toast } from "sonner";
+import { posCustomerSchema, type POSCustomerFormValues } from "@/lib/schemas";
 
 interface Props {
   open: boolean;
@@ -17,65 +19,76 @@ interface Props {
   onSave: (c: POSCustomer) => void;
 }
 
+const buildDefaults = (
+  initial?: Partial<POSCustomer>,
+  requireEinvoice?: boolean,
+): POSCustomerFormValues => ({
+  name: initial?.name ?? "",
+  phone: initial?.phone ?? "",
+  address: initial?.address ?? "",
+  email: initial?.email ?? "",
+  docType: (initial?.docType as POSCustomerFormValues["docType"]) ?? "CC",
+  docNumber: initial?.docNumber ?? "",
+  personType: (initial?.personType as POSCustomerFormValues["personType"]) ?? "natural",
+  taxResponsibility: initial?.taxResponsibility ?? "No responsable de IVA",
+  city: initial?.city ?? "",
+  sendWhatsapp: initial?.sendWhatsapp ?? true,
+  sendEmail: initial?.sendEmail ?? false,
+  advanced: !!requireEinvoice,
+  requireEinvoice: !!requireEinvoice,
+});
+
 /**
- * Diálogo "Cliente rápido" estilo VectorPOS:
+ * Diálogo "Cliente rápido" estilo VectorPOS, ahora con react-hook-form + zod.
  * - Modo express (3 datos): Nombre, Teléfono, Dirección.
  * - Modo avanzado (factura electrónica): Tipo doc, N° doc, Email, Razón social, Persona, Resp. tributaria.
  * - Toggles para enviar comprobante por WhatsApp / Email.
  */
 export default function CustomerQuickDialog({ open, onOpenChange, initial, requireEinvoice, onSave }: Props) {
-  const [advanced, setAdvanced] = useState(!!requireEinvoice);
-  const [form, setForm] = useState<POSCustomer>({
-    name: "",
-    phone: "",
-    address: "",
-    email: "",
-    docType: "CC",
-    docNumber: "",
-    personType: "natural",
-    taxResponsibility: "No responsable de IVA",
-    sendWhatsapp: true,
-    sendEmail: false,
-    ...initial,
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<POSCustomerFormValues>({
+    resolver: zodResolver(posCustomerSchema),
+    defaultValues: buildDefaults(initial, requireEinvoice),
+    mode: "onBlur",
   });
 
+  // Reset cuando se abre el diálogo (o cambian inputs externos)
   useEffect(() => {
-    if (open) {
-      setAdvanced(!!requireEinvoice);
-      setForm((p) => ({ ...p, ...initial }));
-    }
-  }, [open, requireEinvoice, initial]);
+    if (open) reset(buildDefaults(initial, requireEinvoice));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, requireEinvoice, JSON.stringify(initial)]);
 
-  const set = <K extends keyof POSCustomer>(k: K, v: POSCustomer[K]) =>
-    setForm((p) => ({ ...p, [k]: v }));
+  const advanced = watch("advanced");
+  const sendWhatsapp = watch("sendWhatsapp");
+  const sendEmail = watch("sendEmail");
+  const phone = watch("phone");
+  const email = watch("email");
 
-  const validate = (): string | null => {
-    if (!form.name?.trim()) return "El nombre es obligatorio";
-    if (form.name.trim().length > 80) return "Nombre demasiado largo";
-    if (form.phone && !/^[\d +()-]{6,20}$/.test(form.phone)) return "Teléfono inválido";
-    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) return "Email inválido";
-    if (advanced || requireEinvoice) {
-      if (!form.docNumber?.trim()) return "El número de identificación es obligatorio para factura electrónica";
-      if (!form.email?.trim()) return "El email es obligatorio para factura electrónica";
-    }
-    if (form.sendWhatsapp && !form.phone) return "Para enviar por WhatsApp, ingresa el teléfono";
-    if (form.sendEmail && !form.email) return "Para enviar por Email, ingresa el correo";
-    return null;
-  };
-
-  const handleSave = () => {
-    const err = validate();
-    if (err) { toast.error(err); return; }
-    onSave({
-      ...form,
-      name: form.name.trim(),
-      phone: form.phone?.trim() || undefined,
-      address: form.address?.trim() || undefined,
-      email: form.email?.trim() || undefined,
-      docNumber: form.docNumber?.trim() || undefined,
-    });
+  const onSubmit = (values: POSCustomerFormValues) => {
+    const cleaned: POSCustomer = {
+      name: values.name.trim(),
+      phone: values.phone?.trim() || undefined,
+      address: values.address?.trim() || undefined,
+      email: values.email?.trim() || undefined,
+      docType: values.docType,
+      docNumber: values.docNumber?.trim() || undefined,
+      personType: values.personType,
+      taxResponsibility: values.taxResponsibility || undefined,
+      city: values.city?.trim() || undefined,
+      sendWhatsapp: values.sendWhatsapp,
+      sendEmail: values.sendEmail,
+    };
+    onSave(cleaned);
     onOpenChange(false);
   };
+
+  const showAdvanced = advanced || requireEinvoice;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -89,17 +102,34 @@ export default function CustomerQuickDialog({ open, onOpenChange, initial, requi
           </DialogDescription>
         </DialogHeader>
 
-        {/* === Campos rápidos === */}
-        <div className="space-y-3">
-          <Field label="Nombre completo *">
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Ej. María García" autoFocus className="h-10" />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
+          <Field label="Nombre completo *" error={errors.name?.message}>
+            <Input
+              {...register("name")}
+              placeholder="Ej. María García"
+              autoFocus
+              className="h-10"
+              aria-invalid={!!errors.name}
+            />
           </Field>
+
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Teléfono">
-              <Input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} placeholder="3001234567" inputMode="tel" className="h-10" />
+            <Field label="Teléfono" error={errors.phone?.message}>
+              <Input
+                {...register("phone")}
+                placeholder="3001234567"
+                inputMode="tel"
+                className="h-10"
+                aria-invalid={!!errors.phone}
+              />
             </Field>
-            <Field label="Dirección">
-              <Input value={form.address ?? ""} onChange={(e) => set("address", e.target.value)} placeholder="Cra 19 #39-19" className="h-10" />
+            <Field label="Dirección" error={errors.address?.message}>
+              <Input
+                {...register("address")}
+                placeholder="Cra 19 #39-19"
+                className="h-10"
+                aria-invalid={!!errors.address}
+              />
             </Field>
           </div>
 
@@ -109,36 +139,36 @@ export default function CustomerQuickDialog({ open, onOpenChange, initial, requi
             <ToggleRow
               icon={<MessageCircle className="w-4 h-4 text-[#25D366]" />}
               label="WhatsApp"
-              hint={form.phone || "Requiere teléfono"}
-              checked={!!form.sendWhatsapp}
-              onChange={(v) => set("sendWhatsapp", v)}
+              hint={phone || "Requiere teléfono"}
+              checked={!!sendWhatsapp}
+              onChange={(v) => setValue("sendWhatsapp", v, { shouldValidate: true })}
             />
             <ToggleRow
               icon={<Mail className="w-4 h-4 text-primary" />}
               label="Correo electrónico"
-              hint={form.email || "Requiere email"}
-              checked={!!form.sendEmail}
-              onChange={(v) => set("sendEmail", v)}
+              hint={email || "Requiere email"}
+              checked={!!sendEmail}
+              onChange={(v) => setValue("sendEmail", v, { shouldValidate: true })}
             />
           </div>
 
           {/* Toggle modo avanzado */}
           <button
             type="button"
-            onClick={() => setAdvanced((v) => !v)}
+            onClick={() => setValue("advanced", !advanced, { shouldValidate: true })}
             className="w-full flex items-center justify-between text-xs font-semibold text-primary hover:underline py-1"
+            disabled={!!requireEinvoice}
           >
             <span>Datos para factura electrónica</span>
-            {advanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
 
-          {advanced && (
+          {showAdvanced && (
             <div className="space-y-3 border-t pt-3 animate-fade-in">
               <div className="grid grid-cols-[110px_1fr] gap-3">
                 <Field label="Tipo doc">
                   <select
-                    value={form.docType}
-                    onChange={(e) => set("docType", e.target.value as POSCustomer["docType"])}
+                    {...register("docType")}
                     className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                   >
                     <option value="CC">CC</option>
@@ -149,18 +179,29 @@ export default function CustomerQuickDialog({ open, onOpenChange, initial, requi
                     <option value="OTRO">Otro</option>
                   </select>
                 </Field>
-                <Field label="Número de identificación *">
-                  <Input value={form.docNumber ?? ""} onChange={(e) => set("docNumber", e.target.value)} placeholder="1098765432" inputMode="numeric" className="h-10" />
+                <Field label="Número de identificación *" error={errors.docNumber?.message}>
+                  <Input
+                    {...register("docNumber")}
+                    placeholder="1098765432"
+                    inputMode="numeric"
+                    className="h-10"
+                    aria-invalid={!!errors.docNumber}
+                  />
                 </Field>
               </div>
-              <Field label="Email *">
-                <Input value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} placeholder="cliente@correo.com" inputMode="email" className="h-10" />
+              <Field label="Email *" error={errors.email?.message}>
+                <Input
+                  {...register("email")}
+                  placeholder="cliente@correo.com"
+                  inputMode="email"
+                  className="h-10"
+                  aria-invalid={!!errors.email}
+                />
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Tipo persona">
                   <select
-                    value={form.personType}
-                    onChange={(e) => set("personType", e.target.value as POSCustomer["personType"])}
+                    {...register("personType")}
                     className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                   >
                     <option value="natural">Natural</option>
@@ -169,8 +210,7 @@ export default function CustomerQuickDialog({ open, onOpenChange, initial, requi
                 </Field>
                 <Field label="Responsabilidad tributaria">
                   <select
-                    value={form.taxResponsibility}
-                    onChange={(e) => set("taxResponsibility", e.target.value)}
+                    {...register("taxResponsibility")}
                     className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                   >
                     <option>No responsable de IVA</option>
@@ -180,27 +220,40 @@ export default function CustomerQuickDialog({ open, onOpenChange, initial, requi
                   </select>
                 </Field>
               </div>
-              <Field label="Ciudad">
-                <Input value={form.city ?? ""} onChange={(e) => set("city", e.target.value)} placeholder="Bucaramanga" className="h-10" />
+              <Field label="Ciudad" error={errors.city?.message}>
+                <Input {...register("city")} placeholder="Bucaramanga" className="h-10" aria-invalid={!!errors.city} />
               </Field>
             </div>
           )}
-        </div>
 
-        <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="flex-1 h-11 font-bold" onClick={handleSave}>Guardar y usar</Button>
-        </div>
+          <div className="flex gap-2 pt-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="flex-1 h-11 font-bold">
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar y usar"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1">
       <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</Label>
       {children}
+      {error && <p className="text-[11px] text-destructive font-medium">{error}</p>}
     </div>
   );
 }
