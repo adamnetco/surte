@@ -45,12 +45,24 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
           </p>
         </div>
         <div className="flex items-center gap-0.5">
-          <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => onQty(-1)}>
-            <Minus className="w-3 h-3" />
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-9 w-9 focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => onQty(-1)}
+            aria-label={`Reducir cantidad de ${line.name}`}
+          >
+            <Minus className="w-4 h-4" />
           </Button>
-          <span className="w-6 text-center text-xs font-bold tabular-nums">{line.quantity}</span>
-          <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => onQty(1)}>
-            <Plus className="w-3 h-3" />
+          <span className="w-7 text-center text-sm font-bold tabular-nums" aria-live="polite">{line.quantity}</span>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-9 w-9 focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => onQty(1)}
+            aria-label={`Aumentar cantidad de ${line.name}`}
+          >
+            <Plus className="w-4 h-4" />
           </Button>
         </div>
         <div className="w-20 text-right">
