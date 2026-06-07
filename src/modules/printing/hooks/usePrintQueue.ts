@@ -78,8 +78,8 @@ export function usePrintQueue({ organizationId, managedPrinterIds, enabled = tru
 
     // Procesar trabajos pendientes existentes
     (async () => {
-      const { data } = await supabase
-        .from("print_jobs" as any)
+      const { data } = await (supabase as any)
+        .from("print_jobs")
         .select("*")
         .eq("organization_id", organizationId)
         .eq("status", "queued")
@@ -91,12 +91,12 @@ export function usePrintQueue({ organizationId, managedPrinterIds, enabled = tru
 
     const channel = supabase
       .channel(`print_jobs_${organizationId}`)
-      .on("postgres_changes", {
+      .on("postgres_changes" as any, {
         event: "INSERT",
         schema: "public",
         table: "print_jobs",
         filter: `organization_id=eq.${organizationId}`,
-      }, (payload) => {
+      }, (payload: any) => {
         process(payload.new as PrintJobRow);
       })
       .subscribe();
