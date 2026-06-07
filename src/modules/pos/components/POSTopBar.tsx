@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { Settings, Clock, User, LogOut, Keyboard } from "lucide-react";
 import POSModeBar from "./POSModeBar";
+import POSWorkspaceNav from "./POSWorkspaceNav";
 import type { PosMode } from "@/modules/pos/lib/posModes";
 
 interface Props {
@@ -55,16 +56,29 @@ export default function POSTopBar({
           <span className="hidden sm:inline text-sm font-bold text-primary">SistecPOS</span>
         </div>
 
-        <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground">
           <span className="font-semibold text-foreground">{shiftLabel}</span>
           <span className="flex items-center gap-1"><User className="w-3 h-3" />{cashierName}</span>
           <span className="flex items-center gap-1 tabular-nums"><Clock className="w-3 h-3" />{elapsed}</span>
         </div>
 
+        {/* Switcher operativo Panel/Vender/Mesas/KDS — evita volver al hub */}
+        <POSWorkspaceNav className="ml-1" />
+
         <div className="flex-1" />
 
         <div className="flex items-center gap-1.5">
           {rightExtras}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 hidden md:inline-flex"
+            onClick={onOpenShortcuts}
+            title="Atajos de teclado (?)"
+            aria-label="Atajos de teclado"
+          >
+            <Keyboard className="w-4 h-4" />
+          </Button>
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10 focus-visible:ring-2 focus-visible:ring-ring" aria-label="Abrir configuración del POS">
