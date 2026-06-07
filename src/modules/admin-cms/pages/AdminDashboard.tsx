@@ -36,6 +36,7 @@ const SeoContentTab = lazy(() => import("@/modules/admin-cms/components/SeoConte
 const CrmLeadsTab = lazy(() => import("@/modules/admin-cms/components/CrmLeadsTab"));
 const ContactsTab = lazy(() => import("@/modules/admin-cms/components/ContactsTab"));
 const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersManagerTab").then(m => ({ default: m.PrintersManagerTab })));
+const KitchenRoutingTab = lazy(() => import("@/modules/printing/components/KitchenRoutingTab").then(m => ({ default: m.KitchenRoutingTab })));
 
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
@@ -67,6 +68,7 @@ const allTabs = [
   { id: "google-reviews", label: "Google", icon: Map, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
   { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[], module: null },
   { id: "printers", label: "Impresoras", icon: Printer, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "kitchen-routing", label: "Cocina", icon: ChefHat, roles: ["superadmin", "admin"] as AppRole[], module: null },
 ];
 
 class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
@@ -242,6 +244,7 @@ const AdminDashboard = () => {
         {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
         {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
         {activeTab === "printers" && <PrintersTab organizationId={currentOrg?.id ?? ""} />}
+        {activeTab === "kitchen-routing" && <KitchenRoutingTab organizationId={currentOrg?.id ?? ""} />}
         {/* data / sync / fiscal removidos — viven en /superadmin */}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>

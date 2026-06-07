@@ -89,6 +89,7 @@ ipcMain.handle("license:status", () => ({ fingerprint: machineFingerprint(), has
 ipcMain.handle("license:activate", async (_e, key) => activate(key));
 
 app.whenReady().then(async () => {
+  try { printAgent.start(); } catch (e) { console.error("[print-agent] failed to start:", e); }
   createWindow();
   const key = decFile(LIC_FILE);
   if (!key) {

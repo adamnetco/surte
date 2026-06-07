@@ -3,6 +3,8 @@ export { buildReceipt, buildKitchen } from "./lib/ticketBuilder";
 export type { TicketData, TicketLine, TicketOrgInfo } from "./lib/ticketBuilder";
 export { usePrintQueue } from "./hooks/usePrintQueue";
 export { isWebUsbSupported, requestUsbPrinter, openUsbPrinter, printOnceUsb, listAuthorizedUsbPrinters } from "./drivers/webusb";
+export { isWebBluetoothSupported, requestBluetoothPrinter, openBluetoothPrinter, printOnceBluetooth } from "./drivers/webbluetooth";
 export { pingAgent, printViaAgent } from "./drivers/agent";
 export { PrintersManagerTab } from "./components/PrintersManagerTab";
+export { KitchenRoutingTab } from "./components/KitchenRoutingTab";
 export { TicketPreviewDialog } from "./components/TicketPreviewDialog";
