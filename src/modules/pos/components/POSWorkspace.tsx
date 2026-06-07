@@ -928,8 +928,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         change={saleComplete?.change ?? 0}
         canEmitInvoice={!!lastOrderId && navigator.onLine}
         onNewSale={() => setSaleComplete(null)}
-        onPrint={() => { window.print(); }}
+        onPrint={() => setPreviewOpen(true)}
         onEmitInvoice={() => { setSaleComplete(null); setActionMode("emit"); }}
+      />
+
+      <TicketPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        data={lastTicketData}
+        paperMm={80}
+        kind="receipt"
       />
 
     </div>
