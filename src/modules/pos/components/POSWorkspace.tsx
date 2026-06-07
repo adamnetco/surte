@@ -329,15 +329,31 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         setLastOrderId(clientUuid);
         setTicket([]);
         setMeta(ticketCacheKey, []).catch(() => {});
-        setSaleComplete({ total: snapshotTotal, amountPaid, change, items: snapshotItems });
+        setSaleComplete({ total: snapshotTotal, amountPaid, change });
       });
 
-      // 3) Encolar impresión: recibo cliente + comandas de cocina.
-      // Se espera a que la orden se materialice (outbox flush) consultando
-      // por client_uuid hasta 6s; luego llamamos enqueue_print_job.
-      schedulePrint(clientUuid).catch((err) => {
-        console.warn("[printing] no se pudo encolar:", err);
+      // 3) Snapshot para vista previa local del ticket (siempre disponible
+      //    como fallback si no hay impresora configurada o falla el driver).
+      setLastTicketData({
+        org: orgInfoRef.current,
+        ticket_number: undefined,
+        cashier_name: cashierName,
+        customer_name: null,
+        customer_phone: null,
+        customer_document: null,
+        sale_mode: saleMode,
+        created_at: new Date(),
+        items: snapshotItems.map((l) => ({
+          name: l.name, quantity: l.quantity, unit_price: l.unitPrice, total: l.total,
+        })),
+        subtotal: snapshotSubtotal, discount: totals.globalDisc, tax: totals.tax, tip: 0,
+        total: snapshotTotal, amount_paid: amountPaid, change_due: change,
+        payments: payments.map((p) => ({ method: p.method, amount: p.amount })),
       });
+
+      // 4) Encolar impresión vía Realtime: recibo cliente + comandas cocina.
+      //    Se espera a que outbox materialice la orden (max 6s) y se llama RPC.
+      schedulePrint(clientUuid).catch((err) => console.warn("[printing]", err));
 
       toast.success(
         navigator.onLine
