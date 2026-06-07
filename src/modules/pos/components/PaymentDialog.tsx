@@ -44,11 +44,13 @@ function suggestedQuickAmounts(pending: number): number[] {
 
 export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: Props) {
   const [payments, setPayments] = useState<Pay[]>([]);
+  const [submitting, setSubmitting] = useState(false);
   const firstAmountRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
       setPayments([{ method: "efectivo", amount: total }]);
+      setSubmitting(false);
       // Focus + select del primer monto para tecleo inmediato.
       setTimeout(() => {
         firstAmountRef.current?.focus();
@@ -60,7 +62,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: 
   const sum = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
   const change = Math.max(0, sum - total);
   const pending = Math.max(0, total - sum);
-  const canConfirm = pending <= 0 && payments.every((p) => p.amount > 0);
+  const canConfirm = !submitting && pending <= 0 && payments.every((p) => p.amount > 0);
 
   // Estado del cobro: falta / exacto / vuelto
   const statusBadge = useMemo(() => {
@@ -73,10 +75,20 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: 
     setPayments((prev) => prev.map((p, j) => (j === i ? { ...p, ...patch } : p)));
   };
 
+  const doConfirm = () => {
+    if (!canConfirm) return;
+    setSubmitting(true);
+    try {
+      onConfirm(payments.filter((p) => p.amount > 0));
+    } catch {
+      setSubmitting(false);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && canConfirm) {
       e.preventDefault();
-      onConfirm(payments.filter((p) => p.amount > 0));
+      doConfirm();
     }
   };
 
@@ -208,10 +220,12 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: 
             variant="cta"
             className="w-full h-12 text-base"
             disabled={!canConfirm}
-            onClick={() => onConfirm(payments.filter((p) => p.amount > 0))}
+            onClick={doConfirm}
           >
-            Confirmar cobro
-            <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
+            {submitting ? "Procesando…" : "Confirmar cobro"}
+            {!submitting && (
+              <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
+            )}
           </Button>
         </div>
       </DialogContent>
