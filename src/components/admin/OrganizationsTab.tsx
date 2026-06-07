@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -22,6 +24,8 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { organizationSchema, type OrganizationFormValues } from "@/lib/schemas";
+import { errorToMessage } from "@/lib/errors";
 
 const MODULE_CATALOG = [
   { key: "pos", label: "POS / Caja", hint: "Ventas y caja" },
@@ -65,11 +69,25 @@ type Org = {
 const OrganizationsTab = () => {
   const qc = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ slug: "", name: "", business_type: "retail", country: "CO", currency: "COP" });
-  const [saving, setSaving] = useState(false);
   const [modulesOrg, setModulesOrg] = useState<Org | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<OrganizationFormValues>({
+    resolver: zodResolver(organizationSchema),
+    defaultValues: { slug: "", name: "", business_type: "retail", country: "CO", currency: "COP" },
+    mode: "onBlur",
+  });
+
+  const businessType = watch("business_type");
+  const country = watch("country");
 
   const { data: orgs, isLoading } = useQuery({
     queryKey: ["admin-organizations"],
@@ -113,27 +131,25 @@ const OrganizationsTab = () => {
     inactive: orgs?.filter(o => !o.is_active).length || 0,
   }), [orgs]);
 
-  const createOrg = async () => {
-    if (!form.slug || !form.name) return toast.error("Slug y nombre son requeridos", { position: "top-center" });
-    if (!/^[a-z0-9-]+$/.test(form.slug)) {
-      return toast.error("Slug solo puede tener minúsculas, números y guiones", { position: "top-center" });
+  const onCreate = handleSubmit(async (values) => {
+    try {
+      const { error } = await supabase.from("organizations").insert({
+        slug: values.slug.toLowerCase().trim(),
+        name: values.name.trim(),
+        business_type: values.business_type,
+        country: values.country,
+        currency: values.currency,
+        is_active: true,
+      });
+      if (error) throw error;
+      toast.success("Organización creada", { position: "top-center" });
+      setCreateOpen(false);
+      reset({ slug: "", name: "", business_type: "retail", country: "CO", currency: "COP" });
+      qc.invalidateQueries({ queryKey: ["admin-organizations"] });
+    } catch (e) {
+      toast.error(errorToMessage(e), { position: "top-center" });
     }
-    setSaving(true);
-    const { error } = await supabase.from("organizations").insert({
-      slug: form.slug.toLowerCase().trim(),
-      name: form.name.trim(),
-      business_type: form.business_type,
-      country: form.country,
-      currency: form.currency,
-      is_active: true,
-    });
-    setSaving(false);
-    if (error) return toast.error(error.message, { position: "top-center" });
-    toast.success("Organización creada", { position: "top-center" });
-    setCreateOpen(false);
-    setForm({ slug: "", name: "", business_type: "retail", country: "CO", currency: "COP" });
-    qc.invalidateQueries({ queryKey: ["admin-organizations"] });
-  };
+  });
 
   const toggleActive = async (org: Org) => {
     if (!window.confirm(`${org.is_active ? "Desactivar" : "Activar"} ${org.name}?`)) return;
@@ -345,34 +361,49 @@ const OrganizationsTab = () => {
               <DialogTitle>Nueva organización</DialogTitle>
               <DialogDescription>Da de alta una tienda nueva en SistecPOS.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <form onSubmit={onCreate} noValidate className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="org-name">Nombre comercial</Label>
                 <Input
                   id="org-name"
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  {...register("name")}
                   placeholder="Mi Tienda S.A.S."
                   autoFocus
+                  aria-invalid={!!errors.name}
                 />
+                {errors.name && (
+                  <p role="alert" className="text-xs text-destructive">{errors.name.message}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="org-slug">Slug (URL)</Label>
                 <Input
                   id="org-slug"
-                  value={form.slug}
-                  onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
+                  {...register("slug", {
+                    onChange: (e) => {
+                      const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+                      setValue("slug", v, { shouldValidate: true });
+                    },
+                  })}
                   placeholder="mi-tienda"
                   aria-describedby="slug-hint"
+                  aria-invalid={!!errors.slug}
                 />
-                <p id="slug-hint" className="text-xs text-muted-foreground">
-                  Solo minúsculas, números y guiones. Aparecerá en la URL.
-                </p>
+                {errors.slug ? (
+                  <p role="alert" className="text-xs text-destructive">{errors.slug.message}</p>
+                ) : (
+                  <p id="slug-hint" className="text-xs text-muted-foreground">
+                    Solo minúsculas, números y guiones. Aparecerá en la URL.
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Tipo de negocio</Label>
-                  <Select value={form.business_type} onValueChange={(v) => setForm((f) => ({ ...f, business_type: v }))}>
+                  <Select
+                    value={businessType}
+                    onValueChange={(v) => setValue("business_type", v as OrganizationFormValues["business_type"], { shouldValidate: true })}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {BUSINESS_TYPES.map((b) => (
@@ -380,14 +411,18 @@ const OrganizationsTab = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.business_type && (
+                    <p role="alert" className="text-xs text-destructive">{errors.business_type.message}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>País</Label>
                   <Select
-                    value={form.country}
+                    value={country}
                     onValueChange={(v) => {
                       const c = COUNTRIES.find((x) => x.value === v);
-                      setForm((f) => ({ ...f, country: v, currency: c?.currency || f.currency }));
+                      setValue("country", v, { shouldValidate: true });
+                      if (c) setValue("currency", c.currency, { shouldValidate: true });
                     }}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -397,22 +432,25 @@ const OrganizationsTab = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.country && (
+                    <p role="alert" className="text-xs text-destructive">{errors.country.message}</p>
+                  )}
                 </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>
-                Cancelar
-              </Button>
-              <Button onClick={createOrg} disabled={saving}>
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" aria-hidden />
-                ) : (
-                  <Save className="h-4 w-4 mr-1.5" aria-hidden />
-                )}
-                Crear tienda
-              </Button>
-            </DialogFooter>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} disabled={isSubmitting}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" aria-hidden />
+                  ) : (
+                    <Save className="h-4 w-4 mr-1.5" aria-hidden />
+                  )}
+                  Crear tienda
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
 
