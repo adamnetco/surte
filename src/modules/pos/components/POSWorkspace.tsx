@@ -26,7 +26,7 @@ import {
 } from "@/lib/offline/catalog";
 import { setMeta, getMeta } from "@/lib/offline/db";
 import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
-import { useSyncService } from "@/hooks/useSyncService";
+import { useSyncService } from "@/modules/integrations/sync/useSyncService";
 import { enqueue } from "@/lib/offline/outbox";
 import POSTopBar from "./POSTopBar";
 import POSCategoryTabs from "./POSCategoryTabs";
