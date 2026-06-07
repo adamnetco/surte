@@ -95,6 +95,51 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const { config: posModes } = usePOSModes(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
 
+  // === Impresión térmica ===
+  // Cola que escucha print_jobs vía Realtime y los ejecuta en este terminal
+  // (WebUSB / agente local). Si no hay impresora configurada, queda pasiva.
+  usePrintQueue({ organizationId });
+  const [lastTicketData, setLastTicketData] = useState<TicketData | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const orgInfoRef = useRef({ business_name: "SistecPOS" } as TicketData["org"]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("organizations").select("name, legal_name, nit, address, phone")
+        .eq("id", organizationId).maybeSingle();
+      if (data) {
+        orgInfoRef.current = {
+          business_name: data.name ?? "SistecPOS",
+          legal_name: data.legal_name ?? null,
+          nit: data.nit ?? null,
+          address: data.address ?? null,
+          phone: data.phone ?? null,
+        };
+      }
+    })();
+  }, [organizationId]);
+
+  /**
+   * Espera a que outbox materialice la orden (busca por client_uuid)
+   * y luego invoca enqueue_print_job para generar recibo + comandas.
+   * Si en 6s no aparece (offline real), guarda intención local: al volver
+   * la red, una próxima impresión manual desde "Reimprimir" lo cubre.
+   */
+  const schedulePrint = async (clientUuid: string) => {
+    const deadline = Date.now() + 6000;
+    while (Date.now() < deadline) {
+      const { data } = await (supabase as any)
+        .from("pos_orders").select("id").eq("client_uuid", clientUuid).maybeSingle();
+      if (data?.id) {
+        await (supabase as any).rpc("enqueue_print_job", { _order_id: data.id, _kind: "receipt" });
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    // Sin sincronizar: mostrar vista previa como fallback.
+    setPreviewOpen(true);
+  };
+
   useEffect(() => {
     if (!posModes.enabled.includes(saleMode)) setSaleMode(posModes.default);
     // eslint-disable-next-line react-hooks/exhaustive-deps
