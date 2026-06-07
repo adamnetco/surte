@@ -69,11 +69,25 @@ type Org = {
 const OrganizationsTab = () => {
   const qc = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ slug: "", name: "", business_type: "retail", country: "CO", currency: "COP" });
-  const [saving, setSaving] = useState(false);
   const [modulesOrg, setModulesOrg] = useState<Org | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<OrganizationFormValues>({
+    resolver: zodResolver(organizationSchema),
+    defaultValues: { slug: "", name: "", business_type: "retail", country: "CO", currency: "COP" },
+    mode: "onBlur",
+  });
+
+  const businessType = watch("business_type");
+  const country = watch("country");
 
   const { data: orgs, isLoading } = useQuery({
     queryKey: ["admin-organizations"],
