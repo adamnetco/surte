@@ -154,10 +154,10 @@ export default function PosHub() {
       <main className="max-w-7xl mx-auto p-3 sm:p-6">
         <div className="mb-4 sm:mb-6 text-center">
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-            Categoría POS <span className="text-muted-foreground">— Sistema de ventas</span>
+            Punto de venta <span className="text-muted-foreground">— Acceso rápido</span>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Acceso rápido a las áreas de tu tienda. Toca una opción para continuar.
+            Toca una opción para continuar. También puedes saltar directo a <Link to="/pos/vender" className="text-primary font-medium hover:underline">Vender</Link>, <Link to="/mesas" className="text-primary font-medium hover:underline">Mesas</Link> o <Link to="/kds" className="text-primary font-medium hover:underline">KDS</Link> desde la barra superior.
           </p>
         </div>
 
