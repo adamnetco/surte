@@ -9,6 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import { isTransientAuthError, purgeLocalAuth, sleep } from "@/modules/auth/lib/authRecovery";
+import {
+  logAuth,
+  checkMagicLinkGate,
+  recordMagicLinkAttempt,
+  type MagicLinkGate,
+} from "@/modules/auth/lib/authLog";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
 
