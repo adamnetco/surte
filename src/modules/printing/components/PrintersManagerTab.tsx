@@ -30,6 +30,8 @@ interface PrinterRow {
   characters_per_line: number;
   codepage: string;
   cuts_paper: boolean;
+  bluetooth_address?: string | null;
+  os_printer_name?: string | null;
   opens_drawer: boolean;
   role: "receipt" | "kitchen" | "bar" | "label" | "any";
   is_default: boolean;
