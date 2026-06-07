@@ -91,9 +91,13 @@ export default function PosHub() {
     },
   ], [navigate, signOut]);
 
+  // Bypass de módulos para roles con visión completa: el hub no debe verse
+  // vacío en tenants recién creados ni para el superadmin maestro.
+  const moduleBypass = role === "superadmin" || role === "admin" || role === "owner";
+
   const canRender = (t: Tile) => {
     if (t.roles && !t.roles.includes(role ?? "")) return false;
-    if (t.module && !hasModule(t.module)) return false;
+    if (t.module && !moduleBypass && !hasModule(t.module)) return false;
     return true;
   };
 
