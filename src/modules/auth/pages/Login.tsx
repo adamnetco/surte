@@ -90,9 +90,44 @@ const Login = () => {
     window.open(`${window.location.origin}/login`, "_blank", "noopener");
   };
 
+  const isTransientAuthError = (err: any): boolean => {
+    const msg = String(err?.message || "");
+    const status = Number(err?.status || 0);
+    if (status === 0 || status === 408 || status === 429 || status >= 500) return true;
+    return /Failed to fetch|NetworkError|timeout|upstream|fetch failed|load failed/i.test(msg);
+  };
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const signInWithRetry = async (mail: string, pwd: string) => {
+    let lastErr: any = null;
+    const delays = [0, 800, 2000];
+    for (let i = 0; i < delays.length; i++) {
+      if (delays[i]) await sleep(delays[i]);
+      const res = await signIn(mail, pwd);
+      if (!res.error) return res;
+      lastErr = res.error;
+      if (!isTransientAuthError(res.error)) return res;
+    }
+    return { error: lastErr, session: null as any };
+  };
+
+  const clearStaleAuthAndReload = () => {
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("sb-") || k.startsWith("supabase.auth") || k.startsWith("sps_role:"))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch { /* quota */ }
+    toast.success("Sesión local limpiada. Recargando…");
+    setTimeout(() => window.location.reload(), 400);
+  };
+
+  const [backendDown, setBackendDown] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setBackendDown(false);
     try {
       if (isSignUp) {
         const { error } = await signUp(email, password, fullName, businessType, phone);
@@ -107,7 +142,7 @@ const Login = () => {
         toast.success("¡Cuenta creada! Revisa tu email para confirmar.");
         setIsSignUp(false);
       } else {
-        const { error, session } = await signIn(email.trim(), password);
+        const { error, session } = await signInWithRetry(email.trim(), password);
         if (error) throw error;
         const stableSession = session ?? await waitForAuthSession();
         const dest = resolveDestination(stableSession?.user?.email ?? email, role);
@@ -118,7 +153,10 @@ const Login = () => {
     } catch (err: any) {
       const msg = err?.message || "";
       let friendly = "No pudimos iniciar sesión. Revisa tus datos.";
-      if (/Invalid login credentials/i.test(msg)) friendly = "Correo o contraseña incorrectos.";
+      if (isTransientAuthError(err)) {
+        friendly = "El servidor de autenticación no responde. Intenta de nuevo en unos segundos.";
+        setBackendDown(true);
+      } else if (/Invalid login credentials/i.test(msg)) friendly = "Correo o contraseña incorrectos.";
       else if (/Email not confirmed/i.test(msg)) friendly = "Tu email no está confirmado. Revisa tu bandeja.";
       else if (/already registered/i.test(msg)) friendly = "Este correo ya está registrado. Inicia sesión.";
       else if (msg) friendly = msg;
@@ -233,6 +271,22 @@ const Login = () => {
             <span className="px-3 text-[11px] uppercase tracking-wider text-muted-foreground">o con correo</span>
             <div className="border-t border-border flex-1" />
           </div>
+
+          {backendDown && (
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <p className="font-medium mb-1">El servidor de autenticación está intermitente</p>
+              <p className="opacity-80 mb-2">
+                Puede haber un token caducado en este navegador. Limpia la sesión local e intenta de nuevo.
+              </p>
+              <button
+                type="button"
+                onClick={clearStaleAuthAndReload}
+                className="px-2.5 py-1.5 rounded-md bg-amber-200 font-medium hover:bg-amber-300"
+              >
+                Limpiar sesión local y recargar
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-3">
             {isSignUp && (
