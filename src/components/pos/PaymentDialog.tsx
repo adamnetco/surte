@@ -41,36 +41,47 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: 
       <DialogContent className="max-w-md">
         <DialogHeader><DialogTitle>Cobrar {COP(total)}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          {payments.map((p, i) => (
-            <div key={i} className="flex gap-2 items-end">
-              <div className="flex-1 space-y-1">
-                <Label className="text-xs">Método</Label>
-                <select
-                  className="w-full h-10 rounded-lg border border-input bg-background px-2 text-sm"
-                  value={p.method}
-                  onChange={(e) => {
-                    const c = [...payments]; c[i] = { ...c[i], method: e.target.value }; setPayments(c);
-                  }}
-                >
-                  {METHODS.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
-                </select>
+          {payments.map((p, i) => {
+            const methodId = `pay-method-${i}`;
+            const amountId = `pay-amount-${i}`;
+            return (
+              <div key={i} className="flex gap-2 items-end">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor={methodId} className="text-xs">Método</Label>
+                  <select
+                    id={methodId}
+                    className="w-full h-10 rounded-lg border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={p.method}
+                    onChange={(e) => {
+                      const c = [...payments]; c[i] = { ...c[i], method: e.target.value }; setPayments(c);
+                    }}
+                  >
+                    {METHODS.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
+                  </select>
+                </div>
+                <div className="w-32 space-y-1">
+                  <Label htmlFor={amountId} className="text-xs">Monto</Label>
+                  <Input
+                    id={amountId}
+                    type="number" inputMode="numeric" value={p.amount}
+                    onChange={(e) => {
+                      const c = [...payments]; c[i] = { ...c[i], amount: Number(e.target.value) }; setPayments(c);
+                    }}
+                  />
+                </div>
+                {payments.length > 1 && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setPayments(payments.filter((_, j) => j !== i))}
+                    aria-label={`Eliminar pago ${i + 1}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
-              <div className="w-32 space-y-1">
-                <Label className="text-xs">Monto</Label>
-                <Input
-                  type="number" inputMode="numeric" value={p.amount}
-                  onChange={(e) => {
-                    const c = [...payments]; c[i] = { ...c[i], amount: Number(e.target.value) }; setPayments(c);
-                  }}
-                />
-              </div>
-              {payments.length > 1 && (
-                <Button size="icon" variant="ghost" onClick={() => setPayments(payments.filter((_, j) => j !== i))}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
+            );
+          })}
 
           <Button variant="outline" size="sm" onClick={() => setPayments([...payments, { method: "efectivo", amount: pending }])}>
             <Plus className="w-4 h-4 mr-1" /> Dividir pago
