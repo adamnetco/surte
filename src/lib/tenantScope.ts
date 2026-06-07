@@ -1,12 +1,15 @@
 /**
- * tenantScope — Helper para garantizar que cualquier query Superadmin
+ * tenantScope — Helpers para garantizar que cualquier query Superadmin
  * quede aislada al `organization_id` activo.
  *
- * Uso:
- *   const q = scopedFrom("products", currentOrg.id).select("*");
+ * IMPORTANTE: en supabase-js v2, `supabase.from(table)` devuelve un
+ * `PostgrestQueryBuilder` que NO expone `.eq()`. Sólo el `PostgrestFilterBuilder`
+ * que devuelve `.select() / .update() / .delete()` tiene `.eq()`. Por eso
+ * `scopedFrom` arranca con `.select("*")` antes de aplicar el filtro de tenant.
  *
- * El helper lanza si no recibe orgId, evitando queries sin scope que
- * podrían filtrar datos cruzados entre tiendas.
+ * Uso:
+ *   const { data } = await scopedFrom("products", currentOrg.id);
+ *   const { data } = await scopedSelect("products", currentOrg.id, "id,name");
  */
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,14 +17,17 @@ export function scopedFrom(table: string, orgId: string | null | undefined) {
   if (!orgId) {
     throw new Error(`scopedFrom("${table}"): organization_id requerido`);
   }
-  return (supabase as any).from(table).eq("organization_id", orgId) ??
-    (supabase as any).from(table);
+  return (supabase as any).from(table).select("*").eq("organization_id", orgId);
 }
 
 /**
- * Variante segura para `.select()`. Devuelve un builder ya filtrado por org.
+ * Variante segura con selección de columnas explícita.
  */
-export function scopedSelect(table: string, orgId: string | null | undefined, columns = "*") {
+export function scopedSelect(
+  table: string,
+  orgId: string | null | undefined,
+  columns = "*",
+) {
   if (!orgId) throw new Error(`scopedSelect("${table}"): organization_id requerido`);
   return (supabase as any).from(table).select(columns).eq("organization_id", orgId);
 }
