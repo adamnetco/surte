@@ -47,6 +47,8 @@ const LoginRouter = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [backendDown, setBackendDown] = useState(false);
   const [hasStaleTokens, setHasStaleTokens] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [gate, setGate] = useState<MagicLinkGate>(() => checkMagicLinkGate());
   const redirectedRef = useRef(false);
 
   const destinationFor = (mail: string | null | undefined, r: AppRole | null, tenantSlug = tienda.trim().toLowerCase()): string => {
