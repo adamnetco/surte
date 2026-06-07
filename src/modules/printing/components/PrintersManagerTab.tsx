@@ -45,6 +45,8 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<PrinterRow> | null>(null);
   const [agentOnline, setAgentOnline] = useState<boolean | null>(null);
+  const [blePairings, setBlePairings] = useState<Array<{ address: string; name?: string; pairedAt?: string }> | null>(null);
+  const [bleLoading, setBleLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
