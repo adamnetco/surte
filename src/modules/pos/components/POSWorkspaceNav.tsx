@@ -10,12 +10,13 @@ import { cn } from "@/lib/utils";
  *
  * En pantallas táctiles de 10" todos los targets son ≥40px de alto.
  */
-const items = [
+type Item = { to: string; label: string; Icon: typeof LayoutGrid; end?: boolean };
+const items: Item[] = [
   { to: "/pos",         label: "Panel",  Icon: LayoutGrid,   end: true },
   { to: "/pos/vender",  label: "Vender", Icon: ShoppingCart },
   { to: "/mesas",       label: "Mesas",  Icon: Utensils },
   { to: "/kds",         label: "KDS",    Icon: ChefHat },
-] as const;
+];
 
 export default function POSWorkspaceNav({
   className,
