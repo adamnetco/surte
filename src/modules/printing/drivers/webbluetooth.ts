@@ -8,7 +8,7 @@
 //                    write:          00002af1-0000-1000-8000-00805f9b34fb
 // Probamos en orden y caemos al primero que responda.
 
-const CANDIDATE_SERVICES: Array<{ service: BluetoothServiceUUID; write: BluetoothCharacteristicUUID }> = [
+const CANDIDATE_SERVICES: Array<{ service: string; write: string }> = [
   { service: "000018f0-0000-1000-8000-00805f9b34fb", write: "00002af1-0000-1000-8000-00805f9b34fb" },
   { service: "6e400001-b5a3-f393-e0a9-e50e24dcca9e", write: "6e400002-b5a3-f393-e0a9-e50e24dcca9e" },
   { service: "e7810a71-73ae-499d-8c15-faa9aef0c3f2", write: "bef8d6c9-9c21-4c9e-b632-bd58c1009f9f" }, // BlueBamboo
