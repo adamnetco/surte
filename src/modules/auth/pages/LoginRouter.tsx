@@ -162,7 +162,9 @@ const LoginRouter = () => {
     if (tienda) {
       try { sessionStorage.setItem("sps_tenant_override", tienda); } catch { /* noop */ }
     }
-    navigate(destinationFor(user.email, role), { replace: true });
+    const dest = destinationFor(user.email, role);
+    logAuth({ level: "success", event: "auto_redirect_after_session", detail: `dest=${dest} role=${role}`, tenant: tienda || null, email: user.email });
+    navigate(dest, { replace: true });
   }, [authLoading, user, role, tienda, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,15 +176,18 @@ const LoginRouter = () => {
     }
     setLoading(true);
     setBackendDown(false);
+    logAuth({ level: "info", event: "password_signin_attempt", tenant: tenantSlug, email: email.trim() });
     try {
       const { error, session, role: signedInRole } = await signInWithRetry(email.trim(), password);
       if (error) throw error;
       if (tenantSlug) {
         try { sessionStorage.setItem("sps_tenant_override", tenantSlug); } catch { /* noop */ }
       }
+      const dest = destinationFor(session?.user?.email ?? email, signedInRole ?? role, tenantSlug);
+      logAuth({ level: "success", event: "password_signin_ok", detail: `dest=${dest} role=${signedInRole}`, tenant: tenantSlug, email: session?.user?.email ?? email });
       toast.success("¡Bienvenido!");
       redirectedRef.current = true;
-      navigate(destinationFor(session?.user?.email ?? email, signedInRole ?? role, tenantSlug), { replace: true });
+      navigate(dest, { replace: true });
     } catch (err: any) {
       const msg = err?.message || "";
       let friendly = "No pudimos iniciar sesión.";
@@ -192,11 +197,13 @@ const LoginRouter = () => {
       } else if (/Invalid login credentials/i.test(msg)) friendly = "Usuario o contraseña incorrectos.";
       else if (/Email not confirmed/i.test(msg)) friendly = "Tu correo no está confirmado.";
       else if (msg) friendly = msg;
+      logAuth({ level: "error", event: "password_signin_failed", detail: msg || friendly, tenant: tenantSlug, email: email.trim() });
       toast.error(friendly);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
