@@ -430,12 +430,6 @@ const LoginRouter = () => {
             <ShieldCheck size={12} /> Conexión cifrada · Datos protegidos
           </p>
 
-          <p className="mt-4 text-xs text-white/40 text-center">
-            ¿Buscas la tienda Surteya?{" "}
-            <a href="/surteya" className="text-white/70 underline hover:text-white">/surteya</a>
-            {" · "}
-            <a href="https://surteya.sistecpos.com" className="text-white/70 underline hover:text-white">surteya.sistecpos.com</a>
-          </p>
         </motion.div>
       </section>
 
