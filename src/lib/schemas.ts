@@ -173,6 +173,120 @@ export const productSchema = z
 export type ProductFormValues = z.infer<typeof productSchema>;
 
 /* ============================================================
+ * Brand
+ * ============================================================ */
+
+export const brandSchema = z.object({
+  name: z.string().trim().min(2, "Mínimo 2 caracteres").max(80, "Máximo 80 caracteres"),
+  slug: slugRule,
+  logo_url: urlOptional,
+  website_url: urlOptional,
+  sort_order: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? 0 : Number(v)),
+    z.number().int("Debe ser entero").min(0, "No puede ser negativo").max(9999, "Máximo 9999")
+  ),
+  is_active: z.boolean(),
+  meta_title: z.string().trim().max(60, "Máximo 60 caracteres (recomendado SEO)").optional().or(z.literal("")),
+  meta_description: z.string().trim().max(160, "Máximo 160 caracteres (recomendado SEO)").optional().or(z.literal("")),
+  og_image_url: urlOptional,
+});
+export type BrandFormValues = z.infer<typeof brandSchema>;
+
+/* ============================================================
+ * Hero slide
+ * ============================================================ */
+
+export const heroSlideSchema = z.object({
+  title: z.string().trim().min(2, "Mínimo 2 caracteres").max(120, "Máximo 120 caracteres"),
+  subtitle: z.string().trim().max(200, "Máximo 200 caracteres").optional().or(z.literal("")),
+  image_url: urlOptional,
+  image_mobile_url: urlOptional,
+  cta_text: z.string().trim().max(40, "Máximo 40 caracteres").optional().or(z.literal("")),
+  cta_link: z
+    .string()
+    .trim()
+    .max(300, "Máximo 300 caracteres")
+    .regex(/^(\/|https?:\/\/).*/i, "Debe empezar por '/' o 'http(s)://'")
+    .optional()
+    .or(z.literal("")),
+  city: z.string().trim().max(60).optional().or(z.literal("")),
+  sort_order: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? 0 : Number(v)),
+    z.number().int("Debe ser entero").min(0, "No puede ser negativo").max(9999, "Máximo 9999")
+  ),
+});
+export type HeroSlideFormValues = z.infer<typeof heroSlideSchema>;
+
+/* ============================================================
+ * POS customer (cliente del ticket)
+ * - express: solo nombre + (opcional) teléfono/dirección.
+ * - avanzado/factura electrónica: exige docNumber + email.
+ * ============================================================ */
+
+export const posCustomerSchema = z
+  .object({
+    name: z.string().trim().min(2, "Mínimo 2 caracteres").max(80, "Máximo 80 caracteres"),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^[\d +()-]{6,20}$/, "Teléfono inválido")
+      .optional()
+      .or(z.literal("")),
+    address: z.string().trim().max(120, "Máximo 120 caracteres").optional().or(z.literal("")),
+    email: z.string().trim().email("Email inválido").max(120).optional().or(z.literal("")),
+    docType: z.enum(["CC", "NIT", "CE", "PAS", "TI", "OTRO"]).default("CC"),
+    docNumber: z
+      .string()
+      .trim()
+      .max(20, "Máximo 20 caracteres")
+      .regex(/^[\dA-Za-z-]*$/, "Solo letras, números y guiones")
+      .optional()
+      .or(z.literal("")),
+    personType: z.enum(["natural", "juridica"]).default("natural"),
+    taxResponsibility: z.string().max(60).optional().or(z.literal("")),
+    city: z.string().trim().max(60).optional().or(z.literal("")),
+    sendWhatsapp: z.boolean().default(false),
+    sendEmail: z.boolean().default(false),
+    /** Bandera del UI: activa validación avanzada (DIAN) o lo hace `requireEinvoice`. */
+    advanced: z.boolean().default(false),
+    requireEinvoice: z.boolean().default(false),
+  })
+  .superRefine((data, ctx) => {
+    const needsDian = data.advanced || data.requireEinvoice;
+    if (needsDian) {
+      if (!data.docNumber || !data.docNumber.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["docNumber"],
+          message: "Obligatorio para factura electrónica",
+        });
+      }
+      if (!data.email || !data.email.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["email"],
+          message: "Obligatorio para factura electrónica",
+        });
+      }
+    }
+    if (data.sendWhatsapp && !data.phone) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["phone"],
+        message: "Necesario para enviar por WhatsApp",
+      });
+    }
+    if (data.sendEmail && !data.email) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["email"],
+        message: "Necesario para enviar por Email",
+      });
+    }
+  });
+export type POSCustomerFormValues = z.infer<typeof posCustomerSchema>;
+
+/* ============================================================
  * Util: primer error humano de un ZodError → mensaje "campo: error"
  * ============================================================ */
 export function firstZodMessage(err: z.ZodError): string {

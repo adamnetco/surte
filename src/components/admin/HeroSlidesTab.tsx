@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/hooks/useImageUpload";
@@ -6,8 +8,21 @@ import { Plus, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Pencil, Glo
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import SortableList from "./SortableList";
+import { heroSlideSchema, type HeroSlideFormValues } from "@/lib/schemas";
+import { errorToMessage } from "@/lib/errors";
 
 const CITIES = ["", "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
+
+const defaultValues: HeroSlideFormValues = {
+  title: "",
+  subtitle: "",
+  image_url: "",
+  image_mobile_url: "",
+  cta_text: "Ver Catálogo",
+  cta_link: "/catalogo",
+  city: "",
+  sort_order: 0,
+};
 
 const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
   const { data: slides } = useQuery({
@@ -20,72 +35,113 @@ const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
   });
 
   const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    title: "", subtitle: "", image_url: "", image_mobile_url: "",
-    cta_text: "Ver Catálogo", cta_link: "/catalogo", city: "", sort_order: "0",
-  });
   const { upload, uploading } = useImageUpload();
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<HeroSlideFormValues>({
+    resolver: zodResolver(heroSlideSchema),
+    defaultValues,
+    mode: "onBlur",
+  });
+
+  const imageUrl = watch("image_url");
+  const imageMobileUrl = watch("image_mobile_url");
+  const city = watch("city");
 
   const handleImg = async (e: React.ChangeEvent<HTMLInputElement>, field: "image_url" | "image_mobile_url") => {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = await upload(file, "hero");
-    if (url) setForm({ ...form, [field]: url });
+    if (url) setValue(field, url, { shouldDirty: true, shouldValidate: true });
   };
 
-  const save = async () => {
-    if (!form.title.trim()) { toast.error("El título es obligatorio"); return; }
-    const payload: any = {
-      title: form.title, subtitle: form.subtitle || null,
-      image_url: form.image_url || null, image_mobile_url: form.image_mobile_url || null,
-      cta_text: form.cta_text || null, cta_link: form.cta_link || "/catalogo",
-      city: form.city || null, sort_order: Number(form.sort_order),
+  const onSubmit = async (values: HeroSlideFormValues) => {
+    const payload = {
+      title: values.title.trim(),
+      subtitle: values.subtitle || null,
+      image_url: values.image_url || null,
+      image_mobile_url: values.image_mobile_url || null,
+      cta_text: values.cta_text || null,
+      cta_link: values.cta_link || "/catalogo",
+      city: values.city || null,
+      sort_order: values.sort_order,
     };
-    if (editing && editing !== "new") {
-      const { error } = await supabase.from("hero_slides").update(payload).eq("id", editing);
-      if (error) { toast.error(error.message); return; }
-    } else {
-      const { error } = await supabase.from("hero_slides").insert(payload);
-      if (error) { toast.error(error.message); return; }
+    try {
+      if (editing && editing !== "new") {
+        const { error } = await supabase.from("hero_slides").update(payload).eq("id", editing);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("hero_slides").insert(payload);
+        if (error) throw error;
+      }
+      toast.success("Slide guardado");
+      queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
+      queryClient.invalidateQueries({ queryKey: ["hero_slides"] });
+      setEditing(null);
+      reset(defaultValues);
+    } catch (err) {
+      toast.error(errorToMessage(err));
     }
-    toast.success("Slide guardado");
-    queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
-    queryClient.invalidateQueries({ queryKey: ["hero_slides"] });
-    setEditing(null);
   };
 
   const del = async (id: string) => {
     if (!confirm("¿Eliminar slide?")) return;
-    await supabase.from("hero_slides").delete().eq("id", id);
-    queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
-    queryClient.invalidateQueries({ queryKey: ["hero_slides"] });
-    toast.success("Eliminado");
+    try {
+      const { error } = await supabase.from("hero_slides").delete().eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
+      queryClient.invalidateQueries({ queryKey: ["hero_slides"] });
+      toast.success("Eliminado");
+    } catch (err) {
+      toast.error(errorToMessage(err));
+    }
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    await supabase.from("hero_slides").update({ is_active: !current }).eq("id", id);
-    queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
-    queryClient.invalidateQueries({ queryKey: ["hero_slides"] });
+    try {
+      const { error } = await supabase.from("hero_slides").update({ is_active: !current }).eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
+      queryClient.invalidateQueries({ queryKey: ["hero_slides"] });
+    } catch (err) {
+      toast.error(errorToMessage(err));
+    }
   };
 
   const startEdit = (s: any) => {
-    setForm({
-      title: s.title, subtitle: s.subtitle || "", image_url: s.image_url || "",
-      image_mobile_url: s.image_mobile_url || "", cta_text: s.cta_text || "",
-      cta_link: s.cta_link || "/catalogo", city: s.city || "", sort_order: String(s.sort_order || 0),
+    reset({
+      title: s.title ?? "",
+      subtitle: s.subtitle ?? "",
+      image_url: s.image_url ?? "",
+      image_mobile_url: s.image_mobile_url ?? "",
+      cta_text: s.cta_text ?? "",
+      cta_link: s.cta_link ?? "/catalogo",
+      city: s.city ?? "",
+      sort_order: Number(s.sort_order || 0),
     });
     setEditing(s.id);
   };
+
+  const fieldCls = (hasError: boolean) =>
+    `w-full bg-muted rounded-lg px-3 py-2 text-sm border focus:outline-none ${
+      hasError ? "border-destructive" : "border-transparent focus:border-accent"
+    }`;
+
+  const Err = ({ msg }: { msg?: string }) =>
+    msg ? <p className="text-[11px] text-destructive font-medium mt-0.5">{msg}</p> : null;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-heading font-semibold text-foreground">Hero Slides ({slides?.length || 0})</h3>
         <button
-          onClick={() => {
-            setForm({ title: "", subtitle: "", image_url: "", image_mobile_url: "", cta_text: "Ver Catálogo", cta_link: "/catalogo", city: "", sort_order: "0" });
-            setEditing("new");
-          }}
+          onClick={() => { reset(defaultValues); setEditing("new"); }}
           className="btn-surte text-xs px-3 py-2 flex items-center gap-1"
         >
           <Plus size={14} /> Nuevo
@@ -93,10 +149,10 @@ const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
       </div>
 
       {editing && (
-        <div className="bg-card rounded-xl p-4 mb-4 space-y-3 border border-border">
+        <form onSubmit={handleSubmit(onSubmit)} className="bg-card rounded-xl p-4 mb-4 space-y-3 border border-border" noValidate>
           <div className="flex justify-between">
             <span className="font-heading font-semibold text-sm">{editing === "new" ? "Nuevo" : "Editar"} Slide</span>
-            <button onClick={() => setEditing(null)}><X size={18} className="text-muted-foreground" /></button>
+            <button type="button" onClick={() => { setEditing(null); reset(defaultValues); }}><X size={18} className="text-muted-foreground" /></button>
           </div>
 
           {/* Desktop image */}
@@ -104,13 +160,14 @@ const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
             <label className="text-[10px] text-muted-foreground font-medium flex items-center gap-1 mb-1"><Globe size={10} /> Imagen Desktop (1920×600 recomendado)</label>
             <div className="flex items-center gap-3">
               <div className="w-24 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-border">
-                {form.image_url ? <img src={form.image_url} className="w-full h-full object-cover" alt="" /> : <ImageIcon size={20} className="text-muted-foreground/40" />}
+                {imageUrl ? <img src={imageUrl} className="w-full h-full object-cover" alt="" /> : <ImageIcon size={20} className="text-muted-foreground/40" />}
               </div>
               <label className="flex items-center gap-1 cursor-pointer btn-surte text-xs px-3 py-1.5">
                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Subir
                 <input type="file" accept="image/*" onChange={(e) => handleImg(e, "image_url")} className="hidden" disabled={uploading} />
               </label>
             </div>
+            <Err msg={errors.image_url?.message} />
           </div>
 
           {/* Mobile image */}
@@ -118,29 +175,62 @@ const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
             <label className="text-[10px] text-muted-foreground font-medium flex items-center gap-1 mb-1"><Smartphone size={10} /> Imagen Móvil (750×500 recomendado)</label>
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-border">
-                {form.image_mobile_url ? <img src={form.image_mobile_url} className="w-full h-full object-cover" alt="" /> : <Smartphone size={16} className="text-muted-foreground/40" />}
+                {imageMobileUrl ? <img src={imageMobileUrl} className="w-full h-full object-cover" alt="" /> : <Smartphone size={16} className="text-muted-foreground/40" />}
               </div>
               <label className="flex items-center gap-1 cursor-pointer btn-surte text-xs px-3 py-1.5">
                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Subir
                 <input type="file" accept="image/*" onChange={(e) => handleImg(e, "image_mobile_url")} className="hidden" disabled={uploading} />
               </label>
             </div>
+            <Err msg={errors.image_mobile_url?.message} />
           </div>
 
-          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Título *" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
-          <input value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="Subtítulo" className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
-          <div className="grid grid-cols-2 gap-2">
-            <input value={form.cta_text} onChange={(e) => setForm({ ...form, cta_text: e.target.value })} placeholder="Texto botón" className="bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
-            <input value={form.cta_link} onChange={(e) => setForm({ ...form, cta_link: e.target.value })} placeholder="Link destino" className="bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none" />
+          <div>
+            <input {...register("title")} placeholder="Título *" aria-invalid={!!errors.title} className={fieldCls(!!errors.title)} />
+            <Err msg={errors.title?.message} />
           </div>
           <div>
+            <input {...register("subtitle")} placeholder="Subtítulo" aria-invalid={!!errors.subtitle} className={fieldCls(!!errors.subtitle)} />
+            <Err msg={errors.subtitle?.message} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <input {...register("cta_text")} placeholder="Texto botón" aria-invalid={!!errors.cta_text} className={fieldCls(!!errors.cta_text)} />
+              <Err msg={errors.cta_text?.message} />
+            </div>
+            <div>
+              <input {...register("cta_link")} placeholder="Link destino" aria-invalid={!!errors.cta_link} className={fieldCls(!!errors.cta_link)} />
+              <Err msg={errors.cta_link?.message} />
+            </div>
+          </div>
+
+          <div>
             <label className="text-[10px] text-muted-foreground font-medium mb-1 block">Ciudad objetivo (vacío = todas)</label>
-            <select value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none">
+            <select
+              value={city ?? ""}
+              onChange={(e) => setValue("city", e.target.value, { shouldDirty: true })}
+              className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none"
+            >
               {CITIES.map((c) => <option key={c} value={c}>{c || "🌐 Todas las ciudades"}</option>)}
             </select>
           </div>
-          <button onClick={save} className="btn-surte w-full text-sm py-2 flex items-center justify-center gap-1"><Save size={14} /> Guardar</button>
-        </div>
+
+          <div>
+            <input
+              {...register("sort_order", { valueAsNumber: true })}
+              type="number"
+              placeholder="Orden"
+              aria-invalid={!!errors.sort_order}
+              className={fieldCls(!!errors.sort_order)}
+            />
+            <Err msg={errors.sort_order?.message} />
+          </div>
+
+          <button type="submit" disabled={isSubmitting} className="btn-surte w-full text-sm py-2 flex items-center justify-center gap-1 disabled:opacity-60">
+            {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Guardar
+          </button>
+        </form>
       )}
 
       <SortableList
