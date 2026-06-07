@@ -30,7 +30,7 @@ import RoleGuard from "./components/RoleGuard";
 import HostGuard from "./components/HostGuard";
 import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
 
-const ClientPortalShell = lazy(() => import("./components/clientes/ClientPortalShell"));
+const ClientPortalShell = lazy(() => import("./modules/clientes").then((m) => ({ default: m.ClientPortalShell })));
 const SSOErrorScreen = lazy(() => import("./components/SSOErrorScreen"));
 
 
