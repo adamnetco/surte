@@ -14,7 +14,15 @@ project_id = "dimyhjzcwlgfczimqhet"
   [functions.handle-email-suppression]
     verify_jwt = false
   [functions.send-ycloud-whatsapp]
-    verify_jwt = false
+    verify_jwt = true
+  [functions.send-callmebot]
+    verify_jwt = true
+  [functions.resend-mail-service]
+    verify_jwt = true
+  [functions.invoice-ocr]
+    verify_jwt = true
+  [functions.ai-manager]
+    verify_jwt = true
   [functions.license-issue]
     verify_jwt = true
   [functions.license-activate]

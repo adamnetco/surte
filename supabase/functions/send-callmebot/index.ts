@@ -15,6 +15,36 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // verify_jwt=true; sólo admin/superadmin/agente pueden disparar mensajes.
+    const authHeader = req.headers.get('Authorization') ?? '';
+    if (!authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    if (token !== serviceRoleKey) {
+      const sb = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: claims } = await sb.auth.getClaims(token);
+      const userId = claims?.claims?.sub;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { data: allowed } = await supabase.rpc('has_any_role', {
+        _user_id: userId,
+        _roles: ['admin', 'superadmin', 'agente'],
+      });
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     const { phone, message, apikey } = await req.json();
 
     // Get CallMeBot settings from app_settings if not provided

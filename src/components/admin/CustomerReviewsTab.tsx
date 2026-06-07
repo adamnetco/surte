@@ -11,10 +11,10 @@ const CustomerReviewsTab = ({ queryClient }: { queryClient: any }) => {
   const { data: reviews, isLoading } = useQuery({
     queryKey: ["admin-customer-reviews"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customer_reviews")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // RPC SECURITY DEFINER que devuelve PII a admin/superadmin/editor.
+      // El SELECT directo a la tabla ya no expone customer_email/phone a
+      // usuarios normales (REVOKE de columnas).
+      const { data, error } = await supabase.rpc("admin_list_customer_reviews");
       if (error) throw error;
       return data;
     },

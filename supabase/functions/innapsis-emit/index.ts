@@ -6,10 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Defaults compartidos (Innapsis FacturaE v30) — pueden ser sobre-escritos por secretos
+// Defaults compartidos (Innapsis FacturaE v30). El client_secret SOLO viene
+// de secretos — si falta, la función se cae con 500 (sin fallback hardcoded).
+const INNAPSIS_CLIENT_ID = Deno.env.get("INNAPSIS_CLIENT_ID") ?? "b899c906-fe51-4eba-a054-62ca2220452f";
+const INNAPSIS_CLIENT_SECRET = Deno.env.get("INNAPSIS_CLIENT_SECRET");
 const INNAPSIS_DEFAULTS = {
-  client_id: Deno.env.get("INNAPSIS_CLIENT_ID") ?? "b899c906-fe51-4eba-a054-62ca2220452f",
-  client_secret: Deno.env.get("INNAPSIS_CLIENT_SECRET") ?? "2m68Q~zmskJYjZkZ29SjYqvqx.La8vMVVl1QtaQW",
+  client_id: INNAPSIS_CLIENT_ID,
   policy: "B2C_1A_FE_CLIENT_CREDENTIALS_V30",
   scope: "https://facturaeb2c.onmicrosoft.com/client-api/.default",
   token_url: "https://facturaeb2c.b2clogin.com/facturaeb2c.onmicrosoft.com/oauth2/v2.0/token",
@@ -29,7 +31,7 @@ async function getToken(nit: string, apiKey: string): Promise<string> {
   const body = new URLSearchParams({
     grant_type: "client_credentials",
     client_id: INNAPSIS_DEFAULTS.client_id,
-    client_secret: INNAPSIS_DEFAULTS.client_secret,
+    client_secret: INNAPSIS_CLIENT_SECRET!,
     scope: INNAPSIS_DEFAULTS.scope,
   });
   const res = await fetch(url, {
@@ -49,6 +51,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    if (!INNAPSIS_CLIENT_SECRET) {
+      return new Response(JSON.stringify({ error: "INNAPSIS_CLIENT_SECRET not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -73,6 +81,18 @@ Deno.serve(async (req) => {
 
     // Service client para acceso garantizado a config + orden
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // 0) Verifica que el usuario sea miembro activo de la organización solicitada.
+    const { data: membership } = await admin
+      .from("organization_members")
+      .select("id, role")
+      .eq("organization_id", organization_id)
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // 1) Verifica config activa
     const { data: cfg } = await admin

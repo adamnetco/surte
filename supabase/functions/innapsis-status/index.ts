@@ -6,9 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const INNAPSIS_CLIENT_ID = Deno.env.get("INNAPSIS_CLIENT_ID") ?? "b899c906-fe51-4eba-a054-62ca2220452f";
+const INNAPSIS_CLIENT_SECRET = Deno.env.get("INNAPSIS_CLIENT_SECRET");
 const INNAPSIS = {
-  client_id: Deno.env.get("INNAPSIS_CLIENT_ID") ?? "b899c906-fe51-4eba-a054-62ca2220452f",
-  client_secret: Deno.env.get("INNAPSIS_CLIENT_SECRET") ?? "2m68Q~zmskJYjZkZ29SjYqvqx.La8vMVVl1QtaQW",
+  client_id: INNAPSIS_CLIENT_ID,
   policy: "B2C_1A_FE_CLIENT_CREDENTIALS_V30",
   scope: "https://facturaeb2c.onmicrosoft.com/client-api/.default",
   token_url: "https://facturaeb2c.b2clogin.com/facturaeb2c.onmicrosoft.com/oauth2/v2.0/token",
@@ -21,7 +22,7 @@ async function getToken(nit: string, apiKey: string) {
   const body = new URLSearchParams({
     grant_type: "client_credentials",
     client_id: INNAPSIS.client_id,
-    client_secret: INNAPSIS.client_secret,
+    client_secret: INNAPSIS_CLIENT_SECRET!,
     scope: INNAPSIS.scope,
   });
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
@@ -34,6 +35,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    if (!INNAPSIS_CLIENT_SECRET) {
+      return new Response(JSON.stringify({ error: "INNAPSIS_CLIENT_SECRET not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -44,6 +51,7 @@ Deno.serve(async (req) => {
     });
     const { data: c, error: ae } = await sb.auth.getClaims(authHeader.replace("Bearer ", ""));
     if (ae || !c?.claims) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const userId = c.claims.sub;
 
     const { invoice_id, tipo_archivo = "pdf" } = await req.json();
     if (!invoice_id) return new Response(JSON.stringify({ error: "invoice_id requerido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -51,6 +59,18 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: inv } = await admin.from("electronic_invoices").select("*").eq("id", invoice_id).single();
     if (!inv) return new Response(JSON.stringify({ error: "Factura no encontrada" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    // Membership check sobre la organización dueña de la factura.
+    const { data: membership } = await admin
+      .from("organization_members")
+      .select("id")
+      .eq("organization_id", inv.organization_id)
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const { data: cfg } = await admin.from("einvoice_configs").select("*").eq("organization_id", inv.organization_id).eq("is_active", true).maybeSingle();
     if (!cfg) return new Response(JSON.stringify({ error: "Config inactiva" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });

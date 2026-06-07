@@ -9,9 +9,35 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
+    // verify_jwt=true en config.toml + membership check estricto.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+
     const { organization_id, supplier_id, image_base64, image_url, mime_type = "image/jpeg" } = await req.json();
     if (!organization_id) return json({ error: "organization_id requerido" }, 400);
     if (!image_base64 && !image_url) return json({ error: "imagen requerida" }, 400);
+
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: claims } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    const userId = claims?.claims?.sub;
+    if (!userId) return json({ error: "Unauthorized" }, 401);
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("id")
+      .eq("organization_id", organization_id)
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!membership) return json({ error: "Forbidden" }, 403);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY missing" }, 500);

@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import FloatingCart from "@/components/surte/FloatingCart";
@@ -131,7 +132,7 @@ const LandingPage = () => {
         {page.body_html && (
           <div
             className="prose prose-sm max-w-none text-muted-foreground mb-6"
-            dangerouslySetInnerHTML={{ __html: page.body_html }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.body_html) }}
           />
         )}
 

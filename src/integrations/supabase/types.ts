@@ -6050,6 +6050,30 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_customer_reviews: {
+        Args: never
+        Returns: {
+          admin_response: string | null
+          comment: string
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          is_active: boolean
+          is_approved: boolean
+          order_id: string | null
+          organization_id: string | null
+          rating: number
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "customer_reviews"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       apply_catalog_template: {
         Args: { _mode?: string; _org_id: string; _template_id: string }
         Returns: Json

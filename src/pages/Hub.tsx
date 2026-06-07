@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import ProductCard from "@/components/surte/ProductCard";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import FloatingCart from "@/components/surte/FloatingCart";
 import StoreFooter from "@/components/surte/StoreFooter";
 import HeadMeta from "@/components/seo/HeadMeta";
@@ -308,7 +309,7 @@ const Hub = () => {
         {(seoLong?.heading || seoLong?.body_html) && (
           <section className="mt-10 border-t border-border pt-6 prose prose-sm max-w-none prose-headings:font-heading prose-headings:text-foreground prose-p:text-muted-foreground">
             {seoLong?.heading && <h2>{seoLong.heading}</h2>}
-            {seoLong?.body_html && <div dangerouslySetInnerHTML={{ __html: seoLong.body_html }} />}
+            {seoLong?.body_html && <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(seoLong.body_html) }} />}
           </section>
         )}
       </main>
