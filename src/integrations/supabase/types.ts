@@ -4191,6 +4191,7 @@ export type Database = {
       }
       printers: {
         Row: {
+          bluetooth_address: string | null
           characters_per_line: number
           codepage: string
           config: Json
@@ -4207,6 +4208,7 @@ export type Database = {
           name: string
           opens_drawer: boolean
           organization_id: string
+          os_printer_name: string | null
           paper_width_mm: number
           port: number | null
           product_id: string | null
@@ -4216,6 +4218,7 @@ export type Database = {
           vendor_id: string | null
         }
         Insert: {
+          bluetooth_address?: string | null
           characters_per_line?: number
           codepage?: string
           config?: Json
@@ -4232,6 +4235,7 @@ export type Database = {
           name: string
           opens_drawer?: boolean
           organization_id: string
+          os_printer_name?: string | null
           paper_width_mm?: number
           port?: number | null
           product_id?: string | null
@@ -4241,6 +4245,7 @@ export type Database = {
           vendor_id?: string | null
         }
         Update: {
+          bluetooth_address?: string | null
           characters_per_line?: number
           codepage?: string
           config?: Json
@@ -4257,6 +4262,7 @@ export type Database = {
           name?: string
           opens_drawer?: boolean
           organization_id?: string
+          os_printer_name?: string | null
           paper_width_mm?: number
           port?: number | null
           product_id?: string | null
