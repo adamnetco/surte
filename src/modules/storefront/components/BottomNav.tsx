@@ -1,13 +1,34 @@
-import { Home, Star, ShoppingCart, Grid3X3, Menu } from "lucide-react";
+import { Home, LayoutGrid, ShoppingCart, Grid3X3, Menu } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/modules/cart/context/CartContext";
 
-const navItems = [
+// Tab activeFor: regex/array de prefijos que también deben encender la pestaña
+const navItems: Array<{
+  icon: any;
+  label: string;
+  path: string;
+  activeFor?: string[];
+}> = [
   { icon: Home, label: "Inicio", path: "/" },
-  { icon: Star, label: "Ofertas", path: "/ofertas" },
+  {
+    icon: LayoutGrid,
+    label: "Catálogo",
+    path: "/catalogo",
+    activeFor: ["/catalogo", "/producto", "/p/", "/ofertas"],
+  },
   { icon: ShoppingCart, label: "Carrito", path: "/carrito" },
-  { icon: Grid3X3, label: "Categorías", path: "/categorias" },
-  { icon: Menu, label: "Menú", path: "/menu" },
+  {
+    icon: Grid3X3,
+    label: "Categorías",
+    path: "/categorias",
+    activeFor: ["/categorias", "/hub/"],
+  },
+  {
+    icon: Menu,
+    label: "Cuenta",
+    path: "/menu",
+    activeFor: ["/menu", "/perfil", "/pedidos", "/favoritos", "/ayuda", "/configuracion"],
+  },
 ];
 
 const BottomNav = () => {
@@ -18,8 +39,14 @@ const BottomNav = () => {
   return (
     <nav className="nav-bottom md:hidden">
       <div className="flex items-center justify-around py-2">
-        {navItems.map(({ icon: Icon, label, path }) => {
-          const isActive = location.pathname === path;
+        {navItems.map(({ icon: Icon, label, path, activeFor }) => {
+          const pathname = location.pathname;
+          const isActive =
+            path === "/"
+              ? pathname === "/"
+              : (activeFor ?? [path]).some((p) =>
+                  p === "/" ? pathname === "/" : pathname.startsWith(p),
+                );
           const isCart = path === "/carrito";
           return (
             <button

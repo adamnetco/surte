@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
 import ProductCard from "@/modules/storefront/components/ProductCard";
@@ -12,7 +12,7 @@ import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useProducts, useCategories, useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowUpDown, Package } from "lucide-react";
+import { ArrowUpDown, Package, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
 const BASE_URL = "https://surteya.com";
@@ -21,6 +21,7 @@ const VALID_CITIES = ["bucaramanga", "floridablanca", "giron", "piedecuesta"];
 
 const Hub = () => {
   const params = useParams<{ type?: string; slug?: string; city?: string }>();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc">("default");
 
@@ -216,9 +217,19 @@ const Hub = () => {
       )}
       <TopBar />
       <main className="px-4 py-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2 active:scale-95"
+        >
+          <ArrowLeft size={14} /> Volver
+        </button>
         <SeoBreadcrumbs
           items={[
-            { label: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : type === "etiqueta" ? "Destacados" : "Ciudades", href: type === "categoria" ? "/categorias" : undefined },
+            { label: "Inicio", href: "/" },
+            {
+              label: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : type === "etiqueta" ? "Destacados" : "Ciudades",
+              href: type === "categoria" ? "/categorias" : type === "marca" ? "/categorias" : undefined,
+            },
             { label: title },
           ]}
           className="mb-2"

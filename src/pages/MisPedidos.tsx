@@ -170,6 +170,13 @@ const MisPedidos = () => {
                               <p className="text-sm text-foreground">{order.notes}</p>
                             </div>
                           )}
+
+                          <button
+                            onClick={() => navigate(`/pedido/${order.order_number}`)}
+                            className="w-full flex items-center justify-center gap-2 bg-accent/10 text-accent font-medium py-2.5 rounded-xl text-sm mt-2"
+                          >
+                            Ver seguimiento en vivo
+                          </button>
                         </div>
                       </motion.div>
                     )}
