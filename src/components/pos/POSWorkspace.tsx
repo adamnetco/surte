@@ -72,6 +72,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [actionMode, setActionMode] = useState<"emit" | "quote" | "park" | null>(null);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cashierName, setCashierName] = useState("Cajero");
@@ -133,8 +134,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
         if (fresh.length) setProducts(fresh as Product[]);
         if (freshCats.length) setCategories(freshCats.map((c) => ({ id: c.id, name: c.name })));
-      } catch {
-        // offline
+        setCatalogError(null);
+      } catch (err: any) {
+        // offline o falla de red: usamos cache si existe
+        if (!products.length) setCatalogError(err?.message || "No se pudo cargar el catálogo");
       } finally {
         setLoading(false);
       }
