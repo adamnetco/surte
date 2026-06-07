@@ -9,7 +9,7 @@ import { mailService } from "@/modules/email/mailService";
 import { welcomeTemplate } from "@/modules/email/emailTemplates";
 import surteLogo from "@/assets/surte-logo.png";
 import { useTenantBrand } from "@/modules/auth/hooks/useTenantBrand";
-import { verifySignupTenantLink } from "@/modules/auth/lib/verifySignupTenantLink";
+import { verifySignupTenantLinkWithRetry } from "@/modules/auth/lib/verifySignupTenantLink";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
 const AUTH_WAIT_TIMEOUT_MS = 6000;
@@ -181,8 +181,18 @@ const Login = () => {
         // Validación no bloqueante: confirmar que el trigger enlazó el perfil
         // con la organización correcta. No tiramos el flujo si falla, solo
         // avisamos al usuario y dejamos rastro en consola para el admin.
-        void verifySignupTenantLink({ email, sentSlug }).then((res) => {
-          console.info("[Signup tenant-link]", res);
+        void verifySignupTenantLinkWithRetry({
+          email,
+          sentSlug,
+          maxAttempts: 4,
+          baseDelayMs: 1000,
+          onAttempt: ({ attempt, maxAttempts, lastResult, nextDelayMs }) => {
+            console.info(
+              `[Signup tenant-link] intento ${attempt}/${maxAttempts} → "${lastResult?.status}". Reintento en ${nextDelayMs}ms.`,
+            );
+          },
+        }).then((res) => {
+          console.info("[Signup tenant-link] resultado final", res);
           if (res.status === "ok") return;
           if (res.status === "missing_slug" || res.status === "unknown_slug") {
             toast.warning(
@@ -196,9 +206,11 @@ const Login = () => {
             toast.warning(
               "Tu cuenta se creó, pero el enlace con la tienda quedó pendiente. Soporte ya fue notificado.",
             );
+          } else if (res.status === "timeout" || res.status === "error") {
+            toast.warning(
+              "No pudimos confirmar el enlace con la tienda tras varios intentos. Si ves problemas al entrar, contacta soporte.",
+            );
           }
-          // timeout/error: silencio — probablemente RLS bloquea la lectura
-          // antes del email-confirm. El trigger SÍ corrió en el servidor.
         });
 
         setIsSignUp(false);
