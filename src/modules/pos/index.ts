@@ -21,7 +21,8 @@ export { usePOSModes } from "./hooks/usePOSModes";
 
 // Tipos/utilidades de modos POS consumidos por el panel admin
 export {
-  POS_MODE_PRESETS,
-  type PosModeKey,
+  POS_MODES,
+  ALL_POS_MODES,
+  type PosMode,
   type PosModeMeta,
 } from "./lib/posModes";
