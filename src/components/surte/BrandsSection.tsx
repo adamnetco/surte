@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,4 +84,4 @@ const BrandsSection = () => {
   );
 };
 
-export default BrandsSection;
+export default memo(BrandsSection);

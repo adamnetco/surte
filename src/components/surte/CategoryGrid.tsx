@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useCategories } from "@/hooks/useStore";
 import { useNavigate } from "react-router-dom";
 import CategoryIcon from "./CategoryIcon";
@@ -74,4 +75,4 @@ const CategoryGrid = () => {
   );
 };
 
-export default CategoryGrid;
+export default memo(CategoryGrid);
