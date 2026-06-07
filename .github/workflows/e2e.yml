@@ -40,8 +40,10 @@ jobs:
       - name: Patch fixture for CI
         run: cp playwright-fixture.ci.ts playwright-fixture.ts
 
-      - name: Run e2e
-        run: npx playwright test --config=playwright.config.ci.ts
+      # Excluimos tests marcados como @flaky en el título: corren en
+      # `e2e-flaky-nightly.yml` para no bloquear merges. Ver docs/e2e-flaky.md.
+      - name: Run e2e (excluye @flaky)
+        run: npx playwright test --config=playwright.config.ci.ts --grep-invert "@flaky"
         env:
           CI: "true"
 
