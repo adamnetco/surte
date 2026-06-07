@@ -243,7 +243,7 @@ const FALLBACK_AUTH: AuthContextType = {
   isAgent: false,
   role: "user",
   loading: false,
-  signIn: async () => ({ error: new Error("AuthProvider not mounted"), session: null }),
+  signIn: async () => ({ error: new Error("AuthProvider not mounted"), session: null, role: null }),
   signUp: async () => ({ error: new Error("AuthProvider not mounted") }),
   signOut: async () => {},
   globalSignOut: async () => ({ error: new Error("AuthProvider not mounted") }),
