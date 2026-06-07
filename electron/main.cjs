@@ -5,6 +5,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
 const crypto = require("node:crypto");
+const printAgent = require("./print-agent.cjs");
 
 const SUPA_URL = process.env.SURTEYA_SUPA_URL || "https://dimyhjzcwlgfczimqhet.supabase.co";
 const SUPA_ANON = process.env.SURTEYA_SUPA_ANON || "";
@@ -88,6 +89,7 @@ ipcMain.handle("license:status", () => ({ fingerprint: machineFingerprint(), has
 ipcMain.handle("license:activate", async (_e, key) => activate(key));
 
 app.whenReady().then(async () => {
+  try { printAgent.start(); } catch (e) { console.error("[print-agent] failed to start:", e); }
   createWindow();
   const key = decFile(LIC_FILE);
   if (!key) {

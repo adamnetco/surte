@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { EscPosBuilder } from "../lib/escpos";
 import { isWebUsbSupported, requestUsbPrinter, printOnceUsb, listAuthorizedUsbPrinters } from "../drivers/webusb";
 import { pingAgent, printViaAgent } from "../drivers/agent";
+import { isWebBluetoothSupported, requestBluetoothPrinter, printOnceBluetooth } from "../drivers/webbluetooth";
 
 interface PrinterRow {
   id: string;
@@ -144,8 +145,12 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
         const devs = await listAuthorizedUsbPrinters();
         if (!devs.length) throw new Error("Conecta y autoriza la impresora USB primero");
         await printOnceUsb(devs[0], bytes);
+      } else if (p.connection === "bluetooth") {
+        if (!isWebBluetoothSupported()) throw new Error("Web Bluetooth no soportado. Usa Chrome o Edge.");
+        const dev = await requestBluetoothPrinter();
+        await printOnceBluetooth(dev, bytes);
       } else {
-        throw new Error("Conexión Bluetooth aún no soportada en este terminal");
+        throw new Error(`Conexión no soportada: ${p.connection}`);
       }
       toast.success("Prueba enviada");
     } catch (e: any) {
