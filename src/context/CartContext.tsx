@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
-import { getCartToken, resetCartToken, setCartToken } from "@/lib/cartToken";
+import { getCartToken, resetCartToken, setCartToken } from "@/modules/cart/lib/cartToken";
 
 type Product = Tables<"products">;
 
