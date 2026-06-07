@@ -81,13 +81,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     }
   }, [user, role]);
 
-  const loadModules = async (orgId: string) => {
+  const loadModules = useCallback(async (orgId: string) => {
     const { data, error } = await supabase
       .from("organization_modules")
       .select("module_key, enabled, config, expires_at")
       .eq("organization_id", orgId);
     if (!error && data) setModules(data as OrganizationModule[]);
-  };
+  }, []);
 
   useEffect(() => {
     loadOrgs();
@@ -98,33 +98,44 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEY, currentOrgId);
       loadModules(currentOrgId);
     }
-  }, [currentOrgId]);
+  }, [currentOrgId, loadModules]);
 
   const currentOrg = useMemo(
     () => orgs.find((o) => o.id === currentOrgId) ?? null,
     [orgs, currentOrgId]
   );
 
-  const hasModule = (key: string) => {
-    const m = modules.find((x) => x.module_key === key);
-    if (!m) return false;
-    if (!m.enabled) return false;
-    if (m.expires_at && new Date(m.expires_at) < new Date()) return false;
-    return true;
-  };
+  // Perf: hasModule debe ser estable entre renders para no invalidar memos
+  // de consumidores (PosHub, AdminDashboard, etc.) en cada render del provider.
+  const hasModule = useCallback(
+    (key: string) => {
+      const m = modules.find((x) => x.module_key === key);
+      if (!m || !m.enabled) return false;
+      if (m.expires_at && new Date(m.expires_at) < new Date()) return false;
+      return true;
+    },
+    [modules]
+  );
+
+  const switchOrg = useCallback((id: string) => setCurrentOrgId(id), []);
+
+  // Perf: memoizar el value del Provider evita que TODOS los consumidores
+  // re-rendericen en cada render del padre (problema típico de Context).
+  const value = useMemo<OrganizationContextValue>(
+    () => ({
+      loading,
+      orgs,
+      currentOrg,
+      modules,
+      hasModule,
+      switchOrg,
+      refresh: loadOrgs,
+    }),
+    [loading, orgs, currentOrg, modules, hasModule, switchOrg, loadOrgs]
+  );
 
   return (
-    <OrganizationContext.Provider
-      value={{
-        loading,
-        orgs,
-        currentOrg,
-        modules,
-        hasModule,
-        switchOrg: setCurrentOrgId as (id: string) => void,
-        refresh: loadOrgs,
-      }}
-    >
+    <OrganizationContext.Provider value={value}>
       {children}
     </OrganizationContext.Provider>
   );
