@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
+import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 
 /**
  * Redirige rutas legacy de Surteya (`/catalogo`, `/producto/:id`, ...) al prefijo

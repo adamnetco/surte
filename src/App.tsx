@@ -28,7 +28,7 @@ import LoginRouter from "./modules/auth/pages/LoginRouter";
 import AdminDiag from "./pages/AdminDiag";
 import RoleGuard from "./modules/auth/components/RoleGuard";
 import HostGuard from "./components/HostGuard";
-import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
+import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 
 const ClientPortalShell = lazy(() => import("./modules/clientes").then((m) => ({ default: m.ClientPortalShell })));
 const SSOErrorScreen = lazy(() => import("./modules/auth/components/SSOErrorScreen"));

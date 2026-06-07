@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   ISLAND_TABLES, exportTenantIsland, forceOrgOnRows, triggerDownload,
   type IslandTable,
-} from "@/lib/tenantDataIsland";
+} from "@/modules/tenant/lib/tenantDataIsland";
 import {
   normalizeImportedHeaders, cleanImportedRows, buildImportMutationPlan,
 } from "@/utils/dataImportUtils";
@@ -115,7 +115,7 @@ export default function TenantDataIsland() {
   const handleExportOne = async (t: IslandTable) => {
     setRowStatus((s) => ({ ...s, [t.name]: { status: "loading", detail: "Exportando…" } }));
     try {
-      const { fetchIslandRows } = await import("@/lib/tenantDataIsland");
+      const { fetchIslandRows } = await import("@/modules/tenant/lib/tenantDataIsland");
       const { jsonToCsv, downloadCsv } = await import("@/utils/csvUtils");
       const rows = await fetchIslandRows(t, currentOrg.id);
       const date = new Date().toISOString().slice(0, 10);

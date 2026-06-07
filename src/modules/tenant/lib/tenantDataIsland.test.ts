@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { forceOrgOnRows, ISLAND_TABLES } from "@/lib/tenantDataIsland";
+import { forceOrgOnRows, ISLAND_TABLES } from "@/modules/tenant/lib/tenantDataIsland";
 
 describe("tenantDataIsland", () => {
   const ORG = "11111111-1111-1111-1111-111111111111";

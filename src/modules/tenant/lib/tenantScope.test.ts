@@ -13,7 +13,7 @@ vi.mock("@/integrations/supabase/client", () => {
   };
 });
 
-import { scopedFrom, scopedSelect, tenantChannelFilter } from "@/lib/tenantScope";
+import { scopedFrom, scopedSelect, tenantChannelFilter } from "@/modules/tenant/lib/tenantScope";
 import { supabase } from "@/integrations/supabase/client";
 
 const ORG = "11111111-1111-1111-1111-111111111111";
