@@ -25,7 +25,7 @@ import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
 } from "@/lib/offline/catalog";
 import { setMeta, getMeta } from "@/lib/offline/db";
-import { usePOSHotkeys } from "@/hooks/usePOSHotkeys";
+import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
 import { useSyncService } from "@/hooks/useSyncService";
 import { enqueue } from "@/lib/offline/outbox";
 import POSTopBar from "./POSTopBar";
@@ -37,11 +37,11 @@ import POSCustomerPicker from "./POSCustomerPicker";
 import TableGridSheet from "./TableGridSheet";
 import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
-import { usePOSModes } from "@/hooks/usePOSModes";
-import { POS_MODES } from "@/lib/posModes";
+import { usePOSModes } from "@/modules/pos/hooks/usePOSModes";
+import { POS_MODES } from "@/modules/pos/lib/posModes";
 import { supabase } from "@/integrations/supabase/client";
-import type { PosMode } from "@/lib/posModes";
-import type { POSCustomer } from "@/lib/posCustomer";
+import type { PosMode } from "@/modules/pos/lib/posModes";
+import type { POSCustomer } from "@/modules/pos/lib/posCustomer";
 
 
 interface Product {

@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { Settings, Clock, User, LogOut, Keyboard } from "lucide-react";
 import POSModeBar from "./POSModeBar";
-import type { PosMode } from "@/lib/posModes";
+import type { PosMode } from "@/modules/pos/lib/posModes";
 
 interface Props {
   shiftLabel: string;          // e.g. "Turno #12"
