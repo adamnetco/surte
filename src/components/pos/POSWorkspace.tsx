@@ -770,6 +770,31 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         organizationId={organizationId}
       />
 
+      <AlertDialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Limpiar el ticket actual?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán {ticket.length} {ticket.length === 1 ? "línea" : "líneas"} del ticket en curso.
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setTicket([]);
+                setMeta(ticketCacheKey, []).catch(() => {});
+                setClearConfirmOpen(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Sí, limpiar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
