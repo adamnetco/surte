@@ -41,7 +41,6 @@ const Carrito = lazy(() => import("./modules/storefront").then((m) => ({ default
 const Categorias = lazy(() => import("./pages/Categorias"));
 const MenuPage = lazy(() => import("./modules/pos").then((m) => ({ default: m.MenuPage })));
 const Ofertas = lazy(() => import("./modules/storefront").then((m) => ({ default: m.OfertasPage })));
-const Login = lazy(() => import("./modules/auth/pages/Login"));
 const TenantAwareLogin = lazy(() => import("./modules/auth/components/TenantAwareLogin"));
 const AdminDashboard = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.AdminDashboardPage })));
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
