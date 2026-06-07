@@ -30,7 +30,7 @@ import RoleGuard from "./components/RoleGuard";
 import HostGuard from "./components/HostGuard";
 import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
 
-const ClientPortalShell = lazy(() => import("./components/clientes/ClientPortalShell"));
+const ClientPortalShell = lazy(() => import("./modules/clientes").then((m) => ({ default: m.ClientPortalShell })));
 const SSOErrorScreen = lazy(() => import("./components/SSOErrorScreen"));
 
 
@@ -61,9 +61,9 @@ const Mesas = lazy(() => import("./modules/pos").then((m) => ({ default: m.Mesas
 const KDS = lazy(() => import("./modules/pos").then((m) => ({ default: m.KDSPage })));
 const Inventario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InventarioPage })));
 const Facturacion = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.FacturacionPage })));
-const Planes = lazy(() => import("./pages/Planes"));
-const Billing = lazy(() => import("./pages/Billing"));
-const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Planes = lazy(() => import("./modules/clientes").then((m) => ({ default: m.PlanesPage })));
+const Billing = lazy(() => import("./modules/clientes").then((m) => ({ default: m.BillingPage })));
+const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
 const CatalogosBase = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.CatalogosBasePage })));
 const Licencias = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.LicenciasPage })));
 const GerenteIA = lazy(() => import("./pages/GerenteIA"));
