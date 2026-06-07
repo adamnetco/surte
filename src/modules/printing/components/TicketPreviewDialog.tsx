@@ -173,6 +173,7 @@ export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, ki
         {data.change_due > 0 && <div className="row"><span>Cambio</span><span>{m(data.change_due)}</span></div>}
         <hr />
         <div className="center">{data.org.footer ?? "Gracias por su compra"}</div>
+        {storeUrl && <div className="center bold">Pide en línea: {storeUrl.replace(/^https?:\/\//, "")}</div>}
         <div className="center">Powered by SistecPOS</div>
       </>
     );
