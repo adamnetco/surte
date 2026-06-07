@@ -195,21 +195,44 @@ export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, ki
             {content}
           </div>
         </div>
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
-          <Button variant="outline" onClick={handleDownload} disabled={!!busy}>
-            {busy === "png" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
-            PNG
+        <DialogFooter className="flex flex-row flex-wrap items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onOpenChange(false)}
+            title="Cerrar"
+            aria-label="Cerrar"
+          >
+            <X className="h-4 w-4" />
           </Button>
           <Button
+            variant="outline"
+            size="icon"
+            onClick={handleDownload}
+            disabled={!!busy}
+            title="Descargar PNG"
+            aria-label="Descargar PNG"
+          >
+            {busy === "png" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          </Button>
+          <Button
+            size="icon"
             onClick={handleShareWhatsApp}
             disabled={!!busy}
             className="bg-[#25D366] text-white hover:bg-[#1ebe57]"
+            title="Compartir por WhatsApp"
+            aria-label="Compartir por WhatsApp"
           >
-            {busy === "share" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Share2 className="h-4 w-4 mr-1" />}
-            WhatsApp
+            {busy === "share" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
           </Button>
-          <Button onClick={handlePrint}><Printer className="h-4 w-4 mr-1" /> Imprimir</Button>
+          <Button
+            size="icon"
+            onClick={handlePrint}
+            title="Imprimir"
+            aria-label="Imprimir"
+          >
+            <Printer className="h-4 w-4" />
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
