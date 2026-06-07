@@ -6,6 +6,7 @@ import { useOrganization } from "@/modules/platform/context/OrganizationContext"
 import { Loader2, LockKeyhole, ChefHat, Check, Play, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
 
 interface Station { id: string; name: string; color: string | null; }
 interface Ticket {
