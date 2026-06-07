@@ -110,20 +110,22 @@ export function usePrintQueue({ organizationId, managedPrinterIds, enabled = tru
 
 async function renderJobFromOrder(job: PrintJobRow, printer: any): Promise<Uint8Array> {
   if (!job.pos_order_id) throw new Error("Job sin pos_order_id");
-  const { data: order } = await supabase
-    .from("pos_orders" as any)
+  const { data: orderRaw } = await (supabase as any)
+    .from("pos_orders")
     .select("*")
     .eq("id", job.pos_order_id)
     .single();
-  const { data: items } = await supabase
-    .from("pos_order_items" as any)
+  const order = orderRaw as any;
+  const { data: items } = await (supabase as any)
+    .from("pos_order_items")
     .select("*")
     .eq("pos_order_id", job.pos_order_id);
-  const { data: org } = await supabase
-    .from("organizations" as any)
+  const { data: orgRaw } = await (supabase as any)
+    .from("organizations")
     .select("name, legal_name, nit, address, phone")
     .eq("id", order.organization_id)
     .single();
+  const org = orgRaw as any;
 
   const td: TicketData = {
     org: {
