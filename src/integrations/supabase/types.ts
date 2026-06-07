@@ -768,6 +768,7 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean | null
+          kitchen_station_id: string | null
           meta_description: string | null
           meta_title: string | null
           name: string
@@ -783,6 +784,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          kitchen_station_id?: string | null
           meta_description?: string | null
           meta_title?: string | null
           name: string
@@ -798,6 +800,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          kitchen_station_id?: string | null
           meta_description?: string | null
           meta_title?: string | null
           name?: string
@@ -808,6 +811,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "categories_kitchen_station_id_fkey"
+            columns: ["kitchen_station_id"]
+            isOneToOne: false
+            referencedRelation: "kitchen_stations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "categories_organization_id_fkey"
             columns: ["organization_id"]
@@ -2235,6 +2245,7 @@ export type Database = {
           location_id: string | null
           name: string
           organization_id: string
+          printer_id: string | null
           sort_order: number
         }
         Insert: {
@@ -2245,6 +2256,7 @@ export type Database = {
           location_id?: string | null
           name: string
           organization_id: string
+          printer_id?: string | null
           sort_order?: number
         }
         Update: {
@@ -2255,6 +2267,7 @@ export type Database = {
           location_id?: string | null
           name?: string
           organization_id?: string
+          printer_id?: string | null
           sort_order?: number
         }
         Relationships: [
@@ -2263,6 +2276,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kitchen_stations_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
             referencedColumns: ["id"]
           },
         ]
@@ -3945,6 +3965,323 @@ export type Database = {
           },
         ]
       }
+      print_jobs: {
+        Row: {
+          attempts: number
+          client_uuid: string | null
+          copies: number
+          created_at: string
+          created_by: string | null
+          escpos_b64: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          organization_id: string
+          payload: Json
+          pos_order_id: string | null
+          printer_id: string | null
+          processed_at: string | null
+          status: string
+          terminal_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          client_uuid?: string | null
+          copies?: number
+          created_at?: string
+          created_by?: string | null
+          escpos_b64?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          organization_id: string
+          payload?: Json
+          pos_order_id?: string | null
+          printer_id?: string | null
+          processed_at?: string | null
+          status?: string
+          terminal_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          client_uuid?: string | null
+          copies?: number
+          created_at?: string
+          created_by?: string | null
+          escpos_b64?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          organization_id?: string
+          payload?: Json
+          pos_order_id?: string | null
+          printer_id?: string | null
+          processed_at?: string | null
+          status?: string
+          terminal_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_jobs_pos_order_id_fkey"
+            columns: ["pos_order_id"]
+            isOneToOne: false
+            referencedRelation: "pos_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_jobs_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_jobs_terminal_id_fkey"
+            columns: ["terminal_id"]
+            isOneToOne: false
+            referencedRelation: "printer_terminals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      printer_routing_rules: {
+        Row: {
+          category_id: string | null
+          copies: number
+          created_at: string
+          id: string
+          is_active: boolean
+          kitchen_station_id: string | null
+          organization_id: string
+          printer_id: string
+          prints_on: string
+          priority: number
+          product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          copies?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kitchen_station_id?: string | null
+          organization_id: string
+          printer_id: string
+          prints_on?: string
+          priority?: number
+          product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          copies?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kitchen_station_id?: string | null
+          organization_id?: string
+          printer_id?: string
+          prints_on?: string
+          priority?: number
+          product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printer_routing_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_routing_rules_kitchen_station_id_fkey"
+            columns: ["kitchen_station_id"]
+            isOneToOne: false
+            referencedRelation: "kitchen_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_routing_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_routing_rules_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_routing_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_routing_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      printer_terminals: {
+        Row: {
+          acts_as_server: boolean
+          capabilities: Json
+          created_at: string
+          fingerprint: string
+          id: string
+          last_seen_at: string | null
+          name: string
+          organization_id: string
+          printer_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          acts_as_server?: boolean
+          capabilities?: Json
+          created_at?: string
+          fingerprint: string
+          id?: string
+          last_seen_at?: string | null
+          name: string
+          organization_id: string
+          printer_ids?: string[]
+          updated_at?: string
+        }
+        Update: {
+          acts_as_server?: boolean
+          capabilities?: Json
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          last_seen_at?: string | null
+          name?: string
+          organization_id?: string
+          printer_ids?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printer_terminals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      printers: {
+        Row: {
+          characters_per_line: number
+          codepage: string
+          config: Json
+          connection: string
+          created_at: string
+          cuts_paper: boolean
+          id: string
+          ip_address: string | null
+          is_active: boolean
+          is_default: boolean
+          last_seen_at: string | null
+          location_id: string | null
+          model: string | null
+          name: string
+          opens_drawer: boolean
+          organization_id: string
+          paper_width_mm: number
+          port: number | null
+          product_id: string | null
+          role: string
+          status: string
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          characters_per_line?: number
+          codepage?: string
+          config?: Json
+          connection: string
+          created_at?: string
+          cuts_paper?: boolean
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          is_default?: boolean
+          last_seen_at?: string | null
+          location_id?: string | null
+          model?: string | null
+          name: string
+          opens_drawer?: boolean
+          organization_id: string
+          paper_width_mm?: number
+          port?: number | null
+          product_id?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          characters_per_line?: number
+          codepage?: string
+          config?: Json
+          connection?: string
+          created_at?: string
+          cuts_paper?: boolean
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          is_default?: boolean
+          last_seen_at?: string | null
+          location_id?: string | null
+          model?: string | null
+          name?: string
+          opens_drawer?: boolean
+          organization_id?: string
+          paper_width_mm?: number
+          port?: number | null
+          product_id?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printers_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_media: {
         Row: {
           created_at: string
@@ -4138,6 +4475,7 @@ export type Database = {
           is_active: boolean | null
           is_fresh: boolean | null
           is_wholesale: boolean | null
+          kitchen_station_id: string | null
           meta_description: string | null
           meta_title: string | null
           name: string
@@ -4176,6 +4514,7 @@ export type Database = {
           is_active?: boolean | null
           is_fresh?: boolean | null
           is_wholesale?: boolean | null
+          kitchen_station_id?: string | null
           meta_description?: string | null
           meta_title?: string | null
           name: string
@@ -4214,6 +4553,7 @@ export type Database = {
           is_active?: boolean | null
           is_fresh?: boolean | null
           is_wholesale?: boolean | null
+          kitchen_station_id?: string | null
           meta_description?: string | null
           meta_title?: string | null
           name?: string
@@ -4239,6 +4579,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_kitchen_station_id_fkey"
+            columns: ["kitchen_station_id"]
+            isOneToOne: false
+            referencedRelation: "kitchen_stations"
             referencedColumns: ["id"]
           },
           {
@@ -6156,6 +6503,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      enqueue_print_job: {
+        Args: { _kind?: string; _order_id: string }
+        Returns: string[]
       }
       get_current_user_role: {
         Args: never
