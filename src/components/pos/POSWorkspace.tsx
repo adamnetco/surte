@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   Search, FileText, FileSignature, Pause, Keyboard, Printer,
@@ -72,6 +73,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [actionMode, setActionMode] = useState<"emit" | "quote" | "park" | null>(null);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cashierName, setCashierName] = useState("Cajero");
@@ -133,8 +135,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
         if (fresh.length) setProducts(fresh as Product[]);
         if (freshCats.length) setCategories(freshCats.map((c) => ({ id: c.id, name: c.name })));
-      } catch {
-        // offline
+        setCatalogError(null);
+      } catch (err: any) {
+        // offline o falla de red: usamos cache si existe
+        if (!products.length) setCatalogError(err?.message || "No se pudo cargar el catálogo");
       } finally {
         setLoading(false);
       }
@@ -428,7 +432,48 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
           <div className="flex-1 overflow-y-auto p-3">
             {loading ? (
-              <p className="text-center text-muted-foreground py-8">Cargando catálogo…</p>
+              <div
+                className="grid gap-2"
+                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
+                aria-label="Cargando catálogo"
+              >
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="bg-card rounded-lg border overflow-hidden">
+                    <Skeleton className="aspect-square rounded-none" />
+                    <div className="p-2 space-y-1.5">
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-2/3" />
+                      <Skeleton className="h-4 w-1/2 mt-1" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : catalogError && filtered.length === 0 ? (
+              <div className="text-center py-10 px-4 space-y-2">
+                <p className="text-sm font-semibold text-destructive">No se pudo cargar el catálogo</p>
+                <p className="text-xs text-muted-foreground">{catalogError}</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      await refreshCatalogCache();
+                      const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
+                      setProducts(fresh as Product[]);
+                      setCategories(freshCats.map((c) => ({ id: c.id, name: c.name })));
+                      setCatalogError(null);
+                    } catch (e: any) {
+                      setCatalogError(e?.message || "Error de red");
+                      toast.error("No se pudo refrescar el catálogo");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Reintentar
+                </Button>
+              </div>
             ) : filtered.length === 0 ? (
               <p className="text-center text-muted-foreground py-8 text-sm">Sin productos en esta vista</p>
             ) : (
@@ -578,13 +623,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
             {/* Botón principal (cambia label según modo) */}
             <Button
-              className="w-full h-14 text-base font-bold shadow-sm"
+              variant={saleMode === "consumo_interno" ? "cta-primary" : "cta"}
+              className="w-full h-14 text-base"
               disabled={ticket.length === 0}
               onClick={() => setPayOpen(true)}
-              style={{
-                background: saleMode === "consumo_interno" ? "hsl(var(--primary))" : "hsl(var(--accent))",
-                color: saleMode === "consumo_interno" ? "hsl(var(--primary-foreground))" : "hsl(var(--accent-foreground))",
-              }}
             >
               <CreditCard className="w-5 h-5 mr-2" />
               {saleMode === "consumo_interno" ? "REGISTRAR CORTESÍA" : "COBRAR"}
