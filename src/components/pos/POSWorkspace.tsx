@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
+import SaleCompleteDialog from "./SaleCompleteDialog";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
