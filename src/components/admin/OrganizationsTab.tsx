@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -22,6 +24,8 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { organizationSchema, type OrganizationFormValues } from "@/lib/schemas";
+import { errorToMessage } from "@/lib/errors";
 
 const MODULE_CATALOG = [
   { key: "pos", label: "POS / Caja", hint: "Ventas y caja" },
