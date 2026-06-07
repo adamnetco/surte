@@ -96,7 +96,7 @@ export async function verifySignupTenantLink({
     let profileSeen = false;
 
     while (Date.now() < deadline) {
-      const { data: profile, error: profErr } = await supabase
+      const { data: profile, error: profErr } = await (supabase as any)
         .from("profiles")
         .select("organization_id, email")
         .eq("email", email)
