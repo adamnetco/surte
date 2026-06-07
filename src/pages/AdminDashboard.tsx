@@ -120,14 +120,22 @@ const AdminDashboard = () => {
 
   const hasAdminAccess = ["superadmin", "admin", "editor"].includes(role);
 
+  // Perf: limit + columnas explícitas. Antes traíamos `*, categories(name)` sin
+  // límite — con catálogos grandes esto pega el cap de 1000 y satura memoria
+  // del cliente. 500 cubre la UI; el resto se paginará dentro de cada tab.
   const { data: products } = useQuery({
     queryKey: ["admin-products"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*, categories(name)").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("products")
+        .select("id,name,slug,price,cost_price,price_wholesale,stock,is_active,category_id,brand,image_url,sku,gtin,created_at,categories(name)")
+        .order("created_at", { ascending: false })
+        .limit(500);
       if (error) throw error;
       return data;
     },
     enabled: hasAdminAccess,
+    staleTime: 2 * 60_000,
   });
 
   const { data: categories } = useQuery({
@@ -138,26 +146,27 @@ const AdminDashboard = () => {
       return data;
     },
     enabled: hasAdminAccess,
+    staleTime: 5 * 60_000,
   });
 
+  // Perf: dividir orders en (1) lista ligera para listado y (2) detalle on-demand.
+  // El join `order_items(*)` por defecto multiplica filas y RAM; lo cargamos solo
+  // si la tab activa lo necesita. Limit 200 cubre el rango operativo del día.
+  const ordersHasItems = activeTab === "orders" || activeTab === "overview";
   const { data: orders } = useQuery({
-    queryKey: ["admin-orders"],
+    queryKey: ["admin-orders", ordersHasItems ? "with-items" : "light"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false });
+      const select = ordersHasItems ? "*, order_items(*)" : "*";
+      const { data, error } = await supabase
+        .from("orders")
+        .select(select)
+        .order("created_at", { ascending: false })
+        .limit(200);
       if (error) throw error;
       return data;
     },
     enabled: hasAdminAccess,
-  });
-
-  const { data: settings } = useQuery({
-    queryKey: ["admin-settings"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("app_settings").select("*");
-      if (error) throw error;
-      return data;
-    },
-    enabled: hasAdminAccess,
+    staleTime: 30_000,
   });
 
   useEffect(() => {
