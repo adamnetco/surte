@@ -269,24 +269,35 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   }, [ticket, globalDiscPct]);
 
   // ===== Cobro =====
+  // Guard contra doble-submit: el await de enqueue + el batch de setState
+  // dejaban la puerta abierta a que un Enter/click repetido encolara la venta
+  // dos veces (vimos 2 órdenes idénticas en pos_orders).
+  const payingRef = useRef(false);
   const handlePaid = async (payments: { method: string; amount: number; reference?: string }[]) => {
+    if (payingRef.current) return;
+    if (!ticket.length) { toast.error("El ticket está vacío"); return; }
+    payingRef.current = true;
+
+    const snapshotTotal = totals.total;
+    const snapshotSubtotal = totals.subtotal;
+    const snapshotItems = ticket;
     const amountPaid = payments.reduce((s, p) => s + p.amount, 0);
-    const change = Math.max(0, amountPaid - totals.total);
+    const change = Math.max(0, amountPaid - snapshotTotal);
 
     const header = {
       organization_id: organizationId,
       location_id: session.location_id,
       cash_session_id: session.id,
       cashier_id: userId,
-      subtotal: totals.subtotal,
-      total: totals.total,
+      subtotal: snapshotSubtotal,
+      total: snapshotTotal,
       amount_paid: amountPaid,
       change_due: change,
       status: "paid",
       sale_mode: saleMode,
       paid_at: new Date().toISOString(),
     };
-    const items = ticket.map((l) => ({
+    const items = snapshotItems.map((l) => ({
       organization_id: organizationId,
       product_id: l.productId,
       product_name: l.name,
@@ -309,21 +320,27 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         { header, items, payments: paymentRows },
         organizationId
       );
-      setLastOrderId(clientUuid);
-      setTicket([]);
-      setMeta(ticketCacheKey, []).catch(() => {});
+
+      // 1) Cerrar PaymentDialog primero y dejar que Radix libere el focus-trap.
       setPayOpen(false);
+      // 2) En el siguiente frame, mostrar la confirmación y limpiar el ticket.
+      requestAnimationFrame(() => {
+        setLastOrderId(clientUuid);
+        setTicket([]);
+        setMeta(ticketCacheKey, []).catch(() => {});
+        setSaleComplete({ total: snapshotTotal, amountPaid, change });
+      });
 
-      if (navigator.onLine) {
-        toast.success("Ticket cobrado · sincronizando…");
-      } else {
-        toast.success("Ticket cobrado offline · se enviará al volver la red");
-      }
-
-      // Pantalla de cierre de venta (reemplaza confirm() nativo bloqueante).
-      setSaleComplete({ total: totals.total, amountPaid, change });
+      toast.success(
+        navigator.onLine
+          ? "Ticket cobrado · sincronizando…"
+          : "Ticket cobrado offline · se enviará al volver la red"
+      );
     } catch (e: any) {
       toast.error(e?.message || "No se pudo encolar el ticket");
+    } finally {
+      // Liberamos el guard un tick después para evitar el doble Enter.
+      setTimeout(() => { payingRef.current = false; }, 400);
     }
   };
 
