@@ -34,11 +34,11 @@ const ClientPortalShell = lazy(() => import("./components/clientes/ClientPortalS
 const SSOErrorScreen = lazy(() => import("./components/SSOErrorScreen"));
 
 
-const Catalogo = lazy(() => import("./pages/Catalogo"));
-const Carrito = lazy(() => import("./pages/Carrito"));
+const Catalogo = lazy(() => import("./modules/storefront").then((m) => ({ default: m.CatalogoPage })));
+const Carrito = lazy(() => import("./modules/storefront").then((m) => ({ default: m.CarritoPage })));
 const Categorias = lazy(() => import("./pages/Categorias"));
 const MenuPage = lazy(() => import("./modules/pos").then((m) => ({ default: m.MenuPage })));
-const Ofertas = lazy(() => import("./pages/Ofertas"));
+const Ofertas = lazy(() => import("./modules/storefront").then((m) => ({ default: m.OfertasPage })));
 const Login = lazy(() => import("./pages/Login"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
@@ -46,12 +46,12 @@ const Perfil = lazy(() => import("./pages/Perfil"));
 const Favoritos = lazy(() => import("./pages/Favoritos"));
 const Ayuda = lazy(() => import("./pages/Ayuda"));
 const Configuracion = lazy(() => import("./pages/Configuracion"));
-const ProductoDetalle = lazy(() => import("./pages/ProductoDetalle"));
-const Pedido = lazy(() => import("./pages/Pedido"));
+const ProductoDetalle = lazy(() => import("./modules/storefront").then((m) => ({ default: m.ProductoDetallePage })));
+const Pedido = lazy(() => import("./modules/storefront").then((m) => ({ default: m.PedidoPage })));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
-const Hub = lazy(() => import("./pages/Hub"));
-const LandingPage = lazy(() => import("./pages/LandingPage"));
+const Hub = lazy(() => import("./modules/storefront").then((m) => ({ default: m.HubPage })));
+const LandingPage = lazy(() => import("./modules/storefront").then((m) => ({ default: m.LandingPagePage })));
 const Politicas = lazy(() => import("./pages/Politicas"));
 const TratamientoDatos = lazy(() => import("./pages/TratamientoDatos"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
