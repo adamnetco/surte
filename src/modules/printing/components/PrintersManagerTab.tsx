@@ -176,6 +176,36 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
     }
   };
 
+  const scanBle = async () => {
+    setBleLoading(true);
+    try {
+      if (!(await pingAgent())) throw new Error("Agente local offline. Inicia el agente para escanear BLE.");
+      const r = await fetch("http://127.0.0.1:9101/ble/pairings");
+      if (!r.ok) throw new Error(`Agente respondió ${r.status}`);
+      const j = await r.json();
+      const list = (j?.pairings ?? []) as Array<{ address: string; name?: string; pairedAt?: string }>;
+      setBlePairings(list);
+      if (!list.length) toast.info("Sin dispositivos BLE pareados. Empareja la impresora desde el SO primero.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo consultar BLE");
+      setBlePairings([]);
+    } finally {
+      setBleLoading(false);
+    }
+  };
+
+  const pickBlePairing = (p: { address: string; name?: string }) => {
+    setEditing((cur) => ({
+      ...(cur ?? { paper_width_mm: 80, role: "receipt" }),
+      connection: "bluetooth",
+      bluetooth_address: p.address,
+      name: cur?.name || p.name || `BLE ${p.address}`,
+      model: cur?.model || p.name || null,
+    }));
+    setBlePairings(null);
+    toast.success("Dispositivo BLE seleccionado");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
