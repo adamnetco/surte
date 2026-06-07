@@ -41,10 +41,10 @@ const LoginRouter = () => {
   const [hasStaleTokens, setHasStaleTokens] = useState(false);
   const redirectedRef = useRef(false);
 
-  const destinationFor = (mail: string | null | undefined, r: AppRole | null): string => {
+  const destinationFor = (mail: string | null | undefined, r: AppRole | null, tenantSlug = tienda.trim().toLowerCase()): string => {
     if ((mail ?? "").toLowerCase() === MASTER_EMAIL) return "/superadmin";
     if (r === "superadmin") return "/superadmin";
-    const slug = (tienda || "").trim().toLowerCase();
+    const slug = tenantSlug.trim().toLowerCase();
     if (slug && (r === "admin" || r === "editor")) return `/t/${slug}/admin`;
     if (r === "admin" || r === "editor") return "/admin";
     if (r === "agente") return "/pos";
@@ -86,17 +86,22 @@ const LoginRouter = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const tenantSlug = tienda.trim().toLowerCase();
+    if (!tenantSlug && email.trim().toLowerCase() !== MASTER_EMAIL) {
+      toast.error("Ingresa el id_negocio de tu tienda para continuar.");
+      return;
+    }
     setLoading(true);
     setBackendDown(false);
     try {
       const { error, session, role: signedInRole } = await signInWithRetry(email.trim(), password);
       if (error) throw error;
-      if (tienda) {
-        try { sessionStorage.setItem("sps_tenant_override", tienda); } catch { /* noop */ }
+      if (tenantSlug) {
+        try { sessionStorage.setItem("sps_tenant_override", tenantSlug); } catch { /* noop */ }
       }
       toast.success("¡Bienvenido!");
       redirectedRef.current = true;
-      navigate(destinationFor(session?.user?.email ?? email, signedInRole ?? role), { replace: true });
+      navigate(destinationFor(session?.user?.email ?? email, signedInRole ?? role, tenantSlug), { replace: true });
     } catch (err: any) {
       const msg = err?.message || "";
       let friendly = "No pudimos iniciar sesión.";
