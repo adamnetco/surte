@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import TopBar from "@/components/surte/TopBar";
-import BottomNav from "@/components/surte/BottomNav";
-import ProductCard from "@/components/surte/ProductCard";
+import TopBar from "@/modules/storefront/components/TopBar";
+import BottomNav from "@/modules/storefront/components/BottomNav";
+import ProductCard from "@/modules/storefront/components/ProductCard";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
-import FloatingCart from "@/components/surte/FloatingCart";
-import StoreFooter from "@/components/surte/StoreFooter";
+import FloatingCart from "@/modules/storefront/components/FloatingCart";
+import StoreFooter from "@/modules/storefront/components/StoreFooter";
 import HeadMeta from "@/components/seo/HeadMeta";
 import JsonLd, { buildProductListSchema, buildBreadcrumbSchema, buildFaqSchema } from "@/components/seo/JsonLd";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";

@@ -1,6 +1,6 @@
-import TopBar from "@/components/surte/TopBar";
-import BottomNav from "@/components/surte/BottomNav";
-import ProductCard from "@/components/surte/ProductCard";
+import TopBar from "@/modules/storefront/components/TopBar";
+import BottomNav from "@/modules/storefront/components/BottomNav";
+import ProductCard from "@/modules/storefront/components/ProductCard";
 import { useProducts } from "@/hooks/useStore";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 

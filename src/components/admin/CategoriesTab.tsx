@@ -6,7 +6,7 @@ import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Ext
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import SortableList from "./SortableList";
-import CategoryIcon, { AVAILABLE_ICONS, isCustomSvgUrl } from "@/components/surte/CategoryIcon";
+import CategoryIcon, { AVAILABLE_ICONS, isCustomSvgUrl } from "@/modules/storefront/components/CategoryIcon";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { categorySchema, type CategoryFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";

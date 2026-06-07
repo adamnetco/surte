@@ -1,6 +1,6 @@
-import TopBar from "@/components/surte/TopBar";
-import BottomNav from "@/components/surte/BottomNav";
-import StoreFooter from "@/components/surte/StoreFooter";
+import TopBar from "@/modules/storefront/components/TopBar";
+import BottomNav from "@/modules/storefront/components/BottomNav";
+import StoreFooter from "@/modules/storefront/components/StoreFooter";
 import HeadMeta from "@/components/seo/HeadMeta";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { useAppSettings } from "@/hooks/useStore";

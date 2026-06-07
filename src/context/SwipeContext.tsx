@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import ProductSwipeOverlay from "@/components/surte/ProductSwipeOverlay";
+import ProductSwipeOverlay from "@/modules/storefront/components/ProductSwipeOverlay";
 
 interface SwipeFilter {
   categorySlug?: string | null;
