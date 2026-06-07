@@ -64,8 +64,8 @@ const Facturacion = lazy(() => import("./modules/admin-cms").then((m) => ({ defa
 const Planes = lazy(() => import("./pages/Planes"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
-const CatalogosBase = lazy(() => import("./pages/CatalogosBase"));
-const Licencias = lazy(() => import("./pages/Licencias"));
+const CatalogosBase = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.CatalogosBasePage })));
+const Licencias = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.LicenciasPage })));
 const GerenteIA = lazy(() => import("./pages/GerenteIA"));
 const Compras = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.ComprasPage })));
 const Sitios = lazy(() => import("./pages/Sitios"));
