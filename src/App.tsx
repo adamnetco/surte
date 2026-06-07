@@ -42,6 +42,7 @@ const Categorias = lazy(() => import("./pages/Categorias"));
 const MenuPage = lazy(() => import("./modules/pos").then((m) => ({ default: m.MenuPage })));
 const Ofertas = lazy(() => import("./modules/storefront").then((m) => ({ default: m.OfertasPage })));
 const Login = lazy(() => import("./modules/auth/pages/Login"));
+const TenantAwareLogin = lazy(() => import("./modules/auth/components/TenantAwareLogin"));
 const AdminDashboard = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.AdminDashboardPage })));
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
@@ -192,9 +193,9 @@ const App = () => (
                     <Route path="/" element={<TenantHome />} />
 
                     {/* === Rutas universales (cualquier host) === */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/user/login" element={<Login />} />
-                    <Route path="/admin/login" element={<Login />} />
+                    <Route path="/login" element={<TenantAwareLogin />} />
+                    <Route path="/user/login" element={<TenantAwareLogin />} />
+                    <Route path="/admin/login" element={<TenantAwareLogin />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/politicas" element={<Politicas />} />
