@@ -329,7 +329,14 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         setLastOrderId(clientUuid);
         setTicket([]);
         setMeta(ticketCacheKey, []).catch(() => {});
-        setSaleComplete({ total: snapshotTotal, amountPaid, change });
+        setSaleComplete({ total: snapshotTotal, amountPaid, change, items: snapshotItems });
+      });
+
+      // 3) Encolar impresión: recibo cliente + comandas de cocina.
+      // Se espera a que la orden se materialice (outbox flush) consultando
+      // por client_uuid hasta 6s; luego llamamos enqueue_print_job.
+      schedulePrint(clientUuid).catch((err) => {
+        console.warn("[printing] no se pudo encolar:", err);
       });
 
       toast.success(
