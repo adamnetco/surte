@@ -131,27 +131,25 @@ const OrganizationsTab = () => {
     inactive: orgs?.filter(o => !o.is_active).length || 0,
   }), [orgs]);
 
-  const createOrg = async () => {
-    if (!form.slug || !form.name) return toast.error("Slug y nombre son requeridos", { position: "top-center" });
-    if (!/^[a-z0-9-]+$/.test(form.slug)) {
-      return toast.error("Slug solo puede tener minúsculas, números y guiones", { position: "top-center" });
+  const onCreate = handleSubmit(async (values) => {
+    try {
+      const { error } = await supabase.from("organizations").insert({
+        slug: values.slug.toLowerCase().trim(),
+        name: values.name.trim(),
+        business_type: values.business_type,
+        country: values.country,
+        currency: values.currency,
+        is_active: true,
+      });
+      if (error) throw error;
+      toast.success("Organización creada", { position: "top-center" });
+      setCreateOpen(false);
+      reset({ slug: "", name: "", business_type: "retail", country: "CO", currency: "COP" });
+      qc.invalidateQueries({ queryKey: ["admin-organizations"] });
+    } catch (e) {
+      toast.error(errorToMessage(e), { position: "top-center" });
     }
-    setSaving(true);
-    const { error } = await supabase.from("organizations").insert({
-      slug: form.slug.toLowerCase().trim(),
-      name: form.name.trim(),
-      business_type: form.business_type,
-      country: form.country,
-      currency: form.currency,
-      is_active: true,
-    });
-    setSaving(false);
-    if (error) return toast.error(error.message, { position: "top-center" });
-    toast.success("Organización creada", { position: "top-center" });
-    setCreateOpen(false);
-    setForm({ slug: "", name: "", business_type: "retail", country: "CO", currency: "COP" });
-    qc.invalidateQueries({ queryKey: ["admin-organizations"] });
-  };
+  });
 
   const toggleActive = async (org: Org) => {
     if (!window.confirm(`${org.is_active ? "Desactivar" : "Activar"} ${org.name}?`)) return;
