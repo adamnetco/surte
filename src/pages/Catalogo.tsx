@@ -105,18 +105,7 @@ const Catalogo = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-            {sorted.map((p, i) => (
-              <motion.div
-                key={p.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.4), ease: [0.16, 1, 0.3, 1] }}
-              >
-                <ProductCard product={p} />
-              </motion.div>
-            ))}
-          </div>
+          <VirtualizedProductGrid products={sorted} />
         )}
 
         {!isLoading && sorted.length === 0 && (
