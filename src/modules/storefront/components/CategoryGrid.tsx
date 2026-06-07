@@ -3,7 +3,7 @@ import { useCategories } from "@/modules/storefront/hooks/useStore";
 import { useNavigate } from "react-router-dom";
 import CategoryIcon from "./CategoryIcon";
 import { motion } from "framer-motion";
-import { useSwipe } from "@/context/SwipeContext";
+import { useSwipe } from "@/modules/storefront/context/SwipeContext";
 import { Layers } from "lucide-react";
 
 const CategoryGrid = () => {
