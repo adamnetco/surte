@@ -21,6 +21,7 @@ import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import SaleCompleteDialog from "./SaleCompleteDialog";
 import OfflineIndicator from "@/modules/offline/components/OfflineIndicator";
+import { usePrintQueue, TicketPreviewDialog, type TicketData } from "@/modules/printing";
 import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
 } from "@/modules/offline/lib/catalog";
