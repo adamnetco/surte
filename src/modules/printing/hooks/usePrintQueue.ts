@@ -192,6 +192,13 @@ async function dispatchToPrinter(printer: any, bytes: Uint8Array) {
     return;
   }
 
+  // Bluetooth — requiere gesto del usuario, no podemos imprimir silenciosamente desde realtime.
+  // El emparejamiento se hace desde Configuración → Impresoras → Probar.
+  if (printer.connection === "bluetooth") {
+    if (!isWebBluetoothSupported()) throw new Error("Bluetooth no soportado en este navegador");
+    throw new Error("Impresoras Bluetooth requieren imprimir desde el botón POS (no se pueden activar desde cola en segundo plano)");
+  }
+
   throw new Error(`Conexión no soportada en este terminal: ${printer.connection}`);
 }
 
