@@ -80,6 +80,8 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
       codepage: editing.codepage ?? "CP858",
       cuts_paper: editing.cuts_paper ?? true,
       opens_drawer: editing.opens_drawer ?? false,
+      bluetooth_address: editing.bluetooth_address ?? null,
+      os_printer_name: editing.os_printer_name ?? null,
       role: editing.role ?? "receipt",
       is_default: editing.is_default ?? false,
       is_active: editing.is_active ?? true,
