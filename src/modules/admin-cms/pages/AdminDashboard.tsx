@@ -303,7 +303,7 @@ const AdminDashboard = () => {
       {/* Mobile: horizontal tab scroll */}
       <div className="lg:hidden flex overflow-x-auto border-b border-border bg-card scrollbar-hide">
         {tabs.map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => setActiveTab(id)}
+          <button key={id} onClick={() => selectTab(id)}
             className={`relative flex items-center gap-1.5 px-4 py-3 text-xs font-heading font-semibold whitespace-nowrap border-b-2 transition-colors ${
               activeTab === id
                 ? "border-primary text-primary"
