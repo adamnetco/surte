@@ -31,14 +31,14 @@ import {
   downloadCsv,
   readFileAsText,
   type TableDef,
-} from "@/utils/csvUtils";
+} from "@/modules/admin-cms/lib/csvUtils";
 import {
   analyzeImportRows,
   buildImportMutationPlan,
   cleanImportedRows,
   normalizeImportedHeaders,
   type ImportPreviewAnalysis,
-} from "@/utils/dataImportUtils";
+} from "@/modules/admin-cms/lib/dataImportUtils";
 import * as XLSX from "xlsx";
 
 type Status = "idle" | "loading" | "success" | "error";

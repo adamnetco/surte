@@ -11,7 +11,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import JSZip from "jszip";
-import { jsonToCsv } from "@/utils/csvUtils";
+import { jsonToCsv } from "@/modules/admin-cms/lib/csvUtils";
 
 export interface IslandTable {
   name: string;          // identificador (filename y key)

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreditCard, TicketCheck, ShieldCheck, Headphones, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { planLabel } from "@/data/licensePlans";
+import { planLabel } from "@/modules/clientes/data/licensePlans";
 
 interface DashboardMetrics {
   activePlan: string | null;

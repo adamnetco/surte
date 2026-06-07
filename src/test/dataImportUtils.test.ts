@@ -5,8 +5,8 @@ import {
   cleanImportedRows,
   normalizeImportedHeaders,
   parseLocaleNumber,
-} from "@/utils/dataImportUtils";
-import type { TableDef } from "@/utils/csvUtils";
+} from "@/modules/admin-cms/lib/dataImportUtils";
+import type { TableDef } from "@/modules/admin-cms/lib/csvUtils";
 
 const def: TableDef = {
   name: "products",

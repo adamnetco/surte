@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Check, Star, Zap, Crown } from "lucide-react";
-import { planLabel } from "@/data/licensePlans";
+import { planLabel } from "@/modules/clientes/data/licensePlans";
 import { useWhatsAppConfig } from "@/modules/integrations/whatsapp/useWhatsAppConfig";
 
 interface LicenseInfo {

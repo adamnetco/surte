@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, MessageSquare, Paperclip, X, FileText, Image as ImageIcon, Video, Phone } from "lucide-react";
-import { POS_MODULES } from "@/data/posModules";
+import { POS_MODULES } from "@/modules/pos/data/posModules";
 
 const TicketChatView = lazy(() => import("./TicketChatView"));
 
