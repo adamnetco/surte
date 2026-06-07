@@ -145,4 +145,30 @@ const ProductCardBase = ({ product }: { product: Product }) => {
   );
 };
 
+// Perf: ProductCard se renderiza en grids de 20-100+ items. memo evita re-render
+// cuando cambia el carrito o el padre re-renderiza, mientras el producto siga igual.
+// Comparamos solo los campos visibles para que cambios irrelevantes (timestamps,
+// columnas internas) no fuercen re-render.
+const ProductCard = memo(ProductCardBase, (prev, next) => {
+  const a = prev.product;
+  const b = next.product;
+  return (
+    a.id === b.id &&
+    a.name === b.name &&
+    a.price === b.price &&
+    a.price_wholesale === b.price_wholesale &&
+    a.price_distributor === b.price_distributor &&
+    a.original_price === b.original_price &&
+    a.stock === b.stock &&
+    a.image_url === b.image_url &&
+    a.is_fresh === b.is_fresh &&
+    a.is_wholesale === b.is_wholesale &&
+    a.slug === b.slug &&
+    a.unit === b.unit &&
+    a.unit_quantity === b.unit_quantity &&
+    a.unit_measure === b.unit_measure &&
+    a.net_weight_grams === b.net_weight_grams
+  );
+});
+
 export default ProductCard;
