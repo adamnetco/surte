@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
-import TenantSwitcher from "@/components/superadmin/TenantSwitcher";
+import TenantSwitcher from "@/modules/superadmin/components/TenantSwitcher";
 
 const switchOrg = vi.fn();
 let mockOrg: any = { id: "o1", slug: "tienda-uno", name: "Tienda Uno", role: "owner" };

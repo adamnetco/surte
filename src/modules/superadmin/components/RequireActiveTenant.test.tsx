@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
-import RequireActiveTenant from "@/components/superadmin/RequireActiveTenant";
+import RequireActiveTenant from "@/modules/superadmin/components/RequireActiveTenant";
 
 const switchOrg = vi.fn();
 let mockState: any = {

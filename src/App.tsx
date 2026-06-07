@@ -64,13 +64,13 @@ const Facturacion = lazy(() => import("./modules/admin-cms").then((m) => ({ defa
 const Planes = lazy(() => import("./pages/Planes"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
-const CatalogosBase = lazy(() => import("./pages/CatalogosBase"));
-const Licencias = lazy(() => import("./pages/Licencias"));
+const CatalogosBase = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.CatalogosBasePage })));
+const Licencias = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.LicenciasPage })));
 const GerenteIA = lazy(() => import("./pages/GerenteIA"));
 const Compras = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.ComprasPage })));
-const Sitios = lazy(() => import("./pages/Sitios"));
-const SuperadminDashboard = lazy(() => import("./pages/SuperadminDashboard"));
-const TenantWorkspace = lazy(() => import("./pages/TenantWorkspace"));
+const Sitios = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SitiosPage })));
+const SuperadminDashboard = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SuperadminDashboardPage })));
+const TenantWorkspace = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.TenantWorkspacePage })));
 
 // Perf: defaults conservadores para evitar refetches innecesarios.
 // - staleTime 60s: la mayoría de paneles no necesitan datos frescos por segundo.
