@@ -118,7 +118,9 @@ const AdminDashboard = () => {
   const { user, isAdmin, role, loading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const [tabFilter, setTabFilter] = useState("");
   const queryClient = useQueryClient();
+
 
   const { hasModule, currentOrg } = useOrganization();
   const tabs = allTabs.filter((t) => t.roles.includes(role) && (!t.module || hasModule(t.module)));
