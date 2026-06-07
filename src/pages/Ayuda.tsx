@@ -1,5 +1,5 @@
-import TopBar from "@/components/surte/TopBar";
-import BottomNav from "@/components/surte/BottomNav";
+import TopBar from "@/modules/storefront/components/TopBar";
+import BottomNav from "@/modules/storefront/components/BottomNav";
 import { ArrowLeft, MessageCircle, Mail, Phone, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";

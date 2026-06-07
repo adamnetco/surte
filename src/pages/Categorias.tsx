@@ -1,8 +1,8 @@
-import TopBar from "@/components/surte/TopBar";
-import BottomNav from "@/components/surte/BottomNav";
+import TopBar from "@/modules/storefront/components/TopBar";
+import BottomNav from "@/modules/storefront/components/BottomNav";
 import { useCategories } from "@/hooks/useStore";
 import { useNavigate } from "react-router-dom";
-import CategoryIcon from "@/components/surte/CategoryIcon";
+import CategoryIcon from "@/modules/storefront/components/CategoryIcon";
 import { ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";

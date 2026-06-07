@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import TopBar from "@/components/surte/TopBar";
-import BottomNav from "@/components/surte/BottomNav";
-import ProductCard from "@/components/surte/ProductCard";
-import VirtualizedProductGrid from "@/components/surte/VirtualizedProductGrid";
+import TopBar from "@/modules/storefront/components/TopBar";
+import BottomNav from "@/modules/storefront/components/BottomNav";
+import ProductCard from "@/modules/storefront/components/ProductCard";
+import VirtualizedProductGrid from "@/modules/storefront/components/VirtualizedProductGrid";
 import { useProducts, useCategories } from "@/hooks/useStore";
-import FloatingCart from "@/components/surte/FloatingCart";
+import FloatingCart from "@/modules/storefront/components/FloatingCart";
 import { ArrowUpDown, Package } from "lucide-react";
 import { motion } from "framer-motion";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
