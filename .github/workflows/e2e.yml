@@ -1,0 +1,59 @@
+name: E2E (POS + smoke)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: Playwright e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests (Vitest)
+        run: npm test
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # El fixture por defecto importa `lovable-agent-playwright-config` (paquete
+      # interno). En CI sustituimos por un fixture estándar de @playwright/test
+      # antes de correr los specs.
+      - name: Patch fixture for CI
+        run: cp playwright-fixture.ci.ts playwright-fixture.ts
+
+      - name: Run e2e
+        run: npx playwright test --config=playwright.config.ci.ts
+        env:
+          CI: "true"
+
+      - name: Upload Playwright report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload traces, videos & screenshots (on failure)
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: test-results
+          retention-days: 14
+          if-no-files-found: ignore
