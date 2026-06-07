@@ -73,6 +73,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [actionMode, setActionMode] = useState<"emit" | "quote" | "park" | null>(null);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const [saleComplete, setSaleComplete] = useState<{ total: number; amountPaid: number; change: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
