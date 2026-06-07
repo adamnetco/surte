@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { isPushSupported, getCurrentPermission, subscribeToPush, unsubscribeFromPush } from "@/lib/pushClient";
+import { isPushSupported, getCurrentPermission, subscribeToPush, unsubscribeFromPush } from "@/modules/notifications/lib/pushClient";
 
 interface Props {
   variant?: "inline" | "card";
