@@ -34,8 +34,31 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
   const hasDisc = (line.discountPct ?? 0) > 0;
   const finalTotal = hasDisc ? line.total * (1 - (line.discountPct ?? 0) / 100) : line.total;
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Solo si el foco está dentro del row pero no en un input/textarea
+    const target = e.target as HTMLElement;
+    const tag = target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable) return;
+    if (e.key === "+" || e.key === "=") {
+      e.preventDefault();
+      onQty(1);
+    } else if (e.key === "-" || e.key === "_") {
+      e.preventDefault();
+      onQty(-1);
+    } else if (e.key === "Delete" || (e.key === "Backspace" && e.shiftKey)) {
+      e.preventDefault();
+      onRemove();
+    }
+  };
+
   return (
-    <div className="bg-muted/40 rounded-lg p-2 space-y-1 animate-fade-in">
+    <div
+      className="bg-muted/40 rounded-lg p-2 space-y-1 animate-fade-in focus-within:ring-2 focus-within:ring-ring focus:outline-none"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      role="group"
+      aria-label={`${line.name}, cantidad ${line.quantity}. Teclas: + para sumar, - para restar, Supr para eliminar`}
+    >
       <div className="flex items-center gap-2">
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-medium leading-tight truncate">{line.name}</p>
