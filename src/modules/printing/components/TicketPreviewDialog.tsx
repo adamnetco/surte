@@ -24,6 +24,75 @@ const m = (n: number) => COP.format(n).replace("COP", "$").trim();
 export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, kind = "receipt", stationName }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const widthMm = paperMm;
+  const storeUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const [busy, setBusy] = useState<"png" | "share" | null>(null);
+
+  const captureBlob = async (): Promise<Blob | null> => {
+    const node = ref.current;
+    if (!node) return null;
+    const dataUrl = await toPng(node, { pixelRatio: 2, backgroundColor: "#ffffff", cacheBust: true });
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  };
+
+  const filename = () => {
+    const n = data?.ticket_number ?? Date.now();
+    return `ticket-${n}.png`;
+  };
+
+  const handleDownload = async () => {
+    try {
+      setBusy("png");
+      const blob = await captureBlob();
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename(); a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Imagen descargada");
+    } catch (e: any) {
+      toast.error("No se pudo generar la imagen");
+    } finally { setBusy(null); }
+  };
+
+  const buildShareText = () => {
+    if (!data) return "";
+    const total = m(data.total);
+    const num = data.ticket_number ? `Ticket #${data.ticket_number}\n` : "";
+    return [
+      `${data.org.business_name}`,
+      num + `Total: ${total}`,
+      "",
+      "Gracias por tu compra.",
+      `Haz tu próximo pedido aquí: ${storeUrl}`,
+    ].join("\n");
+  };
+
+  const handleShareWhatsApp = async () => {
+    try {
+      setBusy("share");
+      const text = buildShareText();
+      const blob = await captureBlob();
+      const nav: any = navigator;
+      if (blob && nav.canShare && nav.canShare({ files: [new File([blob], filename(), { type: "image/png" })] })) {
+        const file = new File([blob], filename(), { type: "image/png" });
+        await nav.share({ files: [file], text, title: "Ticket de venta" });
+      } else {
+        // Fallback: descarga PNG + abre WhatsApp con texto
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = filename(); a.click();
+          URL.revokeObjectURL(url);
+        }
+        const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(wa, "_blank", "noopener,noreferrer");
+        toast.info("Imagen lista. Adjúntala en WhatsApp.");
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") toast.error("No se pudo compartir");
+    } finally { setBusy(null); }
+  };
 
   const handlePrint = () => {
     const node = ref.current;
