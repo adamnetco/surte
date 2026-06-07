@@ -5,9 +5,9 @@ import { Store, User as UserIcon, Lock, Eye, EyeOff, Loader2, ShieldCheck, Spark
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/modules/auth/context/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
-import { supabase } from "@/integrations/supabase/client";
 import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
+import { isTransientAuthError, purgeLocalAuth, sleep } from "@/modules/auth/lib/authRecovery";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
 
@@ -37,16 +37,42 @@ const LoginRouter = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [backendDown, setBackendDown] = useState(false);
+  const [hasStaleTokens, setHasStaleTokens] = useState(false);
   const redirectedRef = useRef(false);
 
-  const destinationFor = (mail: string | null | undefined, r: AppRole | null): string => {
+  const destinationFor = (mail: string | null | undefined, r: AppRole | null, tenantSlug = tienda.trim().toLowerCase()): string => {
     if ((mail ?? "").toLowerCase() === MASTER_EMAIL) return "/superadmin";
     if (r === "superadmin") return "/superadmin";
-    const slug = (tienda || "").trim().toLowerCase();
+    const slug = tenantSlug.trim().toLowerCase();
     if (slug && (r === "admin" || r === "editor")) return `/t/${slug}/admin`;
     if (r === "admin" || r === "editor") return "/admin";
     if (r === "agente") return "/pos";
     return "/clientes";
+  };
+
+  useEffect(() => {
+    try {
+      setHasStaleTokens(Object.keys(localStorage).some((key) => key.startsWith("sb-") && /auth-token/.test(key)));
+    } catch {
+      setHasStaleTokens(false);
+    }
+  }, []);
+
+  const signInWithRetry = async (mail: string, pwd: string) => {
+    let last: Awaited<ReturnType<typeof signIn>> | null = null;
+    for (const delay of [0, 800, 2000, 4000]) {
+      if (delay) await sleep(delay);
+      last = await signIn(mail, pwd);
+      if (!last.error || !isTransientAuthError(last.error)) return last;
+    }
+    return last ?? { error: new Error("Auth retry failed"), session: null, role: null };
+  };
+
+  const clearStaleAuthAndReload = () => {
+    purgeLocalAuth();
+    toast.success("Sesión local limpiada. Recargando…");
+    window.setTimeout(() => window.location.reload(), 400);
   };
 
   useEffect(() => {
@@ -60,20 +86,29 @@ const LoginRouter = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const tenantSlug = tienda.trim().toLowerCase();
+    if (!tenantSlug && email.trim().toLowerCase() !== MASTER_EMAIL) {
+      toast.error("Ingresa el id_negocio de tu tienda para continuar.");
+      return;
+    }
     setLoading(true);
+    setBackendDown(false);
     try {
-      const { error, session } = await signIn(email.trim(), password);
+      const { error, session, role: signedInRole } = await signInWithRetry(email.trim(), password);
       if (error) throw error;
-      if (tienda) {
-        try { sessionStorage.setItem("sps_tenant_override", tienda); } catch { /* noop */ }
+      if (tenantSlug) {
+        try { sessionStorage.setItem("sps_tenant_override", tenantSlug); } catch { /* noop */ }
       }
       toast.success("¡Bienvenido!");
       redirectedRef.current = true;
-      navigate(destinationFor(session?.user?.email ?? email, role), { replace: true });
+      navigate(destinationFor(session?.user?.email ?? email, signedInRole ?? role, tenantSlug), { replace: true });
     } catch (err: any) {
       const msg = err?.message || "";
       let friendly = "No pudimos iniciar sesión.";
-      if (/Invalid login credentials/i.test(msg)) friendly = "Usuario o contraseña incorrectos.";
+      if (isTransientAuthError(err)) {
+        friendly = "El servidor de autenticación está inestable. Reintenté varias veces; prueba de nuevo en unos segundos.";
+        setBackendDown(true);
+      } else if (/Invalid login credentials/i.test(msg)) friendly = "Usuario o contraseña incorrectos.";
       else if (/Email not confirmed/i.test(msg)) friendly = "Tu correo no está confirmado.";
       else if (msg) friendly = msg;
       toast.error(friendly);
@@ -221,6 +256,23 @@ const LoginRouter = () => {
                 {loading ? "Entrando…" : "Entrar"}
               </button>
             </form>
+
+            {(backendDown || hasStaleTokens) && (
+              <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/60">
+                <p>
+                  {backendDown
+                    ? "La autenticación está tardando más de lo normal. Si el problema continúa, limpia la sesión local e intenta de nuevo."
+                    : "Hay una sesión local guardada. Si no puedes entrar, puedes limpiarla y volver a intentarlo."}
+                </p>
+                <button
+                  type="button"
+                  onClick={clearStaleAuthAndReload}
+                  className="mt-2 text-white underline decoration-white/30 underline-offset-4 hover:text-white/80"
+                >
+                  Limpiar sesión local
+                </button>
+              </div>
+            )}
 
             <div className="relative my-4 flex items-center">
               <div className="border-t border-white/10 flex-1" />
