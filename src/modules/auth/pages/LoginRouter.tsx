@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/modules/auth/context/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
-import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
+import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { detectTenant, isStorefrontTenant, isSystemTenant, isPreviewHost } from "@/lib/subdomain";
+import { detectTenant, isStorefrontTenant, isSystemTenant, isPreviewHost } from "@/modules/tenant/lib/subdomain";
 import { ShieldAlert, ExternalLink } from "lucide-react";
 
 type Scope = "system" | "storefront";

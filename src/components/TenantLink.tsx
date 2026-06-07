@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { buildHandoffUrl } from "@/modules/auth/lib/ssoHandoff";
-import type { Tenant } from "@/lib/subdomain";
+import type { Tenant } from "@/modules/tenant/lib/subdomain";
 
 interface Props extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href"> {
   tenant: Tenant;

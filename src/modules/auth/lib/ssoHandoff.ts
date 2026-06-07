@@ -12,7 +12,7 @@
  *      muestra `SSOErrorScreen` con botón "Iniciar sesión".
  */
 import { supabase } from "@/integrations/supabase/client";
-import type { Tenant } from "@/lib/subdomain";
+import type { Tenant } from "@/modules/tenant/lib/subdomain";
 
 const ROOT_DOMAIN = "sistecpos.com";
 const QUERY_KEY = "sso";
