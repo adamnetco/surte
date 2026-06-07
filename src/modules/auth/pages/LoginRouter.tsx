@@ -368,15 +368,43 @@ const LoginRouter = () => {
               <div className="border-t border-white/10 flex-1" />
             </div>
 
-            <button
-              type="button"
-              onClick={handleEmailLink}
-              disabled={emailLinkLoading}
-              className="w-full mb-3 flex items-center justify-center gap-2.5 bg-white/10 border border-white/10 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors disabled:opacity-60"
-            >
-              {emailLinkLoading ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
-              {emailLinkLoading ? "Enviando acceso…" : "Enviar acceso por email"}
-            </button>
+            {(() => {
+              const cooldownLeft = !gate.allowed && gate.reason === "cooldown" ? Math.ceil((gate.remainingMs ?? 0) / 1000) : 0;
+              const maxed = !gate.allowed && gate.reason === "max_attempts";
+              const disabled = emailLinkLoading || !gate.allowed;
+              const label = emailLinkLoading
+                ? "Enviando acceso…"
+                : maxed
+                  ? `Máx. ${gate.attemptsMax} intentos · espera ${Math.ceil((gate.remainingMs ?? 0) / 60000)} min`
+                  : cooldownLeft > 0
+                    ? `Reenviar en ${cooldownLeft}s`
+                    : magicLinkSent
+                      ? "Reenviar acceso por email"
+                      : "Enviar acceso por email";
+              return (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleEmailLink}
+                    disabled={disabled}
+                    className="w-full mb-2 flex items-center justify-center gap-2.5 bg-white/10 border border-white/10 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors disabled:opacity-60"
+                  >
+                    {emailLinkLoading ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
+                    {label}
+                  </button>
+                  <div className="mb-3 text-[11px] text-white/50 flex items-center justify-between px-1">
+                    <span>Intentos: {gate.attemptsUsed}/{gate.attemptsMax}</span>
+                    <a href="/auth-status" className="underline decoration-white/30 hover:text-white">Ver estado de autenticación</a>
+                  </div>
+                  {magicLinkSent && !emailLinkLoading && (
+                    <p className="mb-3 text-[11px] text-green-300/90 px-1">
+                      ✓ Enlace enviado a <code>{email.trim().toLowerCase()}</code>. Revisa tu bandeja y spam.
+                    </p>
+                  )}
+                </>
+              );
+            })()}
+
 
             <button
               type="button"
