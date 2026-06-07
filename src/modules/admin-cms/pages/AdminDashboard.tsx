@@ -241,6 +241,7 @@ const AdminDashboard = () => {
         {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
         {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
         {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
+        {activeTab === "printers" && <PrintersTab organizationId={(settings as any)?.[0]?.organization_id ?? ""} />}
         {/* data / sync / fiscal removidos — viven en /superadmin */}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
