@@ -19,8 +19,13 @@ jobs:
     name: Playwright e2e (@flaky only)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # No fail-fast: queremos ver TODOS los flakey aunque uno reviente.
-    continue-on-error: true
+    env:
+      # Umbral de tasa de fallos para @flaky. Si se supera, el job falla
+      # y obliga al equipo a priorizar la causa raíz.
+      #   FLAKY_FAILURE_THRESHOLD     → % máx. de tests del suite marcados como flakey
+      #   FLAKY_PER_TEST_THRESHOLD    → % máx. de intentos fallidos por test individual
+      FLAKY_FAILURE_THRESHOLD: "30"
+      FLAKY_PER_TEST_THRESHOLD: "60"
 
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +46,10 @@ jobs:
 
       - name: Run flaky e2e only
         id: run
+        # No detenemos el workflow aquí: queremos medir TODOS los flakey
+        # aunque algún test reviente. El gate real es el step "Enforce
+        # flaky threshold" más abajo.
+        continue-on-error: true
         run: npx playwright test --config=playwright.config.ci.ts --grep "@flaky"
         env:
           CI: "true"
@@ -50,6 +59,13 @@ jobs:
       - name: Build summary
         if: ${{ always() }}
         run: node scripts/summarize-playwright.cjs || true
+
+      - name: Enforce flaky threshold
+        if: ${{ always() }}
+        run: node scripts/enforce-flaky-threshold.cjs
+        env:
+          FLAKY_FAILURE_THRESHOLD: ${{ env.FLAKY_FAILURE_THRESHOLD }}
+          FLAKY_PER_TEST_THRESHOLD: ${{ env.FLAKY_PER_TEST_THRESHOLD }}
 
       - name: Upload report
         if: ${{ always() }}
