@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import TopBar from "@/components/surte/TopBar";
 import BottomNav from "@/components/surte/BottomNav";
 import ProductCard from "@/components/surte/ProductCard";
+import VirtualizedProductGrid from "@/components/surte/VirtualizedProductGrid";
 import { useProducts, useCategories } from "@/hooks/useStore";
 import FloatingCart from "@/components/surte/FloatingCart";
 import { ArrowUpDown, Package } from "lucide-react";
