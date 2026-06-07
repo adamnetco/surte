@@ -104,18 +104,20 @@ export default function KDS() {
     <div className="min-h-[100dvh] bg-foreground/95 text-background flex flex-col">
       <div className="bg-card text-card-foreground border-b px-3 py-2 flex items-center gap-2 overflow-x-auto">
         <ChefHat className="w-5 h-5 text-primary" />
-        <h1 className="font-semibold mr-3">KDS</h1>
-        <button onClick={() => setActiveStation("all")}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium border ${activeStation === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
-          Todas
-        </button>
-        {stations.map(s => (
-          <button key={s.id} onClick={() => setActiveStation(s.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${activeStation === s.id ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
-            {s.name}
+        <h1 className="font-semibold mr-2">KDS</h1>
+        <POSWorkspaceNav className="mr-2" />
+        <div className="flex items-center gap-2 flex-1 overflow-x-auto">
+          <button onClick={() => setActiveStation("all")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border ${activeStation === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
+            Todas
           </button>
-        ))}
-        <Button size="sm" variant="ghost" className="ml-auto" onClick={() => navigate("/mesas")}>← Mesas</Button>
+          {stations.map(s => (
+            <button key={s.id} onClick={() => setActiveStation(s.id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${activeStation === s.id ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
+              {s.name}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 p-3 overflow-auto">
