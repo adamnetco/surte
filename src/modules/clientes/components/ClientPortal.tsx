@@ -65,17 +65,19 @@ export function ClientPortal() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="h-4 w-4" />Resumen</TabsTrigger>
-            <TabsTrigger value="pos" className="gap-2"><Monitor className="h-4 w-4" />Mi POS</TabsTrigger>
-            <TabsTrigger value="subscription" className="gap-2"><ShieldCheck className="h-4 w-4" />Suscripción</TabsTrigger>
-            <TabsTrigger value="tickets" className="gap-2"><TicketCheck className="h-4 w-4" />Soporte</TabsTrigger>
-            <TabsTrigger value="billing" className="gap-2"><CreditCard className="h-4 w-4" />Facturación</TabsTrigger>
-            <TabsTrigger value="contracts" className="gap-2"><ScrollText className="h-4 w-4" />Contratos</TabsTrigger>
-            <TabsTrigger value="trainings" className="gap-2"><GraduationCap className="h-4 w-4" />Entrenamientos</TabsTrigger>
-            <TabsTrigger value="downloads" className="gap-2"><Download className="h-4 w-4" />Descargas</TabsTrigger>
-            <TabsTrigger value="ayuda" className="gap-2"><FileText className="h-4 w-4" />Ayuda</TabsTrigger>
-          </TabsList>
+          <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+            <TabsList className="inline-flex w-max h-auto gap-1 p-1">
+              <TabsTrigger value="dashboard" className="gap-2 shrink-0"><LayoutDashboard className="h-4 w-4" />Resumen</TabsTrigger>
+              <TabsTrigger value="pos" className="gap-2 shrink-0"><Monitor className="h-4 w-4" />Mi POS</TabsTrigger>
+              <TabsTrigger value="subscription" className="gap-2 shrink-0"><ShieldCheck className="h-4 w-4" />Suscripción</TabsTrigger>
+              <TabsTrigger value="tickets" className="gap-2 shrink-0"><TicketCheck className="h-4 w-4" />Soporte</TabsTrigger>
+              <TabsTrigger value="billing" className="gap-2 shrink-0"><CreditCard className="h-4 w-4" />Facturación</TabsTrigger>
+              <TabsTrigger value="contracts" className="gap-2 shrink-0"><ScrollText className="h-4 w-4" />Contratos</TabsTrigger>
+              <TabsTrigger value="trainings" className="gap-2 shrink-0"><GraduationCap className="h-4 w-4" />Entrenamientos</TabsTrigger>
+              <TabsTrigger value="downloads" className="gap-2 shrink-0"><Download className="h-4 w-4" />Descargas</TabsTrigger>
+              <TabsTrigger value="ayuda" className="gap-2 shrink-0"><FileText className="h-4 w-4" />Ayuda</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="dashboard"><Suspense fallback={<Loader />}><ClientDashboardTab onRequestSupport={() => setActiveTab("tickets")} /></Suspense></TabsContent>
           <TabsContent value="pos"><ClientPOSAccess /></TabsContent>
