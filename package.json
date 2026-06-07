@@ -66,6 +66,7 @@
     "dexie-react-hooks": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.36.0",
+    "html-to-image": "^1.11.13",
     "input-otp": "^1.4.2",
     "isomorphic-dompurify": "^3.16.0",
     "jszip": "^3.10.1",

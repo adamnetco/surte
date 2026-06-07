@@ -1,9 +1,12 @@
 // Vista previa HTML del ticket (58/80mm) con botón "Imprimir" como fallback
-// universal vía window.print().
-import { useEffect, useMemo, useRef } from "react";
+// universal vía window.print(). Incluye también compartir por WhatsApp
+// y descargar como PNG (inspirado en el flujo de On Taz Stock).
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, Share2, Download, Loader2 } from "lucide-react";
+import { toPng } from "html-to-image";
+import { toast } from "sonner";
 import type { TicketData } from "../lib/ticketBuilder";
 
 interface Props {
@@ -21,6 +24,75 @@ const m = (n: number) => COP.format(n).replace("COP", "$").trim();
 export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, kind = "receipt", stationName }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const widthMm = paperMm;
+  const storeUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const [busy, setBusy] = useState<"png" | "share" | null>(null);
+
+  const captureBlob = async (): Promise<Blob | null> => {
+    const node = ref.current;
+    if (!node) return null;
+    const dataUrl = await toPng(node, { pixelRatio: 2, backgroundColor: "#ffffff", cacheBust: true });
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  };
+
+  const filename = () => {
+    const n = data?.ticket_number ?? Date.now();
+    return `ticket-${n}.png`;
+  };
+
+  const handleDownload = async () => {
+    try {
+      setBusy("png");
+      const blob = await captureBlob();
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename(); a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Imagen descargada");
+    } catch (e: any) {
+      toast.error("No se pudo generar la imagen");
+    } finally { setBusy(null); }
+  };
+
+  const buildShareText = () => {
+    if (!data) return "";
+    const total = m(data.total);
+    const num = data.ticket_number ? `Ticket #${data.ticket_number}\n` : "";
+    return [
+      `${data.org.business_name}`,
+      num + `Total: ${total}`,
+      "",
+      "Gracias por tu compra.",
+      `Haz tu próximo pedido aquí: ${storeUrl}`,
+    ].join("\n");
+  };
+
+  const handleShareWhatsApp = async () => {
+    try {
+      setBusy("share");
+      const text = buildShareText();
+      const blob = await captureBlob();
+      const nav: any = navigator;
+      if (blob && nav.canShare && nav.canShare({ files: [new File([blob], filename(), { type: "image/png" })] })) {
+        const file = new File([blob], filename(), { type: "image/png" });
+        await nav.share({ files: [file], text, title: "Ticket de venta" });
+      } else {
+        // Fallback: descarga PNG + abre WhatsApp con texto
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = filename(); a.click();
+          URL.revokeObjectURL(url);
+        }
+        const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(wa, "_blank", "noopener,noreferrer");
+        toast.info("Imagen lista. Adjúntala en WhatsApp.");
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") toast.error("No se pudo compartir");
+    } finally { setBusy(null); }
+  };
 
   const handlePrint = () => {
     const node = ref.current;
@@ -101,6 +173,7 @@ export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, ki
         {data.change_due > 0 && <div className="row"><span>Cambio</span><span>{m(data.change_due)}</span></div>}
         <hr />
         <div className="center">{data.org.footer ?? "Gracias por su compra"}</div>
+        {storeUrl && <div className="center bold">Pide en línea: {storeUrl.replace(/^https?:\/\//, "")}</div>}
         <div className="center">Powered by SistecPOS</div>
       </>
     );
@@ -122,8 +195,20 @@ export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, ki
             {content}
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
+          <Button variant="outline" onClick={handleDownload} disabled={!!busy}>
+            {busy === "png" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+            PNG
+          </Button>
+          <Button
+            onClick={handleShareWhatsApp}
+            disabled={!!busy}
+            className="bg-[#25D366] text-white hover:bg-[#1ebe57]"
+          >
+            {busy === "share" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Share2 className="h-4 w-4 mr-1" />}
+            WhatsApp
+          </Button>
           <Button onClick={handlePrint}><Printer className="h-4 w-4 mr-1" /> Imprimir</Button>
         </DialogFooter>
       </DialogContent>
