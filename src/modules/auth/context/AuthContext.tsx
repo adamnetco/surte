@@ -123,28 +123,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
 
+  const purgeLocalAuth = () => {
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("sb-") || k.startsWith("supabase.auth") || k.startsWith("sps_role:"))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch { /* quota */ }
+  };
+
+  const isTransientAuthError = (err: any): boolean => {
+    const status = Number(err?.status || 0);
+    const msg = String(err?.message || "");
+    if (status === 0 || status === 408 || status === 429 || status >= 500) return true;
+    return /AuthRetryableFetchError|Failed to fetch|NetworkError|timeout|upstream|fetch failed|load failed|refresh_token_not_found|Invalid Refresh Token/i.test(msg);
+  };
+
   useEffect(() => {
+    // Silence the harmless "lock steal" abort that bubbles as unhandledrejection
+    const onUnhandled = (e: PromiseRejectionEvent) => {
+      const m = String((e.reason as any)?.message || "");
+      if (/Lock broken by another request with the 'steal' option/i.test(m)) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("unhandledrejection", onUnhandled);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setTimeout(() => void syncAuthState(session), 0);
     });
 
     void (async () => {
-      const { data: { session }, error } = await withTimeout(
-        supabase.auth.getSession(),
-        { data: { session: null }, error: new Error("Session lookup timeout") } as Awaited<ReturnType<typeof supabase.auth.getSession>>
-      );
+      try {
+        const { data: { session }, error } = await withTimeout(
+          supabase.auth.getSession(),
+          { data: { session: null }, error: new Error("Session lookup timeout") } as Awaited<ReturnType<typeof supabase.auth.getSession>>
+        );
 
-      if ((error as any)?.code === "refresh_token_not_found") {
-        await supabase.auth.signOut();
+        // Self-heal: retryable upstream / invalid refresh → wipe stale tokens so the user can log in fresh.
+        if (error && (isTransientAuthError(error) || (error as any)?.code === "refresh_token_not_found")) {
+          console.warn("[Auth] Boot session failed, purging stale tokens:", (error as any)?.message);
+          try { await supabase.auth.signOut({ scope: "local" } as any); } catch { /* noop */ }
+          purgeLocalAuth();
+          resetAuthState();
+          setLoading(false);
+          return;
+        }
+
+        await syncAuthState(session);
+      } catch (err) {
+        console.warn("[Auth] Boot exception, purging:", err);
+        purgeLocalAuth();
         resetAuthState();
         setLoading(false);
-        return;
       }
-
-      await syncAuthState(session);
     })();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      window.removeEventListener("unhandledrejection", onUnhandled);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
