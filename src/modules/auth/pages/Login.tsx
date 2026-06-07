@@ -123,6 +123,16 @@ const Login = () => {
   };
 
   const [backendDown, setBackendDown] = useState(false);
+  const [hasStaleTokens, setHasStaleTokens] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stale = Object.keys(localStorage).some(
+        (k) => k.startsWith("sb-") && /auth-token/.test(k)
+      );
+      setHasStaleTokens(stale);
+    } catch { /* noop */ }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,11 +282,13 @@ const Login = () => {
             <div className="border-t border-border flex-1" />
           </div>
 
-          {backendDown && (
+          {(backendDown || (hasStaleTokens && !user)) && (
             <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-              <p className="font-medium mb-1">El servidor de autenticación está intermitente</p>
+              <p className="font-medium mb-1">
+                {backendDown ? "El servidor de autenticación está intermitente" : "¿Problemas para entrar?"}
+              </p>
               <p className="opacity-80 mb-2">
-                Puede haber un token caducado en este navegador. Limpia la sesión local e intenta de nuevo.
+                Si la app se queda cargando o ves errores, limpia la sesión local y vuelve a intentar.
               </p>
               <button
                 type="button"
