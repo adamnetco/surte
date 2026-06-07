@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, Share2, Download, Loader2 } from "lucide-react";
+import { Printer, Share2, Download, Loader2, X } from "lucide-react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import type { TicketData } from "../lib/ticketBuilder";
