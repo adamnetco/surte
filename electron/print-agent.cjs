@@ -83,13 +83,25 @@ function sendToLan(ip, port, bytes, timeoutMs = 8000) {
 }
 
 // ---------- USB nativo (libusb) ----------
+function parseId(v) {
+  if (v == null || v === "") return null;
+  if (typeof v === "number") return v;
+  const s = String(v).trim();
+  if (/^0x[0-9a-fA-F]+$/.test(s)) return parseInt(s, 16);
+  if (/^[0-9a-fA-F]{4}$/.test(s) && /[a-fA-F]/.test(s)) return parseInt(s, 16);
+  const n = Number(s);
+  return Number.isNaN(n) ? null : n;
+}
+
 function findUsbDevice(vendorId, productId) {
   if (!usbLib) return null;
+  const vid = parseId(vendorId);
+  const pid = parseId(productId);
   const list = usbLib.getDeviceList ? usbLib.getDeviceList() : [];
   return list.find((d) => {
     const desc = d.deviceDescriptor || {};
-    if (vendorId && desc.idVendor !== Number(vendorId)) return false;
-    if (productId && desc.idProduct !== Number(productId)) return false;
+    if (vid != null && desc.idVendor !== vid) return false;
+    if (pid != null && desc.idProduct !== pid) return false;
     return true;
   }) || null;
 }
