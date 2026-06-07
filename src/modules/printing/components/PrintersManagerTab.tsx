@@ -219,6 +219,9 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
             Agente local: {agentOnline === null ? "…" : agentOnline ? "ONLINE" : "offline"}
           </Badge>
           <Button variant="outline" onClick={detectUsb}><Usb className="h-4 w-4 mr-1" />Detectar USB</Button>
+          <Button variant="outline" onClick={scanBle} disabled={bleLoading}>
+            <Bluetooth className="h-4 w-4 mr-1" />{bleLoading ? "Escaneando…" : "Escanear BLE"}
+          </Button>
           <Button onClick={() => setEditing({ paper_width_mm: 80, connection: "usb", role: "receipt" })}>
             <Plus className="h-4 w-4 mr-1" />Nueva
           </Button>
