@@ -386,6 +386,48 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* BLE pairings picker */}
+      <Dialog open={blePairings !== null} onOpenChange={(v) => !v && setBlePairings(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Dispositivos BLE pareados</DialogTitle>
+          </DialogHeader>
+          {blePairings && blePairings.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-4">
+              No hay impresoras BLE pareadas con el agente todavía.
+              Empareja la impresora desde el sistema operativo y vuelve a escanear.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-auto">
+              {blePairings?.map((p) => (
+                <button
+                  key={p.address}
+                  onClick={() => pickBlePairing(p)}
+                  className="w-full text-left p-3 rounded-md border hover:bg-accent transition-colors"
+                >
+                  <div className="font-medium flex items-center gap-2">
+                    <Bluetooth className="h-4 w-4" />
+                    {p.name || "Sin nombre"}
+                  </div>
+                  <div className="text-xs text-muted-foreground font-mono">{p.address}</div>
+                  {p.pairedAt && (
+                    <div className="text-[10px] text-muted-foreground mt-1">
+                      Pareado: {new Date(p.pairedAt).toLocaleString("es-CO")}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlePairings(null)}>Cerrar</Button>
+            <Button variant="outline" onClick={scanBle} disabled={bleLoading}>
+              <Search className="h-4 w-4 mr-1" />Refrescar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
