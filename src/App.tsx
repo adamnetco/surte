@@ -1,8 +1,11 @@
-import { lazy, Suspense } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense, useEffect } from "react";
+import { QueryCache, QueryClient, QueryClientProvider, MutationCache } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
+import AppErrorBoundary from "@/components/AppErrorBoundary";
+import { errorToMessage } from "@/lib/errors";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -83,6 +86,25 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
+  // Captura global de errores: cualquier query/mutation que falle y no tenga
+  // handler propio termina aquí. Las mutations con onError local NO se duplican
+  // porque sonner deduplica por id.
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // Solo molestar al usuario si la query ya tenía datos antes (refetch fallido)
+      // o si fue invocada explícitamente (no en hover/prefetch).
+      if (query.state.data === undefined && query.meta?.silent !== true) {
+        const msg = errorToMessage(error);
+        toast.error(msg, { id: `q:${String(query.queryHash)}` });
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _vars, _ctx, mutation) => {
+      if (mutation.options.onError) return; // ya manejado a nivel local
+      toast.error(errorToMessage(error));
+    },
+  }),
 });
 
 const RouteFallback = () => (
@@ -112,7 +134,34 @@ const TenantHome = () => {
   return <LoginRouter />;
 };
 
+/** Captura errores async no manejados (promesas) y los muestra al usuario. */
+const GlobalErrorListeners = () => {
+  useEffect(() => {
+    const onUnhandled = (event: PromiseRejectionEvent) => {
+      // eslint-disable-next-line no-console
+      console.error("[unhandledrejection]", event.reason);
+      const msg = errorToMessage(event.reason);
+      // No spammear: dedupe por mensaje
+      toast.error(msg, { id: `unhandled:${msg}` });
+    };
+    const onError = (event: ErrorEvent) => {
+      // Solo logueamos: los errores de render los atrapa el ErrorBoundary,
+      // y los de scripts de 3eros no son accionables para el usuario final.
+      // eslint-disable-next-line no-console
+      console.error("[window.onerror]", event.error ?? event.message);
+    };
+    window.addEventListener("unhandledrejection", onUnhandled);
+    window.addEventListener("error", onError);
+    return () => {
+      window.removeEventListener("unhandledrejection", onUnhandled);
+      window.removeEventListener("error", onError);
+    };
+  }, []);
+  return null;
+};
+
 const App = () => (
+  <AppErrorBoundary label="root">
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
@@ -122,6 +171,7 @@ const App = () => (
           <CartProvider>
             <Toaster />
             <Sonner />
+            <GlobalErrorListeners />
             <Suspense fallback={null}><SSOErrorScreen /></Suspense>
 
             <DynamicThemeInjector />
@@ -206,6 +256,7 @@ const App = () => (
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
+  </AppErrorBoundary>
 );
 
 export default App;
