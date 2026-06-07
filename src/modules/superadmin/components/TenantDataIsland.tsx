@@ -14,7 +14,7 @@ import {
 } from "@/modules/tenant/lib/tenantDataIsland";
 import {
   normalizeImportedHeaders, cleanImportedRows, buildImportMutationPlan,
-} from "@/utils/dataImportUtils";
+} from "@/modules/admin-cms/lib/dataImportUtils";
 import * as XLSX from "xlsx";
 
 interface RowStatus {
@@ -116,7 +116,7 @@ export default function TenantDataIsland() {
     setRowStatus((s) => ({ ...s, [t.name]: { status: "loading", detail: "Exportando…" } }));
     try {
       const { fetchIslandRows } = await import("@/modules/tenant/lib/tenantDataIsland");
-      const { jsonToCsv, downloadCsv } = await import("@/utils/csvUtils");
+      const { jsonToCsv, downloadCsv } = await import("@/modules/admin-cms/lib/csvUtils");
       const rows = await fetchIslandRows(t, currentOrg.id);
       const date = new Date().toISOString().slice(0, 10);
       downloadCsv(jsonToCsv(rows), `${currentOrg.slug}-${t.name}-${date}.csv`);
