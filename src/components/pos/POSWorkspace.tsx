@@ -224,10 +224,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     onPark: () => { if (ticket.length > 0) setActionMode("park"); },
     onClear: () => {
       if (ticket.length === 0) return;
-      if (confirm("¿Limpiar el ticket actual?")) {
-        setTicket([]);
-        setMeta(ticketCacheKey, []).catch(() => {});
-      }
+      setClearConfirmOpen(true);
     },
     onEscape: () => setCloseOpen(true),
   });
