@@ -61,9 +61,10 @@ export default function OpenSessionPanel({ organizationId, locations, registers,
         </div>
 
         <div className="space-y-2">
-          <Label>Sede</Label>
+          <Label htmlFor="pos-location">Sede</Label>
           <select
-            className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm"
+            id="pos-location"
+            className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
           >
@@ -72,9 +73,10 @@ export default function OpenSessionPanel({ organizationId, locations, registers,
         </div>
 
         <div className="space-y-2">
-          <Label>Caja</Label>
+          <Label htmlFor="pos-register">Caja</Label>
           <select
-            className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm"
+            id="pos-register"
+            className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             value={registerId}
             onChange={(e) => setRegisterId(e.target.value)}
           >
@@ -83,8 +85,9 @@ export default function OpenSessionPanel({ organizationId, locations, registers,
         </div>
 
         <div className="space-y-2">
-          <Label className="flex items-center gap-2"><Banknote className="w-4 h-4" /> Base de caja (COP)</Label>
+          <Label htmlFor="pos-opening" className="flex items-center gap-2"><Banknote className="w-4 h-4" /> Base de caja (COP)</Label>
           <Input
+            id="pos-opening"
             type="number"
             inputMode="numeric"
             value={opening}
