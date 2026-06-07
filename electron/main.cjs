@@ -5,6 +5,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
 const crypto = require("node:crypto");
+const printAgent = require("./print-agent.cjs");
 
 const SUPA_URL = process.env.SURTEYA_SUPA_URL || "https://dimyhjzcwlgfczimqhet.supabase.co";
 const SUPA_ANON = process.env.SURTEYA_SUPA_ANON || "";
