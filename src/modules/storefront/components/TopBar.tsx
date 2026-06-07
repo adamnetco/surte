@@ -1,10 +1,19 @@
-import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu, Sun, Moon, Shield } from "lucide-react";
+import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu, Sun, Moon, Shield, Package, Settings, HelpCircle, LogIn, LogOut, UserCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useCart } from "@/modules/cart/context/CartContext";
 import { useTheme } from "@/modules/platform/context/ThemeContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import surteLogo from "@/assets/surte-logo.png";
 
 const CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"] as const;
@@ -28,7 +37,13 @@ const TopBar = ({ onSearch }: TopBarProps) => {
   const { data: settings } = useAppSettings();
   const { totalItems, totalPrice } = useCart();
   const { theme, toggle: toggleTheme } = useTheme();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Sesión cerrada");
+    navigate("/");
+  };
 
   const showPromoBanner = settings?.show_promo_banner === "true";
   const promoBannerText = settings?.promo_banner_text || "🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000";
@@ -146,11 +161,84 @@ const TopBar = ({ onSearch }: TopBarProps) => {
               </button>
             )}
 
+            {/* Account dropdown (desktop) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  aria-label={user ? "Mi cuenta" : "Iniciar sesión"}
+                  title={user ? "Mi cuenta" : "Iniciar sesión"}
+                  className="hidden md:flex w-8 h-8 items-center justify-center rounded-full bg-muted text-foreground hover:bg-muted/80 transition-colors"
+                >
+                  <User size={16} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {user ? (
+                  <>
+                    <DropdownMenuLabel className="flex flex-col gap-0.5">
+                      <span className="text-xs font-normal text-muted-foreground">Hola,</span>
+                      <span className="truncate text-sm">{user.email}</span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/perfil")}>
+                      <UserCircle className="mr-2 h-4 w-4" /> Mi Perfil
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/pedidos")}>
+                      <Package className="mr-2 h-4 w-4" /> Mis Pedidos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/favoritos")}>
+                      <Heart className="mr-2 h-4 w-4" /> Favoritos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/configuracion")}>
+                      <Settings className="mr-2 h-4 w-4" /> Configuración
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/ayuda")}>
+                      <HelpCircle className="mr-2 h-4 w-4" /> Ayuda
+                    </DropdownMenuItem>
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => navigate("/admin")}>
+                          <Shield className="mr-2 h-4 w-4" /> Admin Dashboard
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                      <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/login?redirect=/perfil")}>
+                      <LogIn className="mr-2 h-4 w-4" /> Iniciar Sesión
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/login?redirect=/perfil&mode=signup")}>
+                      <UserCircle className="mr-2 h-4 w-4" /> Crear Cuenta
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/pedidos")}>
+                      <Package className="mr-2 h-4 w-4" /> Mis Pedidos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/favoritos")}>
+                      <Heart className="mr-2 h-4 w-4" /> Favoritos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/ayuda")}>
+                      <HelpCircle className="mr-2 h-4 w-4" /> Ayuda
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Mobile account button → goes to /menu */}
             <button
               onClick={() => navigate(user ? "/perfil" : "/login?redirect=/perfil")}
               aria-label={user ? "Mi cuenta" : "Iniciar sesión"}
               title={user ? "Mi cuenta" : "Iniciar sesión"}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-muted text-foreground"
+              className="md:hidden w-8 h-8 flex items-center justify-center rounded-full bg-muted text-foreground"
             >
               <User size={16} />
             </button>
