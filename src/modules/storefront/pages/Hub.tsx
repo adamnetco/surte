@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
 import ProductCard from "@/modules/storefront/components/ProductCard";
@@ -12,7 +12,7 @@ import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useProducts, useCategories, useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowUpDown, Package } from "lucide-react";
+import { ArrowUpDown, Package, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
 const BASE_URL = "https://surteya.com";
