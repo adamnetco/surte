@@ -26,6 +26,7 @@ const statusSteps = ["pendiente", "confirmado", "en_preparacion", "enviado", "en
 
 const Pedido = () => {
   const { orderNumber } = useParams();
+  const navigate = useNavigate();
   const { data: settings } = useAppSettings();
 
   const { data: order, isLoading, isError, refetch } = useQuery({

@@ -21,6 +21,7 @@ const VALID_CITIES = ["bucaramanga", "floridablanca", "giron", "piedecuesta"];
 
 const Hub = () => {
   const params = useParams<{ type?: string; slug?: string; city?: string }>();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc">("default");
 
