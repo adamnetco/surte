@@ -84,4 +84,4 @@ const BrandsSection = () => {
   );
 };
 
-export default BrandsSection;
+export default memo(BrandsSection);
