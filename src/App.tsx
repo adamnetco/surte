@@ -26,12 +26,12 @@ import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 import Index from "./pages/Index";
 import LoginRouter from "./modules/auth/pages/LoginRouter";
 import AdminDiag from "./pages/AdminDiag";
-import RoleGuard from "./components/RoleGuard";
+import RoleGuard from "./modules/auth/components/RoleGuard";
 import HostGuard from "./components/HostGuard";
 import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
 
 const ClientPortalShell = lazy(() => import("./modules/clientes").then((m) => ({ default: m.ClientPortalShell })));
-const SSOErrorScreen = lazy(() => import("./components/SSOErrorScreen"));
+const SSOErrorScreen = lazy(() => import("./modules/auth/components/SSOErrorScreen"));
 
 
 const Catalogo = lazy(() => import("./modules/storefront").then((m) => ({ default: m.CatalogoPage })));
