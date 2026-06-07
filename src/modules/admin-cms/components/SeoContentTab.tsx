@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Pencil, Trash2, Save, X, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
-import TiptapEditor from "@/components/admin/TiptapEditor";
+import TiptapEditor from "@/modules/admin-cms/components/TiptapEditor";
 
 type EntityType = "category" | "brand" | "city" | "tag";
 type Faq = { q: string; a: string };

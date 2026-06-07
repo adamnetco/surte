@@ -1,0 +1,8 @@
+// Public API barrel for the admin-cms module.
+// Consumers should import from "@/modules/admin-cms" rather than reaching
+// into ./components or ./pages directly.
+
+export { default as AdminDashboardPage } from "./pages/AdminDashboard";
+export { default as InventarioPage } from "./pages/Inventario";
+export { default as FacturacionPage } from "./pages/Facturacion";
+export { default as ComprasPage } from "./pages/Compras";

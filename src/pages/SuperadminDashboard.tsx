@@ -9,14 +9,14 @@ import TenantSwitcher from "@/components/superadmin/TenantSwitcher";
 import RequireActiveTenant from "@/components/superadmin/RequireActiveTenant";
 import TenantOnboardingWizard from "@/components/superadmin/TenantOnboardingWizard";
 
-const OverviewTab = lazy(() => import("@/components/admin/OverviewTab"));
-const OrganizationsTab = lazy(() => import("@/components/admin/OrganizationsTab"));
-const ModulesTab = lazy(() => import("@/components/admin/ModulesTab"));
-const FiscalSettingsTab = lazy(() => import("@/components/admin/FiscalSettingsTab"));
-const SyncMonitor = lazy(() => import("@/components/admin/SyncMonitor"));
-const SyncStatusTable = lazy(() => import("@/components/admin/SyncStatusTable"));
-const DeadLetterQueue = lazy(() => import("@/components/admin/DeadLetterQueue"));
-const DataManagementTab = lazy(() => import("@/components/admin/DataManagementTab"));
+const OverviewTab = lazy(() => import("@/modules/admin-cms/components/OverviewTab"));
+const OrganizationsTab = lazy(() => import("@/modules/admin-cms/components/OrganizationsTab"));
+const ModulesTab = lazy(() => import("@/modules/admin-cms/components/ModulesTab"));
+const FiscalSettingsTab = lazy(() => import("@/modules/admin-cms/components/FiscalSettingsTab"));
+const SyncMonitor = lazy(() => import("@/modules/admin-cms/components/SyncMonitor"));
+const SyncStatusTable = lazy(() => import("@/modules/admin-cms/components/SyncStatusTable"));
+const DeadLetterQueue = lazy(() => import("@/modules/admin-cms/components/DeadLetterQueue"));
+const DataManagementTab = lazy(() => import("@/modules/admin-cms/components/DataManagementTab"));
 const TenantHealth = lazy(() => import("@/components/superadmin/TenantHealth"));
 const TenantDataIsland = lazy(() => import("@/components/superadmin/TenantDataIsland"));
 

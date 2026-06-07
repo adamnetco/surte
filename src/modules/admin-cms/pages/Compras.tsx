@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Truck, FileText, Link2, Star, Trash2, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
-import AdminHeader from "@/components/admin/AdminHeader";
+import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 
 export default function Compras() {
   const { user, role, loading } = useAuth();

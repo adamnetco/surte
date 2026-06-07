@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink, RefreshCw, Send, Webhook } from "lucide-react";
 import { toast } from "sonner";
-import AdminHeader from "@/components/admin/AdminHeader";
+import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 
 const ASTRO_HOST_IP = "185.158.133.1"; // mismo IP base de Lovable; el cliente reenvía aquí su DNS
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
