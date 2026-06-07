@@ -242,9 +242,20 @@ const Login = () => {
       <main className="flex-1 flex flex-col items-center justify-center px-5 py-8">
         <div className="w-full max-w-sm">
           <div className="flex flex-col items-center text-center mb-6">
-            <img src={surteLogo} alt="SURTÉ YA" className="h-14 mb-3 object-contain" />
+            {brandLogo ? (
+              <img
+                src={brandLogo}
+                alt={brandName}
+                className="h-14 mb-3 object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+            ) : (
+              <div className="h-14 w-14 mb-3 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
+                <Store size={26} />
+              </div>
+            )}
             <h1 className="font-heading font-bold text-xl text-foreground">
-              {isSignUp ? "Crea tu cuenta" : "Bienvenido de nuevo"}
+              {isSignUp ? `Crea tu cuenta en ${brandName}` : `Bienvenido a ${brandName}`}
             </h1>
             <p className="text-xs text-muted-foreground mt-1">
               {isSignUp
