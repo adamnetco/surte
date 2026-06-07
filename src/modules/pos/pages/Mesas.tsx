@@ -117,17 +117,19 @@ export default function Mesas() {
   return (
     <div className="min-h-[100dvh] bg-muted/30 flex flex-col">
       <div className="bg-card border-b px-3 py-2 flex items-center gap-2 overflow-x-auto">
-        <h1 className="font-semibold mr-3">Mesas</h1>
-        {areas.map(a => (
-          <button
-            key={a.id}
-            onClick={() => setActiveArea(a.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${activeArea === a.id ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}
-          >
-            {a.name}
-          </button>
-        ))}
-        <Button size="sm" variant="ghost" className="ml-auto" onClick={() => navigate("/kds")}>Ir a KDS →</Button>
+        <h1 className="font-semibold mr-2">Mesas</h1>
+        <POSWorkspaceNav className="mr-2" />
+        <div className="flex items-center gap-2 flex-1 overflow-x-auto">
+          {areas.map(a => (
+            <button
+              key={a.id}
+              onClick={() => setActiveArea(a.id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${activeArea === a.id ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}
+            >
+              {a.name}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 relative overflow-auto p-4">
