@@ -67,6 +67,13 @@ const LoginRouter = () => {
     } catch {
       setHasStaleTokens(false);
     }
+    logAuth({ level: "info", event: "login_page_mounted", tenant, detail: `host=${window.location.hostname}` });
+  }, [tenant]);
+
+  // Tick the gate clock so the resend button auto-enables when cooldown ends.
+  useEffect(() => {
+    const id = window.setInterval(() => setGate(checkMagicLinkGate()), 1000);
+    return () => window.clearInterval(id);
   }, []);
 
   const signInWithRetry = async (mail: string, pwd: string) => {
@@ -81,6 +88,7 @@ const LoginRouter = () => {
 
   const clearStaleAuthAndReload = () => {
     purgeLocalAuth();
+    logAuth({ level: "warn", event: "local_auth_purged" });
     toast.success("Sesión local limpiada. Recargando…");
     window.setTimeout(() => window.location.reload(), 400);
   };
@@ -97,6 +105,18 @@ const LoginRouter = () => {
       return;
     }
 
+    const currentGate = checkMagicLinkGate();
+    if (!currentGate.allowed) {
+      const seconds = Math.ceil((currentGate.remainingMs ?? 0) / 1000);
+      const msg = currentGate.reason === "cooldown"
+        ? `Espera ${seconds}s antes de reenviar el enlace.`
+        : `Llegaste al máximo de ${currentGate.attemptsMax} intentos. Reintenta en ${Math.ceil(seconds / 60)} min o revisa /auth-status.`;
+      toast.error(msg);
+      logAuth({ level: "warn", event: "magic_link_blocked", detail: msg, tenant: tenantSlug, email: mail });
+      setGate(currentGate);
+      return;
+    }
+
     setEmailLinkLoading(true);
     setBackendDown(false);
     try {
@@ -105,6 +125,7 @@ const LoginRouter = () => {
       }
       const redirectTo = new URL("/admin/login", window.location.origin);
       if (tenantSlug) redirectTo.searchParams.set("tienda", tenantSlug);
+      logAuth({ level: "info", event: "magic_link_request", detail: `redirectTo=${redirectTo.toString()}`, tenant: tenantSlug, email: mail });
       const { error } = await supabase.auth.signInWithOtp({
         email: mail,
         options: {
@@ -113,9 +134,14 @@ const LoginRouter = () => {
         },
       });
       if (error) throw error;
+      recordMagicLinkAttempt();
+      setGate(checkMagicLinkGate());
+      setMagicLinkSent(true);
+      logAuth({ level: "success", event: "magic_link_sent", tenant: tenantSlug, email: mail });
       toast.success("Te envié un enlace de acceso. Revisa tu correo y entra sin contraseña.");
     } catch (err: any) {
       const msg = err?.message || "";
+      logAuth({ level: "error", event: "magic_link_failed", detail: msg, tenant: tenantSlug, email: mail });
       if (isTransientAuthError(err)) {
         setBackendDown(true);
         toast.error("El servidor de autenticación está intermitente. Intenta reenviar el acceso en unos segundos.");
@@ -128,6 +154,7 @@ const LoginRouter = () => {
       setEmailLinkLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (authLoading || redirectedRef.current || !user) return;
