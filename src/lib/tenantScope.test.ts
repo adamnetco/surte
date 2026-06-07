@@ -25,10 +25,11 @@ describe("tenantScope", () => {
     expect(() => scopedFrom("products", undefined)).toThrow();
   });
 
-  it("scopedFrom invoca supabase.from(table).eq con organization_id", () => {
+  it("scopedFrom invoca supabase.from(table).select().eq con organization_id", () => {
     scopedFrom("products", ORG);
     expect((supabase as any).from).toHaveBeenCalledWith("products");
-    const b: any = (supabase as any).from.mock.results[0].value;
+    const b: any = (supabase as any).from.mock.results.at(-1)!.value;
+    expect(b.select).toHaveBeenCalledWith("*");
     expect(b.eq).toHaveBeenCalledWith("organization_id", ORG);
   });
 
