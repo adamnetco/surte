@@ -166,3 +166,63 @@ export async function verifySignupTenantLink({
     };
   }
 }
+
+export interface RetryArgs extends VerifyArgs {
+  /** Máximo de intentos totales (incluye el primero). Default 4. */
+  maxAttempts?: number;
+  /** Delay base entre reintentos en ms (backoff exponencial). Default 1000. */
+  baseDelayMs?: number;
+  /** Callback opcional notificado en cada intento (útil para UI/log). */
+  onAttempt?: (info: {
+    attempt: number;
+    maxAttempts: number;
+    lastResult: SignupLinkResult | null;
+    nextDelayMs: number;
+  }) => void;
+}
+
+/** Estados considerados "transitorios" → se reintentan con backoff. */
+const TRANSIENT_STATUSES: readonly SignupLinkStatus[] = [
+  "timeout",
+  "error",
+  "profile_not_created", // el trigger puede tardar > timeout en correr
+  "organization_not_linked", // puede que el trigger aún no haya rellenado el FK
+];
+
+/**
+ * verifySignupTenantLinkWithRetry
+ * -----------------------------------------------------------------------------
+ * Envuelve `verifySignupTenantLink` con reintentos y backoff exponencial
+ * (1s, 2s, 4s, ...). Solo reintenta estados transitorios; los estados
+ * "duros" (missing_slug, unknown_slug, slug_mismatch) salen al primer intento.
+ *
+ * Siempre devuelve un `SignupLinkResult` — nunca lanza — para mantener el
+ * contrato no-bloqueante del flujo de signup.
+ */
+export async function verifySignupTenantLinkWithRetry(
+  args: RetryArgs,
+): Promise<SignupLinkResult> {
+  const maxAttempts = Math.max(1, args.maxAttempts ?? 4);
+  const baseDelayMs = args.baseDelayMs ?? 1000;
+  let last: SignupLinkResult | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    last = await verifySignupTenantLink(args);
+    if (!TRANSIENT_STATUSES.includes(last.status)) {
+      return last; // ok o estado terminal no recuperable
+    }
+    if (attempt === maxAttempts) break;
+    const nextDelayMs = baseDelayMs * Math.pow(2, attempt - 1);
+    args.onAttempt?.({ attempt, maxAttempts, lastResult: last, nextDelayMs });
+    await sleep(nextDelayMs);
+  }
+  return (
+    last ?? {
+      status: "error",
+      sentSlug: args.sentSlug,
+      expectedOrgId: null,
+      actualOrgId: null,
+      message: "Reintentos agotados sin resultado.",
+    }
+  );
+}
