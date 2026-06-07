@@ -320,13 +320,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         toast.success("Ticket cobrado offline · se enviará al volver la red");
       }
 
-      if (navigator.onLine) {
-        setTimeout(() => {
-          if (confirm("¿Emitir factura electrónica DIAN para este ticket?")) {
-            setActionMode("emit");
-          }
-        }, 300);
-      }
+      // Pantalla de cierre de venta (reemplaza confirm() nativo bloqueante).
+      setSaleComplete({ total: totals.total, amountPaid, change });
     } catch (e: any) {
       toast.error(e?.message || "No se pudo encolar el ticket");
     }
