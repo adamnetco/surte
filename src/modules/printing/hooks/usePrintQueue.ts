@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { buildReceipt, buildKitchen, type TicketData } from "../lib/ticketBuilder";
 import { listAuthorizedUsbPrinters, printOnceUsb } from "../drivers/webusb";
 import { pingAgent, printViaAgent } from "../drivers/agent";
+import { isWebBluetoothSupported, requestBluetoothPrinter, printOnceBluetooth } from "../drivers/webbluetooth";
 import { toast } from "sonner";
 
 interface UsePrintQueueOpts {
