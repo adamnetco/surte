@@ -92,8 +92,8 @@ export default function GlobalCommandPalette() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        // Evitar pisar el ⌘K del POS cuando esté montado: si hay un input activo dentro
-        // de un dialog de cmdk, dejamos que ese lo maneje. Caso normal: abrimos global.
+        // El POS tiene su propia paleta (productos). No pisamos ⌘K dentro de /pos*.
+        if (window.location.pathname.startsWith("/pos")) return;
         const target = e.target as HTMLElement | null;
         if (target?.closest?.("[cmdk-root]")) return;
         e.preventDefault();
