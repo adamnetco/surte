@@ -69,7 +69,21 @@ const Sitios = lazy(() => import("./pages/Sitios"));
 const SuperadminDashboard = lazy(() => import("./pages/SuperadminDashboard"));
 const TenantWorkspace = lazy(() => import("./pages/TenantWorkspace"));
 
-const queryClient = new QueryClient();
+// Perf: defaults conservadores para evitar refetches innecesarios.
+// - staleTime 60s: la mayoría de paneles no necesitan datos frescos por segundo.
+// - gcTime 5min: mantiene cache caliente al navegar entre tabs.
+// - refetchOnWindowFocus false: en POS/Admin abrir otra pestaña no debería re-pegarle a la DB.
+// - retry 1: errores transitorios sí reintentan, pero no bucles largos.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const RouteFallback = () => (
   <div className="min-h-[100dvh] flex items-center justify-center text-sm text-muted-foreground">
