@@ -14,7 +14,11 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.PLAYWRIGHT_RETRIES
+    ? Number(process.env.PLAYWRIGHT_RETRIES)
+    : process.env.CI
+    ? 2
+    : 0,
   workers: process.env.CI ? 1 : undefined,
   // `github` emite ::error file=...,line=... como anotaciones nativas del PR.
   // `json` se usa luego para resumir fallos en un comentario con links.

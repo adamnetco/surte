@@ -1,0 +1,125 @@
+name: E2E Flaky (nightly)
+
+# Jobs nocturnos para tests marcados como @flaky en el título.
+# Se aíslan del pipeline principal (que los excluye con --grep-invert)
+# para que no bloqueen merges, pero seguimos observando su salud.
+
+on:
+  schedule:
+    # 07:00 UTC ≈ 02:00 Bogotá. Diario.
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  flaky:
+    name: Playwright e2e (@flaky only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # No fail-fast: queremos ver TODOS los flakey aunque uno reviente.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Patch fixture for CI
+        run: cp playwright-fixture.ci.ts playwright-fixture.ts
+
+      - name: Run flaky e2e only
+        id: run
+        run: npx playwright test --config=playwright.config.ci.ts --grep "@flaky"
+        env:
+          CI: "true"
+          # Más reintentos en nightly — el objetivo es medir, no bloquear.
+          PLAYWRIGHT_RETRIES: "3"
+
+      - name: Build summary
+        if: ${{ always() }}
+        run: node scripts/summarize-playwright.cjs || true
+
+      - name: Upload report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-flaky-report
+          path: playwright-report
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Upload traces / videos (on failure)
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-flaky-artifacts
+          path: test-results
+          retention-days: 30
+          if-no-files-found: ignore
+
+      # Si el nightly falla, abre/actualiza un issue para que quede traza.
+      - name: Open issue on failure
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "Nightly flaky e2e — fallos detectados";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `El job nocturno de tests \`@flaky\` falló.`,
+              ``,
+              `Run: ${runUrl}`,
+              `Artifacts: ${runUrl}#artifacts`,
+              ``,
+              `Revisa \`playwright-flaky-report\` para el detalle y \`playwright-flaky-artifacts\` para traces/videos.`,
+            ].join("\n");
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "flaky-nightly",
+              per_page: 1,
+            });
+            if (issues.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body,
+              });
+            } else {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: "flaky-nightly",
+                });
+              } catch (e) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: "flaky-nightly",
+                  color: "fbca04",
+                  description: "Fallos del job nocturno de tests @flaky",
+                });
+              }
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["flaky-nightly"],
+              });
+            }
