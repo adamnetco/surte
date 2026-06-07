@@ -21,6 +21,7 @@ import CustomScriptInjector from "@/components/CustomScriptInjector";
 import Analytics from "@/modules/marketing/seo/Analytics";
 import CartNavigationGuard from "@/components/CartNavigationGuard";
 import OmnichannelCartListener from "@/components/OmnichannelCartListener";
+import GlobalCommandPalette from "@/components/GlobalCommandPalette";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
 import Index from "./pages/Index";
