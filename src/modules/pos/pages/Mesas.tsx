@@ -7,6 +7,7 @@ import { Loader2, LockKeyhole, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import TableOrderDrawer from "@/modules/pos/components/TableOrderDrawer";
+import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
 
 interface Area { id: string; name: string; color: string | null; }
 interface Table {
