@@ -1,5 +1,5 @@
 import { useState, useEffect, Component, lazy, Suspense, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import type { AppRole } from "@/modules/auth/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -120,6 +120,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [tabFilter, setTabFilter] = useState("");
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
 
   const { hasModule, currentOrg } = useOrganization();
@@ -129,6 +130,22 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!loading && role === "editor") setActiveTab("orders");
   }, [role, loading]);
+
+  // Sync activeTab ⇄ ?tab=... — habilita deep-linking desde el Command Palette.
+  useEffect(() => {
+    const q = searchParams.get("tab");
+    if (q && q !== activeTab && tabs.some((t) => t.id === q)) setActiveTab(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, tabs.length]);
+
+  const selectTab = (id: string) => {
+    setActiveTab(id);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", id);
+      return next;
+    }, { replace: true });
+  };
 
   useEffect(() => {
     if (!loading && !user) { toast.error("Acceso denegado"); navigate("/"); return; }
@@ -286,7 +303,7 @@ const AdminDashboard = () => {
       {/* Mobile: horizontal tab scroll */}
       <div className="lg:hidden flex overflow-x-auto border-b border-border bg-card scrollbar-hide">
         {tabs.map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => setActiveTab(id)}
+          <button key={id} onClick={() => selectTab(id)}
             className={`relative flex items-center gap-1.5 px-4 py-3 text-xs font-heading font-semibold whitespace-nowrap border-b-2 transition-colors ${
               activeTab === id
                 ? "border-primary text-primary"
@@ -348,7 +365,7 @@ const AdminDashboard = () => {
               const renderTabBtn = ({ id, label, icon: Icon }: typeof tabs[number]) => (
                 <button
                   key={id}
-                  onClick={() => setActiveTab(id)}
+                  onClick={() => selectTab(id)}
                   className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium transition-colors relative ${
                     activeTab === id
                       ? "bg-primary/10 text-primary border-r-2 border-primary"
