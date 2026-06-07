@@ -8,7 +8,7 @@ import BottomNav from "@/modules/storefront/components/BottomNav";
 import { useCart } from "@/context/CartContext";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useAuth } from "@/modules/auth/context/AuthContext";
-import { useAgent } from "@/context/AgentContext";
+import { useAgent } from "@/modules/pos/context/AgentContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

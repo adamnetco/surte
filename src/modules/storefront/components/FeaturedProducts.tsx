@@ -6,7 +6,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useSwipe } from "@/context/SwipeContext";
+import { useSwipe } from "@/modules/storefront/context/SwipeContext";
 
 interface FeaturedSection {
   id: string;
