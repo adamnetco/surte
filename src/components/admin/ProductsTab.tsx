@@ -295,7 +295,34 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
   };
 
   const saveProduct = async () => {
-    if (!form.name || !form.price) { toast.error("Nombre y precio son obligatorios"); return; }
+    // Validación tipada con zod: cubre obligatorios, formatos y reglas cruzadas
+    // (mayorista ≤ detal, original > price, costo ≤ precio).
+    const parsed = productSchema.safeParse({
+      name: form.name,
+      slug: form.slug,
+      description: form.description,
+      price: form.price,
+      original_price: form.original_price,
+      price_wholesale: form.price_wholesale,
+      price_distributor: form.price_distributor,
+      cost_price: form.cost_price,
+      stock: form.stock,
+      unit: form.unit,
+      category_id: form.category_id,
+      brand: form.brand,
+      sku: form.sku,
+      gtin: form.gtin,
+      meta_title: form.meta_title,
+      meta_description: form.meta_description,
+      image_url: form.image_url,
+      unit_quantity: form.unit_quantity,
+      net_weight_grams: form.net_weight_grams,
+      is_active: form.is_active,
+    });
+    if (!parsed.success) {
+      toast.error(firstZodMessage(parsed.error));
+      return;
+    }
     const autoSlug = form.slug || form.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const tagsArray = form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : [];
     const payload: any = {
