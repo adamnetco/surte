@@ -29,6 +29,7 @@ import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 import Index from "./pages/Index";
 import LoginRouter from "./modules/auth/pages/LoginRouter";
 import AdminDiag from "./pages/AdminDiag";
+import AuthStatus from "./pages/AuthStatus";
 import RoleGuard from "./modules/auth/components/RoleGuard";
 import HostGuard from "./components/HostGuard";
 import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
@@ -251,6 +252,8 @@ const App = () => (
                     <Route path="/t/:slug/admin" element={<HostGuard require="system"><TenantWorkspace /></HostGuard>} />
                     <Route path="/admin/diag" element={<AdminDiag />} />
                     <Route path="/admin-diag" element={<AdminDiag />} />
+                    <Route path="/auth-status" element={<AuthStatus />} />
+                    <Route path="/admin/auth-status" element={<AuthStatus />} />
 
                     <Route path="*" element={<NotFound />} />
                   </Routes>

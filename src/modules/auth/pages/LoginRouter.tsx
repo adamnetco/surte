@@ -9,6 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import { isTransientAuthError, purgeLocalAuth, sleep } from "@/modules/auth/lib/authRecovery";
+import {
+  logAuth,
+  checkMagicLinkGate,
+  recordMagicLinkAttempt,
+  type MagicLinkGate,
+} from "@/modules/auth/lib/authLog";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
 
@@ -41,6 +47,8 @@ const LoginRouter = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [backendDown, setBackendDown] = useState(false);
   const [hasStaleTokens, setHasStaleTokens] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [gate, setGate] = useState<MagicLinkGate>(() => checkMagicLinkGate());
   const redirectedRef = useRef(false);
 
   const destinationFor = (mail: string | null | undefined, r: AppRole | null, tenantSlug = tienda.trim().toLowerCase()): string => {
@@ -59,6 +67,13 @@ const LoginRouter = () => {
     } catch {
       setHasStaleTokens(false);
     }
+    logAuth({ level: "info", event: "login_page_mounted", tenant, detail: `host=${window.location.hostname}` });
+  }, [tenant]);
+
+  // Tick the gate clock so the resend button auto-enables when cooldown ends.
+  useEffect(() => {
+    const id = window.setInterval(() => setGate(checkMagicLinkGate()), 1000);
+    return () => window.clearInterval(id);
   }, []);
 
   const signInWithRetry = async (mail: string, pwd: string) => {
@@ -73,6 +88,7 @@ const LoginRouter = () => {
 
   const clearStaleAuthAndReload = () => {
     purgeLocalAuth();
+    logAuth({ level: "warn", event: "local_auth_purged" });
     toast.success("Sesión local limpiada. Recargando…");
     window.setTimeout(() => window.location.reload(), 400);
   };
@@ -89,6 +105,18 @@ const LoginRouter = () => {
       return;
     }
 
+    const currentGate = checkMagicLinkGate();
+    if (!currentGate.allowed) {
+      const seconds = Math.ceil((currentGate.remainingMs ?? 0) / 1000);
+      const msg = currentGate.reason === "cooldown"
+        ? `Espera ${seconds}s antes de reenviar el enlace.`
+        : `Llegaste al máximo de ${currentGate.attemptsMax} intentos. Reintenta en ${Math.ceil(seconds / 60)} min o revisa /auth-status.`;
+      toast.error(msg);
+      logAuth({ level: "warn", event: "magic_link_blocked", detail: msg, tenant: tenantSlug, email: mail });
+      setGate(currentGate);
+      return;
+    }
+
     setEmailLinkLoading(true);
     setBackendDown(false);
     try {
@@ -97,6 +125,7 @@ const LoginRouter = () => {
       }
       const redirectTo = new URL("/admin/login", window.location.origin);
       if (tenantSlug) redirectTo.searchParams.set("tienda", tenantSlug);
+      logAuth({ level: "info", event: "magic_link_request", detail: `redirectTo=${redirectTo.toString()}`, tenant: tenantSlug, email: mail });
       const { error } = await supabase.auth.signInWithOtp({
         email: mail,
         options: {
@@ -105,9 +134,14 @@ const LoginRouter = () => {
         },
       });
       if (error) throw error;
+      recordMagicLinkAttempt();
+      setGate(checkMagicLinkGate());
+      setMagicLinkSent(true);
+      logAuth({ level: "success", event: "magic_link_sent", tenant: tenantSlug, email: mail });
       toast.success("Te envié un enlace de acceso. Revisa tu correo y entra sin contraseña.");
     } catch (err: any) {
       const msg = err?.message || "";
+      logAuth({ level: "error", event: "magic_link_failed", detail: msg, tenant: tenantSlug, email: mail });
       if (isTransientAuthError(err)) {
         setBackendDown(true);
         toast.error("El servidor de autenticación está intermitente. Intenta reenviar el acceso en unos segundos.");
@@ -121,13 +155,16 @@ const LoginRouter = () => {
     }
   };
 
+
   useEffect(() => {
     if (authLoading || redirectedRef.current || !user) return;
     redirectedRef.current = true;
     if (tienda) {
       try { sessionStorage.setItem("sps_tenant_override", tienda); } catch { /* noop */ }
     }
-    navigate(destinationFor(user.email, role), { replace: true });
+    const dest = destinationFor(user.email, role);
+    logAuth({ level: "success", event: "auto_redirect_after_session", detail: `dest=${dest} role=${role}`, tenant: tienda || null, email: user.email });
+    navigate(dest, { replace: true });
   }, [authLoading, user, role, tienda, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,15 +176,18 @@ const LoginRouter = () => {
     }
     setLoading(true);
     setBackendDown(false);
+    logAuth({ level: "info", event: "password_signin_attempt", tenant: tenantSlug, email: email.trim() });
     try {
       const { error, session, role: signedInRole } = await signInWithRetry(email.trim(), password);
       if (error) throw error;
       if (tenantSlug) {
         try { sessionStorage.setItem("sps_tenant_override", tenantSlug); } catch { /* noop */ }
       }
+      const dest = destinationFor(session?.user?.email ?? email, signedInRole ?? role, tenantSlug);
+      logAuth({ level: "success", event: "password_signin_ok", detail: `dest=${dest} role=${signedInRole}`, tenant: tenantSlug, email: session?.user?.email ?? email });
       toast.success("¡Bienvenido!");
       redirectedRef.current = true;
-      navigate(destinationFor(session?.user?.email ?? email, signedInRole ?? role, tenantSlug), { replace: true });
+      navigate(dest, { replace: true });
     } catch (err: any) {
       const msg = err?.message || "";
       let friendly = "No pudimos iniciar sesión.";
@@ -157,11 +197,13 @@ const LoginRouter = () => {
       } else if (/Invalid login credentials/i.test(msg)) friendly = "Usuario o contraseña incorrectos.";
       else if (/Email not confirmed/i.test(msg)) friendly = "Tu correo no está confirmado.";
       else if (msg) friendly = msg;
+      logAuth({ level: "error", event: "password_signin_failed", detail: msg || friendly, tenant: tenantSlug, email: email.trim() });
       toast.error(friendly);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
@@ -326,15 +368,43 @@ const LoginRouter = () => {
               <div className="border-t border-white/10 flex-1" />
             </div>
 
-            <button
-              type="button"
-              onClick={handleEmailLink}
-              disabled={emailLinkLoading}
-              className="w-full mb-3 flex items-center justify-center gap-2.5 bg-white/10 border border-white/10 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors disabled:opacity-60"
-            >
-              {emailLinkLoading ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
-              {emailLinkLoading ? "Enviando acceso…" : "Enviar acceso por email"}
-            </button>
+            {(() => {
+              const cooldownLeft = !gate.allowed && gate.reason === "cooldown" ? Math.ceil((gate.remainingMs ?? 0) / 1000) : 0;
+              const maxed = !gate.allowed && gate.reason === "max_attempts";
+              const disabled = emailLinkLoading || !gate.allowed;
+              const label = emailLinkLoading
+                ? "Enviando acceso…"
+                : maxed
+                  ? `Máx. ${gate.attemptsMax} intentos · espera ${Math.ceil((gate.remainingMs ?? 0) / 60000)} min`
+                  : cooldownLeft > 0
+                    ? `Reenviar en ${cooldownLeft}s`
+                    : magicLinkSent
+                      ? "Reenviar acceso por email"
+                      : "Enviar acceso por email";
+              return (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleEmailLink}
+                    disabled={disabled}
+                    className="w-full mb-2 flex items-center justify-center gap-2.5 bg-white/10 border border-white/10 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors disabled:opacity-60"
+                  >
+                    {emailLinkLoading ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
+                    {label}
+                  </button>
+                  <div className="mb-3 text-[11px] text-white/50 flex items-center justify-between px-1">
+                    <span>Intentos: {gate.attemptsUsed}/{gate.attemptsMax}</span>
+                    <a href="/auth-status" className="underline decoration-white/30 hover:text-white">Ver estado de autenticación</a>
+                  </div>
+                  {magicLinkSent && !emailLinkLoading && (
+                    <p className="mb-3 text-[11px] text-green-300/90 px-1">
+                      ✓ Enlace enviado a <code>{email.trim().toLowerCase()}</code>. Revisa tu bandeja y spam.
+                    </p>
+                  )}
+                </>
+              );
+            })()}
+
 
             <button
               type="button"
