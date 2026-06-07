@@ -15,7 +15,7 @@ const Categorias = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4">
-        <SeoBreadcrumbs items={[{ label: "Categorías" }]} className="mb-2" />
+        <SeoBreadcrumbs items={[{ label: "Inicio", href: "/" }, { label: "Categorías" }]} className="mb-2" />
         <h1 className="text-xl font-heading font-bold text-foreground mb-4">Categorías</h1>
         <div className="flex flex-col gap-3">
           {isLoading

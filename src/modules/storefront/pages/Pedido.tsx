@@ -115,7 +115,13 @@ const Pedido = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4 max-w-lg mx-auto">
-        <SeoBreadcrumbs items={[{ label: "Pedidos", href: "/pedidos" }, { label: `Pedido #${order.order_number}` }]} className="mb-2" />
+        <SeoBreadcrumbs items={[{ label: "Inicio", href: "/" }, { label: `Pedido #${order.order_number}` }]} className="mb-2" />
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2 active:scale-95"
+        >
+          <ArrowLeft size={14} /> Volver al inicio
+        </button>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -232,6 +238,12 @@ const Pedido = () => {
             className="w-full flex items-center justify-center gap-2 bg-muted text-foreground font-medium py-3 rounded-xl text-sm"
           >
             <Copy size={16} /> Copiar enlace de seguimiento
+          </button>
+          <button
+            onClick={() => navigate("/catalogo")}
+            className="w-full flex items-center justify-center gap-2 bg-accent/10 text-accent font-medium py-3 rounded-xl text-sm"
+          >
+            <ShoppingBag size={16} /> Seguir comprando
           </button>
         </motion.div>
       </main>

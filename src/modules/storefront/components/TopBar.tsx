@@ -28,7 +28,7 @@ const TopBar = ({ onSearch }: TopBarProps) => {
   const { data: settings } = useAppSettings();
   const { totalItems, totalPrice } = useCart();
   const { theme, toggle: toggleTheme } = useTheme();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const showPromoBanner = settings?.show_promo_banner === "true";
   const promoBannerText = settings?.promo_banner_text || "🚚 ENVÍO GRATIS EN COMPRAS DESDE $120.000";
@@ -147,7 +147,9 @@ const TopBar = ({ onSearch }: TopBarProps) => {
             )}
 
             <button
-              onClick={() => navigate("/menu")}
+              onClick={() => navigate(user ? "/perfil" : "/login?redirect=/perfil")}
+              aria-label={user ? "Mi cuenta" : "Iniciar sesión"}
+              title={user ? "Mi cuenta" : "Iniciar sesión"}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-muted text-foreground"
             >
               <User size={16} />

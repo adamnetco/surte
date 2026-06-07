@@ -216,9 +216,19 @@ const Hub = () => {
       )}
       <TopBar />
       <main className="px-4 py-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2 active:scale-95"
+        >
+          <ArrowLeft size={14} /> Volver
+        </button>
         <SeoBreadcrumbs
           items={[
-            { label: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : type === "etiqueta" ? "Destacados" : "Ciudades", href: type === "categoria" ? "/categorias" : undefined },
+            { label: "Inicio", href: "/" },
+            {
+              label: type === "categoria" ? "Categorías" : type === "marca" ? "Marcas" : type === "etiqueta" ? "Destacados" : "Ciudades",
+              href: type === "categoria" ? "/categorias" : type === "marca" ? "/categorias" : undefined,
+            },
             { label: title },
           ]}
           className="mb-2"

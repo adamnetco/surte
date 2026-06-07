@@ -17,9 +17,9 @@ const Favoritos = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopBar />
       <main className="px-4 py-4">
-        <SeoBreadcrumbs items={[{ label: "Favoritos" }]} className="mb-2" />
+        <SeoBreadcrumbs items={[{ label: "Inicio", href: "/" }, { label: "Favoritos" }]} className="mb-2" />
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={() => navigate(-1)} className="text-foreground"><ArrowLeft size={20} /></button>
+          <button onClick={() => navigate(-1)} className="text-foreground" aria-label="Volver"><ArrowLeft size={20} /></button>
           <h1 className="text-xl font-heading font-bold text-foreground">Favoritos</h1>
         </div>
 
@@ -27,7 +27,13 @@ const Favoritos = () => {
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Heart size={48} strokeWidth={1.2} className="mb-3 opacity-40" />
             <p className="font-heading font-semibold text-lg mb-1">Sin favoritos</p>
-            <p className="text-sm">Toca el ❤️ en un producto para guardarlo</p>
+            <p className="text-sm mb-4">Toca el ❤️ en un producto para guardarlo</p>
+            <button
+              onClick={() => navigate("/catalogo")}
+              className="px-5 py-2.5 rounded-full bg-accent text-accent-foreground text-sm font-semibold hover:opacity-90"
+            >
+              Explorar catálogo
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">

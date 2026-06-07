@@ -407,7 +407,13 @@ const Carrito = () => {
     <div className="min-h-screen bg-background pb-24 lg:pb-8">
       <TopBar />
       <main className="px-4 py-4 max-w-7xl mx-auto">
-        <SeoBreadcrumbs items={[{ label: "Carrito" }]} className="mb-2" />
+        <SeoBreadcrumbs items={[{ label: "Inicio", href: "/" }, { label: "Carrito" }]} className="mb-2" />
+        <button
+          onClick={() => navigate("/catalogo")}
+          className="flex items-center gap-1.5 text-sm text-accent font-medium mb-3 active:scale-95"
+        >
+          <ExternalLink size={14} className="rotate-180" /> Continuar comprando
+        </button>
         <h1 className="text-xl lg:text-2xl font-heading font-bold text-foreground mb-4">Tu Carrito</h1>
 
         {items.length === 0 ? (
