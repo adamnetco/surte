@@ -18,8 +18,8 @@ import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { trackPurchase } from "@/modules/marketing/seo/Analytics";
-import { mailService } from "@/utils/mailService";
-import { orderConfirmationTemplate } from "@/utils/emailTemplates";
+import { mailService } from "@/modules/email/mailService";
+import { orderConfirmationTemplate } from "@/modules/email/emailTemplates";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);

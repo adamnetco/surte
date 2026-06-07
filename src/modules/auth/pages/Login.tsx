@@ -5,8 +5,8 @@ import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone, ShieldCheck, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { mailService } from "@/utils/mailService";
-import { welcomeTemplate } from "@/utils/emailTemplates";
+import { mailService } from "@/modules/email/mailService";
+import { welcomeTemplate } from "@/modules/email/emailTemplates";
 import surteLogo from "@/assets/surte-logo.png";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
