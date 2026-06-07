@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Store, User as UserIcon, Lock, Eye, EyeOff, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import { Store, User as UserIcon, Lock, Eye, EyeOff, Loader2, ShieldCheck, Sparkles, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/modules/auth/context/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import { isTransientAuthError, purgeLocalAuth, sleep } from "@/modules/auth/lib/authRecovery";
@@ -36,6 +37,7 @@ const LoginRouter = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailLinkLoading, setEmailLinkLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [backendDown, setBackendDown] = useState(false);
   const [hasStaleTokens, setHasStaleTokens] = useState(false);
@@ -73,6 +75,50 @@ const LoginRouter = () => {
     purgeLocalAuth();
     toast.success("Sesión local limpiada. Recargando…");
     window.setTimeout(() => window.location.reload(), 400);
+  };
+
+  const handleEmailLink = async () => {
+    const mail = email.trim().toLowerCase();
+    const tenantSlug = tienda.trim().toLowerCase();
+    if (!mail) {
+      toast.error("Ingresa tu email para enviarte el acceso.");
+      return;
+    }
+    if (!tenantSlug && mail !== MASTER_EMAIL) {
+      toast.error("Ingresa el id_negocio de tu tienda para enviar el acceso.");
+      return;
+    }
+
+    setEmailLinkLoading(true);
+    setBackendDown(false);
+    try {
+      if (tenantSlug) {
+        try { sessionStorage.setItem("sps_tenant_override", tenantSlug); } catch { /* noop */ }
+      }
+      const redirectTo = new URL("/admin/login", window.location.origin);
+      if (tenantSlug) redirectTo.searchParams.set("tienda", tenantSlug);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: mail,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: redirectTo.toString(),
+        },
+      });
+      if (error) throw error;
+      toast.success("Te envié un enlace de acceso. Revisa tu correo y entra sin contraseña.");
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (isTransientAuthError(err)) {
+        setBackendDown(true);
+        toast.error("El servidor de autenticación está intermitente. Intenta reenviar el acceso en unos segundos.");
+      } else if (/signup disabled|user not found|not found/i.test(msg)) {
+        toast.error("Ese email no está registrado. Verifica el correo o pide al administrador crear el usuario.");
+      } else {
+        toast.error(msg || "No pude enviar el acceso por email.");
+      }
+    } finally {
+      setEmailLinkLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -279,6 +325,16 @@ const LoginRouter = () => {
               <span className="px-3 text-[10px] uppercase tracking-wider text-white/40">o</span>
               <div className="border-t border-white/10 flex-1" />
             </div>
+
+            <button
+              type="button"
+              onClick={handleEmailLink}
+              disabled={emailLinkLoading}
+              className="w-full mb-3 flex items-center justify-center gap-2.5 bg-white/10 border border-white/10 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors disabled:opacity-60"
+            >
+              {emailLinkLoading ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
+              {emailLinkLoading ? "Enviando acceso…" : "Enviar acceso por email"}
+            </button>
 
             <button
               type="button"
