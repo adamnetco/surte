@@ -102,18 +102,18 @@ export default function POSCustomerPicker({ customer, onChange, requireEinvoice,
         <button
           type="button"
           onClick={() => setDialogOpen(true)}
-          className="w-6 h-6 grid place-items-center rounded hover:bg-muted text-muted-foreground hover:text-foreground"
-          title="Editar cliente"
+          className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`Editar datos de ${customer.name}`}
         >
-          <Pencil className="w-3 h-3" />
+          <Pencil className="w-4 h-4" />
         </button>
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="w-6 h-6 grid place-items-center rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-          title="Quitar cliente"
+          className="w-9 h-9 grid place-items-center rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
+          aria-label={`Quitar cliente ${customer.name} del ticket`}
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
