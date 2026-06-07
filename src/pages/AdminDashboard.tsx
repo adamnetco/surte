@@ -182,13 +182,26 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (!hasAdminAccess) return;
+    // Perf: en horas pico llegan ráfagas de eventos (estado de pedido, items,
+    // pagos). Antes invalidábamos en CADA evento → tormenta de refetches del
+    // join pesado `orders + order_items`. Debounce 800ms agrupa la ráfaga en
+    // un solo refetch sin perder reactividad perceptible.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleInvalidate = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+        timer = null;
+      }, 800);
+    };
     const channel = supabase
       .channel("admin-orders-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, scheduleInvalidate)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
   }, [hasAdminAccess, queryClient]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Cargando...</p></div>;
