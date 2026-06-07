@@ -15,7 +15,7 @@ const KNOWN_VENDORS = [
 ];
 
 export interface UsbPrinterHandle {
-  device: USBDevice;
+  device: any;
   endpointOut: number;
   send: (data: Uint8Array) => Promise<void>;
   close: () => Promise<void>;
@@ -25,16 +25,16 @@ export function isWebUsbSupported(): boolean {
   return typeof navigator !== "undefined" && !!(navigator as any).usb;
 }
 
-export async function requestUsbPrinter(): Promise<USBDevice> {
+export async function requestUsbPrinter(): Promise<any> {
   if (!isWebUsbSupported()) throw new Error("WebUSB no disponible en este navegador. Usa Chrome o Edge.");
   // @ts-expect-error - tipos WebUSB no incluidos por defecto
-  const device: USBDevice = await navigator.usb.requestDevice({
+  const device: any = await navigator.usb.requestDevice({
     filters: KNOWN_VENDORS.map((vendorId) => ({ vendorId })),
   });
   return device;
 }
 
-export async function openUsbPrinter(device: USBDevice): Promise<UsbPrinterHandle> {
+export async function openUsbPrinter(device: any): Promise<UsbPrinterHandle> {
   await device.open();
   if (device.configuration === null) await device.selectConfiguration(1);
   const iface = device.configuration!.interfaces[0];
@@ -64,14 +64,14 @@ export async function openUsbPrinter(device: USBDevice): Promise<UsbPrinterHandl
   };
 }
 
-export async function listAuthorizedUsbPrinters(): Promise<USBDevice[]> {
+export async function listAuthorizedUsbPrinters(): Promise<any[]> {
   if (!isWebUsbSupported()) return [];
   // @ts-expect-error - WebUSB
   return await navigator.usb.getDevices();
 }
 
 /** Imprime un buffer y cierra la conexión. */
-export async function printOnceUsb(device: USBDevice, data: Uint8Array) {
+export async function printOnceUsb(device: any, data: Uint8Array) {
   const handle = await openUsbPrinter(device);
   try {
     await handle.send(data);
