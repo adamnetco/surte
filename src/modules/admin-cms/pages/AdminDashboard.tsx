@@ -1,5 +1,5 @@
 import { useState, useEffect, Component, lazy, Suspense, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import type { AppRole } from "@/modules/auth/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
