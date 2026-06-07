@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSectionAccess from "@/modules/admin-cms/components/AdminSectionAccess";
 import { pendingCount, flushOutbox } from "@/lib/offline/outbox";

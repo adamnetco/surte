@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useAgent, type AgentCustomer } from "@/context/AgentContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";

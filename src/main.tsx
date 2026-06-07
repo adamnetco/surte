@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { wireOutboxListeners } from "./lib/offline/outbox";
-import { consumeHandoff } from "./lib/ssoHandoff";
+import { consumeHandoff } from "./modules/auth/lib/ssoHandoff";
 
 wireOutboxListeners();
 

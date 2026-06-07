@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/context/OrganizationContext";
 import {
   ShoppingCart, Wallet, FileText, Boxes, Truck, BarChart3, Megaphone,

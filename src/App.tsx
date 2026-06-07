@@ -8,7 +8,7 @@ import AppErrorBoundary from "@/components/AppErrorBoundary";
 import { errorToMessage } from "@/lib/errors";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider } from "@/modules/auth/context/AuthContext";
 import { AgentProvider } from "@/context/AgentContext";
 import { OrganizationProvider } from "@/context/OrganizationContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -24,14 +24,14 @@ import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
 import Index from "./pages/Index";
-import LoginRouter from "./pages/LoginRouter";
+import LoginRouter from "./modules/auth/pages/LoginRouter";
 import AdminDiag from "./pages/AdminDiag";
-import RoleGuard from "./components/RoleGuard";
+import RoleGuard from "./modules/auth/components/RoleGuard";
 import HostGuard from "./components/HostGuard";
 import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
 
 const ClientPortalShell = lazy(() => import("./modules/clientes").then((m) => ({ default: m.ClientPortalShell })));
-const SSOErrorScreen = lazy(() => import("./components/SSOErrorScreen"));
+const SSOErrorScreen = lazy(() => import("./modules/auth/components/SSOErrorScreen"));
 
 
 const Catalogo = lazy(() => import("./modules/storefront").then((m) => ({ default: m.CatalogoPage })));
@@ -39,7 +39,7 @@ const Carrito = lazy(() => import("./modules/storefront").then((m) => ({ default
 const Categorias = lazy(() => import("./pages/Categorias"));
 const MenuPage = lazy(() => import("./modules/pos").then((m) => ({ default: m.MenuPage })));
 const Ofertas = lazy(() => import("./modules/storefront").then((m) => ({ default: m.OfertasPage })));
-const Login = lazy(() => import("./pages/Login"));
+const Login = lazy(() => import("./modules/auth/pages/Login"));
 const AdminDashboard = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.AdminDashboardPage })));
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
@@ -49,12 +49,12 @@ const Configuracion = lazy(() => import("./pages/Configuracion"));
 const ProductoDetalle = lazy(() => import("./modules/storefront").then((m) => ({ default: m.ProductoDetallePage })));
 const Pedido = lazy(() => import("./modules/storefront").then((m) => ({ default: m.PedidoPage })));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const Unsubscribe = lazy(() => import("./modules/auth/pages/Unsubscribe"));
 const Hub = lazy(() => import("./modules/storefront").then((m) => ({ default: m.HubPage })));
 const LandingPage = lazy(() => import("./modules/storefront").then((m) => ({ default: m.LandingPagePage })));
 const Politicas = lazy(() => import("./pages/Politicas"));
 const TratamientoDatos = lazy(() => import("./pages/TratamientoDatos"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ResetPassword = lazy(() => import("./modules/auth/pages/ResetPassword"));
 const POS = lazy(() => import("./modules/pos").then((m) => ({ default: m.POSPage })));
 const PosHub = lazy(() => import("./modules/pos").then((m) => ({ default: m.PosHubPage })));
 const Mesas = lazy(() => import("./modules/pos").then((m) => ({ default: m.MesasPage })));

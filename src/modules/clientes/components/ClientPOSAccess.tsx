@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Monitor, LogIn, Eye, EyeOff, Loader2, ShieldCheck, ShieldOff, Trash2, Zap, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SavedSession {

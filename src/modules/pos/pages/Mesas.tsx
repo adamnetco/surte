@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/context/OrganizationContext";
 import { Loader2, LockKeyhole, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";

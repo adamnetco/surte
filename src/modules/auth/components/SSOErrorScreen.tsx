@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { SSOError } from "@/lib/ssoHandoff";
+import type { SSOError } from "@/modules/auth/lib/ssoHandoff";
 
 const MESSAGES: Record<SSOError, { title: string; body: string }> = {
   expired_or_used: {
