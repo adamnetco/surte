@@ -21,6 +21,7 @@ import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import SaleCompleteDialog from "./SaleCompleteDialog";
 import OfflineIndicator from "@/modules/offline/components/OfflineIndicator";
+import { usePrintQueue, TicketPreviewDialog, type TicketData } from "@/modules/printing";
 import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
 } from "@/modules/offline/lib/catalog";
@@ -93,6 +94,51 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
+
+  // === Impresión térmica ===
+  // Cola que escucha print_jobs vía Realtime y los ejecuta en este terminal
+  // (WebUSB / agente local). Si no hay impresora configurada, queda pasiva.
+  usePrintQueue({ organizationId });
+  const [lastTicketData, setLastTicketData] = useState<TicketData | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const orgInfoRef = useRef({ business_name: "SistecPOS" } as TicketData["org"]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("organizations").select("name, legal_name, nit, address, phone")
+        .eq("id", organizationId).maybeSingle();
+      if (data) {
+        orgInfoRef.current = {
+          business_name: data.name ?? "SistecPOS",
+          legal_name: data.legal_name ?? null,
+          nit: data.nit ?? null,
+          address: data.address ?? null,
+          phone: data.phone ?? null,
+        };
+      }
+    })();
+  }, [organizationId]);
+
+  /**
+   * Espera a que outbox materialice la orden (busca por client_uuid)
+   * y luego invoca enqueue_print_job para generar recibo + comandas.
+   * Si en 6s no aparece (offline real), guarda intención local: al volver
+   * la red, una próxima impresión manual desde "Reimprimir" lo cubre.
+   */
+  const schedulePrint = async (clientUuid: string) => {
+    const deadline = Date.now() + 6000;
+    while (Date.now() < deadline) {
+      const { data } = await (supabase as any)
+        .from("pos_orders").select("id").eq("client_uuid", clientUuid).maybeSingle();
+      if (data?.id) {
+        await (supabase as any).rpc("enqueue_print_job", { _order_id: data.id, _kind: "receipt" });
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    // Sin sincronizar: mostrar vista previa como fallback.
+    setPreviewOpen(true);
+  };
 
   useEffect(() => {
     if (!posModes.enabled.includes(saleMode)) setSaleMode(posModes.default);
@@ -330,6 +376,29 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         setMeta(ticketCacheKey, []).catch(() => {});
         setSaleComplete({ total: snapshotTotal, amountPaid, change });
       });
+
+      // 3) Snapshot para vista previa local del ticket (siempre disponible
+      //    como fallback si no hay impresora configurada o falla el driver).
+      setLastTicketData({
+        org: orgInfoRef.current,
+        ticket_number: undefined,
+        cashier_name: cashierName,
+        customer_name: null,
+        customer_phone: null,
+        customer_document: null,
+        sale_mode: saleMode,
+        created_at: new Date(),
+        items: snapshotItems.map((l) => ({
+          name: l.name, quantity: l.quantity, unit_price: l.unitPrice, total: l.total,
+        })),
+        subtotal: snapshotSubtotal, discount: totals.globalDisc, tax: totals.tax, tip: 0,
+        total: snapshotTotal, amount_paid: amountPaid, change_due: change,
+        payments: payments.map((p) => ({ method: p.method, amount: p.amount })),
+      });
+
+      // 4) Encolar impresión vía Realtime: recibo cliente + comandas cocina.
+      //    Se espera a que outbox materialice la orden (max 6s) y se llama RPC.
+      schedulePrint(clientUuid).catch((err) => console.warn("[printing]", err));
 
       toast.success(
         navigator.onLine
@@ -859,8 +928,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         change={saleComplete?.change ?? 0}
         canEmitInvoice={!!lastOrderId && navigator.onLine}
         onNewSale={() => setSaleComplete(null)}
-        onPrint={() => { window.print(); }}
+        onPrint={() => setPreviewOpen(true)}
         onEmitInvoice={() => { setSaleComplete(null); setActionMode("emit"); }}
+      />
+
+      <TicketPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        data={lastTicketData}
+        paperMm={80}
+        kind="receipt"
       />
 
     </div>

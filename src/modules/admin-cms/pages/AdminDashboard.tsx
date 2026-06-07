@@ -4,7 +4,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import type { AppRole } from "@/modules/auth/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2 } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
@@ -35,6 +35,7 @@ const ModifiersTab = lazy(() => import("@/modules/admin-cms/components/Modifiers
 const SeoContentTab = lazy(() => import("@/modules/admin-cms/components/SeoContentTab"));
 const CrmLeadsTab = lazy(() => import("@/modules/admin-cms/components/CrmLeadsTab"));
 const ContactsTab = lazy(() => import("@/modules/admin-cms/components/ContactsTab"));
+const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersManagerTab").then(m => ({ default: m.PrintersManagerTab })));
 
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
@@ -65,6 +66,7 @@ const allTabs = [
   { id: "reviews", label: "Comentarios", icon: MessageSquare, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
   { id: "google-reviews", label: "Google", icon: Map, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null },
   { id: "scripts", label: "Scripts", icon: Code, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { id: "printers", label: "Impresoras", icon: Printer, roles: ["superadmin", "admin"] as AppRole[], module: null },
 ];
 
 class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
@@ -105,7 +107,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
 
-  const { hasModule } = useOrganization();
+  const { hasModule, currentOrg } = useOrganization();
   const tabs = allTabs.filter((t) => t.roles.includes(role) && (!t.module || hasModule(t.module)));
   const opsLinks = operationsLinks.filter((l) => l.roles.includes(role));
 
@@ -239,6 +241,7 @@ const AdminDashboard = () => {
         {activeTab === "reviews" && <CustomerReviewsTab queryClient={queryClient} />}
         {activeTab === "google-reviews" && <GoogleReviewsTab queryClient={queryClient} />}
         {activeTab === "scripts" && <ScriptsTab queryClient={queryClient} />}
+        {activeTab === "printers" && <PrintersTab organizationId={currentOrg?.id ?? ""} />}
         {/* data / sync / fiscal removidos — viven en /superadmin */}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
