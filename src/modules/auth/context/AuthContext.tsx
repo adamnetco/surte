@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { isAuthLockAbort, isTransientAuthError, purgeLocalAuth } from "@/modules/auth/lib/authRecovery";
 
 export type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
 
@@ -123,26 +124,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
 
-  const purgeLocalAuth = () => {
-    try {
-      Object.keys(localStorage)
-        .filter((k) => k.startsWith("sb-") || k.startsWith("supabase.auth") || k.startsWith("sps_role:"))
-        .forEach((k) => localStorage.removeItem(k));
-    } catch { /* quota */ }
-  };
-
-  const isTransientAuthError = (err: any): boolean => {
-    const status = Number(err?.status || 0);
-    const msg = String(err?.message || "");
-    if (status === 0 || status === 408 || status === 429 || status >= 500) return true;
-    return /AuthRetryableFetchError|Failed to fetch|NetworkError|timeout|upstream|fetch failed|load failed|refresh_token_not_found|Invalid Refresh Token/i.test(msg);
-  };
-
   useEffect(() => {
     // Silence the harmless "lock steal" abort that bubbles as unhandledrejection
     const onUnhandled = (e: PromiseRejectionEvent) => {
-      const m = String((e.reason as any)?.message || "");
-      if (/Lock broken by another request with the 'steal' option/i.test(m)) {
+      if (isAuthLockAbort(e.reason)) {
         e.preventDefault();
       }
     };

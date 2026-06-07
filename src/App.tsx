@@ -23,6 +23,7 @@ import CartNavigationGuard from "@/components/CartNavigationGuard";
 import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 import GlobalCommandPalette from "@/components/GlobalCommandPalette";
 import AuthHealthMonitor from "@/components/AuthHealthMonitor";
+import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
 import Index from "./pages/Index";
@@ -140,6 +141,10 @@ const TenantHome = () => {
 const GlobalErrorListeners = () => {
   useEffect(() => {
     const onUnhandled = (event: PromiseRejectionEvent) => {
+      if (isAuthLockAbort(event.reason)) {
+        event.preventDefault();
+        return;
+      }
       // eslint-disable-next-line no-console
       console.error("[unhandledrejection]", event.reason);
       const msg = errorToMessage(event.reason);
