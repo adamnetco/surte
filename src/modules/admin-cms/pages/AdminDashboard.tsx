@@ -107,7 +107,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
 
-  const { hasModule } = useOrganization();
+  const { hasModule, currentOrg } = useOrganization();
   const tabs = allTabs.filter((t) => t.roles.includes(role) && (!t.module || hasModule(t.module)));
   const opsLinks = operationsLinks.filter((l) => l.roles.includes(role));
 
