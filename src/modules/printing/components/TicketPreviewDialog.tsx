@@ -1,9 +1,12 @@
 // Vista previa HTML del ticket (58/80mm) con botón "Imprimir" como fallback
-// universal vía window.print().
-import { useEffect, useMemo, useRef } from "react";
+// universal vía window.print(). Incluye también compartir por WhatsApp
+// y descargar como PNG (inspirado en el flujo de On Taz Stock).
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, Share2, Download, Loader2 } from "lucide-react";
+import { toPng } from "html-to-image";
+import { toast } from "sonner";
 import type { TicketData } from "../lib/ticketBuilder";
 
 interface Props {
