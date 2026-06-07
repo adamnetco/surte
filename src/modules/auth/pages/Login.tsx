@@ -3,11 +3,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone, ShieldCheck, ExternalLink, Loader2 } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone, ShieldCheck, ExternalLink, Loader2, Store } from "lucide-react";
 import { toast } from "sonner";
 import { mailService } from "@/modules/email/mailService";
 import { welcomeTemplate } from "@/modules/email/emailTemplates";
 import surteLogo from "@/assets/surte-logo.png";
+import { useTenantBrand } from "@/modules/auth/hooks/useTenantBrand";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
 const AUTH_WAIT_TIMEOUT_MS = 6000;
@@ -36,6 +37,13 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const fromPath = ((location.state as { from?: string } | null)?.from || "") as string;
+  const brand = useTenantBrand();
+  // Surteya conserva su logo histórico (asset local) como fallback visual
+  // mientras se carga el logo dinámico del tenant. Otros tenants muestran un
+  // ícono genérico hasta que llega su logo desde DB.
+  const isSurteya = brand.slug === "surteya";
+  const brandLogo = brand.logo_url ?? (isSurteya ? surteLogo : null);
+  const brandName = brand.name ?? "Tu tienda";
 
   const redirectedRef = useRef(false);
 
@@ -140,12 +148,26 @@ const Login = () => {
     setBackendDown(false);
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password, fullName, businessType, phone);
+        // Pasamos el slug del tenant como metadata para que el trigger
+        // `handle_new_user` enlace el perfil del cliente con SU negocio.
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              business_type: businessType || "casa",
+              phone: phone || "",
+              organization_slug: brand.slug ?? "",
+            },
+            emailRedirectTo: window.location.origin,
+          },
+        });
         if (error) throw error;
         mailService
           .send({
             to: email,
-            subject: "¡Bienvenido a SURTÉ YA!",
+            subject: `¡Bienvenido a ${brandName}!`,
             html: welcomeTemplate(fullName || "Cliente"),
           })
           .catch((err) => console.warn("Welcome email failed:", err));
@@ -220,9 +242,20 @@ const Login = () => {
       <main className="flex-1 flex flex-col items-center justify-center px-5 py-8">
         <div className="w-full max-w-sm">
           <div className="flex flex-col items-center text-center mb-6">
-            <img src={surteLogo} alt="SURTÉ YA" className="h-14 mb-3 object-contain" />
+            {brandLogo ? (
+              <img
+                src={brandLogo}
+                alt={brandName}
+                className="h-14 mb-3 object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+            ) : (
+              <div className="h-14 w-14 mb-3 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
+                <Store size={26} />
+              </div>
+            )}
             <h1 className="font-heading font-bold text-xl text-foreground">
-              {isSignUp ? "Crea tu cuenta" : "Bienvenido de nuevo"}
+              {isSignUp ? `Crea tu cuenta en ${brandName}` : `Bienvenido a ${brandName}`}
             </h1>
             <p className="text-xs text-muted-foreground mt-1">
               {isSignUp
