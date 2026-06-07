@@ -151,6 +151,10 @@ const Login = () => {
       if (isSignUp) {
         // Pasamos el slug del tenant como metadata para que el trigger
         // `handle_new_user` enlace el perfil del cliente con SU negocio.
+        const sentSlug = brand.slug ?? "";
+        if (!sentSlug) {
+          console.warn("[Signup] organization_slug vacío — el perfil no quedará enlazado a un tenant.");
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -159,7 +163,7 @@ const Login = () => {
               full_name: fullName,
               business_type: businessType || "casa",
               phone: phone || "",
-              organization_slug: brand.slug ?? "",
+              organization_slug: sentSlug,
             },
             emailRedirectTo: window.location.origin,
           },
@@ -173,6 +177,30 @@ const Login = () => {
           })
           .catch((err) => console.warn("Welcome email failed:", err));
         toast.success("¡Cuenta creada! Revisa tu email para confirmar.");
+
+        // Validación no bloqueante: confirmar que el trigger enlazó el perfil
+        // con la organización correcta. No tiramos el flujo si falla, solo
+        // avisamos al usuario y dejamos rastro en consola para el admin.
+        void verifySignupTenantLink({ email, sentSlug }).then((res) => {
+          console.info("[Signup tenant-link]", res);
+          if (res.status === "ok") return;
+          if (res.status === "missing_slug" || res.status === "unknown_slug") {
+            toast.warning(
+              "Tu cuenta se creó pero no pudimos asociarla a esta tienda. Contacta al administrador.",
+            );
+          } else if (
+            res.status === "organization_not_linked" ||
+            res.status === "profile_not_created" ||
+            res.status === "slug_mismatch"
+          ) {
+            toast.warning(
+              "Tu cuenta se creó, pero el enlace con la tienda quedó pendiente. Soporte ya fue notificado.",
+            );
+          }
+          // timeout/error: silencio — probablemente RLS bloquea la lectura
+          // antes del email-confirm. El trigger SÍ corrió en el servidor.
+        });
+
         setIsSignUp(false);
       } else {
         const { error, session } = await signInWithRetry(email.trim(), password);
