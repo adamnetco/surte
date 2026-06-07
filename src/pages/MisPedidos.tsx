@@ -7,7 +7,7 @@ import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
 import { Package, Clock, CheckCircle, Truck, XCircle, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -23,7 +23,7 @@ const statusConfig: Record<string, { label: string; icon: any; color: string }> 
 
 const statusSteps = ["pendiente", "confirmado", "en_preparacion", "enviado", "entregado"];
 
-import HeadMeta from "@/components/seo/HeadMeta";
+import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 
 const MisPedidos = () => {
   const { user, loading: authLoading } = useAuth();

@@ -18,7 +18,7 @@ import AgentBar from "@/modules/storefront/components/AgentBar";
 import CityPickerModal from "@/modules/storefront/components/CityPickerModal";
 import DynamicThemeInjector from "@/components/DynamicThemeInjector";
 import CustomScriptInjector from "@/components/CustomScriptInjector";
-import Analytics from "@/components/seo/Analytics";
+import Analytics from "@/modules/marketing/seo/Analytics";
 import CartNavigationGuard from "@/components/CartNavigationGuard";
 import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 

@@ -15,11 +15,11 @@ import BottomNav from "@/modules/storefront/components/BottomNav";
 import FloatingCart from "@/modules/storefront/components/FloatingCart";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProfile, getPriceForType } from "@/hooks/useProfile";
-import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/components/seo/JsonLd";
-import HeadMeta from "@/components/seo/HeadMeta";
-import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/modules/marketing/seo/JsonLd";
+import HeadMeta from "@/modules/marketing/seo/HeadMeta";
+import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useAppSettings, useInactiveBrands } from "@/hooks/useStore";
-import { trackViewProduct, trackAddToCart } from "@/components/seo/Analytics";
+import { trackViewProduct, trackAddToCart } from "@/modules/marketing/seo/Analytics";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);

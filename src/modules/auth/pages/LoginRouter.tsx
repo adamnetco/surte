@@ -7,7 +7,7 @@ import { useAuth, type AppRole } from "@/modules/auth/context/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { detectTenant, isStorefrontTenant } from "@/lib/subdomain";
-import HeadMeta from "@/components/seo/HeadMeta";
+import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
 

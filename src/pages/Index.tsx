@@ -15,9 +15,9 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Flame, Truck, Shield, Star } from "lucide-react";
 import { useAppSettings } from "@/hooks/useStore";
-import JsonLd, { buildLocalBusinessSchema, buildWebSiteSchema } from "@/components/seo/JsonLd";
-import HeadMeta from "@/components/seo/HeadMeta";
-import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import JsonLd, { buildLocalBusinessSchema, buildWebSiteSchema } from "@/modules/marketing/seo/JsonLd";
+import HeadMeta from "@/modules/marketing/seo/HeadMeta";
+import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 
 const PromoSection = () => {
   const navigate = useNavigate();

@@ -2,7 +2,7 @@ import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
 import ProductCard from "@/modules/storefront/components/ProductCard";
 import { useProducts } from "@/hooks/useStore";
-import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 
 const Ofertas = () => {
   const { data: products, isLoading } = useProducts();
