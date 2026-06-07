@@ -365,7 +365,7 @@ const AdminDashboard = () => {
               const renderTabBtn = ({ id, label, icon: Icon }: typeof tabs[number]) => (
                 <button
                   key={id}
-                  onClick={() => setActiveTab(id)}
+                  onClick={() => selectTab(id)}
                   className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium transition-colors relative ${
                     activeTab === id
                       ? "bg-primary/10 text-primary border-r-2 border-primary"
