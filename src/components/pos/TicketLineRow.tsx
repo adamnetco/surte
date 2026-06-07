@@ -126,10 +126,11 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
         <Popover>
           <PopoverTrigger asChild>
             <button
-              className={`flex items-center gap-1 text-[10px] px-1.5 h-5 rounded border transition ${
+              type="button"
+              aria-label={hasDisc ? `Editar descuento ${line.discountPct}%` : "Aplicar descuento de línea"}
+              className={`flex items-center gap-1 text-[11px] px-2 h-7 rounded border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 hasDisc ? "border-accent text-accent bg-accent/10" : "border-border text-muted-foreground hover:text-foreground"
               }`}
-              title="Descuento de línea"
             >
               <Percent className="w-3 h-3" />
               {hasDisc ? `${line.discountPct}%` : "Desc"}
