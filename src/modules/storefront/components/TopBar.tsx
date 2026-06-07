@@ -1,10 +1,19 @@
-import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu, Sun, Moon, Shield } from "lucide-react";
+import { Search, User, MapPin, ChevronDown, X, ShoppingCart, Heart, Menu, Sun, Moon, Shield, Package, Settings, HelpCircle, LogIn, LogOut, UserCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useCart } from "@/modules/cart/context/CartContext";
 import { useTheme } from "@/modules/platform/context/ThemeContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import surteLogo from "@/assets/surte-logo.png";
 
 const CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"] as const;
