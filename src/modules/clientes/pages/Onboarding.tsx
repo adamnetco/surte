@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Check, PartyPopper } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { WizardShell } from "@/components/onboarding/WizardShell";
-import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "@/lib/onboarding/businessTemplates";
+import { WizardShell } from "@/modules/onboarding/components/WizardShell";
+import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "@/modules/onboarding/lib/businessTemplates";
 import { cn } from "@/lib/utils";
 
 const TOTAL = 5;
