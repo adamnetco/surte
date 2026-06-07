@@ -4,7 +4,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, Share2, Download, Loader2, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Printer, Share2, Download, Loader2, X, MessageCircle, Briefcase, Copy, Smartphone } from "lucide-react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import type { TicketData } from "../lib/ticketBuilder";
@@ -68,30 +76,103 @@ export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, ki
     ].join("\n");
   };
 
-  const handleShareWhatsApp = async () => {
+  // Detección de plataforma para elegir el mejor esquema/fallback
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isAndroid = /Android/.test(ua);
+  const isMobile = isIOS || isAndroid;
+
+  // Abre WhatsApp con el texto. Estrategia:
+  //  1) Si el usuario eligió una app específica, intenta el deep link nativo.
+  //  2) Si la app no está instalada (no salta de la página), abre wa.me como respaldo.
+  //  3) En desktop usa siempre wa.me (WhatsApp Web/Desktop).
+  const openWhatsApp = (variant: "any" | "personal" | "business", text: string) => {
+    const encoded = encodeURIComponent(text);
+    const waMe = `https://wa.me/?text=${encoded}`;
+
+    if (!isMobile || variant === "any") {
+      window.open(waMe, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    let scheme = "";
+    if (variant === "personal") scheme = `whatsapp://send?text=${encoded}`;
+    else if (variant === "business") {
+      // Android usa whatsapp-business://, iOS whatsappbusiness://
+      scheme = isIOS ? `whatsappbusiness://send?text=${encoded}` : `whatsapp-business://send?text=${encoded}`;
+    }
+
+    // Intento del deep link + fallback automático a wa.me si la app no está instalada
+    const start = Date.now();
+    const fallback = window.setTimeout(() => {
+      if (Date.now() - start < 1800) {
+        window.open(waMe, "_blank", "noopener,noreferrer");
+      }
+    }, 1200);
+
+    // Si la página se oculta (porque la app abrió), cancelamos el fallback
+    const onHide = () => {
+      if (document.hidden) window.clearTimeout(fallback);
+    };
+    document.addEventListener("visibilitychange", onHide, { once: true });
+
+    window.location.href = scheme;
+  };
+
+  // 1) Compartir por sistema (Web Share API) — muestra TODAS las apps instaladas:
+  //    WhatsApp, WhatsApp Business, Telegram, Mail, etc. Es la opción más fiable.
+  const handleSystemShare = async () => {
     try {
       setBusy("share");
       const text = buildShareText();
       const blob = await captureBlob();
       const nav: any = navigator;
-      if (blob && nav.canShare && nav.canShare({ files: [new File([blob], filename(), { type: "image/png" })] })) {
-        const file = new File([blob], filename(), { type: "image/png" });
+      const file = blob ? new File([blob], filename(), { type: "image/png" }) : null;
+
+      if (file && nav.canShare && nav.canShare({ files: [file] })) {
         await nav.share({ files: [file], text, title: "Ticket de venta" });
+      } else if (nav.share) {
+        await nav.share({ text, title: "Ticket de venta" });
+        if (blob) downloadBlob(blob);
+        toast.info("Adjunta la imagen en el chat");
       } else {
-        // Fallback: descarga PNG + abre WhatsApp con texto
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url; a.download = filename(); a.click();
-          URL.revokeObjectURL(url);
-        }
-        const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
-        window.open(wa, "_blank", "noopener,noreferrer");
+        // Desktop sin Web Share: descarga PNG + abre WhatsApp Web
+        if (blob) downloadBlob(blob);
+        openWhatsApp("any", text);
         toast.info("Imagen lista. Adjúntala en WhatsApp.");
       }
     } catch (e: any) {
       if (e?.name !== "AbortError") toast.error("No se pudo compartir");
     } finally { setBusy(null); }
+  };
+
+  // 2) Abrir directamente la app elegida (personal o Business)
+  const handleOpenWhatsApp = async (variant: "personal" | "business") => {
+    try {
+      setBusy("share");
+      const text = buildShareText();
+      const blob = await captureBlob();
+      if (blob) downloadBlob(blob); // imagen lista para adjuntar
+      openWhatsApp(variant, text);
+    } catch {
+      toast.error("No se pudo abrir WhatsApp");
+    } finally { setBusy(null); }
+  };
+
+  const downloadBlob = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename(); a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopyText = async () => {
+    try {
+      await navigator.clipboard.writeText(buildShareText());
+      toast.success("Texto copiado");
+    } catch {
+      toast.error("No se pudo copiar");
+    }
   };
 
   const handlePrint = () => {
@@ -215,16 +296,46 @@ export function TicketPreviewDialog({ open, onOpenChange, data, paperMm = 80, ki
           >
             {busy === "png" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           </Button>
-          <Button
-            size="icon"
-            onClick={handleShareWhatsApp}
-            disabled={!!busy}
-            className="bg-[#25D366] text-white hover:bg-[#1ebe57]"
-            title="Compartir por WhatsApp"
-            aria-label="Compartir por WhatsApp"
-          >
-            {busy === "share" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                disabled={!!busy}
+                className="bg-[#25D366] text-white hover:bg-[#1ebe57]"
+                title="Compartir por WhatsApp"
+                aria-label="Compartir por WhatsApp"
+              >
+                {busy === "share" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuLabel>Compartir ticket</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {isMobile && (
+                <DropdownMenuItem onClick={handleSystemShare}>
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  Elegir app… (recomendado)
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => handleOpenWhatsApp("personal")}>
+                <MessageCircle className="h-4 w-4 mr-2 text-[#25D366]" />
+                WhatsApp
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleOpenWhatsApp("business")}>
+                <Briefcase className="h-4 w-4 mr-2 text-[#075E54]" />
+                WhatsApp Business
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleCopyText}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copiar texto
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownload}>
+                <Download className="h-4 w-4 mr-2" />
+                Descargar imagen
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             size="icon"
             onClick={handlePrint}
