@@ -17,11 +17,11 @@ import { Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { WizardShell } from "@/components/onboarding/WizardShell";
-import { SubdomainPreview, type SlugStatus } from "@/components/onboarding/SubdomainPreview";
-import { NitLookup } from "@/components/onboarding/NitLookup";
-import { CredentialsCard } from "@/components/onboarding/CredentialsCard";
-import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "@/lib/onboarding/businessTemplates";
+import { WizardShell } from "@/modules/onboarding/components/WizardShell";
+import { SubdomainPreview, type SlugStatus } from "@/modules/onboarding/components/SubdomainPreview";
+import { NitLookup } from "@/modules/onboarding/components/NitLookup";
+import { CredentialsCard } from "@/modules/onboarding/components/CredentialsCard";
+import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "@/modules/onboarding/lib/businessTemplates";
 import { cn } from "@/lib/utils";
 
 type Result = {
