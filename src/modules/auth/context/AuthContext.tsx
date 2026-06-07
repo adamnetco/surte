@@ -154,7 +154,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Self-heal: retryable upstream / invalid refresh → wipe stale tokens so the user can log in fresh.
         if (error && (isTransientAuthError(error) || (error as any)?.code === "refresh_token_not_found")) {
           console.warn("[Auth] Boot session failed, purging stale tokens:", (error as any)?.message);
-          try { await supabase.auth.signOut({ scope: "local" } as any); } catch { /* noop */ }
           purgeLocalAuth();
           resetAuthState();
           setLoading(false);
