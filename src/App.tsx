@@ -202,6 +202,7 @@ const App = () => (
                     <Route path="/login" element={<TenantAwareLogin />} />
                     <Route path="/user/login" element={<TenantAwareLogin />} />
                     <Route path="/admin/login" element={<TenantAwareLogin />} />
+                    <Route path="/superadmin/acceso" element={<LoginSuperadmin />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/politicas" element={<Politicas />} />
