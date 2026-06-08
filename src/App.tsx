@@ -75,6 +75,7 @@ const Compras = lazy(() => import("./modules/admin-cms").then((m) => ({ default:
 const Sitios = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SitiosPage })));
 const SuperadminDashboard = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SuperadminDashboardPage })));
 const TenantWorkspace = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.TenantWorkspacePage })));
+const LoginSuperadmin = lazy(() => import("./modules/auth/pages/LoginSuperadmin"));
 
 // Perf: defaults conservadores para evitar refetches innecesarios.
 // - staleTime 60s: la mayoría de paneles no necesitan datos frescos por segundo.
