@@ -172,6 +172,14 @@ export default function CloudTasksStatusPage() {
               <div className="flex flex-col gap-1.5 md:items-end text-xs">
                 <EnvBadge env="test" res={testRes} busy={running.has(`${task.id}:test`)} onRetry={() => runCheck(task, "test")} />
                 <EnvBadge env="live" res={liveRes} busy={running.has(`${task.id}:live`)} onRetry={() => runCheck(task, "live")} />
+                <button
+                  onClick={() => retryPending(task)}
+                  disabled={running.has(`${task.id}:test`) || running.has(`${task.id}:live`)}
+                  className="mt-1 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-primary/30 text-primary hover:bg-primary/10 text-[11px] disabled:opacity-50"
+                  title="Re-ejecutar solo las etapas pendientes y registrar el resultado"
+                >
+                  <Play size={11} /> Reintentar pendientes
+                </button>
               </div>
             </div>
           );
