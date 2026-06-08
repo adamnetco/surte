@@ -19,6 +19,7 @@ const DeadLetterQueue = lazy(() => import("@/modules/admin-cms/components/DeadLe
 const DataManagementTab = lazy(() => import("@/modules/admin-cms/components/DataManagementTab"));
 const TenantHealth = lazy(() => import("@/modules/superadmin/components/TenantHealth"));
 const TenantDataIsland = lazy(() => import("@/modules/superadmin/components/TenantDataIsland"));
+const CloudTasksStatus = lazy(() => import("@/modules/superadmin/pages/CloudTasksStatus"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -105,6 +106,7 @@ const SuperadminDashboard = () => {
                 <Route path="nueva-tienda" element={<TenantOnboardingWizard onCreated={() => navigate("/superadmin/tiendas")} />} />
                 {/* Datos globales (catálogos base, plantillas) — solo Superadmin master. */}
                 <Route path="datos" element={<DataManagementTab />} />
+                <Route path="cloud-tareas" element={<CloudTasksStatus />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />

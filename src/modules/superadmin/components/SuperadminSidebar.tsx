@@ -2,7 +2,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
 
   BarChart3, Building2, Rocket, RefreshCw, Database,
-  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse,
+  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -13,6 +13,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin", end: true, label: "Resumen SaaS", icon: BarChart3, desc: "Métricas cross-tenant" },
   { to: "/superadmin/tiendas", label: "Tiendas", icon: Building2, desc: "Gestión de organizaciones" },
   { to: "/superadmin/nueva-tienda", label: "Nueva tienda", icon: Rocket, desc: "Wizard de alta" },
+  { to: "/superadmin/cloud-tareas", label: "Cloud / Tareas", icon: Zap, desc: "Migraciones, seeds, secrets" },
 ];
 
 const TENANT_ITEMS = [
