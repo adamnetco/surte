@@ -117,3 +117,22 @@ Schema + edge functions + secrets se copian. Repetir seed `demo` con `environmen
 ---
 
 **Cómo reanudar:** decir "continúa con las tareas pendientes" y el agente ejecuta secciones 1→8 en orden, esperando aprobación de migración y secretos donde aplique.
+
+---
+
+## 5. Sistema de acceso (refactor completo) — plan aprobado 2026-06-08
+
+Plan: `.lovable/plan.md` · Arquitectura: `docs/auth/architecture.md` · Migración: `.lovable/pending-migrations/auth-system.sql` · Memoria: `mem://auth/access-system`
+
+**Decisiones del usuario:**
+- WebAuthn + TOTP + Recovery como núcleo, **todo configurable** desde panel admin (`auth_settings`).
+- Break-glass superadmin con aprobadores definidos por configuración (email + TOTP).
+- Enforcement 2FA: por configuración (default 14 días gracia para admin/superadmin).
+- IP allowlist superadmin: por configuración (default vacío).
+- Crear secret `AUTH_ENCRYPTION_KEY` cuando Cloud responda.
+
+**Orden de ejecución al volver Cloud:**
+1. `secrets--add_secret AUTH_ENCRYPTION_KEY` (32 bytes base64).
+2. `supabase--migration` con SQL de `.lovable/pending-migrations/auth-system.sql`.
+3. Implementar edge functions auth-* (stubs por crear).
+4. Construir Fases 2-7 según plan (UI, state machine, break-glass, hardening, migración usuarios).
