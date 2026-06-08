@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import { isAuthLockAbort, isTransientAuthError, purgeLocalAuth } from "@/modules/auth/lib/authRecovery";
+import { isDevBypassEnabled, buildBypassSession, buildBypassUser } from "@/modules/auth/lib/devBypass";
 
 export type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
 
@@ -132,6 +133,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   useEffect(() => {
+    // === Dev bypass: salta toda la lógica real de auth ===
+    if (isDevBypassEnabled()) {
+      const fakeUser = buildBypassUser();
+      const fakeSession = buildBypassSession();
+      setSession(fakeSession);
+      setUser(fakeUser);
+      applyRole("superadmin", fakeUser.id);
+      setLoading(false);
+      console.warn(
+        "[Auth] DEV BYPASS activo — sesión simulada de superadmin. NO se monta en producción."
+      );
+      return;
+    }
+
     // Silence the harmless "lock steal" abort that bubbles as unhandledrejection
     const onUnhandled = (e: PromiseRejectionEvent) => {
       if (isAuthLockAbort(e.reason)) {

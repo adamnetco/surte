@@ -23,6 +23,7 @@ import CartNavigationGuard from "@/components/CartNavigationGuard";
 import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 import GlobalCommandPalette from "@/components/GlobalCommandPalette";
 import AuthHealthMonitor from "@/components/AuthHealthMonitor";
+import DevBypassBanner from "@/components/DevBypassBanner";
 import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
@@ -180,6 +181,7 @@ const App = () => (
           <CartProvider>
             <Toaster />
             <Sonner />
+            <DevBypassBanner />
             <GlobalErrorListeners />
             <Suspense fallback={null}><SSOErrorScreen /></Suspense>
 
