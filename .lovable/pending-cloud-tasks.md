@@ -136,3 +136,20 @@ Plan: `.lovable/plan.md` · Arquitectura: `docs/auth/architecture.md` · Migraci
 2. `supabase--migration` con SQL de `.lovable/pending-migrations/auth-system.sql`.
 3. Implementar edge functions auth-* (stubs por crear).
 4. Construir Fases 2-7 según plan (UI, state machine, break-glass, hardening, migración usuarios).
+
+## 6. Avance frontend (sin Cloud)
+
+Construido y listo para conectar cuando Cloud responda:
+
+- `src/modules/auth/state/loginMachine.ts` — reducer puro + `pickStrongest()`. 5 tests verdes.
+- `src/modules/auth/hooks/useLoginFlow.ts` — orquesta el reducer y llama a `auth-login-challenge` (con fallback si Cloud está caído).
+- `src/modules/auth/lib/webauthn-client.ts` — wrapper nativo `navigator.credentials` (sin dependencia externa).
+- Componentes UI: `MethodPicker`, `PasskeyButton`, `TotpInput`, `RecoveryCodeInput`.
+- Página `src/modules/auth/pages/LoginSuperadmin.tsx` montada en `/superadmin/acceso`.
+- Barrel `@/modules/auth` re-exporta `useLoginFlow`, `loginReducer`, `LoginSuperadminPage`.
+
+Cuando Cloud vuelva:
+1. Crear secret `AUTH_ENCRYPTION_KEY`.
+2. Aplicar `.lovable/pending-migrations/auth-system.sql`.
+3. Desplegar edge functions `auth-login-challenge`, `auth-totp-*`, `auth-webauthn-*`, `auth-recovery-*`, `auth-break-glass-*`.
+4. Reemplazar el `onVerify(false, ...)` del prototipo por las llamadas reales.
