@@ -19,6 +19,7 @@ const DeadLetterQueue = lazy(() => import("@/modules/admin-cms/components/DeadLe
 const DataManagementTab = lazy(() => import("@/modules/admin-cms/components/DataManagementTab"));
 const TenantHealth = lazy(() => import("@/modules/superadmin/components/TenantHealth"));
 const TenantDataIsland = lazy(() => import("@/modules/superadmin/components/TenantDataIsland"));
+const CloudTasksStatus = lazy(() => import("@/modules/superadmin/pages/CloudTasksStatus"));
 
 const SyncSection = () => (
   <div className="space-y-4">
