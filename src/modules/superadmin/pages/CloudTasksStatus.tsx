@@ -57,8 +57,10 @@ export default function CloudTasksStatusPage() {
       const entry: HistoryEntry = { taskId: task.id, env, status: res.status, detail: res.detail, at: res.checkedAt };
       appendHistory(entry);
       setHistory((h) => [entry, ...h].slice(0, 200));
+      return res;
     } catch (e: any) {
       toast.error(`Falló verificación: ${e?.message ?? "error"}`);
+      return null;
     } finally {
       setRunning((s) => {
         const n = new Set(s);
@@ -71,6 +73,21 @@ export default function CloudTasksStatusPage() {
   const runAll = async (env: EnvKey) => {
     toast.info(`Verificando ${CLOUD_TASKS.length} tareas en ${env === "test" ? "Test" : "Live"}…`);
     await Promise.all(CLOUD_TASKS.map((t) => runCheck(t, env)));
+  };
+
+  /** Re-ejecuta solo los entornos cuyo estado actual NO es "done". */
+  const retryPending = async (task: CloudTask) => {
+    const envs: EnvKey[] = ["test", "live"];
+    const targets = envs.filter((e) => (results[task.id]?.[e]?.status ?? "unknown") !== "done");
+    if (targets.length === 0) {
+      toast.info("Esta tarea ya está completa en ambos entornos.");
+      return;
+    }
+    toast.info(`Reintentando ${targets.length} etapa(s) pendiente(s)…`);
+    const out = await Promise.all(targets.map((e) => runCheck(task, e)));
+    const done = out.filter((r) => r?.status === "done").length;
+    if (done === targets.length) toast.success("Todas las etapas pendientes quedaron listas.");
+    else toast.warning(`${done}/${targets.length} etapas siguen sin completarse. Revisa el historial.`);
   };
 
   useEffect(() => {
