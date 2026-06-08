@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, AlertCircle, HelpCircle, Clock, RefreshCw, Trash2, FileText, Zap } from "lucide-react";
+import { CheckCircle2, AlertCircle, HelpCircle, Clock, RefreshCw, Trash2, FileText, Zap, Play } from "lucide-react";
 import { toast } from "sonner";
 import {
   CLOUD_TASKS,
@@ -57,8 +57,10 @@ export default function CloudTasksStatusPage() {
       const entry: HistoryEntry = { taskId: task.id, env, status: res.status, detail: res.detail, at: res.checkedAt };
       appendHistory(entry);
       setHistory((h) => [entry, ...h].slice(0, 200));
+      return res;
     } catch (e: any) {
       toast.error(`Falló verificación: ${e?.message ?? "error"}`);
+      return null;
     } finally {
       setRunning((s) => {
         const n = new Set(s);
@@ -71,6 +73,21 @@ export default function CloudTasksStatusPage() {
   const runAll = async (env: EnvKey) => {
     toast.info(`Verificando ${CLOUD_TASKS.length} tareas en ${env === "test" ? "Test" : "Live"}…`);
     await Promise.all(CLOUD_TASKS.map((t) => runCheck(t, env)));
+  };
+
+  /** Re-ejecuta solo los entornos cuyo estado actual NO es "done". */
+  const retryPending = async (task: CloudTask) => {
+    const envs: EnvKey[] = ["test", "live"];
+    const targets = envs.filter((e) => (results[task.id]?.[e]?.status ?? "unknown") !== "done");
+    if (targets.length === 0) {
+      toast.info("Esta tarea ya está completa en ambos entornos.");
+      return;
+    }
+    toast.info(`Reintentando ${targets.length} etapa(s) pendiente(s)…`);
+    const out = await Promise.all(targets.map((e) => runCheck(task, e)));
+    const done = out.filter((r) => r?.status === "done").length;
+    if (done === targets.length) toast.success("Todas las etapas pendientes quedaron listas.");
+    else toast.warning(`${done}/${targets.length} etapas siguen sin completarse. Revisa el historial.`);
   };
 
   useEffect(() => {
@@ -155,6 +172,14 @@ export default function CloudTasksStatusPage() {
               <div className="flex flex-col gap-1.5 md:items-end text-xs">
                 <EnvBadge env="test" res={testRes} busy={running.has(`${task.id}:test`)} onRetry={() => runCheck(task, "test")} />
                 <EnvBadge env="live" res={liveRes} busy={running.has(`${task.id}:live`)} onRetry={() => runCheck(task, "live")} />
+                <button
+                  onClick={() => retryPending(task)}
+                  disabled={running.has(`${task.id}:test`) || running.has(`${task.id}:live`)}
+                  className="mt-1 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-primary/30 text-primary hover:bg-primary/10 text-[11px] disabled:opacity-50"
+                  title="Re-ejecutar solo las etapas pendientes y registrar el resultado"
+                >
+                  <Play size={11} /> Reintentar pendientes
+                </button>
               </div>
             </div>
           );
