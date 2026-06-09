@@ -314,6 +314,9 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
                   <Switch checked={d.is_primary} onCheckedChange={() => setPrimary(d)} />
                 </TableCell>
                 <TableCell className="flex gap-1">
+                  <Button size="sm" variant="outline" onClick={() => setWizardDomain({ id: d.id, hostname: d.hostname })}>
+                    <Wand2 className="w-3 h-3 mr-1" />Wizard CF
+                  </Button>
                   {!d.verified_at && <Button size="sm" variant="outline" onClick={() => markVerified(d)}>Verificar</Button>}
                   <a href={`https://${d.hostname}`} target="_blank" rel="noreferrer">
                     <Button size="icon" variant="ghost"><ExternalLink className="w-4 h-4" /></Button>
@@ -326,6 +329,13 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
           </TableBody>
         </Table>
       </Card>
+
+      <DomainWizard
+        open={!!wizardDomain}
+        onOpenChange={(v) => !v && setWizardDomain(null)}
+        orgId={orgId}
+        domain={wizardDomain}
+      />
     </div>
   );
 }
