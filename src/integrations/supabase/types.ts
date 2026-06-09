@@ -6186,12 +6186,58 @@ export type Database = {
           },
         ]
       }
+      tenant_cloudflare_accounts: {
+        Row: {
+          api_token_encrypted: string
+          cf_account_id: string
+          cf_zone_id: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_token_encrypted: string
+          cf_account_id: string
+          cf_zone_id?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_token_encrypted?: string
+          cf_account_id?: string
+          cf_zone_id?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tenant_domains: {
         Row: {
+          cf_account_id: string | null
+          cf_dcv_method: string | null
+          cf_hostname_id: string | null
+          cf_ownership_verification: Json | null
+          cf_ssl_status: string | null
+          cf_status: string | null
+          cf_zone_id: string | null
+          cname_target: string | null
           created_at: string
+          dns_mode: string
           hostname: string
           id: string
           is_primary: boolean
+          last_checked_at: string | null
           notes: string | null
           organization_id: string
           site_id: string
@@ -6201,10 +6247,20 @@ export type Database = {
           verified_at: string | null
         }
         Insert: {
+          cf_account_id?: string | null
+          cf_dcv_method?: string | null
+          cf_hostname_id?: string | null
+          cf_ownership_verification?: Json | null
+          cf_ssl_status?: string | null
+          cf_status?: string | null
+          cf_zone_id?: string | null
+          cname_target?: string | null
           created_at?: string
+          dns_mode?: string
           hostname: string
           id?: string
           is_primary?: boolean
+          last_checked_at?: string | null
           notes?: string | null
           organization_id: string
           site_id: string
@@ -6214,10 +6270,20 @@ export type Database = {
           verified_at?: string | null
         }
         Update: {
+          cf_account_id?: string | null
+          cf_dcv_method?: string | null
+          cf_hostname_id?: string | null
+          cf_ownership_verification?: Json | null
+          cf_ssl_status?: string | null
+          cf_status?: string | null
+          cf_zone_id?: string | null
+          cname_target?: string | null
           created_at?: string
+          dns_mode?: string
           hostname?: string
           id?: string
           is_primary?: boolean
+          last_checked_at?: string | null
           notes?: string | null
           organization_id?: string
           site_id?: string
