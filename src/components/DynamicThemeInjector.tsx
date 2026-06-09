@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
+import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 
 /**
  * Convierte un hex (#RRGGBB) a triplete HSL "H S% L%" compatible con
@@ -35,7 +36,8 @@ const hexToHslTriplet = (hex: string): string | null => {
  * Resultado: cada id_negocio re-pinta toda la app en runtime.
  */
 const DynamicThemeInjector = () => {
-  const { data: settings } = useAppSettings();
+  const isStorefront = isStorefrontTenant(detectTenant());
+  const { data: settings } = useAppSettings(isStorefront);
 
   useEffect(() => {
     if (!settings) return;

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
+import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 
 declare global {
   interface Window {
@@ -16,7 +17,8 @@ declare global {
  * Tracks page views on route changes.
  */
 const Analytics = () => {
-  const { data: settings } = useAppSettings();
+  const isStorefront = isStorefrontTenant(detectTenant());
+  const { data: settings } = useAppSettings(isStorefront);
   const location = useLocation();
   const ga4Id = settings?.seo_ga4_measurement_id;
   const fbPixelId = settings?.seo_facebook_pixel_id;
