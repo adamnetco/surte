@@ -13,9 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink, RefreshCw, Send, Webhook } from "lucide-react";
+import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink, RefreshCw, Send, Webhook, Cloud, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
+import CloudflareAccountsTab from "@/modules/superadmin/components/CloudflareAccountsTab";
+import DomainWizard from "@/modules/superadmin/components/DomainWizard";
 
 const ASTRO_HOST_IP = "185.158.133.1"; // mismo IP base de Lovable; el cliente reenvía aquí su DNS
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
@@ -45,12 +47,14 @@ export default function Sitios() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid grid-cols-2 w-full lg:w-auto">
+          <TabsList className="grid grid-cols-3 w-full lg:w-auto">
             <TabsTrigger value="sites"><Globe className="w-4 h-4 mr-1" />Sitios</TabsTrigger>
             <TabsTrigger value="domains">Dominios</TabsTrigger>
+            <TabsTrigger value="cloudflare"><Cloud className="w-4 h-4 mr-1" />Cloudflare</TabsTrigger>
           </TabsList>
           <TabsContent value="sites"><SitesTab orgId={orgId} qc={qc} /></TabsContent>
           <TabsContent value="domains"><DomainsTab orgId={orgId} qc={qc} /></TabsContent>
+          <TabsContent value="cloudflare"><CloudflareAccountsTab orgId={orgId} /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -215,6 +219,7 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
 function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
   const [siteId, setSiteId] = useState<string>("");
   const [hostname, setHostname] = useState("");
+  const [wizardDomain, setWizardDomain] = useState<{ id: string; hostname: string } | null>(null);
 
   const { data: sites } = useQuery({
     queryKey: ["tenant-sites-list", orgId],
@@ -309,6 +314,9 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
                   <Switch checked={d.is_primary} onCheckedChange={() => setPrimary(d)} />
                 </TableCell>
                 <TableCell className="flex gap-1">
+                  <Button size="sm" variant="outline" onClick={() => setWizardDomain({ id: d.id, hostname: d.hostname })}>
+                    <Wand2 className="w-3 h-3 mr-1" />Wizard CF
+                  </Button>
                   {!d.verified_at && <Button size="sm" variant="outline" onClick={() => markVerified(d)}>Verificar</Button>}
                   <a href={`https://${d.hostname}`} target="_blank" rel="noreferrer">
                     <Button size="icon" variant="ghost"><ExternalLink className="w-4 h-4" /></Button>
@@ -321,6 +329,13 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
           </TableBody>
         </Table>
       </Card>
+
+      <DomainWizard
+        open={!!wizardDomain}
+        onOpenChange={(v) => !v && setWizardDomain(null)}
+        orgId={orgId}
+        domain={wizardDomain}
+      />
     </div>
   );
 }
