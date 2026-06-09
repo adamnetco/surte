@@ -5,6 +5,37 @@ import type { Tables } from "@/integrations/supabase/types";
 export type Product = Tables<"products">;
 export type Category = Tables<"categories">;
 
+const PRODUCT_CARD_COLUMNS = [
+  "id",
+  "name",
+  "slug",
+  "brand",
+  "tags",
+  "price",
+  "price_wholesale",
+  "price_distributor",
+  "original_price",
+  "stock",
+  "image_url",
+  "unit",
+  "unit_quantity",
+  "unit_measure",
+  "net_weight_grams",
+  "is_fresh",
+  "is_wholesale",
+  "available_from",
+  "available_until",
+  "available_days",
+  "available_time_start",
+  "available_time_end",
+].join(",");
+
+const withTimeout = (ms = 3500) => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), ms);
+  return { signal: controller.signal, done: () => window.clearTimeout(timeoutId) };
+};
+
 /** Returns a Set of inactive brand names (lowercased) to filter products */
 export const useInactiveBrands = () =>
   useQuery({
@@ -26,7 +57,7 @@ export const useCategories = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("*")
+        .select("id,slug,name,sort_order,meta_title,meta_description,og_image_url")
         .eq("is_active", true)
         .order("sort_order");
       if (error) throw error;
@@ -56,7 +87,12 @@ export const useProducts = (categorySlug?: string, search?: string) => {
   return useQuery({
     queryKey: ["products", categorySlug, search, inactiveBrands ? Array.from(inactiveBrands) : []],
     queryFn: async () => {
-      let query = supabase.from("products").select("*, categories(slug, name)").eq("is_active", true);
+      const categoryJoin = categorySlug ? "categories!inner(slug,name)" : "categories(slug,name)";
+      let query = (supabase as any)
+        .from("products")
+        .select(`${PRODUCT_CARD_COLUMNS},${categoryJoin}`)
+        .eq("is_active", true);
+      if (categorySlug) query = query.eq("categories.slug", categorySlug);
       if (search) {
         query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,tags.cs.{${search.toLowerCase()}}`);
       }
@@ -69,9 +105,6 @@ export const useProducts = (categorySlug?: string, search?: string) => {
       }
       // Filter by scheduling/availability
       result = result.filter((p: any) => isProductAvailableNow(p));
-      if (categorySlug) {
-        result = result.filter((p: any) => p.categories?.slug === categorySlug);
-      }
       return result as (Product & { categories: { slug: string; name: string } | null })[];
     },
     enabled: inactiveBrands !== undefined,
@@ -79,14 +112,25 @@ export const useProducts = (categorySlug?: string, search?: string) => {
   });
 };
 
-export const useAppSettings = () =>
+export const useAppSettings = (enabled = true) =>
   useQuery({
     queryKey: ["app_settings"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("app_settings").select("*");
-      if (error) throw error;
-      const settings: Record<string, string> = {};
-      data.forEach((s) => { settings[s.key] = s.value; });
-      return settings;
+      const timeout = withTimeout();
+      try {
+        const { data, error } = await supabase
+          .from("app_settings")
+          .select("key,value")
+          .abortSignal(timeout.signal);
+        if (error) throw error;
+        const settings: Record<string, string> = {};
+        data.forEach((s) => { settings[s.key] = s.value; });
+        return settings;
+      } finally {
+        timeout.done();
+      }
     },
+    enabled,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });

@@ -1,19 +1,23 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 
 const CustomScriptInjector = () => {
+  const isStorefront = isStorefrontTenant(detectTenant());
   const { data: scripts } = useQuery({
     queryKey: ["custom-scripts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("custom_scripts")
-        .select("*")
+        .select("id, script_content, position")
         .eq("is_active", true)
         .order("sort_order");
       if (error) throw error;
       return data;
     },
+    enabled: isStorefront,
+    retry: false,
     staleTime: 5 * 60 * 1000,
   });
 
