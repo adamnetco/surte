@@ -108,6 +108,7 @@ const SuperadminDashboard = () => {
                 {/* Datos globales (catálogos base, plantillas) — solo Superadmin master. */}
                 <Route path="datos" element={<DataManagementTab />} />
                 <Route path="cloud-tareas" element={<CloudTasksStatus />} />
+                <Route path="seguridad/acceso" element={<SeguridadAcceso />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
