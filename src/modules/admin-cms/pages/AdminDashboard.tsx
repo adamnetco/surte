@@ -160,8 +160,7 @@ const AdminDashboard = () => {
   const { data: products } = useQuery({
     queryKey: ["admin-products"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc("get_admin_products_secure" as never);
+      const { data, error } = await (supabase as any).rpc("get_admin_products_secure");
       if (error) throw error;
       return (data ?? []).map((p: any) => ({
         ...p,
