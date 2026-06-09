@@ -47,12 +47,14 @@ export default function Sitios() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid grid-cols-2 w-full lg:w-auto">
+          <TabsList className="grid grid-cols-3 w-full lg:w-auto">
             <TabsTrigger value="sites"><Globe className="w-4 h-4 mr-1" />Sitios</TabsTrigger>
             <TabsTrigger value="domains">Dominios</TabsTrigger>
+            <TabsTrigger value="cloudflare"><Cloud className="w-4 h-4 mr-1" />Cloudflare</TabsTrigger>
           </TabsList>
           <TabsContent value="sites"><SitesTab orgId={orgId} qc={qc} /></TabsContent>
           <TabsContent value="domains"><DomainsTab orgId={orgId} qc={qc} /></TabsContent>
+          <TabsContent value="cloudflare"><CloudflareAccountsTab orgId={orgId} /></TabsContent>
         </Tabs>
       </main>
     </div>
