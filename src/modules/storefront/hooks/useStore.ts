@@ -5,6 +5,12 @@ import type { Tables } from "@/integrations/supabase/types";
 export type Product = Tables<"products">;
 export type Category = Tables<"categories">;
 
+const withTimeout = (ms = 3500) => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), ms);
+  return { signal: controller.signal, done: () => window.clearTimeout(timeoutId) };
+};
+
 /** Returns a Set of inactive brand names (lowercased) to filter products */
 export const useInactiveBrands = () =>
   useQuery({
@@ -79,14 +85,22 @@ export const useProducts = (categorySlug?: string, search?: string) => {
   });
 };
 
-export const useAppSettings = () =>
+export const useAppSettings = (enabled = true) =>
   useQuery({
     queryKey: ["app_settings"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("app_settings").select("*");
+      const timeout = withTimeout();
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("key,value")
+        .abortSignal(timeout.signal);
+      timeout.done();
       if (error) throw error;
       const settings: Record<string, string> = {};
       data.forEach((s) => { settings[s.key] = s.value; });
       return settings;
     },
+    enabled,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
