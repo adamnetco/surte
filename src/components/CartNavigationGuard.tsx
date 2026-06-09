@@ -56,6 +56,7 @@ const CartNavigationGuard = () => {
   // Intercept programmatic navigation (navigate() calls)
   useEffect(() => {
     const navigator = navContext.navigator as any;
+    if (!navigator?.push || !navigator?.replace) return;
     const originalPush = navigator.push.bind(navigator);
     const originalReplace = navigator.replace.bind(navigator);
 
