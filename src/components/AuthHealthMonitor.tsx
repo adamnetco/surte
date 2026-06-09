@@ -9,6 +9,7 @@ import { toast } from "sonner";
  * Montar una sola vez (App.tsx).
  */
 const PING_INTERVAL_MS = 15_000;
+const PING_BACKOFF_MS = 60_000;
 const DOWN_THRESHOLD_MS = 30_000;
 const TOAST_ID = "auth-backend-down";
 
@@ -47,7 +48,7 @@ export default function AuthHealthMonitor() {
       if (!navigator.onLine) return markDown();
       try {
         const controller = new AbortController();
-        const t = setTimeout(() => controller.abort(), 8000);
+        const t = setTimeout(() => controller.abort(), 3000);
         const res = await fetch(url, {
           method: "GET",
           headers: { apikey },
@@ -64,7 +65,13 @@ export default function AuthHealthMonitor() {
     };
 
     void ping();
-    const id = window.setInterval(ping, PING_INTERVAL_MS);
+    const id = window.setInterval(() => {
+      const interval = downSinceRef.current ? PING_BACKOFF_MS : PING_INTERVAL_MS;
+      const last = Number(sessionStorage.getItem("sps:last_auth_health_ping") || 0);
+      if (Date.now() - last < interval) return;
+      sessionStorage.setItem("sps:last_auth_health_ping", String(Date.now()));
+      void ping();
+    }, PING_INTERVAL_MS);
     const onOnline = () => void ping();
     window.addEventListener("online", onOnline);
 

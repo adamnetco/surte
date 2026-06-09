@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation } from "react-router-dom";
+import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 
 const ADMIN_PATHS = ["/admin", "/sitios", "/pos", "/mesas", "/kds", "/facturacion", "/compras", "/inventario", "/planes", "/billing", "/licencias", "/gerente-ia", "/catalogos-base", "/onboarding"];
 
@@ -11,6 +12,7 @@ const CityPickerModal = () => {
   const [open, setOpen] = useState(false);
   const [showSkip, setShowSkip] = useState(false);
   const { pathname } = useLocation();
+  const isStorefront = isStorefrontTenant(detectTenant());
   const isAdminRoute = ADMIN_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
   const { data: municipalities } = useQuery({
@@ -24,10 +26,13 @@ const CityPickerModal = () => {
       if (error) throw error;
       return data;
     },
+    enabled: isStorefront && !isAdminRoute,
+    retry: false,
+    staleTime: 10 * 60 * 1000,
   });
 
   useEffect(() => {
-    if (isAdminRoute) {
+    if (!isStorefront || isAdminRoute) {
       setOpen(false);
       return;
     }
@@ -39,7 +44,7 @@ const CityPickerModal = () => {
       const skipTimer = setTimeout(() => setShowSkip(true), 5000);
       return () => clearTimeout(skipTimer);
     }
-  }, [isAdminRoute]);
+  }, [isStorefront, isAdminRoute]);
 
   const handleSelect = (city: string) => {
     localStorage.setItem("surte_city", city);

@@ -107,6 +107,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Debounced remote sync to persistent_carts (skipped while hydrating)
   useEffect(() => {
     if (isHydratingRef.current) return;
+    if (items.length === 0 && !phoneRef.current && !userIdRef.current) return;
     if (syncTimer.current) window.clearTimeout(syncTimer.current);
     syncTimer.current = window.setTimeout(() => {
       const payload = items.map((i) => ({
