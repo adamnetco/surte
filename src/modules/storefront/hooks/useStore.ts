@@ -88,7 +88,7 @@ export const useProducts = (categorySlug?: string, search?: string) => {
     queryKey: ["products", categorySlug, search, inactiveBrands ? Array.from(inactiveBrands) : []],
     queryFn: async () => {
       const categoryJoin = categorySlug ? "categories!inner(slug,name)" : "categories(slug,name)";
-      let query = supabase
+      let query = (supabase as any)
         .from("products")
         .select(`${PRODUCT_CARD_COLUMNS},${categoryJoin}`)
         .eq("is_active", true);
