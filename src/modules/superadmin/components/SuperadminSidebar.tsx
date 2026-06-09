@@ -13,6 +13,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin", end: true, label: "Resumen SaaS", icon: BarChart3, desc: "Métricas cross-tenant" },
   { to: "/superadmin/tiendas", label: "Tiendas", icon: Building2, desc: "Gestión de organizaciones" },
   { to: "/superadmin/nueva-tienda", label: "Nueva tienda", icon: Rocket, desc: "Wizard de alta" },
+  { to: "/superadmin/seguridad/acceso", label: "Acceso & Seguridad", icon: ShieldCheck, desc: "2FA, passkeys, break-glass" },
   { to: "/superadmin/cloud-tareas", label: "Cloud / Tareas", icon: Zap, desc: "Migraciones, seeds, secrets" },
 ];
 
