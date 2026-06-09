@@ -2,14 +2,16 @@ import { MessageCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useState } from "react";
+import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 
 const FloatingWhatsApp = () => {
-  const { data: settings } = useAppSettings();
+  const isStorefront = isStorefrontTenant(detectTenant());
+  const { data: settings } = useAppSettings(isStorefront);
   const phone = settings?.whatsapp_number || "573001234567";
   const message = encodeURIComponent("Hola SURTÉ YA, necesito ayuda con mi pedido");
   const [dismissed, setDismissed] = useState(false);
 
-  if (dismissed) return null;
+  if (!isStorefront || dismissed) return null;
 
   return (
     <motion.div

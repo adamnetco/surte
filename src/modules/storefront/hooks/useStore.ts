@@ -93,8 +93,8 @@ export const useAppSettings = (enabled = true) =>
       const { data, error } = await supabase
         .from("app_settings")
         .select("key,value")
-        .abortSignal(timeout.signal);
-      timeout.done();
+        .abortSignal(timeout.signal)
+        .finally(timeout.done);
       if (error) throw error;
       const settings: Record<string, string> = {};
       data.forEach((s) => { settings[s.key] = s.value; });
