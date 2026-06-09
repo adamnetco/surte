@@ -20,6 +20,7 @@ const DataManagementTab = lazy(() => import("@/modules/admin-cms/components/Data
 const TenantHealth = lazy(() => import("@/modules/superadmin/components/TenantHealth"));
 const TenantDataIsland = lazy(() => import("@/modules/superadmin/components/TenantDataIsland"));
 const CloudTasksStatus = lazy(() => import("@/modules/superadmin/pages/CloudTasksStatus"));
+const SeguridadAcceso = lazy(() => import("@/modules/superadmin/pages/SeguridadAcceso"));
 
 const SyncSection = () => (
   <div className="space-y-4">
