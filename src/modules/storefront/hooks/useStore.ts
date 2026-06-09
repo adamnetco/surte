@@ -90,15 +90,18 @@ export const useAppSettings = (enabled = true) =>
     queryKey: ["app_settings"],
     queryFn: async () => {
       const timeout = withTimeout();
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("key,value")
-        .abortSignal(timeout.signal)
-        .finally(timeout.done);
-      if (error) throw error;
-      const settings: Record<string, string> = {};
-      data.forEach((s) => { settings[s.key] = s.value; });
-      return settings;
+      try {
+        const { data, error } = await supabase
+          .from("app_settings")
+          .select("key,value")
+          .abortSignal(timeout.signal);
+        if (error) throw error;
+        const settings: Record<string, string> = {};
+        data.forEach((s) => { settings[s.key] = s.value; });
+        return settings;
+      } finally {
+        timeout.done();
+      }
     },
     enabled,
     retry: false,
