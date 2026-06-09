@@ -2321,6 +2321,13 @@ export type Database = {
             foreignKeyName: "landing_page_products_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "admin_products_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -2780,6 +2787,13 @@ export type Database = {
             foreignKeyName: "modifier_groups_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "admin_products_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modifier_groups_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -2833,6 +2847,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "modifier_options_linked_product_id_fkey"
+            columns: ["linked_product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_products_secure"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "modifier_options_linked_product_id_fkey"
             columns: ["linked_product_id"]
@@ -3079,6 +3100,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_products_secure"
             referencedColumns: ["id"]
           },
           {
@@ -4130,6 +4158,13 @@ export type Database = {
             foreignKeyName: "printer_routing_rules_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "admin_products_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_routing_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -4334,6 +4369,13 @@ export type Database = {
             foreignKeyName: "product_media_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "admin_products_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -4392,6 +4434,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_presentations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_products_secure"
             referencedColumns: ["id"]
           },
           {
@@ -6330,6 +6379,71 @@ export type Database = {
       }
     }
     Views: {
+      admin_products_secure: {
+        Row: {
+          availability: string | null
+          available_days: number[] | null
+          available_from: string | null
+          available_time_end: string | null
+          available_time_start: string | null
+          available_until: string | null
+          base_unit: string | null
+          brand: string | null
+          category_id: string | null
+          category_name: string | null
+          cost_price: number | null
+          created_at: string | null
+          description: string | null
+          gtin: string | null
+          id: string | null
+          image_url: string | null
+          is_active: boolean | null
+          is_fresh: boolean | null
+          is_wholesale: boolean | null
+          kitchen_station_id: string | null
+          meta_description: string | null
+          meta_title: string | null
+          name: string | null
+          net_weight_grams: number | null
+          organization_id: string | null
+          original_price: number | null
+          price: number | null
+          price_distributor: number | null
+          price_wholesale: number | null
+          sku: string | null
+          slug: string | null
+          stock: number | null
+          tags: string[] | null
+          unit: string | null
+          unit_measure: string | null
+          unit_quantity: number | null
+          updated_at: string | null
+          weight: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_kitchen_station_id_fkey"
+            columns: ["kitchen_station_id"]
+            isOneToOne: false
+            referencedRelation: "kitchen_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products_public: {
         Row: {
           availability: string | null
