@@ -160,13 +160,12 @@ const AdminDashboard = () => {
   const { data: products } = useQuery({
     queryKey: ["admin-products"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id,name,slug,price,cost_price,price_wholesale,stock,is_active,category_id,brand,image_url,sku,gtin,created_at,categories(name)")
-        .order("created_at", { ascending: false })
-        .limit(500);
+      const { data, error } = await (supabase as any).rpc("get_admin_products_secure");
       if (error) throw error;
-      return data;
+      return (data ?? []).map((p: any) => ({
+        ...p,
+        categories: p.category_name ? { name: p.category_name } : null,
+      }));
     },
     enabled: hasAdminAccess,
     staleTime: 2 * 60_000,

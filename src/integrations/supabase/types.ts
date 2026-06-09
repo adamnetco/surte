@@ -6514,6 +6514,49 @@ export type Database = {
         Args: { _kind?: string; _order_id: string }
         Returns: string[]
       }
+      get_admin_products_secure: {
+        Args: never
+        Returns: {
+          availability: string
+          available_days: number[]
+          available_from: string
+          available_time_end: string
+          available_time_start: string
+          available_until: string
+          base_unit: string
+          brand: string
+          category_id: string
+          category_name: string
+          cost_price: number
+          created_at: string
+          description: string
+          gtin: string
+          id: string
+          image_url: string
+          is_active: boolean
+          is_fresh: boolean
+          is_wholesale: boolean
+          kitchen_station_id: string
+          meta_description: string
+          meta_title: string
+          name: string
+          net_weight_grams: number
+          organization_id: string
+          original_price: number
+          price: number
+          price_distributor: number
+          price_wholesale: number
+          sku: string
+          slug: string
+          stock: number
+          tags: string[]
+          unit: string
+          unit_measure: string
+          unit_quantity: number
+          updated_at: string
+          weight: string
+        }[]
+      }
       get_current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
