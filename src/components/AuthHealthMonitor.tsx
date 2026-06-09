@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { isDevBypassEnabled } from "@/modules/auth/lib/devBypass";
 
 /**
  * Hace ping cada 15s al endpoint público de auth (`/auth/v1/health`).
@@ -18,6 +19,7 @@ export default function AuthHealthMonitor() {
   const shownRef = useRef(false);
 
   useEffect(() => {
+    if (isDevBypassEnabled()) return;
     const url = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/health`;
     const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
     let cancelled = false;
@@ -64,7 +66,7 @@ export default function AuthHealthMonitor() {
       }
     };
 
-    void ping();
+    const firstPingId = window.setTimeout(() => void ping(), 5000);
     const id = window.setInterval(() => {
       const interval = downSinceRef.current ? PING_BACKOFF_MS : PING_INTERVAL_MS;
       const last = Number(sessionStorage.getItem("sps:last_auth_health_ping") || 0);
@@ -77,6 +79,7 @@ export default function AuthHealthMonitor() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(firstPingId);
       window.clearInterval(id);
       window.removeEventListener("online", onOnline);
       toast.dismiss(TOAST_ID);

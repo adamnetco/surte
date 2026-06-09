@@ -29,12 +29,12 @@ import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 // Eager: only the home page (LCP-critical) — everything else is code-split.
 import Index from "./pages/Index";
 import LoginRouter from "./modules/auth/pages/LoginRouter";
-import AdminDiag from "./pages/AdminDiag";
-import AuthStatus from "./pages/AuthStatus";
 import RoleGuard from "./modules/auth/components/RoleGuard";
 import HostGuard from "./components/HostGuard";
 import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 
+const AdminDiag = lazy(() => import("./pages/AdminDiag"));
+const AuthStatus = lazy(() => import("./pages/AuthStatus"));
 const ClientPortalShell = lazy(() => import("./modules/clientes").then((m) => ({ default: m.ClientPortalShell })));
 const SSOErrorScreen = lazy(() => import("./modules/auth/components/SSOErrorScreen"));
 
