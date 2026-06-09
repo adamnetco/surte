@@ -187,6 +187,252 @@ export type Database = {
           },
         ]
       }
+      auth_break_glass_requests: {
+        Row: {
+          approver1_at: string | null
+          approver1_email: string | null
+          approver2_at: string | null
+          approver2_email: string | null
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          requester_email: string
+          token_hash: string
+        }
+        Insert: {
+          approver1_at?: string | null
+          approver1_email?: string | null
+          approver2_at?: string | null
+          approver2_email?: string | null
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          requester_email: string
+          token_hash: string
+        }
+        Update: {
+          approver1_at?: string | null
+          approver1_email?: string | null
+          approver2_at?: string | null
+          approver2_email?: string | null
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          requester_email?: string
+          token_hash?: string
+        }
+        Relationships: []
+      }
+      auth_factors: {
+        Row: {
+          created_at: string
+          id: string
+          last_used_at: string | null
+          metadata: Json
+          secret_encrypted: string | null
+          type: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          metadata?: Json
+          secret_encrypted?: string | null
+          type: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          metadata?: Json
+          secret_encrypted?: string | null
+          type?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      auth_login_events: {
+        Row: {
+          created_at: string
+          details: Json
+          email: string | null
+          id: string
+          ip: unknown
+          method: string
+          risk_score: number
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          email?: string | null
+          id?: string
+          ip?: unknown
+          method: string
+          risk_score?: number
+          success: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          email?: string | null
+          id?: string
+          ip?: unknown
+          method?: string
+          risk_score?: number
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      auth_recovery_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      auth_settings: {
+        Row: {
+          break_glass_approvers: Json
+          break_glass_method: string
+          enforce_2fa_grace_days: number
+          id: boolean
+          idle_timeout_minutes: Json
+          methods_enabled: Json
+          rate_limit_per_15min: number
+          reauth_window_minutes: number
+          require_2fa_roles: Json
+          superadmin_ip_allowlist: Json
+          superadmin_requires_passkey: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          break_glass_approvers?: Json
+          break_glass_method?: string
+          enforce_2fa_grace_days?: number
+          id?: boolean
+          idle_timeout_minutes?: Json
+          methods_enabled?: Json
+          rate_limit_per_15min?: number
+          reauth_window_minutes?: number
+          require_2fa_roles?: Json
+          superadmin_ip_allowlist?: Json
+          superadmin_requires_passkey?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          break_glass_approvers?: Json
+          break_glass_method?: string
+          enforce_2fa_grace_days?: number
+          id?: boolean
+          idle_timeout_minutes?: Json
+          methods_enabled?: Json
+          rate_limit_per_15min?: number
+          reauth_window_minutes?: number
+          require_2fa_roles?: Json
+          superadmin_ip_allowlist?: Json
+          superadmin_requires_passkey?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      auth_superadmin_allowlist: {
+        Row: {
+          created_at: string
+          email: string
+          enforced_ip_cidr: string | null
+          id: string
+          requires_passkey: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          enforced_ip_cidr?: string | null
+          id?: string
+          requires_passkey?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          enforced_ip_cidr?: string | null
+          id?: string
+          requires_passkey?: boolean
+        }
+        Relationships: []
+      }
+      auth_webauthn_credentials: {
+        Row: {
+          aaguid: string | null
+          counter: number
+          created_at: string
+          credential_id: string
+          device_label: string | null
+          id: string
+          last_used_at: string | null
+          public_key: string
+          transports: Json
+          user_id: string
+        }
+        Insert: {
+          aaguid?: string | null
+          counter?: number
+          created_at?: string
+          credential_id: string
+          device_label?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key: string
+          transports?: Json
+          user_id: string
+        }
+        Update: {
+          aaguid?: string | null
+          counter?: number
+          created_at?: string
+          credential_id?: string
+          device_label?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key?: string
+          transports?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       banners: {
         Row: {
           created_at: string
@@ -6454,6 +6700,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      app_current_role: { Args: never; Returns: string }
       apply_catalog_template: {
         Args: { _mode?: string; _org_id: string; _template_id: string }
         Returns: Json
