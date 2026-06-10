@@ -12,18 +12,14 @@
   - E2E `e2e/pos.spec.ts` ya cubre que `/pos` carga sin pageerror y sin overlays atascados.
 - ✅ **Fase 6** — Modal de módulos por organización se alimenta de `public.modules` (DB-driven, agrupado por categoría). Se limpiaron 8 `module_key` huérfanos y se añadieron `whatsapp`, `fiscal`, `compras` al catálogo.
 
+- ✅ **Fase 2.5** — Edge function `reseed-demo` desplegada. Crea (si falta) el usuario `demo@sistecpos.com` con `email_confirm=true`, lo vincula a la org demo (`59a4032f…`) como `admin` en `organization_members` y le otorga `user_roles.role='admin'`. Solo invocable por superadmin/admin autenticado:
+  ```ts
+  supabase.functions.invoke("reseed-demo")
+  ```
+  Recomendación: enviar magic-link al demo email después de invocar (la contraseña inicial es aleatoria).
+
 ## Pendiente
 
-### Fase 2.5 — Vincular usuario demo
-Cuando se cree `demo@sistecpos.com` en Auth:
-```sql
-INSERT INTO public.organization_members (organization_id, user_id, role)
-VALUES ('59a4032f-3eeb-4312-a84a-f6d042f019ec', '<auth.uid>', 'admin')
-ON CONFLICT (organization_id, user_id) DO UPDATE SET role='admin';
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('<auth.uid>', 'admin') ON CONFLICT DO NOTHING;
-```
-Endpoint sugerido: `/superadmin/reseed-demo` que ejecute esto vía edge function con service role.
 
 ### Fase 5+ — Próximos pasos de observabilidad
 - Migrar `console.error` / `console.warn` críticos a `logger.*` (módulo por módulo).
