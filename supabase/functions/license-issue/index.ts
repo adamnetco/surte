@@ -2,7 +2,12 @@
 // Genera keypair Ed25519, guarda la privada cifrada en metadata.signing_key (AES-GCM con LICENSE_MASTER_KEY),
 // devuelve license_key UUID que el cliente embebe en el instalador.
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const MASTER = Deno.env.get("LICENSE_MASTER_KEY") ?? "";
 

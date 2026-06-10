@@ -6,7 +6,12 @@
 // 5. Envía invitación al owner (magic link via supabase admin)
 // 6. Responde con organization_id, license_key, invite_link
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-purchase-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const SECRET = Deno.env.get("LICENSE_PURCHASE_SECRET") ?? "";
 const MASTER = Deno.env.get("LICENSE_MASTER_KEY") ?? "";
