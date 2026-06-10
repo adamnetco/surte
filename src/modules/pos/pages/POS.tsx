@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { toast } from "sonner";
-import { Loader2, LockKeyhole } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import OpenSessionPanel from "@/modules/pos/components/OpenSessionPanel";
 import POSWorkspace from "@/modules/pos/components/POSWorkspace";
 import POSErrorBoundary from "@/modules/pos/components/POSErrorBoundary";
+import ModuleInactiveScreen from "@/components/ModuleInactiveScreen";
 
 interface Location { id: string; name: string; }
 interface Register { id: string; name: string; location_id: string; }
