@@ -250,6 +250,7 @@ const App = () => (
                     <Route path="/compras" element={<HostGuard require="storefront"><Compras /></HostGuard>} />
                     <Route path="/gerente-ia" element={<HostGuard require="storefront"><GerenteIA /></HostGuard>} />
                     <Route path="/onboarding" element={<HostGuard require="storefront"><Onboarding /></HostGuard>} />
+                    <Route path="/activacion" element={<HostGuard require="storefront"><ActivationStatus /></HostGuard>} />
                     <Route path="/billing" element={<HostGuard require="storefront"><Billing /></HostGuard>} />
 
                     {/* === Panel SistecPOS (solo en hosts del sistema) === */}
