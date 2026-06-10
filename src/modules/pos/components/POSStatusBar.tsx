@@ -105,7 +105,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
     queryFn: async () => {
       const { data } = await supabase
         .from("tenant_sites")
-        .select("id,is_published,last_sync_at")
+        .select("id,is_published,updated_at")
         .eq("organization_id", organizationId);
       return data ?? [];
     },
@@ -114,6 +114,13 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
   const total = sites?.length ?? 0;
   const sitesStatus: Status = total === 0 ? "unknown" : published > 0 ? "ok" : "off";
   const lastSync = sites?.reduce<string | null>((acc, s: any) => {
+    const v = s.updated_at;
+    if (!v) return acc;
+    return !acc || v > acc ? v : acc;
+  }, null);
+  // (consume below)
+  void lastSync;
+  const _lastSync = sites?.reduce<string | null>((acc, s: any) => {
     if (!s.last_sync_at) return acc;
     return !acc || s.last_sync_at > acc ? s.last_sync_at : acc;
   }, null);
