@@ -77,6 +77,7 @@ const Sitios = lazy(() => import("./modules/superadmin").then((m) => ({ default:
 const SuperadminDashboard = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SuperadminDashboardPage })));
 const TenantWorkspace = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.TenantWorkspacePage })));
 const LoginSuperadmin = lazy(() => import("./modules/auth/pages/LoginSuperadmin"));
+const MiSeguridad = lazy(() => import("./pages/MiSeguridad"));
 
 // Perf: defaults conservadores para evitar refetches innecesarios.
 // - staleTime 60s: la mayoría de paneles no necesitan datos frescos por segundo.
@@ -224,7 +225,8 @@ const App = () => (
                     <Route path="/favoritos" element={<HostGuard require="storefront"><Favoritos /></HostGuard>} />
                     <Route path="/perfil" element={<HostGuard require="storefront"><Perfil /></HostGuard>} />
                     <Route path="/ayuda" element={<HostGuard require="storefront"><Ayuda /></HostGuard>} />
-                    <Route path="/configuracion" element={<HostGuard require="storefront"><Configuracion /></HostGuard>} />
+                   <Route path="/configuracion" element={<HostGuard require="storefront"><Configuracion /></HostGuard>} />
+                   <Route path="/mi/seguridad" element={<HostGuard require="storefront"><MiSeguridad /></HostGuard>} />
                     <Route path="/clientes" element={<HostGuard require="storefront"><ClientPortalShell /></HostGuard>} />
 
                     {/* SEO local (hubs por ciudad) → solo en hosts de tenant */}
