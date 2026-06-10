@@ -171,8 +171,8 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
           const totalDomains = s.tenant_domains?.length ?? 0;
           const headingId = `site-${s.id}-title`;
           return (
-            <Card key={s.id} asChild className="p-4 flex flex-col gap-3 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-ring">
-              <article aria-labelledby={headingId}>
+            <Card key={s.id} role="article" aria-labelledby={headingId} className="p-4 flex flex-col gap-3 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-ring">
+              {/* Header */}
               {/* Header */}
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary grid place-items-center shrink-0" aria-hidden>
