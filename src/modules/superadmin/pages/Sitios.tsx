@@ -21,7 +21,7 @@ import CloudflareAccountsTab from "@/modules/superadmin/components/CloudflareAcc
 import DomainWizard from "@/modules/superadmin/components/DomainWizard";
 import SiteDetailsPanel from "@/modules/superadmin/components/SiteDetailsPanel";
 
-const ASTRO_HOST_IP = "185.158.133.1"; // mismo IP base de Lovable; el cliente reenvía aquí su DNS
+const ASTRO_HOST_IP = "185.158.133.1"; // IP anycast de Lovable hosting (storefront servido desde Lovable Cloud)
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
 
 export default function Sitios() {
