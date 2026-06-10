@@ -111,16 +111,20 @@ export default function Licencias() {
   }, [user]);
 
   async function loadAll() {
-    const [l, a, r, o] = await Promise.all([
+    const [l, a, r, o, p] = await Promise.all([
       supabase.from("licenses").select("*").order("created_at", { ascending: false }),
       supabase.from("license_activations").select("*").order("last_heartbeat_at", { ascending: false }),
       supabase.from("desktop_releases").select("*").order("published_at", { ascending: false }),
       supabase.from("organizations").select("id,name").order("name"),
+      supabase.from("onboarding_progress").select("organization_id,company_done,location_done,modules_done,einvoice_done,catalog_done,completed_at"),
     ]);
     setLicenses((l.data as any) ?? []);
     setActivations((a.data as any) ?? []);
     setReleases((r.data as any) ?? []);
     setOrgs((o.data as any) ?? []);
+    const map: Record<string, OnboardingProgress> = {};
+    ((p.data as any) ?? []).forEach((row: OnboardingProgress) => { map[row.organization_id] = row; });
+    setOnboarding(map);
   }
 
   async function issueLicense() {
@@ -134,13 +138,30 @@ export default function Licencias() {
       },
     });
     if (error) return toast.error(error.message);
-    toast.success("Licencia emitida");
+    toast.success("Licencia emitida y activa");
     setIssueOpen(false);
+    // Asegura registro de onboarding para que la organización pueda continuar
+    await supabase.from("onboarding_progress").upsert(
+      { organization_id: issueOrg },
+      { onConflict: "organization_id" },
+    );
     await loadAll();
+    await refreshOrgs();
     if ((data as any)?.license_key) {
-      navigator.clipboard?.writeText((data as any).license_key);
-      toast.info("Clave copiada al portapapeles");
+      setIssuedInfo({
+        license_key: (data as any).license_key,
+        organization_id: issueOrg,
+        plan: issuePlan,
+      });
+      navigator.clipboard?.writeText((data as any).license_key).catch(() => {});
     }
+  }
+
+  function goConfigureOrg(orgId: string) {
+    switchOrg(orgId);
+    setIssuedInfo(null);
+    // pequeño delay para que el provider persista currentOrgId en localStorage
+    setTimeout(() => navigate(`/onboarding?org=${orgId}`), 50);
   }
 
   async function updateMax(lic: License, newMax: number) {
