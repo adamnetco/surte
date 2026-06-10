@@ -59,7 +59,8 @@ export function ClientPOSAccess() {
     );
   }
 
-  const posActivo = hasModule("pos");
+  // Acepta ambas variantes para tolerar mismatch del onboarding antiguo
+  const posActivo = hasModule("pos") || hasModule("pos_counter");
 
   return (
     <div className="space-y-6">
