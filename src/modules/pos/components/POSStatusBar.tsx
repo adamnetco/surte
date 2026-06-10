@@ -123,6 +123,16 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
     };
   }, [health?.wp]);
 
+  const wpStatus: HealthStatus = wpPill.status;
+  const coreStatus: HealthStatus = corePill.status;
+  const sitesStatus: HealthStatus = sitesPill.status;
+
+  // Timelines — local for printer, server-hydrated for core/wp/sites.
+  const printerTl = useStatusTimeline("printer", printer, "local");
+  const coreTl = useStatusTimeline("core", coreStatus, organizationId, { hydrateFromServer: true });
+  const wpTl = useStatusTimeline("wp", wpStatus, organizationId, { hydrateFromServer: true });
+  const sitesTl = useStatusTimeline("sites", sitesStatus, organizationId, { hydrateFromServer: true });
+
   const fmtMoney = (n: number) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
 
