@@ -5,6 +5,7 @@ import { pingAgent } from "@/modules/printing/drivers/agent";
 import { cn } from "@/lib/utils";
 import { useHealthSnapshot, type HealthStatus } from "@/modules/pos/hooks/useHealthSnapshot";
 import { StatusPill } from "@/modules/pos/components/StatusPill";
+import { useStatusTimeline } from "@/modules/pos/hooks/useStatusTimeline";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 
