@@ -21,7 +21,7 @@ import CloudflareAccountsTab from "@/modules/superadmin/components/CloudflareAcc
 import DomainWizard from "@/modules/superadmin/components/DomainWizard";
 import SiteDetailsPanel from "@/modules/superadmin/components/SiteDetailsPanel";
 
-const ASTRO_HOST_IP = "185.158.133.1"; // mismo IP base de Lovable; el cliente reenvía aquí su DNS
+const ASTRO_HOST_IP = "185.158.133.1"; // IP anycast de Lovable hosting (storefront servido desde Lovable Cloud)
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
 
 export default function Sitios() {
@@ -370,10 +370,11 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
           <Button onClick={add}><Plus className="w-4 h-4 mr-1" />Conectar</Button>
         </div>
         <div className="text-xs text-muted-foreground bg-muted/40 rounded-md p-3 space-y-1">
-          <p className="font-medium text-foreground">Configuración DNS que debe hacer el cliente:</p>
-          <p>• <b>CNAME</b> <code>www</code> → <code>cname.vercel-dns.com</code></p>
-          <p>• <b>A</b> <code>@</code> → <code>{ASTRO_HOST_IP}</code> (si quiere root sin www)</p>
-          <p>• <b>TXT</b> <code>_lovable-tenant</code> → token mostrado por dominio (verificación)</p>
+          <p className="font-medium text-foreground">Configuración DNS que debe hacer el cliente (hosting Lovable):</p>
+          <p>• <b>A</b> <code>@</code> → <code>{ASTRO_HOST_IP}</code></p>
+          <p>• <b>A</b> <code>www</code> → <code>{ASTRO_HOST_IP}</code></p>
+          <p>• <b>TXT</b> <code>_lovable-tenant</code> → token mostrado por dominio (verificación SistecPOS)</p>
+          <p className="text-[11px] italic">SSL se aprovisiona automáticamente vía Lovable una vez propaguen los registros (hasta 72h).</p>
         </div>
       </Card>
 

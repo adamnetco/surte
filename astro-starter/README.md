@@ -19,26 +19,26 @@ cp .env.example .env       # rellena PUBLIC_SUPABASE_URL / PUBLIC_SUPABASE_ANON_
 npm run dev
 ```
 
-## Deploy
+## Deploy (Lovable hosting)
 
-1. Sube este folder como repo a GitHub.
-2. **Vercel → New Project** → importa el repo.
-3. Variables de entorno:
-   - `PUBLIC_SUPABASE_URL` = `https://dimyhjzcwlgfczimqhet.supabase.co`
-   - `PUBLIC_SUPABASE_ANON_KEY` = (la anon key publicable)
-4. **Settings → Domains**: añade los dominios de los clientes (`www.cliente1.com`, `www.cliente2.com`, …). Vercel emite SSL automáticamente.
-5. El cliente apunta su DNS:
-   - `CNAME www → cname.vercel-dns.com`
-   - o `A @ → 76.76.21.21`
+El storefront se sirve desde **Lovable Cloud** (mismo hosting que el panel SistecPOS). No se despliega en Vercel.
+
+1. Publica el proyecto SistecPOS Core en Lovable (botón **Publish**).
+2. En **Project Settings → Domains** añade los dominios de los clientes (`www.cliente1.com`, etc.). Lovable provisiona SSL automáticamente.
+3. El cliente apunta su DNS:
+   - `A @ → 185.158.133.1`
+   - `A www → 185.158.133.1`
+   - `TXT _lovable → lovable_verify=<token>` (mostrado en el flujo de conexión)
 
 ## Onboarding un nuevo cliente
 
 1. En el panel admin `/sitios` de Sistecpos: crea el sitio, configura su URL de WP y publícalo.
-2. Añade el dominio en la pestaña "Dominios".
-3. Añade ese mismo dominio en Vercel → Settings → Domains.
-4. El cliente configura el DNS.
+2. Añade el dominio en la pestaña "Dominios" (genera el `_lovable-tenant` token).
+3. Añade ese mismo dominio en **Lovable → Project Settings → Domains**.
+4. El cliente configura el DNS (A records + TXT de verificación).
 5. Listo: el sitio levanta sin desplegar nada nuevo.
 
 ## Para >100 clientes (recomendado)
 
-Usar **Cloudflare for SaaS** en vez del flujo de Domains de Vercel: emite SSL on-demand para miles de hostnames con un solo CNAME objetivo. Apunta Cloudflare for SaaS → tu proyecto Vercel.
+Usar **Cloudflare for SaaS** delante de Lovable: emite SSL on-demand para miles de hostnames con un solo CNAME objetivo. El wizard `/sitios → Conectar dominio` ya soporta el modo `saas` para este flujo.
+
