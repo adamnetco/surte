@@ -158,6 +158,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
         actionHref="/admin?tab=printers"
         actionLabel="Configurar impresoras"
         onRetry={() => { failsRef.current = 0; setPrinter("unknown"); }}
+        timeline={printerTl.formatted}
       />
       <StatusPill
         icon={corePill.icon}
@@ -166,6 +167,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
         hint={corePill.hint}
         description={corePill.description}
         onRetry={onRetry}
+        timeline={coreTl.formatted}
       />
       <StatusPill
         icon={Globe}
@@ -176,6 +178,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
         actionHref="/sitios"
         actionLabel="Ir a Sitios"
         onRetry={onRetry}
+        timeline={sitesTl.formatted}
       />
       <StatusPill
         icon={FileText}
@@ -187,6 +190,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
         actionHref="/sitios"
         actionLabel="Configurar WP"
         onRetry={onRetry}
+        timeline={wpTl.formatted}
       />
       {session ? (
         <StatusPill
