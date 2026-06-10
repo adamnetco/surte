@@ -191,14 +191,25 @@ const OrganizationsTab = () => {
 
   const toggleModule = async (mkey: string, current: boolean) => {
     if (!modulesOrg) return;
+    const next = !current;
+    // Optimistic update
+    qc.setQueryData(["org-modules", modulesOrg.id], (prev: Map<string, boolean> | undefined) => {
+      const map = new Map(prev ?? []);
+      map.set(mkey, next);
+      return map;
+    });
     const { error } = await supabase
       .from("organization_modules")
       .upsert(
-        { organization_id: modulesOrg.id, module_key: mkey, enabled: !current },
+        { organization_id: modulesOrg.id, module_key: mkey, enabled: next },
         { onConflict: "organization_id,module_key" }
       );
-    if (error) return toast.error(error.message, { position: "top-center" });
-    refetchModules();
+    if (error) {
+      toast.error(`No se pudo ${next ? "activar" : "desactivar"}: ${error.message}`, { position: "top-center" });
+      refetchModules();
+      return;
+    }
+    toast.success(`${next ? "Activado" : "Desactivado"}`, { position: "top-center" });
   };
 
   const initials = (name: string) =>
