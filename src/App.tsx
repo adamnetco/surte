@@ -23,6 +23,7 @@ import CartNavigationGuard from "@/components/CartNavigationGuard";
 import OmnichannelCartListener from "@/components/OmnichannelCartListener";
 import GlobalCommandPalette from "@/components/GlobalCommandPalette";
 import AuthHealthMonitor from "@/components/AuthHealthMonitor";
+const OnboardingChecklist = lazy(() => import("@/modules/onboarding/components/OnboardingChecklist"));
 import DevBypassBanner from "@/components/DevBypassBanner";
 import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 
