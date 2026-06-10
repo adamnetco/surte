@@ -281,29 +281,52 @@ export default function Licencias() {
           <div className="grid gap-3">
             {licenses.map(lic => {
               const used = activations.filter(a => a.license_id === lic.id && !a.revoked_at).length;
+              const prog = onboarding[lic.organization_id];
+              const pct = onbPct(prog);
+              const complete = !!prog?.completed_at || pct === 100;
               return (
                 <Card key={lic.id} className="p-4">
                   <div className="flex items-start justify-between flex-wrap gap-3">
-                    <div>
-                      <div className="font-semibold flex items-center gap-2">
-                        <Building2 className="h-4 w-4" /> {orgName(lic.organization_id)}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold flex items-center gap-2 flex-wrap">
+                        <Building2 className="h-4 w-4 shrink-0" /> {orgName(lic.organization_id)}
                         <Badge variant={lic.status === "active" ? "default" : "destructive"}>{lic.status}</Badge>
                         <Badge variant="outline">{lic.plan}</Badge>
+                        {complete
+                          ? <Badge className="bg-success text-success-foreground hover:bg-success/90">Onboarding 100%</Badge>
+                          : <Badge variant="secondary">Onboarding {pct}%</Badge>}
                       </div>
                       <code className="text-xs text-muted-foreground break-all">{lic.license_key}</code>
                       <div className="text-xs text-muted-foreground mt-1">
                         Emitida {new Date(lic.issued_at).toLocaleDateString()} · Expira {lic.expires_at ? new Date(lic.expires_at).toLocaleDateString() : "sin caducidad"}
                       </div>
+                      {!complete && (
+                        <div className="mt-2 max-w-md">
+                          <Progress value={pct} className="h-1.5" />
+                          <div className="flex gap-2 mt-1 text-[10px] text-muted-foreground flex-wrap">
+                            {ONB_STEPS.map((k) => (
+                              <span key={k} className={prog?.[k] ? "text-success" : ""}>
+                                {prog?.[k] ? "✓" : "○"} {k.replace("_done", "")}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Label className="text-xs">Terminales</Label>
                       <Input type="number" min={1} className="w-20" defaultValue={lic.max_terminals}
                         onBlur={(e) => { const v = Number(e.target.value); if (v !== lic.max_terminals) updateMax(lic, v); }} />
-                      <span className="text-xs text-muted-foreground">{used} / {lic.max_terminals} activos</span>
-                      <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(lic.license_key).then(() => toast.success("Copiado"))}>Copiar</Button>
+                      <span className="text-xs text-muted-foreground">{used} / {lic.max_terminals}</span>
+                      <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(lic.license_key).then(() => toast.success("Copiado"))}>
+                        <Copy className="h-4 w-4 mr-1" /> Clave
+                      </Button>
+                      <Button size="sm" onClick={() => goConfigureOrg(lic.organization_id)} disabled={lic.status !== "active"}>
+                        <Settings className="h-4 w-4 mr-1" /> {complete ? "Reconfigurar" : "Configurar"}
+                      </Button>
                       {lic.status === "active"
-                        ? <Button variant="destructive" size="sm" onClick={() => setStatus(lic, "suspended")}><ShieldOff className="h-4 w-4" /></Button>
-                        : <Button size="sm" onClick={() => setStatus(lic, "active")}><ShieldCheck className="h-4 w-4" /></Button>}
+                        ? <Button variant="destructive" size="sm" onClick={() => setStatus(lic, "suspended")} title="Suspender"><ShieldOff className="h-4 w-4" /></Button>
+                        : <Button size="sm" onClick={() => setStatus(lic, "active")} title="Reactivar"><ShieldCheck className="h-4 w-4" /></Button>}
                     </div>
                   </div>
                 </Card>
