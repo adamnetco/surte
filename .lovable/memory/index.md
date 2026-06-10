@@ -1,0 +1,1 @@
+- [Modules Catalog Source](mem://features/modules-catalog-source) — DB-driven modules; never hardcode module keys (FK to public.modules)
