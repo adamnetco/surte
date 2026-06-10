@@ -7,6 +7,7 @@
 - ✅ **Fase 4** — Tabla `client_pos_sessions` eliminada (estaba vacía, sin RPC ni edge function activas). No quedan referencias funcionales a `softwarepos.online` en `src/`.
 
 - ✅ **Fase 3** — RBAC + telemetría: `UsersTab` oculta selects de rol/biz a no-admins y bloquea autocambios; `signIn` registra éxitos en `auth_login_events` y delega los fallos a la edge function `log-login-attempt` (service role).
+- ✅ **Fase 6** — Modal de módulos por organización ahora se alimenta de `public.modules` (DB-driven, agrupado por categoría, con descripciones). Se limpiaron 8 `module_key` huérfanos (`pos_counter`→`pos`, `tables`→`mesas`, `ecommerce`→`retail`, `inventory_multi_warehouse`→`inventario`, `b2b_wholesale`→`horeca`, eliminados `loyalty`/`delivery_own`/`einvoice_innapsis`) y se añadieron al catálogo `whatsapp`, `fiscal` y `compras`.
 
 ## Pendiente
 
