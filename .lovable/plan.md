@@ -1,215 +1,128 @@
-# Plan: Refactor y endurecimiento del sistema de acceso — SistecPOS Core
+# Plan de refactorización y optimización — SistecPOS Core
 
-## 1. Objetivos
+## Objetivo
 
-1. **Cero pérdida de acceso**: múltiples métodos de login + factores de recuperación redundantes.
-2. **2FA obligatorio para Superadmin/Admin**, opcional para Editor/User.
-3. **FIDO2/WebAuthn (passkeys)** como método primario sin contraseña.
-4. **Superadmin blindado**: ruta segregada, allowlist por email + IP opcional + passkey obligatoria.
-5. **Server-side key custody**: claves privadas (TOTP secret, WebAuthn credentials, recovery hashes) nunca expuestas al cliente.
-6. **UX rápida**: mobile-first, login en ≤ 2 toques con passkey; fallback claro si falla un método.
+Auditar y limpiar el flujo de ingreso al POS. Hoy, al pulsar "Ingresar al POS" desde `/clientes`, la app abre una nueva pestaña hacia `https://softwarepos.online/index.php/login/index/1` — un sistema **PHP heredado** que se trajo copiado desde sistecpos.com y que ya no aplica aquí. SistecPOS Core tiene su propio POS nativo en `/pos` (módulo `pos_counter`, `POSWorkspace.tsx`), y todo el ingreso debe quedarse dentro de esta app.
 
-## 2. Estado actual (a auditar antes de codificar)
+El plan limpia ese legado, unifica el acceso al POS propio, y aprovecha el barrido para corregir deuda detectada (semillas demo, RLS de `user_roles`, edge functions con `verify_jwt`, telemetría de login).
 
-- `lovable.auth` (Google OAuth managed) + email/password Supabase.
-- RLS basada en `has_role(uid, role)` con `user_roles` (superadmin > admin > editor > user).
-- `handle_new_user` enlaza guest orders.
-- HIBP habilitado.
-- No hay 2FA, ni WebAuthn, ni recovery codes, ni audit log de login.
+---
 
-Salida del descubrimiento: documento `docs/auth/current-state.md` con inventario de hooks (`useAuth`), guards, rutas y edge functions que tocan sesión.
-
-## 3. Métodos de acceso soportados (matriz final)
-
-
-| Método                                                             | Primario | Fallback  | Roles permitidos |
-| ------------------------------------------------------------------ | -------- | --------- | ---------------- |
-| Passkey (WebAuthn/FIDO2)                                           | ✅        | —         | Todos            |
-| Google OAuth (managed)                                             | ✅        | —         | Todos            |
-| Email + Password + TOTP                                            | ✅        | ✅         | Todos            |
-| Magic Link (email OTP 6 dígitos)                                   | —        | ✅         | Todos            |
-| SMS OTP (WhatsApp via YCloud)                                      | —        | ✅         | User/Editor      |
-| Recovery Codes (10 × un solo uso)                                  | —        | ✅ rescate | Todos            |
-| **Superadmin Break-glass** (sobre cifrado offline + 2 aprobadores) | —        | ✅ crítico | Superadmin       |
-
-
-## 4. Arquitectura
-
-### 4.1 Tablas nuevas (migración con GRANTs + RLS)
-
-- `auth_factors` — `user_id`, `type` (`totp|webauthn|recovery|sms`), `secret_encrypted`, `metadata jsonb`, `last_used_at`, `verified_at`.
-- `auth_webauthn_credentials` — `credential_id`, `public_key`, `counter`, `transports`, `device_label`, `aaguid`.
-- `auth_recovery_codes` — `user_id`, `code_hash`, `used_at`.
-- `auth_login_events` — `user_id`, `method`, `ip`, `ua`, `success`, `risk_score`, `created_at` (append-only, retención 180d).
-- `auth_superadmin_allowlist` — `email`, `enforced_ip_cidr nullable`, `requires_passkey bool default true`.
-- `auth_break_glass_requests` — `requester_email`, `approver1`, `approver2`, `expires_at`, `consumed_at`.
-
-Todas con `GRANT` a `service_role` y `authenticated` (solo SELECT del propio user via RLS).
-
-### 4.2 Edge Functions (verify_jwt según caso)
-
-- `auth-webauthn-register-options` / `auth-webauthn-register-verify`
-- `auth-webauthn-login-options` / `auth-webauthn-login-verify` → emite sesión via `supabase.auth.admin.generateLink` o token custom.
-- `auth-totp-enroll` (genera secret cifrado AES-GCM con `LICENSE_MASTER_KEY` derivado) / `auth-totp-verify`.
-- `auth-recovery-generate` (10 códigos, devuelve 1 vez) / `auth-recovery-consume`.
-- `auth-login-challenge` orquestador: decide método según factor del usuario.
-- `auth-break-glass-request` / `auth-break-glass-approve`.
-- `auth-audit-log` (cliente envía evento; función firma y persiste).
-
-Secret nuevo requerido: `AUTH_ENCRYPTION_KEY` (32 bytes base64) para cifrar TOTP secrets en reposo.
-
-### 4.3 Frontend
-
-```
-src/modules/auth/
-  pages/
-    Login.tsx              # selector de método (passkey > google > password)
-    LoginSuperadmin.tsx    # ruta /superadmin/login segregada
-    Enroll2FA.tsx
-    EnrollPasskey.tsx
-    RecoveryCodes.tsx
-    Recover.tsx            # flujo de rescate
-  components/
-    MethodPicker.tsx
-    TotpInput.tsx
-    PasskeyButton.tsx
-    RecoveryCodeInput.tsx
-  hooks/
-    useWebAuthn.ts
-    useTotp.ts
-    useLoginFlow.ts        # state machine xstate-like
-  lib/
-    webauthn-client.ts     # @simplewebauthn/browser wrapper
-    risk.ts                # device fingerprint ligero
-  state/
-    loginMachine.ts
-```
-
-State machine: `idle → identify → choose_factor → verify_factor → [2fa] → session_ready | recovery`.
-
-### 4.4 Guards y sesión
-
-- `CartNavigationGuard` se mantiene.
-- Nuevo `RoleGuard` server-validated: en cada navegación a área protegida, llama `auth.getUser()` (no `getSession()`) + RPC `current_role()`.
-- Idle timeout configurable por rol (Superadmin 15 min, Admin 60 min, otros 8 h).
-- Re-auth step-up para acciones críticas (cambio de roles, secrets, break-glass): exige passkey o TOTP en los últimos 5 min.
-
-### 4.5 Superadmin (Eduardo Tobacia)
-
-- Ruta `/superadmin/acceso` (no enlazada en UI pública).
-- Requiere: email en allowlist + passkey + TOTP + (opcional) IP en CIDR.
-- Sin password directo. Recovery solo vía break-glass.
-- Break-glass: dos aprobadores (Admins definidos) reciben email Resend con link firmado de 10 min; al aprobar ambos, se emite un single-use magic link de 5 min al superadmin y se notifica a todos los superadmins.
-
-## 5. UX (mobile-first)
-
-- **Login screen**: input email → backend responde con factores disponibles → muestra botón primario según el más fuerte registrado (passkey > totp+pwd > google > magic link).
-- **Skeletons** durante challenge.
-- **Mensajes claros** de fallback ("Tu passkey no funcionó, prueba con código de recuperación").
-- **Onboarding 2FA** obligatorio post-primer-login para admin/superadmin con barra de progreso.
-- Vista `/mi/seguridad`: lista de factores, dispositivos passkey, sesiones activas, últimos 10 logins, botón revocar.
-
-## 6. Diagrama de flujo (login estándar)
+## Hallazgos clave de la auditoría
 
 ```text
-[Email] -> identify -> ¿passkey? --sí--> WebAuthn --ok--> sesión
-                              \--no--> ¿totp?  --sí--> pwd + totp --> sesión
-                                              \--no--> ¿google? --sí--> OAuth --> sesión
-                                                              \--no--> magic link email
-fallo x3 -> bloquear 15 min + sugerir recovery codes
+Síntoma observado:
+  /clientes → tab "POS" → "Ingresar al POS" → window.open(softwarepos.online)
+
+Causa raíz:
+  src/modules/clientes/components/ClientPOSAccess.tsx:51
+  src/modules/clientes/components/ClientPOSLogin.tsx:83
+    form.action = "https://softwarepos.online/index.php/login/index/1"
+
+Daño colateral:
+  - Edge function `validate-pos-login` valida contra el sistema viejo
+  - Tabla `client_pos_sessions` guarda credenciales del POS legado (texto/encriptado)
+  - RPC `get_client_pos_sessions` expone esas filas
+  - Tab "POS" en ClientPortal.tsx promueve el flujo legado
+  - Console muestra "Role assignment failed: RLS user_roles" al crear usuarios desde admin
+  - Edge functions de licencias ya quedaron arregladas (turno anterior)
+  - Columnas faltantes en `client_tickets` ya quedaron arregladas (turno anterior)
 ```
 
-## 7. Fases de implementación (vertical slices)
+---
 
-### Fase 0 — Discovery & audit (sin código)
+## Fase 1 — Cortar el cordón con softwarepos.online (crítico, ~1 sesión)
 
-- Mapear `useAuth`, guards, rutas; documentar.
-- Confirmar Cloud arriba (las migraciones requieren backend).
-- Salida: `docs/auth/current-state.md`.
+**Resultado:** ningún botón de la app abre softwarepos.online. El tab "POS" del cliente lleva a `/pos` nativo.
 
-### Fase 1 — Fundaciones DB + audit log
+1. Reemplazar `ClientPOSAccess.tsx`: eliminar el `submitPOSForm` que hace `form.action = softwarepos.online`; el botón "Ingresar al POS" debe usar `navigate("/pos")` (React Router) con verificación previa de:
+   - sesión activa (`useAuth`)
+   - organización activa (`useOrganization.currentOrg`)
+   - módulo `pos_counter` activo (`hasModule("pos_counter")`)
+2. Si falta organización o módulo, mostrar CTA: "Configura tu tienda" → `/onboarding?org=<id>` (ya implementado en post-license-onboarding).
+3. Eliminar `ClientPOSLogin.tsx` (duplicado del flujo legado, sin usos críticos).
+4. Marcar como deprecated y dejar de renderizar el tab "POS legado". Si el usuario aún lo necesita por compatibilidad, esconderlo tras feature flag `legacy_pos_bridge` (default OFF).
+5. Eliminar/archivar la edge function `validate-pos-login` y el RPC `get_client_pos_sessions`. Conservar la tabla `client_pos_sessions` solo si hay registros activos; si está vacía, drop con migración.
 
-- Migración: `auth_factors`, `auth_login_events`, `auth_superadmin_allowlist` con RLS + GRANTs.
-- Edge function `auth-audit-log` + hook cliente que registra cada `signIn/signOut`.
-- Checkpoint: eventos visibles en `/superadmin/auditoria-acceso`.
+**Verificación:** `rg "softwarepos\.online" src/` devuelve 0 coincidencias. Click en "Ingresar al POS" desde `/clientes` aterriza en `/pos` y abre `OpenSessionPanel`.
 
-### Fase 2 — TOTP + Recovery Codes
+---
 
-- Tablas + EF de enroll/verify/consume.
-- UI `Enroll2FA.tsx` (QR + verificación) y `RecoveryCodes.tsx` (descarga PDF + copia).
-- Enforcement opcional por rol vía flag en `user_roles`.
-- Checkpoint: admin puede activar y rescatar con código.
+## Fase 2 — Sembrar tienda demo operativa (~1 sesión)
 
-### Fase 3 — WebAuthn / Passkeys
+**Resultado:** la organización "demo" puede ejecutar todos los flujos (POS, KDS, impresión, tickets) sin configuración manual.
 
-- Instalar `@simplewebauthn/browser` + server (Deno port o implementación nativa Web Crypto).
-- EFs register/login + tabla.
-- UI `EnrollPasskey.tsx` y botón en `Login.tsx`.
-- Checkpoint: login passwordless funciona en iOS Safari, Android Chrome, desktop.
+1. Migración `seed-demo-org.sql` que upsertea:
+   - `organizations { slug: 'demo', name: 'Tienda Demo' }`
+   - `organization_modules` con `pos_counter`, `pos_kds`, `pos_tables`, `printing`, `einvoice` activos
+   - 1 `location` "Sede Principal" + 1 `cash_register` "Caja 1"
+   - 1 `kitchen_station` "Cocina", 1 `dining_area` + 4 `dining_tables`
+   - 10 `products` representativos con `product_presentations` base
+   - vincular `demo@sistecpos.com` (user existente) como `organization_members` con rol `admin`
+2. Asegurar que `handle_new_user` asigne automáticamente la organización demo cuando el dominio del email sea `@sistecpos.com` y no exista membresía.
+3. Endpoint admin `/superadmin/reseed-demo` (botón) que invoca edge function `seed-demo-data` para resetear el tenant demo a estado limpio.
 
-### Fase 4 — State machine de login y método dinámico
+**Verificación:** login con `demo@sistecpos.com` → switch automático a org "demo" → `/pos` muestra catálogo, abre caja, crea ticket, imprime preview.
 
-- `loginMachine.ts` (xstate o reducer propio).
-- Refactor `Login.tsx` para usar la máquina.
-- Idle timeout por rol + re-auth step-up.
-- Checkpoint: flujo único maneja todos los métodos.
+---
 
-### Fase 5 — Superadmin segregado + break-glass
+## Fase 3 — Endurecer flujo de login y RBAC (~1 sesión)
 
-- Ruta `/superadmin/acceso`, allowlist, enforcement passkey+TOTP+IP.
-- Tabla y EFs de break-glass + emails Resend.
-- Checkpoint: simulacro de recuperación con 2 aprobadores.
+**Resultado:** sin warnings RLS al crear usuarios; rutas protegidas con guard único.
 
-### Fase 6 — Endurecimiento
+1. Arreglar RLS de `user_roles` (warning visto en consola: `new row violates RLS for table "user_roles"`). Política actual no permite que un admin asigne roles dentro de su org. Añadir policy `INSERT` `WITH CHECK (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'superadmin'))`.
+2. Unificar guards: hoy conviven `RoleGuard`, `MasterOnlyGuard` y chequeos ad-hoc. Mantener `RoleGuard` (sección-driven) + `MasterOnlyGuard` (superadmin allowlist) y deprecar checks dispersos.
+3. Quitar el chequeo de `hasModule("pos_counter")` duplicado en POS.tsx y centralizar en `RoleGuard module="pos_counter"`.
+4. Agregar telemetría: cada login dispara `auth_login_events` con `{user_id, method, host, redirected_to}` para auditar a dónde aterrizan los usuarios.
 
-- Rate limit (Upstash o tabla `auth_rate_limit` con función Postgres).
-- HIBP ya activo; añadir bloqueo de contraseñas reutilizadas (últimas 5 hashes).
-- Headers de seguridad y CSP estricto.
-- Pruebas de penetración manuales: fuzz endpoints, replay challenges.
-- Checkpoint: `supabase--linter` limpio y scan de seguridad sin highs.
+**Verificación:** crear usuario desde `admin/users` sin warning RLS; tabla `auth_login_events` recibe filas.
 
-### Fase 7 — Migración de usuarios existentes
+---
 
-- Script: para cada usuario activo, forzar enrolment de 2FA en próximo login (admins) o invitar (resto).
-- Email masivo con instrucciones (template Resend).
-- Ventana de 14 días; tras eso, admins sin 2FA quedan en estado `must_enroll`.
+## Fase 4 — Limpieza de edge functions y secretos (~0.5 sesión)
 
-## 8. Detalles técnicos clave
+**Resultado:** ninguna función rota, importes consistentes, `verify_jwt` correcto.
 
-- **Cifrado de secrets**: TOTP secret y WebAuthn challenges → AES-GCM con key derivada (HKDF) de `AUTH_ENCRYPTION_KEY` + `user_id` salt.
-- **Sesiones**: Supabase JWT (httpOnly cuando proxy lo permita; en SPA, almacenamiento por defecto pero con refresh rotation + revoke en `auth_login_events` anómalos).
-- **Risk scoring** simple: nuevo device/UA/IP suma puntos → fuerza 2FA aunque sea opcional.
-- **Memoria**: documentar en `mem://auth/access-system` el nuevo modelo + factores + rutas.
+1. Auditar todas las funciones bajo `supabase/functions/`:
+   - Eliminar `validate-pos-login` (Fase 1 lo deja sin uso).
+   - Verificar que ninguna otra siga importando `npm:@supabase/supabase-js@2/cors` (ya corregido en license-*).
+   - Asegurar `verify_jwt` correcto en `config.toml` para funciones públicas (lead-capture, image-optimizer) vs autenticadas (license-*, auth-*).
+2. Rotar `AUTH_ENCRYPTION_KEY` si nunca se generó (pre-condición del módulo auth).
 
-## 9. Riesgos y mitigaciones
+**Verificación:** `curl` smoke test a cada edge function activa retorna 200/401 esperado.
 
+---
 
-| Riesgo                                       | Mitigación                                                                                                      |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Cloud caído impide migraciones               | Tareas quedan en `/superadmin/cloud-tareas`, ejecutar al volver                                                 |
-| Usuario pierde dispositivo passkey y códigos | Break-glass con 2 aprobadores                                                                                   |
-| Bug bloquea a todos los admins               | Superadmin allowlist + break-glass + script CLI de rescate (Edge Function con `service_role` y secret separado) |
-| WebAuthn en navegadores viejos               | Fallback automático a TOTP/magic link                                                                           |
-| Migración masiva genera fricción             | Onboarding gradual + tutorial in-app                                                                            |
+## Fase 5 — Observabilidad y guardarraíles (~0.5 sesión)
 
+**Resultado:** errores futuros visibles, regresiones imposibles a softwarepos.online.
 
-## 10. Entregables
+1. Test e2e Playwright `e2e/pos-login.spec.ts`: login demo → /clientes → click POS → asertar `page.url()` contiene `/pos` y NO `softwarepos.online`.
+2. ESLint rule custom (`no-restricted-syntax`) que prohíbe literales con `softwarepos.online` en `src/`.
+3. Sentry/console wrapper para edge functions de auth con `console.error` estructurado.
+4. Documentar todo en `mem://features/pos-native-login` y actualizar índice de memoria.
 
-1. `docs/auth/current-state.md` (Fase 0)
-2. `docs/auth/architecture.md` (este plan + diagramas)
-3. Migraciones SQL (Fases 1–5)
-4. Edge functions auth-* (Fases 1–5)
-5. Módulo `src/modules/auth/` refactorizado
-6. `/superadmin/auditoria-acceso` y `/mi/seguridad`
-7. Memoria `mem://auth/access-system`
-8. Plan de pruebas: matriz por método × rol × dispositivo
+**Verificación:** `bun e2e` pasa la nueva spec; `bun lint` falla si alguien reintroduce la URL.
 
-## 11. Aprobaciones requeridas antes de codificar
+---
 
-1. ¿Confirmas WebAuthn + TOTP + Recovery como núcleo (vs solo TOTP)? R:// si, confirmo varias opciones WebAuthn + TOTP + Recovery como nucleo, panel de gestion para por configuracion decidir
-2. ¿Quiénes son los 2 aprobadores de break-glass del superadmin? R:// email y TOTP, por configuración decidir
-3. ¿Activamos enforcement obligatorio 2FA para admin/superadmin desde día 1, o tras ventana de 14 días? por configuracion decidir
-4. ¿IP allowlist para superadmin: sí, no, u opcional por configuración? por configuración decidir.
-5. ¿Apruebas crear el secret `AUTH_ENCRYPTION_KEY` cuando Cloud responda? si
+## Riesgos y mitigación
 
-Tras tu OK arranco con Fase 0 (auditoría sin código) y dejo Fases 1+ encoladas en `/superadmin/cloud-tareas` hasta que el backend responda.
+| Riesgo | Mitigación |
+|---|---|
+| Clientes con sesiones guardadas en `client_pos_sessions` activas | Banner one-time: "Tu acceso ahora está integrado. Vuelve a iniciar sesión en /pos." |
+| `seed-demo-org.sql` pisa datos reales si demo se reutilizó | Usar `INSERT … ON CONFLICT DO NOTHING` y bandera `is_seed_demo=true` para identificar filas auto-generadas |
+| RLS endurecido bloquea flujos legítimos | Probar con cada rol (superadmin/admin/editor/user) antes de hacer merge |
+
+## Orden sugerido de ejecución
+
+Fase 1 (bloqueante UX) → Fase 3 (RBAC) → Fase 2 (demo) → Fase 4 (cleanup) → Fase 5 (guardarraíles).
+
+## Detalles técnicos
+
+- **Stack tocado:** React Router (`navigate`), `useOrganization`, `useAuth`, Supabase RLS, edge functions Deno, Playwright.
+- **Tablas afectadas:** `client_pos_sessions` (drop), `user_roles` (policy), `organizations`/`organization_members`/`organization_modules` (seed), `auth_login_events` (insert).
+- **Archivos clave a modificar:** `ClientPOSAccess.tsx`, `ClientPOSLogin.tsx` (delete), `ClientPortal.tsx`, `RoleGuard.tsx`, `POS.tsx`, `supabase/functions/validate-pos-login/` (delete), `supabase/config.toml`.
+- **Memorias a crear:** `mem://features/pos-native-login`, `mem://features/demo-tenant-seed`.
+
+¿Apruebas el plan para empezar por la Fase 1?
