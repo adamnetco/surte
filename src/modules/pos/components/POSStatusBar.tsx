@@ -118,12 +118,6 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
     if (!v) return acc;
     return !acc || v > acc ? v : acc;
   }, null);
-  // (consume below)
-  void lastSync;
-  const _lastSync = sites?.reduce<string | null>((acc, s: any) => {
-    if (!s.last_sync_at) return acc;
-    return !acc || s.last_sync_at > acc ? s.last_sync_at : acc;
-  }, null);
 
   // ---- 4) Sesión / turno ----
   const sessionStatus: Status = session ? "ok" : "unknown";
