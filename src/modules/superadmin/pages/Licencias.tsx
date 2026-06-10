@@ -1,16 +1,36 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, KeyRound, Plus, ShieldCheck, ShieldOff, Cpu, Building2 } from "lucide-react";
+import { Download, KeyRound, Plus, ShieldCheck, ShieldOff, Cpu, Building2, Settings, Sparkles, Copy, ArrowRight } from "lucide-react";
+
+type OnboardingProgress = {
+  organization_id: string;
+  company_done: boolean;
+  location_done: boolean;
+  modules_done: boolean;
+  einvoice_done: boolean;
+  catalog_done: boolean;
+  completed_at: string | null;
+};
+
+const ONB_STEPS: Array<keyof OnboardingProgress> = ["company_done", "location_done", "modules_done", "einvoice_done", "catalog_done"];
+function onbPct(p?: OnboardingProgress) {
+  if (!p) return 0;
+  const done = ONB_STEPS.filter((k) => p[k]).length;
+  return Math.round((done / ONB_STEPS.length) * 100);
+}
 
 type License = {
   id: string;
@@ -56,6 +76,7 @@ export default function Licencias() {
   const [activations, setActivations] = useState<Activation[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
   const [orgs, setOrgs] = useState<Org[]>([]);
+  const [onboarding, setOnboarding] = useState<Record<string, OnboardingProgress>>({});
 
   // Issue dialog
   const [issueOpen, setIssueOpen] = useState(false);
@@ -64,12 +85,18 @@ export default function Licencias() {
   const [issueMax, setIssueMax] = useState(3);
   const [issueExpires, setIssueExpires] = useState("");
 
+  // Post-issue success dialog
+  const [issuedInfo, setIssuedInfo] = useState<{ license_key: string; organization_id: string; plan: string } | null>(null);
+
   // Release dialog
   const [relOpen, setRelOpen] = useState(false);
   const [relVersion, setRelVersion] = useState("");
   const [relPlatform, setRelPlatform] = useState("win32");
   const [relUrl, setRelUrl] = useState("");
   const [relNotes, setRelNotes] = useState("");
+
+  const navigate = useNavigate();
+  const { switchOrg, refresh: refreshOrgs } = useOrganization();
 
   useEffect(() => {
     (async () => {
@@ -84,16 +111,20 @@ export default function Licencias() {
   }, [user]);
 
   async function loadAll() {
-    const [l, a, r, o] = await Promise.all([
+    const [l, a, r, o, p] = await Promise.all([
       supabase.from("licenses").select("*").order("created_at", { ascending: false }),
       supabase.from("license_activations").select("*").order("last_heartbeat_at", { ascending: false }),
       supabase.from("desktop_releases").select("*").order("published_at", { ascending: false }),
       supabase.from("organizations").select("id,name").order("name"),
+      supabase.from("onboarding_progress").select("organization_id,company_done,location_done,modules_done,einvoice_done,catalog_done,completed_at"),
     ]);
     setLicenses((l.data as any) ?? []);
     setActivations((a.data as any) ?? []);
     setReleases((r.data as any) ?? []);
     setOrgs((o.data as any) ?? []);
+    const map: Record<string, OnboardingProgress> = {};
+    ((p.data as any) ?? []).forEach((row: OnboardingProgress) => { map[row.organization_id] = row; });
+    setOnboarding(map);
   }
 
   async function issueLicense() {
@@ -107,13 +138,30 @@ export default function Licencias() {
       },
     });
     if (error) return toast.error(error.message);
-    toast.success("Licencia emitida");
+    toast.success("Licencia emitida y activa");
     setIssueOpen(false);
+    // Asegura registro de onboarding para que la organización pueda continuar
+    await supabase.from("onboarding_progress").upsert(
+      { organization_id: issueOrg },
+      { onConflict: "organization_id" },
+    );
     await loadAll();
+    await refreshOrgs();
     if ((data as any)?.license_key) {
-      navigator.clipboard?.writeText((data as any).license_key);
-      toast.info("Clave copiada al portapapeles");
+      setIssuedInfo({
+        license_key: (data as any).license_key,
+        organization_id: issueOrg,
+        plan: issuePlan,
+      });
+      navigator.clipboard?.writeText((data as any).license_key).catch(() => {});
     }
+  }
+
+  function goConfigureOrg(orgId: string) {
+    switchOrg(orgId);
+    setIssuedInfo(null);
+    // pequeño delay para que el provider persista currentOrgId en localStorage
+    setTimeout(() => navigate(`/onboarding?org=${orgId}`), 50);
   }
 
   async function updateMax(lic: License, newMax: number) {
@@ -233,29 +281,52 @@ export default function Licencias() {
           <div className="grid gap-3">
             {licenses.map(lic => {
               const used = activations.filter(a => a.license_id === lic.id && !a.revoked_at).length;
+              const prog = onboarding[lic.organization_id];
+              const pct = onbPct(prog);
+              const complete = !!prog?.completed_at || pct === 100;
               return (
                 <Card key={lic.id} className="p-4">
                   <div className="flex items-start justify-between flex-wrap gap-3">
-                    <div>
-                      <div className="font-semibold flex items-center gap-2">
-                        <Building2 className="h-4 w-4" /> {orgName(lic.organization_id)}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold flex items-center gap-2 flex-wrap">
+                        <Building2 className="h-4 w-4 shrink-0" /> {orgName(lic.organization_id)}
                         <Badge variant={lic.status === "active" ? "default" : "destructive"}>{lic.status}</Badge>
                         <Badge variant="outline">{lic.plan}</Badge>
+                        {complete
+                          ? <Badge className="bg-success text-success-foreground hover:bg-success/90">Onboarding 100%</Badge>
+                          : <Badge variant="secondary">Onboarding {pct}%</Badge>}
                       </div>
                       <code className="text-xs text-muted-foreground break-all">{lic.license_key}</code>
                       <div className="text-xs text-muted-foreground mt-1">
                         Emitida {new Date(lic.issued_at).toLocaleDateString()} · Expira {lic.expires_at ? new Date(lic.expires_at).toLocaleDateString() : "sin caducidad"}
                       </div>
+                      {!complete && (
+                        <div className="mt-2 max-w-md">
+                          <Progress value={pct} className="h-1.5" />
+                          <div className="flex gap-2 mt-1 text-[10px] text-muted-foreground flex-wrap">
+                            {ONB_STEPS.map((k) => (
+                              <span key={k} className={prog?.[k] ? "text-success" : ""}>
+                                {prog?.[k] ? "✓" : "○"} {k.replace("_done", "")}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Label className="text-xs">Terminales</Label>
                       <Input type="number" min={1} className="w-20" defaultValue={lic.max_terminals}
                         onBlur={(e) => { const v = Number(e.target.value); if (v !== lic.max_terminals) updateMax(lic, v); }} />
-                      <span className="text-xs text-muted-foreground">{used} / {lic.max_terminals} activos</span>
-                      <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(lic.license_key).then(() => toast.success("Copiado"))}>Copiar</Button>
+                      <span className="text-xs text-muted-foreground">{used} / {lic.max_terminals}</span>
+                      <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(lic.license_key).then(() => toast.success("Copiado"))}>
+                        <Copy className="h-4 w-4 mr-1" /> Clave
+                      </Button>
+                      <Button size="sm" onClick={() => goConfigureOrg(lic.organization_id)} disabled={lic.status !== "active"}>
+                        <Settings className="h-4 w-4 mr-1" /> {complete ? "Reconfigurar" : "Configurar"}
+                      </Button>
                       {lic.status === "active"
-                        ? <Button variant="destructive" size="sm" onClick={() => setStatus(lic, "suspended")}><ShieldOff className="h-4 w-4" /></Button>
-                        : <Button size="sm" onClick={() => setStatus(lic, "active")}><ShieldCheck className="h-4 w-4" /></Button>}
+                        ? <Button variant="destructive" size="sm" onClick={() => setStatus(lic, "suspended")} title="Suspender"><ShieldOff className="h-4 w-4" /></Button>
+                        : <Button size="sm" onClick={() => setStatus(lic, "active")} title="Reactivar"><ShieldCheck className="h-4 w-4" /></Button>}
                     </div>
                   </div>
                 </Card>
@@ -357,6 +428,55 @@ export default function Licencias() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Post-issue success dialog: guía al superadmin al siguiente paso */}
+      <Dialog open={!!issuedInfo} onOpenChange={(o) => !o && setIssuedInfo(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> Licencia activa
+            </DialogTitle>
+            <DialogDescription>
+              {issuedInfo && `Listo para ${orgName(issuedInfo.organization_id)}. Plan ${issuedInfo.plan}. La clave ya está en tu portapapeles.`}
+            </DialogDescription>
+          </DialogHeader>
+          {issuedInfo && (
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Clave de licencia</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="text-xs break-all flex-1">{issuedInfo.license_key}</code>
+                  <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(issuedInfo.license_key).then(() => toast.success("Copiada"))}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Button className="w-full justify-between" onClick={() => goConfigureOrg(issuedInfo.organization_id)}>
+                  <span className="flex items-center gap-2"><Settings className="h-4 w-4" /> Configurar tienda ahora</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+                {releases.find((r) => r.is_current) && (
+                  <a
+                    className="flex items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-accent"
+                    href={releases.find((r) => r.is_current)?.download_url}
+                    target="_blank" rel="noreferrer"
+                  >
+                    <span className="flex items-center gap-2"><Download className="h-4 w-4" /> Descargar SistecPOS Desktop</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tip: el wizard de configuración cubre nombre del negocio, sucursal, módulos y facturación. Toma menos de 2 minutos.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIssuedInfo(null)}>Más tarde</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
