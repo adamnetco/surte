@@ -21,6 +21,8 @@ interface Props {
   onRetry?: () => void;
   /** Last events list to surface (logger excerpt). */
   events?: string[];
+  /** Status transition timeline (most-recent first). */
+  timeline?: string[];
 }
 
 const dotColor: Record<HealthStatus, string> = {
