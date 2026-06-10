@@ -1,1 +1,2 @@
 - [Modules Catalog Source](mem://features/modules-catalog-source) — DB-driven modules; never hardcode module keys (FK to public.modules)
+- [Demo DNS Pending](mem://features/demo-dns-pending) — Cliente debe publicar TXT _acme-challenge + A 185.158.133.1 para demo.sistecpos.com (seguimiento en /superadmin/cloud-tareas)
