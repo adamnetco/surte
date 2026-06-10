@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ShieldCheck, KeyRound, RefreshCw, Loader2, Copy } from "lucide-react";
+import { ShieldCheck, KeyRound, RefreshCw, Loader2, Copy, LogIn } from "lucide-react";
 
 interface EnrollResp { otpauth_uri: string; secret: string; }
 interface CodesResp { codes: string[]; }
@@ -16,6 +17,29 @@ const MiSeguridad = () => {
   const [enroll, setEnroll] = useState<EnrollResp | null>(null);
   const [code, setCode] = useState("");
   const [codes, setCodes] = useState<string[] | null>(null);
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setHasSession(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setHasSession(!!s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  if (hasSession === false) {
+    return (
+      <div className="container max-w-md mx-auto py-16 px-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><ShieldCheck className="text-primary" /> Inicia sesión</CardTitle>
+            <CardDescription>Necesitas estar autenticado para gestionar tu seguridad.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full"><Link to="/login"><LogIn className="mr-2" size={16} />Ir a iniciar sesión</Link></Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const status = useQuery({
     queryKey: ["auth-security-status"],
