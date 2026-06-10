@@ -251,7 +251,6 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
                 onTogglePublish={() => togglePublish(s)}
                 onConfigWp={() => setWpEdit({ ...(wp ?? {}), site_id: s.id })}
               />
-              </article>
             </Card>
           );
         })}
