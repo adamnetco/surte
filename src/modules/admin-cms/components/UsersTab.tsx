@@ -30,6 +30,7 @@ const businessMeta: Record<BusinessType, { label: string; color: string }> = {
 
 const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const { user: currentUser, role: currentRole } = useAuth();
+  const canManageRoles = currentRole === "admin" || currentRole === "superadmin";
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | AppRole>("all");
   const [filterBiz, setFilterBiz] = useState<"all" | BusinessType>("all");
