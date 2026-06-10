@@ -5,11 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronDown, ExternalLink, Send, ShieldCheck, ShieldAlert, Shield,
-  Globe, Loader2, CheckCircle2, AlertTriangle, Clock,
+  Globe, Loader2, CheckCircle2, AlertTriangle, Clock, Copy, RefreshCw,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+interface DcvRecord {
+  name?: string;
+  type?: string;
+  value?: string;
+}
 
 interface Site {
   id: string;
@@ -24,6 +30,7 @@ interface Site {
     cf_ssl_status?: string | null;
     verified_at?: string | null;
     last_checked_at?: string | null;
+    cf_ownership_verification?: DcvRecord | null;
   }>;
   tenant_wp_config?: Array<{ wp_base_url?: string; wp_app_password?: string | null }>;
 }
