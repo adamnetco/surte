@@ -5,6 +5,7 @@ import { pingAgent } from "@/modules/printing/drivers/agent";
 import { cn } from "@/lib/utils";
 import { useHealthSnapshot, type HealthStatus } from "@/modules/pos/hooks/useHealthSnapshot";
 import { StatusPill } from "@/modules/pos/components/StatusPill";
+import { useStatusTimeline } from "@/modules/pos/hooks/useStatusTimeline";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 
@@ -122,6 +123,16 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
     };
   }, [health?.wp]);
 
+  const wpStatus: HealthStatus = wpPill.status;
+  const coreStatus: HealthStatus = corePill.status;
+  const sitesStatus: HealthStatus = sitesPill.status;
+
+  // Timelines — local for printer, server-hydrated for core/wp/sites.
+  const printerTl = useStatusTimeline("printer", printer, "local");
+  const coreTl = useStatusTimeline("core", coreStatus, organizationId, { hydrateFromServer: true });
+  const wpTl = useStatusTimeline("wp", wpStatus, organizationId, { hydrateFromServer: true });
+  const sitesTl = useStatusTimeline("sites", sitesStatus, organizationId, { hydrateFromServer: true });
+
   const fmtMoney = (n: number) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
 
@@ -147,6 +158,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
         actionHref="/admin?tab=printers"
         actionLabel="Configurar impresoras"
         onRetry={() => { failsRef.current = 0; setPrinter("unknown"); }}
+        timeline={printerTl.formatted}
       />
       <StatusPill
         icon={corePill.icon}
@@ -155,6 +167,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
         hint={corePill.hint}
         description={corePill.description}
         onRetry={onRetry}
+        timeline={coreTl.formatted}
       />
       <StatusPill
         icon={Globe}
@@ -165,6 +178,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
         actionHref="/sitios"
         actionLabel="Ir a Sitios"
         onRetry={onRetry}
+        timeline={sitesTl.formatted}
       />
       <StatusPill
         icon={FileText}
@@ -176,6 +190,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
         actionHref="/sitios"
         actionLabel="Configurar WP"
         onRetry={onRetry}
+        timeline={wpTl.formatted}
       />
       {session ? (
         <StatusPill
