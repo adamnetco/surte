@@ -42,6 +42,7 @@ export default function Sitios() {
     <div className="min-h-screen bg-background">
       <AdminHeader />
       <main className="max-w-7xl mx-auto p-4 lg:p-6 space-y-4">
+        <AppBreadcrumb currentLabel="Sitios web" />
         <div>
           <h1 className="text-2xl font-heading font-bold text-primary">Sitios web (Astro + WP headless)</h1>
           <p className="text-sm text-muted-foreground">Cada negocio puede tener su propio sitio público, WordPress headless y dominio propio.</p>
