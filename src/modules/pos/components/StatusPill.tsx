@@ -54,6 +54,7 @@ function StatusPillBase({
   actionLabel,
   onRetry,
   events,
+  timeline,
 }: Props) {
   const triggerId = `pill-${label.replace(/\s+/g, "-").toLowerCase()}`;
 
