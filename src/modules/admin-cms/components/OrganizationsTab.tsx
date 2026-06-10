@@ -27,16 +27,22 @@ import { Link } from "react-router-dom";
 import { organizationSchema, type OrganizationFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 
-const MODULE_CATALOG = [
-  { key: "pos", label: "POS / Caja", hint: "Ventas y caja" },
-  { key: "agenda", label: "Agenda / Citas", hint: "Reservas" },
-  { key: "inventory", label: "Inventario avanzado", hint: "Stock multi-bodega" },
-  { key: "purchases", label: "Compras / Proveedores", hint: "Órdenes de compra" },
-  { key: "ecommerce", label: "Tienda online", hint: "E-commerce" },
-  { key: "whatsapp", label: "WhatsApp", hint: "Mensajería" },
-  { key: "fiscal", label: "Facturación electrónica", hint: "Cumplimiento DIAN" },
-  { key: "kds", label: "KDS Cocina", hint: "Pantalla de cocina" },
-];
+type ModuleRow = {
+  key: string;
+  name: string;
+  description: string | null;
+  category: string;
+  sort_order: number;
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  core: "Núcleo",
+  operations: "Operación",
+  verticals: "Verticales",
+  crm: "CRM & Ventas",
+  admin: "Administración",
+  general: "General",
+};
 
 const BUSINESS_TYPES = [
   { value: "retail", label: "Retail" },
@@ -114,6 +120,29 @@ const OrganizationsTab = () => {
     },
   });
 
+  const { data: moduleCatalog, isLoading: catalogLoading } = useQuery<ModuleRow[]>({
+    queryKey: ["module-catalog"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("modules" as never)
+        .select("key,name,description,category,sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as ModuleRow[];
+    },
+  });
+
+  const groupedCatalog = useMemo(() => {
+    const groups = new Map<string, ModuleRow[]>();
+    (moduleCatalog ?? []).forEach((m) => {
+      const arr = groups.get(m.category) ?? [];
+      arr.push(m);
+      groups.set(m.category, arr);
+    });
+    return Array.from(groups.entries());
+  }, [moduleCatalog]);
+
   const filtered = useMemo(() => {
     const list = orgs || [];
     return list.filter((o) => {
@@ -162,14 +191,25 @@ const OrganizationsTab = () => {
 
   const toggleModule = async (mkey: string, current: boolean) => {
     if (!modulesOrg) return;
+    const next = !current;
+    // Optimistic update
+    qc.setQueryData(["org-modules", modulesOrg.id], (prev: Map<string, boolean> | undefined) => {
+      const map = new Map(prev ?? []);
+      map.set(mkey, next);
+      return map;
+    });
     const { error } = await supabase
       .from("organization_modules")
       .upsert(
-        { organization_id: modulesOrg.id, module_key: mkey, enabled: !current },
+        { organization_id: modulesOrg.id, module_key: mkey, enabled: next },
         { onConflict: "organization_id,module_key" }
       );
-    if (error) return toast.error(error.message, { position: "top-center" });
-    refetchModules();
+    if (error) {
+      toast.error(`No se pudo ${next ? "activar" : "desactivar"}: ${error.message}`, { position: "top-center" });
+      refetchModules();
+      return;
+    }
+    toast.success(`${next ? "Activado" : "Desactivado"}`, { position: "top-center" });
   };
 
   const initials = (name: string) =>
@@ -456,43 +496,72 @@ const OrganizationsTab = () => {
 
         {/* Modules Dialog */}
         <Dialog open={!!modulesOrg} onOpenChange={(v) => !v && setModulesOrg(null)}>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-xl max-h-[90dvh] flex flex-col">
             <DialogHeader>
-              <DialogTitle>Módulos</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings2 className="h-5 w-5 text-primary" aria-hidden />
+                Módulos
+              </DialogTitle>
               <DialogDescription>
-                {modulesOrg?.name} — activa las capacidades contratadas.
+                <span className="font-medium text-foreground">{modulesOrg?.name}</span> — activa las capacidades contratadas. Los cambios se aplican al instante.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-              {MODULE_CATALOG.map((m) => {
-                const enabled = modules?.get(m.key) ?? false;
-                const switchId = `mod-${m.key}`;
-                return (
-                  <div
-                    key={m.key}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-border/70 p-3 hover:bg-muted/40 transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <Label htmlFor={switchId} className="font-medium text-sm block cursor-pointer">
-                        {m.label}
-                      </Label>
-                      <div className="text-xs text-muted-foreground">{m.hint}</div>
+            <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-5 py-2">
+              {catalogLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                  ))}
+                </div>
+              ) : groupedCatalog.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No hay módulos disponibles.
+                </p>
+              ) : (
+                groupedCatalog.map(([category, items]) => (
+                  <div key={category} className="space-y-2">
+                    <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                      {CATEGORY_LABELS[category] ?? category}
+                    </h3>
+                    <div className="space-y-1.5">
+                      {items.map((m) => {
+                        const enabled = modules?.get(m.key) ?? false;
+                        const switchId = `mod-${m.key}`;
+                        return (
+                          <div
+                            key={m.key}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-border/70 p-3 hover:bg-muted/40 transition-colors"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <Label htmlFor={switchId} className="font-medium text-sm block cursor-pointer">
+                                {m.name}
+                              </Label>
+                              {m.description && (
+                                <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                  {m.description}
+                                </div>
+                              )}
+                            </div>
+                            <Switch
+                              id={switchId}
+                              checked={enabled}
+                              onCheckedChange={() => toggleModule(m.key, enabled)}
+                              aria-label={`${enabled ? "Desactivar" : "Activar"} ${m.name}`}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
-                    <Switch
-                      id={switchId}
-                      checked={enabled}
-                      onCheckedChange={() => toggleModule(m.key, enabled)}
-                      aria-label={`Activar ${m.label}`}
-                    />
                   </div>
-                );
-              })}
+                ))
+              )}
             </div>
-            <DialogFooter>
+            <DialogFooter className="border-t pt-4">
               <Button variant="outline" onClick={() => setModulesOrg(null)}>Cerrar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
       </div>
     </TooltipProvider>
   );
