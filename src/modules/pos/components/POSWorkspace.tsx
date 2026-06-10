@@ -30,6 +30,7 @@ import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
 import { useSyncService } from "@/modules/integrations/sync/useSyncService";
 import { enqueue } from "@/modules/offline/lib/outbox";
 import POSTopBar from "./POSTopBar";
+import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
 import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
