@@ -110,6 +110,14 @@ VALUES ('<site_id_surteya>','<org_surteya>','surteya.com','cloudflare_account', 
 ```
 Luego ejecutar wizard desde el panel.
 
+## 7b. DNS pendiente del cliente — demo.sistecpos.com (2026-06-10)
+
+Tras la reprovisión Cloudflare, el cliente debe publicar en su DNS:
+- **Dos TXT** `_acme-challenge.demo.sistecpos.com` (valores mostrados en `SiteDetailsPanel` → Reprovisionar).
+- **A records** a `185.158.133.1` para `demo` (y `www.demo` si aplica).
+
+Seguimiento: tarea `domain-demo-dns-acme` en `/superadmin/cloud-tareas`. Checker: `tenant_domains.cf_ssl_status='active'` para `hostname='demo.sistecpos.com'`.
+
 ## 8. Publicar a Live
 
 Schema + edge functions + secrets se copian. Repetir seed `demo` con `environment:"production"`.
