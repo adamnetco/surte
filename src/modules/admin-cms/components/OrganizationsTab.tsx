@@ -120,6 +120,29 @@ const OrganizationsTab = () => {
     },
   });
 
+  const { data: moduleCatalog, isLoading: catalogLoading } = useQuery<ModuleRow[]>({
+    queryKey: ["module-catalog"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("modules" as never)
+        .select("key,name,description,category,sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as ModuleRow[];
+    },
+  });
+
+  const groupedCatalog = useMemo(() => {
+    const groups = new Map<string, ModuleRow[]>();
+    (moduleCatalog ?? []).forEach((m) => {
+      const arr = groups.get(m.category) ?? [];
+      arr.push(m);
+      groups.set(m.category, arr);
+    });
+    return Array.from(groups.entries());
+  }, [moduleCatalog]);
+
   const filtered = useMemo(() => {
     const list = orgs || [];
     return list.filter((o) => {
