@@ -1,0 +1,1 @@
+ALTER TABLE public.auth_factors RENAME COLUMN type TO factor_type;
