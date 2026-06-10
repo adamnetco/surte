@@ -1151,6 +1151,7 @@ export type Database = {
       client_tickets: {
         Row: {
           assigned_to: string | null
+          attachment_url: string | null
           attachments: Json
           category: string | null
           closed_at: string | null
@@ -1163,9 +1164,12 @@ export type Database = {
           subject: string
           updated_at: string
           user_id: string
+          video_url: string | null
+          whatsapp: string | null
         }
         Insert: {
           assigned_to?: string | null
+          attachment_url?: string | null
           attachments?: Json
           category?: string | null
           closed_at?: string | null
@@ -1178,9 +1182,12 @@ export type Database = {
           subject: string
           updated_at?: string
           user_id: string
+          video_url?: string | null
+          whatsapp?: string | null
         }
         Update: {
           assigned_to?: string | null
+          attachment_url?: string | null
           attachments?: Json
           category?: string | null
           closed_at?: string | null
@@ -1193,6 +1200,8 @@ export type Database = {
           subject?: string
           updated_at?: string
           user_id?: string
+          video_url?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
