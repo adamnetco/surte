@@ -2181,6 +2181,53 @@ export type Database = {
           },
         ]
       }
+      health_events: {
+        Row: {
+          correlation_id: string | null
+          created_at: string
+          id: string
+          latency_ms: number | null
+          message: string | null
+          metadata: Json
+          organization_id: string | null
+          prev_status: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          correlation_id?: string | null
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          message?: string | null
+          metadata?: Json
+          organization_id?: string | null
+          prev_status?: string | null
+          source: string
+          status: string
+        }
+        Update: {
+          correlation_id?: string | null
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          message?: string | null
+          metadata?: Json
+          organization_id?: string | null
+          prev_status?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hero_slides: {
         Row: {
           city: string | null

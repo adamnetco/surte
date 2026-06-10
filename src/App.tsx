@@ -76,6 +76,7 @@ const CatalogosBase = lazy(() => import("./modules/superadmin").then((m) => ({ d
 const Licencias = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.LicenciasPage })));
 const GerenteIA = lazy(() => import("./pages/GerenteIA"));
 const Compras = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.ComprasPage })));
+const HealthLogs = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.HealthLogsPage })));
 const Sitios = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SitiosPage })));
 const SuperadminDashboard = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SuperadminDashboardPage })));
 const TenantWorkspace = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.TenantWorkspacePage })));
@@ -250,6 +251,7 @@ const App = () => (
                     <Route path="/inventario" element={<HostGuard require="storefront"><Inventario /></HostGuard>} />
                     <Route path="/facturacion" element={<HostGuard require="storefront"><Facturacion /></HostGuard>} />
                     <Route path="/compras" element={<HostGuard require="storefront"><Compras /></HostGuard>} />
+                    <Route path="/admin/health-logs" element={<HostGuard require="storefront"><RoleGuard section="admin"><HealthLogs /></RoleGuard></HostGuard>} />
                     <Route path="/gerente-ia" element={<HostGuard require="storefront"><GerenteIA /></HostGuard>} />
                     <Route path="/onboarding" element={<HostGuard require="storefront"><Onboarding /></HostGuard>} />
                     <Route path="/activacion" element={<HostGuard require="storefront"><ActivationStatus /></HostGuard>} />

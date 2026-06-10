@@ -106,5 +106,46 @@ Deno.serve(async (req) => {
     if (oldest) cache.delete(oldest);
   }
 
-  return json(payload);
+  // Persist health_events on state changes (fire-and-forget)
+  const correlationId = req.headers.get("x-correlation-id") ?? crypto.randomUUID();
+  queueMicrotask(async () => {
+    try {
+      const { data: last } = await admin
+        .from("health_events")
+        .select("source, status")
+        .eq("organization_id", orgId)
+        .in("source", ["core", "wordpress", "sites"])
+        .order("created_at", { ascending: false })
+        .limit(10);
+      const lastBySource = new Map<string, string>();
+      for (const r of (last ?? []) as Array<{ source: string; status: string }>) {
+        if (!lastBySource.has(r.source)) lastBySource.set(r.source, r.status);
+      }
+      const wpStatus = payload.wp.connected ? "ok" : (items.length === 0 ? "idle" : "error");
+      const sitesStatus = items.length === 0 ? "idle" : (published > 0 ? "ok" : "warn");
+      const toInsert: Array<Record<string, unknown>> = [];
+      const candidates: Array<[string, string, Record<string, unknown>]> = [
+        ["core", core.status, { latency_ms: core.latency_ms, error: (core as any).error ?? null }],
+        ["wordpress", wpStatus, { errors: payload.wp.errors }],
+        ["sites", sitesStatus, { total: items.length, published }],
+      ];
+      for (const [source, status, metadata] of candidates) {
+        const prev = lastBySource.get(source);
+        if (prev !== status) {
+          toInsert.push({
+            organization_id: orgId,
+            source,
+            status,
+            prev_status: prev ?? null,
+            latency_ms: source === "core" ? core.latency_ms : null,
+            correlation_id: correlationId,
+            metadata,
+          });
+        }
+      }
+      if (toInsert.length) await admin.from("health_events").insert(toInsert);
+    } catch (_e) { /* best-effort */ }
+  });
+
+  return json(payload, 200);
 });
