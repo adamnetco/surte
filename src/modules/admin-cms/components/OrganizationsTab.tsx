@@ -27,16 +27,22 @@ import { Link } from "react-router-dom";
 import { organizationSchema, type OrganizationFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 
-const MODULE_CATALOG = [
-  { key: "pos", label: "POS / Caja", hint: "Ventas y caja" },
-  { key: "agenda", label: "Agenda / Citas", hint: "Reservas" },
-  { key: "inventory", label: "Inventario avanzado", hint: "Stock multi-bodega" },
-  { key: "purchases", label: "Compras / Proveedores", hint: "Órdenes de compra" },
-  { key: "ecommerce", label: "Tienda online", hint: "E-commerce" },
-  { key: "whatsapp", label: "WhatsApp", hint: "Mensajería" },
-  { key: "fiscal", label: "Facturación electrónica", hint: "Cumplimiento DIAN" },
-  { key: "kds", label: "KDS Cocina", hint: "Pantalla de cocina" },
-];
+type ModuleRow = {
+  key: string;
+  name: string;
+  description: string | null;
+  category: string;
+  sort_order: number;
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  core: "Núcleo",
+  operations: "Operación",
+  verticals: "Verticales",
+  crm: "CRM & Ventas",
+  admin: "Administración",
+  general: "General",
+};
 
 const BUSINESS_TYPES = [
   { value: "retail", label: "Retail" },
