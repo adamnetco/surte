@@ -30,6 +30,7 @@ import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 import Index from "./pages/Index";
 import LoginRouter from "./modules/auth/pages/LoginRouter";
 import RoleGuard from "./modules/auth/components/RoleGuard";
+import MasterOnlyGuard from "./modules/auth/components/MasterOnlyGuard";
 import HostGuard from "./components/HostGuard";
 import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
 
@@ -256,8 +257,8 @@ const App = () => (
                     <Route path="/licencias" element={<HostGuard require="system"><Licencias /></HostGuard>} />
                     <Route path="/catalogos-base" element={<HostGuard require="system"><CatalogosBase /></HostGuard>} />
                     <Route path="/t/:slug/admin" element={<HostGuard require="system"><TenantWorkspace /></HostGuard>} />
-                    <Route path="/admin/diag" element={<AdminDiag />} />
-                    <Route path="/admin-diag" element={<AdminDiag />} />
+                    <Route path="/admin/diag" element={<MasterOnlyGuard><AdminDiag /></MasterOnlyGuard>} />
+                    <Route path="/admin-diag" element={<MasterOnlyGuard><AdminDiag /></MasterOnlyGuard>} />
                     <Route path="/auth-status" element={<AuthStatus />} />
                     <Route path="/admin/auth-status" element={<AuthStatus />} />
 
