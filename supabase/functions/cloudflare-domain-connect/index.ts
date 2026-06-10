@@ -73,19 +73,37 @@ Deno.serve(async (req) => {
   const ownership = cfJson.result.ownership_verification;
   const dcv = cfJson.result.ssl?.validation_records?.[0];
 
-  await svc.from("tenant_domains").upsert({
-    site_id: body.tenant_id,
-    hostname,
-    dns_mode: "saas",
-    cf_zone_id: zoneId,
-    cf_hostname_id: cfId,
-    cf_status: status,
-    cf_ssl_status: ssl_status ?? null,
-    cf_ownership_verification: ownership ?? null,
-    cf_dcv_method: dcv ? "http" : null,
-    cname_target: `${zoneId}.cloudflareondemand.com`,
-    last_checked_at: new Date().toISOString(),
-  }, { onConflict: "hostname" });
+  // Look up organization_id for the site (required NOT NULL on insert path).
+  const { data: siteRow } = await svc
+    .from("tenant_sites")
+    .select("organization_id")
+    .eq("id", body.tenant_id)
+    .maybeSingle();
+  if (!siteRow?.organization_id) {
+    return json({ error: "site_not_found", tenant_id: body.tenant_id }, 404);
+  }
+
+  const { error: upsertErr } = await svc.from("tenant_domains").upsert(
+    {
+      site_id: body.tenant_id,
+      organization_id: siteRow.organization_id,
+      hostname,
+      dns_mode: "saas",
+      cf_zone_id: zoneId,
+      cf_hostname_id: cfId,
+      cf_status: status,
+      cf_ssl_status: ssl_status ?? null,
+      cf_ownership_verification: ownership ?? null,
+      cf_dcv_method: dcv ? "http" : null,
+      cname_target: `${zoneId}.cloudflareondemand.com`,
+      last_checked_at: new Date().toISOString(),
+    },
+    { onConflict: "hostname" },
+  );
+  if (upsertErr) {
+    console.error("tenant_domains upsert failed", upsertErr);
+    return json({ error: "db_upsert_failed", detail: upsertErr.message }, 500);
+  }
 
   return json({
     ok: true,
