@@ -30,6 +30,7 @@ const businessMeta: Record<BusinessType, { label: string; color: string }> = {
 
 const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const { user: currentUser, role: currentRole } = useAuth();
+  const canManageRoles = currentRole === "admin" || currentRole === "superadmin";
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | AppRole>("all");
   const [filterBiz, setFilterBiz] = useState<"all" | BusinessType>("all");
@@ -241,7 +242,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
 
               {/* Actions */}
               <div className="flex items-center gap-2">
-                {!isSuperadminUser && !isCurrentUser && (
+                {!isSuperadminUser && !isCurrentUser && canManageRoles && (
                   <>
                     <select value={u.role} onChange={(e) => requestChange(u.user_id, u.full_name || "Usuario", "role", e.target.value)}
                       className="flex-1 bg-muted rounded-lg px-2 py-1.5 text-xs font-medium border border-transparent focus:border-primary focus:outline-none">
@@ -253,9 +254,11 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
                     </select>
                   </>
                 )}
-                <button onClick={() => openEditModal(u)} className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted">
-                  <Pencil size={14} />
-                </button>
+                {canManageRoles && (
+                  <button onClick={() => openEditModal(u)} className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted">
+                    <Pencil size={14} />
+                  </button>
+                )}
               </div>
 
               {/* Info row */}
