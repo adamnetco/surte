@@ -21,10 +21,19 @@ const TOTAL = 5;
 
 export default function Onboarding() {
   const { user } = useAuth();
-  const { currentOrg, loading: orgLoading } = useOrganization();
+  const { currentOrg, orgs, switchOrg, loading: orgLoading } = useOrganization();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const planKey = params.get("plan") ?? "pro";
+  const orgParam = params.get("org");
+
+  // Permite que superadmin opere sobre cualquier org pasada por ?org=
+  useEffect(() => {
+    if (orgParam && currentOrg?.id !== orgParam && orgs.some((o) => o.id === orgParam)) {
+      switchOrg(orgParam);
+    }
+  }, [orgParam, currentOrg?.id, orgs, switchOrg]);
+
 
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
