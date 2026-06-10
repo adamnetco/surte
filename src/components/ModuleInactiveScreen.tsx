@@ -55,7 +55,7 @@ export function ModuleInactiveScreen({ moduleKey, moduleLabel }: Props) {
       // 2. Licencia activa
       const { data: lic } = await supabase
         .from("licenses")
-        .select("id, status, expires_at, plan_id")
+        .select("id, status, expires_at")
         .eq("organization_id", currentOrg.id)
         .order("created_at", { ascending: false })
         .limit(1)
