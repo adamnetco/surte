@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import AppBreadcrumb from "@/components/AppBreadcrumb";
 import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink, RefreshCw, Send, Webhook, Cloud, Wand2, Settings2, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
@@ -42,6 +43,7 @@ export default function Sitios() {
     <div className="min-h-screen bg-background">
       <AdminHeader />
       <main className="max-w-7xl mx-auto p-4 lg:p-6 space-y-4">
+        <AppBreadcrumb currentLabel="Sitios web" />
         <div>
           <h1 className="text-2xl font-heading font-bold text-primary">Sitios web (Astro + WP headless)</h1>
           <p className="text-sm text-muted-foreground">Cada negocio puede tener su propio sitio público, WordPress headless y dominio propio.</p>

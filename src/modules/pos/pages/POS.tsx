@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { toast } from "sonner";
-import { Loader2, LockKeyhole } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import OpenSessionPanel from "@/modules/pos/components/OpenSessionPanel";
 import POSWorkspace from "@/modules/pos/components/POSWorkspace";
 import POSErrorBoundary from "@/modules/pos/components/POSErrorBoundary";
+import ModuleInactiveScreen from "@/components/ModuleInactiveScreen";
 
 interface Location { id: string; name: string; }
 interface Register { id: string; name: string; location_id: string; }
@@ -70,17 +71,7 @@ export default function POS() {
   }
 
   if (!hasModule("pos_counter")) {
-    return (
-      <div className="min-h-[100dvh] grid place-items-center p-6 text-center">
-        <div className="max-w-sm space-y-3">
-          <LockKeyhole className="w-8 h-8 mx-auto text-muted-foreground" />
-          <h1 className="text-lg font-semibold">Módulo POS no activo</h1>
-          <p className="text-sm text-muted-foreground">
-            Activa el módulo <code className="bg-muted px-1 rounded">pos_counter</code> para tu organización.
-          </p>
-        </div>
-      </div>
-    );
+    return <ModuleInactiveScreen moduleKey="pos_counter" moduleLabel="POS / Caja" />;
   }
 
   if (!activeSession) {

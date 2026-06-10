@@ -107,9 +107,23 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
   // Perf: hasModule debe ser estable entre renders para no invalidar memos
   // de consumidores (PosHub, AdminDashboard, etc.) en cada render del provider.
+  //
+  // Compatibilidad de claves: el wizard de onboarding inserta claves genéricas
+  // (`pos`, `mesas`) mientras que ciertas rutas de código piden claves
+  // específicas (`pos_counter`, `tables`). Sin un alias el usuario veía
+  // "Módulo POS no activo" justo después de crear la tienda.
+  // Mantener este mapa centralizado evita migraciones de datos.
+  const MODULE_ALIASES: Record<string, string[]> = {
+    pos_counter: ["pos", "pos_counter", "caja"],
+    tables: ["tables", "mesas"],
+    kds: ["kds", "kitchen"],
+    inventory: ["inventory", "inventario"],
+  };
+
   const hasModule = useCallback(
     (key: string) => {
-      const m = modules.find((x) => x.module_key === key);
+      const aliases = MODULE_ALIASES[key] ?? [key];
+      const m = modules.find((x) => aliases.includes(x.module_key));
       if (!m || !m.enabled) return false;
       if (m.expires_at && new Date(m.expires_at) < new Date()) return false;
       return true;

@@ -1,121 +1,166 @@
-# Plan: Hardening UX/Performance del POS + Aprovisionamiento de subdominio por tienda
+# Plan — Health Observability, Tenant Provisioning E2E y UX de Activación
 
-## Respuesta a tu pregunta (subdominio automático)
-
-**Sí, lo validé y lo incluyo en el plan.** Hoy ya existe la infraestructura para multi-tenant por subdominio:
-
-- `src/modules/tenant/lib/subdomain.ts` detecta `<slug>.sistecpos.com` como storefront del negocio (ej. `surteya.sistecpos.com`).
-- Tabla `tenant_sites` (sitios por organización) + `tenant_domains` (dominios custom) + edge functions `cloudflare-domain-connect` / `cloudflare-domain-status` (Cloudflare for SaaS Custom Hostnames con `CLOUDFLARE_FALLBACK_ZONE_ID`).
-- Astro starter (`astro-starter/`) ya lee el tenant por host.
-
-Lo que **falta** y se añade al plan: al crear una `organization` (o aceptar un `org_signup_request`), generar automáticamente:
-
-1. Un `tenant_sites` con `subdomain = <slug>` (slug derivado del nombre, validado único contra reservas: admin/mi/pos/app/www/api/staging/preview).
-2. Un `tenant_domains` con `hostname = <slug>.sistecpos.com`, `dns_mode = 'saas'`, marcado como `is_primary = true`.
-3. Registro del Custom Hostname en Cloudflare (reutilizando `cloudflare-domain-connect` para que SSL/HTTP-01 se emita solo).
-4. Publicar el sitio Astro en modo "auto" (placeholder) para que el subdominio responda en cuanto el SSL esté activo.
+Este plan cubre 5 frentes solicitados. Se puede ejecutar por fases independientes; recomiendo el orden listado.
 
 ---
 
-## Fase 1 — Endpoint unificado de salud (Core + Sitios)
+## Fase 1 — Verificación E2E del aprovisionamiento de subdominio (.sistecpos.com)
 
-**Edge function nueva:** `supabase/functions/health-snapshot/index.ts`
+**Objetivo:** garantizar que al crear una tienda quede `<slug>.sistecpos.com` con DNS + SSL emitido y visible en la UI.
 
-- Input: `{ organization_id }` (token requerido).
-- Salida única y consistente:
-  ```json
-  {
-    "core": { "status": "ok|warn|off", "latency_ms": 123, "checked_at": "..." },
-    "sites": { "total": 3, "published": 2, "last_sync_at": "...", "items": [{id,slug,is_published,hostname,cf_status,cf_ssl_status,last_sync_at}] },
-    "wp": { "connected": true, "errors": [] },
-    "version": "v1"
-  }
-  ```
-- Cache server-side de 10s por org (Map en memoria) → menos hits a Postgres.
-- Reutilizar `cloudflare-domain-status` internamente para refrescar SSL si `last_checked_at > 5 min`.
+**Backend**
+- `tenant-create-with-owner`: confirmar que llama a `cloudflare-domain-connect` y persiste `tenant_domains.cloudflare_hostname_id`, `ssl_status='pending_validation'`.
+- Nueva edge function `tenant-provision-verify` (idempotente): recibe `organization_id`, refresca SSL via Cloudflare API, actualiza `tenant_domains.ssl_status` + `last_checked_at`. Reusa lógica de `cloudflare-domain-status`.
+- Tests Deno: `tenant-create-with-owner.test.ts` valida que tras crear org se inserta `tenant_sites` + `tenant_domains` con hostname `slug.sistecpos.com`.
 
-## Fase 2 — Hook resiliente `useHealthSnapshot`
+**Frontend**
+- `SiteDetailsPanel.tsx`: añadir bloque "Aprovisionamiento" con 3 chips: DNS (CNAME OK / pendiente), SSL (issued / pending / failed), Cloudflare hostname id.
+- Botón "Reintentar verificación" → invoca `tenant-provision-verify`.
+- Polling cada 30s mientras `ssl_status !== 'active'`, máximo 10 min, luego detener y mostrar acción manual.
 
-`src/modules/pos/hooks/useHealthSnapshot.ts`:
+---
 
-- React Query `staleTime: 15s`, `refetchInterval: 20s`, `refetchOnWindowFocus: true`.
-- **Backoff exponencial** en errores (20s → 40s → 80s → máx 5min), con `retry: (n) => n < 5`.
-- `keepPreviousData: true` para no perder UI si falla un poll.
-- `select()` memoizado para que sólo se re-renderice la pill cuyo status cambió.
-- Logger via `@/lib/logger` con `correlation_id`.
+## Fase 2 — Timeline de salud en la barra de estado
 
-## Fase 3 — Barra de estado: estados degradados + acciones
+**Objetivo:** auditar cambios de estado (printer/core/wp) con historial inspeccionable.
 
-Refactor `POSStatusBar.tsx` y nuevo `StatusPill.tsx`:
+**Cliente (sin persistencia adicional)**
+- Nuevo `src/modules/pos/lib/healthTimeline.ts`: ring buffer en memoria (últimos 200 eventos) + espejo en `sessionStorage` (`__sistecpos_health_timeline__`).
+- API: `recordHealthEvent({ source, prevStatus, status, latency_ms, message, correlationId })`.
+- En `useHealthSnapshot.ts`: comparar snapshot anterior vs nuevo; si cambia status de core/wp → record.
+- En `POSStatusBar.tsx` (printer): record en cada cambio de estado.
+- Genera `correlationId` (crypto.randomUUID()) por cada request snapshot y se propaga al `health-snapshot` via header `x-correlation-id` y se devuelve.
 
-- 4 estados: `ok | warn | off | unknown` con icono + color + texto accesible (`aria-live="polite"`, `role="status"`).
-- Cada pill abre **Popover** con:
-  - Mensaje claro del error (ej. "Agente local no responde en puerto 9100").
-  - Botón **"Reintentar"** (dispara `refetch()` inmediato y resetea backoff).
-  - Botón **"Resolver"** → link a la página adecuada (`/sitios`, `/configuracion/impresoras`, doc URL).
-  - Últimos 3 eventos del logger filtrados por `source`.
-- Impresora: si `pingAgent()` falla 3× consecutivas → estado `off` + toast una vez (no spam).
-- WordPress (nuevo en la barra): consume `health.wp.connected`, link a `/sitios` con tab WP.
+**UI**
+- `StatusPill.tsx`: nueva sección "Historial reciente" en el Popover con últimos 5 eventos del source (ícono según severidad, hora relativa, correlationId truncado copiable).
+- Componente nuevo `HealthTimelineSheet.tsx`: Sheet completo con filtros por source/status y export CSV. Trigger desde un botón "Ver historial completo" al final del popover.
 
-## Fase 4 — Accesibilidad POS + PosHub
+---
 
-- `POSStatusBar`: `role="status"`, `aria-label="Estado del sistema"`, cada pill `<button>` con `aria-describedby`, navegable con Tab, foco visible (`focus-visible:ring-2 ring-ring`).
-- Contraste verificado AA: cambiar `bg-emerald-500`/`bg-rose-500` por tokens (`bg-success`, `bg-destructive`) ya definidos en index.css.
-- PosHub: `<main>` único, headings jerárquicos (h1 página, h2 secciones, h3 tiles), tiles como `<a>` reales (no div onClick), atajos de teclado (`g s` → Sitios, `g p` → POS) vía `usePOSHotkeys`.
-- Grid Sitios: cada card `<article aria-labelledby>`, badges con texto + icono (no sólo color), botones icon-only con `aria-label`.
+## Fase 3 — Panel de logs en Admin
 
-## Fase 5 — Panel de detalles por Sitio
+**Objetivo:** centralizar eventos de salud con correlationId para investigación.
 
-Expandir `src/modules/superadmin/pages/Sitios.tsx`:
+**Backend**
+- Migración: tabla `health_events` (organization_id, source, status, prev_status, latency_ms, message, correlation_id, metadata jsonb, created_at). RLS: admin/owner pueden leer; service_role insert. GRANTs explícitos.
+- Edge function `health-snapshot`: además de devolver snapshot, hace insert async (fire-and-forget) en `health_events` cuando detecta cambio de estado vs último registro.
+- Edge function `printer-event-log` (nueva): cliente reporta eventos de impresora.
 
-- Card compacta en mobile (≤ sm): nombre, badge de estado, botón "Ver detalles" → Sheet lateral.
-- Desktop: `Collapsible` dentro de la card revelando:
-  - Última sincronización (relativa: "hace 2 min") + timestamp absoluto en `title`.
-  - Estado de publicación (publicado/borrador) + último deploy.
-  - Estado Cloudflare (`cf_status`, `cf_ssl_status`) + botón "Verificar DNS".
-  - Conteo de productos sincronizados.
-  - Acciones: Sincronizar, Publicar/Despublicar, Abrir WP Admin, Ver sitio, Configurar dominio.
-- Skeletons (`SkeletonPresets`) para cada bloque.
+**Frontend**
+- Nueva página `src/modules/admin-cms/pages/HealthLogs.tsx` accesible desde Configuración → Logs de sistema.
+- Tabla virtualizada (TanStack) con columnas: fecha, source (chip), estado (prev→new), latencia, mensaje, correlationId (copiable), acciones (ver metadata json en Sheet).
+- Filtros: rango de fechas, source, status. Búsqueda por correlationId.
+- Realtime: suscripción a `health_events` para nuevos eventos en vivo.
 
-## Fase 6 — Auto-aprovisionamiento de subdominio (respuesta a tu pregunta)
+---
 
-**Edge function nueva:** `provision-tenant-subdomain`
+## Fase 4 — Tests automatizados de accesibilidad
 
-- Trigger: invocada desde `OrganizationsTab` al crear org **y** desde `approve-org-signup`.
-- Lógica:
-  1. Slugify nombre → validar contra reservas (`admin|mi|pos|app|www|api|staging|preview|sistecpos`) y unicidad en `tenant_sites.subdomain`.
-  2. Insertar `tenant_sites { organization_id, subdomain, is_published: false }`.
-  3. Insertar `tenant_domains { site_id, hostname: '<slug>.sistecpos.com', dns_mode: 'saas', is_primary: true }`.
-  4. Invocar `cloudflare-domain-connect` con `hostname` → registra Custom Hostname y deja SSL en `pending_validation`.
-  5. Devolver `{ subdomain, hostname, ssl_status }` al admin que creó la org.
-- UI: en `OrganizationsTab` mostrar el subdominio asignado en la fila + badge "SSL: emitiendo…" que se refresca cada 30s vía `cloudflare-domain-status` hasta `active`.
-- Migración: `tenant_sites.subdomain` `UNIQUE NOT NULL` si aún no lo es; índice case-insensitive.
+**Objetivo:** asegurar a11y en POSStatusBar y grid de Sitios en cada PR.
 
-## Fase 7 — Verificación
+**Setup**
+- Añadir `vitest-axe` + `@axe-core/react` a devDependencies.
+- `src/test/a11y.ts` helper: `expectNoA11yViolations(container)`.
 
-- Tests Deno para `health-snapshot` (mock org con 0/1/N sitios).
-- Test unitario para slugify + reservas.
-- Lighthouse a `/pos` y `/sitios` (objetivo a11y ≥ 95).
-- Verificar backoff con DevTools (cortar red → ver intervalos crecientes en logs).
-- Verificar accesibilidad con teclado: Tab recorre toda la barra y todas las cards.
+**Tests**
+- `src/modules/pos/components/POSStatusBar.test.tsx`: render con mock de `useHealthSnapshot` (3 escenarios: ok, degraded, off) → axe + foco visible (tab navega entre pills) + aria-label presente.
+- `src/modules/superadmin/pages/Sitios.test.tsx`: render con mock de sitios (vacío, 1, varios) → axe + roles `article` + botones icon-only con `aria-label`.
+- `StatusPill.test.tsx`: contraste de tokens (verificar clases `text-foreground` no arbitrarias) + popover navegable por teclado (Escape cierra).
 
-## Archivos a crear / editar
+**CI**
+- Añadir job `a11y` en `.github/workflows/e2e.yml` que ejecute `bunx vitest run --reporter=verbose **/*.a11y.test.tsx`.
 
-**Crear:**
+---
 
-- `supabase/functions/health-snapshot/index.ts`
-- `supabase/functions/provision-tenant-subdomain/index.ts`
-- `src/modules/pos/hooks/useHealthSnapshot.ts`
-- `src/modules/pos/components/StatusPill.tsx`
-- `src/modules/superadmin/components/SiteDetailsPanel.tsx`
-- `src/modules/superadmin/lib/slugify.ts` (+ test)
+## Fase 5 — UX del flujo Licencia → Onboarding → POS (clave para el usuario)
 
-**Editar:**
+**Problema reportado:** "al crear licencia empieza onboarding, pero al ingresar a crear tienda sale 'módulo POS no activo'."
 
-- `src/modules/pos/components/POSStatusBar.tsx` (consume hook, pills accesibles)
-- `src/modules/pos/pages/PosHub.tsx` (a11y, headings, tiles `<a>`)
-- `src/modules/superadmin/pages/Sitios.tsx` (panel de detalles, cards a11y)
-- `src/modules/admin-cms/components/OrganizationsTab.tsx` (mostrar subdominio + invocar provision)
-- Migración SQL: `tenant_sites.subdomain UNIQUE`, índice ci.
+**Diagnóstico previsto:**
+- La licencia se crea pero `organization_modules` no incluye `pos` automáticamente, o `OrganizationContext` no refresca tras el wizard.
+- Falta feedback de estado: el usuario no sabe en qué paso está bloqueado.
 
-¿Apruebas el plan? Si quieres, ajusto el orden (por ejemplo, ejecutar primero Fase 6 del subdominio, o priorizar la Fase 1+2+3 de la barra). ejecuta plan como sea mas eficiente y optimo.
+**Cambios**
+
+**5.1 — Activación automática del módulo POS**
+- En `tenant-create-with-owner`: garantizar insert en `organization_modules` con los módulos seleccionados en el wizard (`pos` siempre incluido si la plantilla lo trae).
+- Trigger SQL `trg_license_activate_default_modules`: al insertar licencia activa, si no hay `organization_modules` para esa org, insertar los del `saas_plan.plan_modules`.
+
+**5.2 — Pantalla de estado de activación (`/activacion`)**
+- Nueva ruta + componente `ActivationStatus.tsx` (módulo onboarding).
+- Stepper visual con 5 hitos:
+  1. Cuenta creada ✓
+  2. Licencia activa (con plan)
+  3. Tienda configurada (slug, NIT)
+  4. Módulos activos (lista con check por módulo)
+  5. Subdominio + SSL listo (lee `tenant_domains.ssl_status`)
+- Cada paso pendiente muestra CTA: "Continuar onboarding", "Activar módulo POS", "Reintentar SSL".
+- Botón "Ir al POS" se habilita solo cuando 1-4 están completos; muestra warning si 5 pendiente pero no bloquea.
+
+**5.3 — Guardia mejorada de "módulo POS no activo"**
+- Actualmente probablemente se muestra un texto seco. Reemplazar por componente `ModuleInactiveScreen.tsx`:
+  - Icono + título claro: "El módulo POS aún no está activo en esta tienda."
+  - Diagnóstico: lista qué falta (licencia, plan, módulo) leyendo de BD.
+  - 2 CTAs: "Ver estado de activación" (→ `/activacion`) y "Contactar soporte" (WhatsApp).
+  - Breadcrumb arriba: `Tiendas › <nombre> › POS (inactivo)`.
+
+**5.4 — Breadcrumbs + botones de retorno globales en flujo onboarding/admin**
+- Nuevo componente `src/components/AppBreadcrumb.tsx` que consume `useLocation` y un mapa de rutas a labels (define en `src/lib/routeLabels.ts`).
+- Integrar en headers de: `PosHub`, `Sitios`, `TenantWorkspace`, `ActivationStatus`, `Onboarding`, `Billing`, `HealthLogs`.
+- Cada página con `<AppBreadcrumb />` + botón "Volver" (flecha) que use `navigate(-1)` con fallback a la ruta padre.
+
+**5.5 — Guía contextual (tour ligero)**
+- Componente `OnboardingChecklist.tsx`: chip flotante (bottom-right) visible para owners con onboarding incompleto, abre Popover con los 5 hitos de 5.2 en miniatura. Cierra y recuerda en `localStorage` cuando todo completo.
+
+---
+
+## Técnicas / archivos clave
+
+```
+Backend
+  supabase/functions/tenant-provision-verify/index.ts    (nuevo)
+  supabase/functions/health-snapshot/index.ts            (insert health_events)
+  supabase/functions/printer-event-log/index.ts          (nuevo)
+  supabase/functions/tenant-create-with-owner/index.ts   (asegurar organization_modules)
+  Migración: health_events + trigger trg_license_activate_default_modules
+
+Frontend
+  src/modules/pos/lib/healthTimeline.ts                  (nuevo)
+  src/modules/pos/components/HealthTimelineSheet.tsx     (nuevo)
+  src/modules/pos/components/StatusPill.tsx              (timeline en popover)
+  src/modules/pos/hooks/useHealthSnapshot.ts             (correlationId + diff)
+  src/modules/superadmin/components/SiteDetailsPanel.tsx (bloque SSL)
+  src/modules/admin-cms/pages/HealthLogs.tsx             (nuevo)
+  src/modules/onboarding/pages/ActivationStatus.tsx      (nuevo)
+  src/modules/onboarding/components/OnboardingChecklist.tsx (nuevo)
+  src/components/AppBreadcrumb.tsx                       (nuevo)
+  src/components/ModuleInactiveScreen.tsx                (nuevo)
+  src/lib/routeLabels.ts                                 (nuevo)
+
+Tests
+  vitest-axe setup + a11y helpers
+  POSStatusBar.a11y.test.tsx, Sitios.a11y.test.tsx, StatusPill.a11y.test.tsx
+  tenant-create-with-owner.test.ts
+```
+
+---
+
+## Verificación final
+
+- Crear tienda nueva desde wizard → ver `<slug>.sistecpos.com` en SiteDetailsPanel con SSL pasando de pending → active en <5min.
+- Acceder al POS de la nueva tienda como owner → módulo POS activo sin pantalla "no activo".
+- Forzar fallo de printer agent → ver evento en timeline del pill + fila en HealthLogs con correlationId.
+- `bunx vitest run` con suite a11y en verde.
+- Lighthouse a11y ≥ 95 en /pos/vender, /sitios, /admin/health-logs.
+
+---
+
+## Orden recomendado
+
+1. Fase 5.1 + 5.3 (desbloqueo inmediato del usuario)
+2. Fase 1 (verificación SSL)
+3. Fase 5.2 + 5.4 + 5.5 (UX guiada)
+4. Fase 3 (panel logs) + Fase 2 (timeline en pills)
+5. Fase 4 (tests a11y) como red de seguridad final
+
+¿Apruebas el plan completo, o prefieres que arranque solo por la Fase 5 (desbloqueo POS + breadcrumbs) primero?

@@ -59,7 +59,8 @@ export function ClientPOSAccess() {
     );
   }
 
-  const posActivo = hasModule("pos");
+  // Acepta ambas variantes para tolerar mismatch del onboarding antiguo
+  const posActivo = hasModule("pos") || hasModule("pos_counter");
 
   return (
     <div className="space-y-6">
@@ -109,14 +110,19 @@ export function ClientPOSAccess() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                El módulo <code className="bg-muted px-1 rounded">pos</code> no está activo
-                para esta tienda. Configúralo desde el onboarding o pide a tu administrador que
-                lo habilite.
+                El módulo <code className="bg-muted px-1 rounded">pos</code> aún no está activo
+                para esta tienda. Te llevamos al asistente de activación para revisar qué falta.
               </p>
-              <Button className="w-full" onClick={() => navigate(`/onboarding?org=${currentOrg.id}`)}>
-                <Settings className="mr-2 h-4 w-4" />
-                Configurar tienda
-              </Button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button className="w-full" onClick={() => navigate("/activacion")}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Ver estado de activación
+                </Button>
+                <Button variant="outline" className="w-full" onClick={() => navigate(`/onboarding?org=${currentOrg.id}`)}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configurar tienda
+                </Button>
+              </div>
             </>
           )}
         </CardContent>
