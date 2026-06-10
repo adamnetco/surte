@@ -428,6 +428,55 @@ export default function Licencias() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Post-issue success dialog: guía al superadmin al siguiente paso */}
+      <Dialog open={!!issuedInfo} onOpenChange={(o) => !o && setIssuedInfo(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> Licencia activa
+            </DialogTitle>
+            <DialogDescription>
+              {issuedInfo && `Listo para ${orgName(issuedInfo.organization_id)}. Plan ${issuedInfo.plan}. La clave ya está en tu portapapeles.`}
+            </DialogDescription>
+          </DialogHeader>
+          {issuedInfo && (
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Clave de licencia</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="text-xs break-all flex-1">{issuedInfo.license_key}</code>
+                  <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(issuedInfo.license_key).then(() => toast.success("Copiada"))}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Button className="w-full justify-between" onClick={() => goConfigureOrg(issuedInfo.organization_id)}>
+                  <span className="flex items-center gap-2"><Settings className="h-4 w-4" /> Configurar tienda ahora</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+                {releases.find((r) => r.is_current) && (
+                  <a
+                    className="flex items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-accent"
+                    href={releases.find((r) => r.is_current)?.download_url}
+                    target="_blank" rel="noreferrer"
+                  >
+                    <span className="flex items-center gap-2"><Download className="h-4 w-4" /> Descargar SistecPOS Desktop</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tip: el wizard de configuración cubre nombre del negocio, sucursal, módulos y facturación. Toma menos de 2 minutos.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIssuedInfo(null)}>Más tarde</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
