@@ -4,11 +4,12 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import {
   ShoppingCart, Wallet, FileText, Boxes, Truck, BarChart3, Megaphone,
-  Users, UserPlus, Settings, Shield, LogOut, Loader2, Utensils, ChefHat, Power,
+  Users, UserPlus, Settings, Shield, LogOut, Loader2, Utensils, ChefHat, Power, Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
+import POSStatusBar from "@/modules/pos/components/POSStatusBar";
 
 type TileColor =
   | "primary" | "secondary" | "accent" | "destructive"
