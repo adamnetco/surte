@@ -76,6 +76,7 @@ export default function Licencias() {
   const [activations, setActivations] = useState<Activation[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
   const [orgs, setOrgs] = useState<Org[]>([]);
+  const [onboarding, setOnboarding] = useState<Record<string, OnboardingProgress>>({});
 
   // Issue dialog
   const [issueOpen, setIssueOpen] = useState(false);
@@ -84,12 +85,18 @@ export default function Licencias() {
   const [issueMax, setIssueMax] = useState(3);
   const [issueExpires, setIssueExpires] = useState("");
 
+  // Post-issue success dialog
+  const [issuedInfo, setIssuedInfo] = useState<{ license_key: string; organization_id: string; plan: string } | null>(null);
+
   // Release dialog
   const [relOpen, setRelOpen] = useState(false);
   const [relVersion, setRelVersion] = useState("");
   const [relPlatform, setRelPlatform] = useState("win32");
   const [relUrl, setRelUrl] = useState("");
   const [relNotes, setRelNotes] = useState("");
+
+  const navigate = useNavigate();
+  const { switchOrg, refresh: refreshOrgs } = useOrganization();
 
   useEffect(() => {
     (async () => {
