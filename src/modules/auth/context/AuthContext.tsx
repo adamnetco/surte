@@ -194,17 +194,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     const nextRole = !error ? await syncAuthState(data.session) : null;
 
-    // Telemetría: login exitoso queda registrado en auth_login_events (RLS:
-    // INSERT permitido a authenticated). Los intentos fallidos no pueden
-    // loggearse desde el cliente (anon) — pendiente edge function.
+    // Telemetría unificada: login exitoso vía cliente (RLS authenticated);
+    // login fallido vía edge function log-login-attempt (service role).
+    const route = typeof window !== "undefined" ? window.location.pathname : null;
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
+
     if (!error && data.session?.user?.id) {
       void supabase.from("auth_login_events").insert({
         user_id: data.session.user.id,
         email,
         method: "password",
         success: true,
-        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-        details: { route: typeof window !== "undefined" ? window.location.pathname : null },
+        user_agent: ua,
+        details: { route },
+      });
+    } else if (error) {
+      void supabase.functions.invoke("log-login-attempt", {
+        body: {
+          email,
+          method: "password",
+          success: false,
+          details: { route, reason: (error as { message?: string })?.message ?? "unknown" },
+        },
       });
     }
 
