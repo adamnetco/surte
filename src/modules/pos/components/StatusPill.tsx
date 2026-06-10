@@ -100,6 +100,20 @@ function StatusPillBase({
             ))}
           </ul>
         )}
+        {timeline && timeline.length > 0 && (
+          <div className="mb-3">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+              Historial
+            </p>
+            <ol className="space-y-0.5 max-h-32 overflow-y-auto rounded-md border bg-background/60 p-2 text-[10px]">
+              {timeline.slice(0, 6).map((t, i) => (
+                <li key={i} className="font-mono text-muted-foreground truncate" title={t}>
+                  {t}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           {onRetry && (
             <Button size="sm" variant="outline" onClick={onRetry} className="h-8 gap-1">
