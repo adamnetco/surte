@@ -68,3 +68,7 @@ project_id = "dimyhjzcwlgfczimqhet"
     verify_jwt = true
   [functions.auth-audit-log]
     verify_jwt = true
+  [functions.cloudflare-domain-connect]
+    verify_jwt = true
+  [functions.cloudflare-domain-status]
+    verify_jwt = true
