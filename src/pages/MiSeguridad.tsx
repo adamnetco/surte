@@ -23,12 +23,12 @@ const MiSeguridad = () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return { totp: false, recovery: 0 };
       const [t, r] = await Promise.all([
-        supabase.from("auth_factors").select("id", { count: "exact", head: true })
+        (supabase as any).from("auth_factors").select("id")
           .eq("user_id", u.user.id).eq("factor_type", "totp").not("verified_at", "is", null),
-        supabase.from("auth_recovery_codes").select("id", { count: "exact", head: true })
+        (supabase as any).from("auth_recovery_codes").select("id")
           .eq("user_id", u.user.id).is("used_at", null),
       ]);
-      return { totp: (t.count ?? 0) > 0, recovery: r.count ?? 0 };
+      return { totp: (t.data?.length ?? 0) > 0, recovery: r.data?.length ?? 0 };
     },
   });
 
