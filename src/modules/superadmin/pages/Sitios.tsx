@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import CloudflareAccountsTab from "@/modules/superadmin/components/CloudflareAccountsTab";
 import DomainWizard from "@/modules/superadmin/components/DomainWizard";
+import SiteDetailsPanel from "@/modules/superadmin/components/SiteDetailsPanel";
 
 const ASTRO_HOST_IP = "185.158.133.1"; // mismo IP base de Lovable; el cliente reenvía aquí su DNS
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
@@ -168,35 +169,37 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
             ?? s.tenant_domains?.[0]?.hostname;
           const verifiedDomains = s.tenant_domains?.filter((d: any) => d.verified_at).length ?? 0;
           const totalDomains = s.tenant_domains?.length ?? 0;
+          const headingId = `site-${s.id}-title`;
           return (
-            <Card key={s.id} className="p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+            <Card key={s.id} role="article" aria-labelledby={headingId} className="p-4 flex flex-col gap-3 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-ring">
+              {/* Header */}
               {/* Header */}
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary grid place-items-center shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary grid place-items-center shrink-0" aria-hidden>
                   <Globe className="w-5 h-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-heading font-semibold text-base truncate">{s.name}</h3>
+                  <h3 id={headingId} className="font-heading font-semibold text-base truncate">{s.name}</h3>
                   <p className="text-xs text-muted-foreground font-mono truncate">/{s.slug}</p>
                 </div>
                 <Badge
                   variant={s.is_published ? "default" : "secondary"}
                   className={s.is_published ? "bg-emerald-500/15 text-emerald-700 border-emerald-200 hover:bg-emerald-500/25" : ""}
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${s.is_published ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                  <span aria-hidden className={`w-1.5 h-1.5 rounded-full mr-1.5 ${s.is_published ? "bg-emerald-500" : "bg-muted-foreground"}`} />
                   {s.is_published ? "Publicado" : "Borrador"}
                 </Badge>
               </div>
 
               {/* Status grid */}
               <div className="grid grid-cols-2 gap-2 text-xs">
-                {/* WordPress */}
                 <div className="rounded-md border bg-muted/30 p-2.5">
                   <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
                     {wpConfigured
-                      ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      : <AlertCircle className="w-3.5 h-3.5 text-amber-500" />}
+                      ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" aria-hidden />
+                      : <AlertCircle className="w-3.5 h-3.5 text-amber-500" aria-hidden />}
                     <span className="font-medium">WordPress</span>
+                    <span className="sr-only">{wpConfigured ? "configurado" : "no configurado"}</span>
                   </div>
                   {wpHost ? (
                     <a href={wp.wp_base_url} target="_blank" rel="noreferrer" className="text-primary hover:underline truncate block">
@@ -207,12 +210,11 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
                   )}
                 </div>
 
-                {/* Dominio primario */}
                 <div className="rounded-md border bg-muted/30 p-2.5">
                   <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
                     {verifiedDomains > 0
-                      ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      : <AlertCircle className="w-3.5 h-3.5 text-amber-500" />}
+                      ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" aria-hidden />
+                      : <AlertCircle className="w-3.5 h-3.5 text-amber-500" aria-hidden />}
                     <span className="font-medium">Dominio</span>
                   </div>
                   {primaryDomain ? (
@@ -226,45 +228,29 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
                 </div>
               </div>
 
-              {/* Acciones */}
+              {/* Toggle + quick actions */}
               <div className="flex items-center justify-between gap-2 pt-2 border-t">
                 <label className="flex items-center gap-2 cursor-pointer text-xs">
-                  <Switch checked={s.is_published} onCheckedChange={() => togglePublish(s)} aria-label="Publicar sitio" />
+                  <Switch checked={s.is_published} onCheckedChange={() => togglePublish(s)} aria-label={`Publicar ${s.name}`} />
                   <span className="text-muted-foreground">Publicado</span>
                 </label>
                 <div className="flex items-center gap-1">
-                  {primaryDomain && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      asChild
-                      title="Abrir sitio"
-                      className="h-8 w-8 p-0"
-                    >
-                      <a href={`https://${primaryDomain}`} target="_blank" rel="noreferrer" aria-label="Abrir sitio">
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setWpEdit({ ...(wp ?? {}), site_id: s.id })}
-                    aria-label="Configurar WordPress"
-                  >
-                    <Settings2 className="w-3.5 h-3.5 mr-1" />WP
+                  <Button size="sm" variant="outline" onClick={() => setWpEdit({ ...(wp ?? {}), site_id: s.id })} aria-label="Configurar WordPress">
+                    <Settings2 className="w-3.5 h-3.5 mr-1" aria-hidden />WP
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!wpConfigured}
-                    onClick={() => syncProducts(s.id)}
-                    aria-label="Sincronizar productos a WordPress"
-                  >
-                    <Send className="w-3.5 h-3.5 mr-1" />Sync
+                  <Button size="sm" variant="outline" disabled={!wpConfigured} onClick={() => syncProducts(s.id)} aria-label="Sincronizar productos">
+                    <Send className="w-3.5 h-3.5 mr-1" aria-hidden />Sync
                   </Button>
                 </div>
               </div>
+
+              {/* Detalles expandibles / Sheet en mobile */}
+              <SiteDetailsPanel
+                site={s}
+                onSync={() => syncProducts(s.id)}
+                onTogglePublish={() => togglePublish(s)}
+                onConfigWp={() => setWpEdit({ ...(wp ?? {}), site_id: s.id })}
+              />
             </Card>
           );
         })}
