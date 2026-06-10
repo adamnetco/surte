@@ -30,6 +30,7 @@ import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
 import { useSyncService } from "@/modules/integrations/sync/useSyncService";
 import { enqueue } from "@/modules/offline/lib/outbox";
 import POSTopBar from "./POSTopBar";
+import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
 import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
@@ -433,6 +434,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onOpenShortcuts={() => setHelpOpen(true)}
         rightExtras={
           <>
+            <POSStatusBar
+              organizationId={organizationId}
+              session={{ opening_amount: session.opening_amount, opened_at: session.opened_at }}
+              className="hidden md:flex"
+            />
             <OfflineIndicator />
             {(sync.pending > 0 || sync.syncing) && (
               <button
