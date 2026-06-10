@@ -21,6 +21,22 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+      // Fase 1 del refactor: el POS legacy en `softwarepos.online` quedó
+      // deprecado. Cualquier nuevo literal con ese dominio en el código
+      // (no en comentarios) re-introduce el bug del redirect externo.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value=/softwarepos\\.online/]",
+          message:
+            "softwarepos.online quedó deprecado en la Fase 1. Usa la ruta /pos nativa.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/softwarepos\\.online/]",
+          message:
+            "softwarepos.online quedó deprecado en la Fase 1. Usa la ruta /pos nativa.",
+        },
+      ],
     },
   },
 );
