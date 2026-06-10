@@ -198,6 +198,7 @@ const App = () => (
                 <OmnichannelCartListener />
                 <GlobalCommandPalette />
                 <AuthHealthMonitor />
+                <Suspense fallback={null}><OnboardingChecklist /></Suspense>
                 <SwipeProvider>
                   <Suspense fallback={<RouteFallback />}>
                   <Routes>
