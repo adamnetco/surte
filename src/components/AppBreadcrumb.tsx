@@ -23,7 +23,7 @@ interface Props {
 
 function labelize(seg: string) {
   if (ROUTE_LABELS[seg]) return ROUTE_LABELS[seg];
-  return seg.charAt(0).toUpperCase() + seg.slice(1).replaceAll("-", " ");
+  return seg.charAt(0).toUpperCase() + seg.slice(1).split("-").join(" ");
 }
 
 export function AppBreadcrumb({ currentLabel, className }: Props) {
