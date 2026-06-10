@@ -179,6 +179,30 @@ export const CLOUD_TASKS: CloudTask[] = [
     check: async () => ({ status: "unknown", detail: "Verificar manualmente en /sitios", checkedAt: now() }),
   },
   {
+    id: "domain-demo-dns-acme",
+    group: "domain",
+    title: "DNS pendiente del cliente — demo.sistecpos.com",
+    description:
+      "Publicar TXT _acme-challenge.demo.sistecpos.com (2 registros) + A demo → 185.158.133.1. Se marca efectuado cuando cf_ssl_status='active'.",
+    reference: ".lovable/pending-cloud-tasks.md §7b",
+    howToRun:
+      "El cliente edita su DNS. Ver TXT exactos en /superadmin/sitios → demo → Reprovisionar.",
+    check: (env) =>
+      queryEnv(env, async () =>
+        (supabase as any)
+          .from("tenant_domains")
+          .select("cf_ssl_status,cf_status")
+          .eq("hostname", "demo.sistecpos.com")
+          .maybeSingle(),
+      ).then<EnvResult>((r) => {
+        if (!r.ok) return { status: "unknown", detail: r.error ?? "Sin respuesta", checkedAt: now() };
+        if (!r.data) return { status: "pending", detail: "Dominio no registrado aún", checkedAt: now() };
+        const ssl = (r.data as any).cf_ssl_status;
+        if (ssl === "active") return { status: "done", detail: "SSL activo — DNS publicado por el cliente", checkedAt: now() };
+        return { status: "pending", detail: `SSL: ${ssl ?? "n/a"} — esperando TXT/A del cliente`, checkedAt: now() };
+      }),
+  },
+  {
     id: "domain-surteya",
     group: "domain",
     title: "Registro de surteya.com en Cloudflare",
