@@ -139,16 +139,19 @@ export default function PosHub() {
           <POSWorkspaceNav className="ml-2 hidden md:flex" />
           <nav className="ml-auto hidden lg:flex items-center gap-1 text-sm">
             <Link to="/perfil"     className="px-3 py-1.5 rounded hover:bg-muted">Mi cuenta</Link>
-            <Link to="/sitios"     className="px-3 py-1.5 rounded hover:bg-muted">Puntos de venta</Link>
             {isOwnerOrAdmin && <Link to="/admin" className="px-3 py-1.5 rounded hover:bg-muted">Administración</Link>}
           </nav>
-          <Button variant="ghost" size="icon" onClick={async () => { await signOut?.(); navigate("/login"); }} title="Salir" className="ml-auto lg:ml-0">
-            <Power className="w-5 h-5" />
-          </Button>
+          <div className="ml-auto lg:ml-2 flex items-center gap-2">
+            <POSStatusBar organizationId={currentOrg.id} className="hidden md:flex" />
+            <Button variant="ghost" size="icon" onClick={async () => { await signOut?.(); navigate("/login"); }} title="Salir">
+              <Power className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
         {/* Switcher visible siempre en móvil/tablet */}
-        <div className="md:hidden border-t bg-muted/30 px-3 py-2 overflow-x-auto">
+        <div className="md:hidden border-t bg-muted/30 px-3 py-2 overflow-x-auto space-y-2">
           <POSWorkspaceNav />
+          <POSStatusBar organizationId={currentOrg.id} />
         </div>
       </header>
 
