@@ -6,12 +6,9 @@
 - ✅ **Fase 2** — Demo SistecPOS sembrada (módulos, sede, caja, cocina, mesas, categorías, 10 productos). Bug `pos_counter`→`pos` corregido.
 - ✅ **Fase 4** — Tabla `client_pos_sessions` eliminada (estaba vacía, sin RPC ni edge function activas). No quedan referencias funcionales a `softwarepos.online` en `src/`.
 
-## Pendiente
+- ✅ **Fase 3** — RBAC + telemetría: `UsersTab` oculta selects de rol/biz a no-admins y bloquea autocambios; `signIn` registra éxitos en `auth_login_events` y delega los fallos a la edge function `log-login-attempt` (service role).
 
-### Fase 3 — Hardening RBAC + telemetría
-- Ocultar botón "Asignar rol" en `UsersTab` para usuarios sin `admin`/`superadmin` (evita el warning RLS visible en consola).
-- Loggear cada login en `auth_login_events` (success/fail, provider, ip, ua).
-- Unificar guards: hoy hay `RoleGuard` + chequeos ad-hoc; consolidar en un único `<RequireRole>` y `<RequireModule>`.
+## Pendiente
 
 ### Fase 2.5 — Vincular usuario demo
 Cuando se cree `demo@sistecpos.com` en Auth:
