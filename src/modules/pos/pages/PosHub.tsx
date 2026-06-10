@@ -85,6 +85,7 @@ export default function PosHub() {
       title: "Configuración",
       tiles: [
         { title: "Ajustes del sistema", subtitle: "Configuración general",   icon: Settings, to: "/admin",       color: "primary-soft", size: "lg", roles: ["superadmin","admin","owner","manager"] },
+        { title: "Sitios web del negocio", subtitle: "Astro + WordPress headless por tienda", icon: Globe, to: "/sitios", color: "accent-soft", size: "md", roles: ["superadmin","admin","owner"] },
         { title: "Usuarios",            subtitle: "Permisos y accesos",      icon: Users,    to: "/admin?tab=users", color: "accent-soft", size: "md", roles: ["superadmin","admin","owner"] },
         { title: "Facturación",         subtitle: "Documentos electrónicos", icon: FileText, to: "/facturacion", color: "muted", size: "md" },
         { title: "Salir",               subtitle: "Cerrar sesión",           icon: LogOut,   onClick: async () => { await signOut?.(); navigate("/login"); }, color: "destructive", size: "lg" },
