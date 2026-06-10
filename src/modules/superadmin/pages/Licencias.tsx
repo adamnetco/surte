@@ -1,16 +1,36 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, KeyRound, Plus, ShieldCheck, ShieldOff, Cpu, Building2 } from "lucide-react";
+import { Download, KeyRound, Plus, ShieldCheck, ShieldOff, Cpu, Building2, Settings, Sparkles, Copy, ArrowRight } from "lucide-react";
+
+type OnboardingProgress = {
+  organization_id: string;
+  company_done: boolean;
+  location_done: boolean;
+  modules_done: boolean;
+  einvoice_done: boolean;
+  catalog_done: boolean;
+  completed_at: string | null;
+};
+
+const ONB_STEPS: Array<keyof OnboardingProgress> = ["company_done", "location_done", "modules_done", "einvoice_done", "catalog_done"];
+function onbPct(p?: OnboardingProgress) {
+  if (!p) return 0;
+  const done = ONB_STEPS.filter((k) => p[k]).length;
+  return Math.round((done / ONB_STEPS.length) * 100);
+}
 
 type License = {
   id: string;
