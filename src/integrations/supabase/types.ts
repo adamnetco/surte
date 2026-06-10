@@ -1115,39 +1115,6 @@ export type Database = {
         }
         Relationships: []
       }
-      client_pos_sessions: {
-        Row: {
-          created_at: string
-          device: string | null
-          ended_at: string | null
-          id: string
-          ip: string | null
-          started_at: string
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          device?: string | null
-          ended_at?: string | null
-          id?: string
-          ip?: string | null
-          started_at?: string
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          device?: string | null
-          ended_at?: string | null
-          id?: string
-          ip?: string | null
-          started_at?: string
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       client_tickets: {
         Row: {
           assigned_to: string | null

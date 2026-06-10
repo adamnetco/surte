@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS public.client_pos_sessions CASCADE;

@@ -7,7 +7,7 @@
  *
  * Ahora: lleva al usuario al POS nativo (`/pos` → POSWorkspace)
  * dentro de SistecPOS Core, respetando organización activa y módulo
- * `pos_counter`. Si falta configuración, ofrece atajo al onboarding.
+ * `pos`. Si falta configuración, ofrece atajo al onboarding.
  *
  * Documentado en mem://features/pos-native-login
  */
