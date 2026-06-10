@@ -77,13 +77,16 @@ export default function Onboarding() {
     if (!canAdvance() || !currentOrg) return;
     setSaving(true);
     try {
+      const progressPatch: Record<string, boolean | string> = {};
       if (step === 1) {
         await supabase.from("organizations").update({ name: companyName }).eq("id", currentOrg.id);
+        progressPatch.company_done = true;
       } else if (step === 2) {
         const { data: existing } = await supabase.from("locations").select("id").eq("organization_id", currentOrg.id).limit(1).maybeSingle();
         if (!existing) {
           await supabase.from("locations").insert({ organization_id: currentOrg.id, name: locationName, city, is_active: true });
         }
+        progressPatch.location_done = true;
       } else if (step === 3) {
         setModules(template.modules);
       } else if (step === 4) {
@@ -94,10 +97,22 @@ export default function Onboarding() {
             { onConflict: "organization_id,module_key" },
           );
         }
+        progressPatch.modules_done = true;
+        if (enableEinvoice) progressPatch.einvoice_done = true;
       } else if (step === 5) {
+        await supabase.from("onboarding_progress").upsert(
+          { organization_id: currentOrg.id, catalog_done: true, completed_at: new Date().toISOString() },
+          { onConflict: "organization_id" },
+        );
         toast.success("¡Todo listo!");
         navigate("/pos");
         return;
+      }
+      if (Object.keys(progressPatch).length > 0) {
+        await supabase.from("onboarding_progress").upsert(
+          { organization_id: currentOrg.id, ...progressPatch },
+          { onConflict: "organization_id" },
+        );
       }
       setStep((s) => s + 1);
     } catch (e: any) {
@@ -106,6 +121,7 @@ export default function Onboarding() {
       setSaving(false);
     }
   };
+
 
   if (orgLoading) {
     return (
