@@ -59,7 +59,7 @@ export function ClientPOSAccess() {
     );
   }
 
-  const posActivo = hasModule("pos_counter");
+  const posActivo = hasModule("pos");
 
   return (
     <div className="space-y-6">
@@ -109,7 +109,7 @@ export function ClientPOSAccess() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                El módulo <code className="bg-muted px-1 rounded">pos_counter</code> no está activo
+                El módulo <code className="bg-muted px-1 rounded">pos</code> no está activo
                 para esta tienda. Configúralo desde el onboarding o pide a tu administrador que
                 lo habilite.
               </p>

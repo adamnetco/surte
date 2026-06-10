@@ -48,16 +48,22 @@ Daño colateral:
 
 ---
 
-## Fase 2 — Sembrar tienda demo operativa (~1 sesión)
+## Fase 2 — Sembrar tienda demo operativa ✅ COMPLETADA
 
-**Resultado:** la organización "demo" puede ejecutar todos los flujos (POS, KDS, impresión, tickets) sin configuración manual.
+**Resultado:** la organización `Demo SistecPOS` (`59a4032f-3eeb-4312-a84a-f6d042f019ec`) ya tiene baseline operativa.
 
-1. Migración `seed-demo-org.sql` que upsertea:
-   - `organizations { slug: 'demo', name: 'Tienda Demo' }`
-   - `organization_modules` con `pos_counter`, `pos_kds`, `pos_tables`, `printing`, `einvoice` activos
-   - 1 `location` "Sede Principal" + 1 `cash_register` "Caja 1"
-   - 1 `kitchen_station` "Cocina", 1 `dining_area` + 4 `dining_tables`
-   - 10 `products` representativos con `product_presentations` base
+Aplicado vía migración idempotente:
+- `organization_modules`: retail, pos, kds, mesas, inventario, crm, licencias
+- `locations`: `Sede Demo Centro` (DEMO-01, Bucaramanga, is_main)
+- `cash_registers`: `Caja 1`
+- `kitchen_stations`: `Cocina principal`
+- `dining_areas`: `Salón principal` + 4 mesas
+- `categories`: Bebidas, Snacks, Panadería
+- `products`: 10 ítems (DEMO-001..DEMO-010) con price/cost/stock
+
+Bug colateral arreglado: `ClientPOSAccess.tsx` usaba `hasModule("pos_counter")` pero el `module_key` real es `pos`. Corregido.
+
+Pendiente Fase 2.5 (al crear el usuario demo en Auth): insertar en `organization_members` (role `admin`) y `user_roles` (role `admin`).
    - vincular `demo@sistecpos.com` (user existente) como `organization_members` con rol `admin`
 2. Asegurar que `handle_new_user` asigne automáticamente la organización demo cuando el dominio del email sea `@sistecpos.com` y no exista membresía.
 3. Endpoint admin `/superadmin/reseed-demo` (botón) que invoca edge function `seed-demo-data` para resetear el tenant demo a estado limpio.
