@@ -122,20 +122,51 @@ Deno.serve(async (req) => {
       if (modErr) console.warn("modules upsert warning:", modErr.message);
     }
 
-    // Optional domain
-    let domain_row: any = null;
-    if (domain) {
-      // tenant_sites may be required as parent — try lookup or skip silently
-      const { data: site } = await admin.from("tenant_sites").select("id").eq("organization_id", org.id).maybeSingle();
-      if (site) {
-        const { data: dom, error: domErr } = await admin
+    // ---- Auto-provision tenant site + <slug>.sistecpos.com subdomain ----
+    // Reserved system slugs cannot become tenant subdomains.
+    const RESERVED = new Set(["admin", "mi", "pos", "app", "www", "api", "staging", "preview", "sistecpos"]);
+    let site_row: any = null;
+    let auto_subdomain: string | null = null;
+    if (!RESERVED.has(slug)) {
+      const { data: site, error: siteErr } = await admin
+        .from("tenant_sites")
+        .insert({ organization_id: org.id, slug, name, is_published: false })
+        .select("id, slug")
+        .single();
+      if (siteErr) {
+        console.warn("tenant_sites insert warning:", siteErr.message);
+      } else if (site) {
+        site_row = site;
+        const hostname = `${slug}.sistecpos.com`;
+        auto_subdomain = hostname;
+        const { error: domErr } = await admin
           .from("tenant_domains")
-          .insert({ site_id: site.id, organization_id: org.id, hostname: domain, is_primary: true })
-          .select()
-          .maybeSingle();
-        if (domErr) console.warn("domain insert warning:", domErr.message);
-        domain_row = dom;
+          .insert({ site_id: site.id, organization_id: org.id, hostname, is_primary: true, dns_mode: "saas" });
+        if (domErr) console.warn("auto domain insert warning:", domErr.message);
+
+        // Fire-and-forget Cloudflare custom-hostname registration so SSL starts
+        // issuing immediately. The UI can poll cloudflare-domain-status later.
+        try {
+          await admin.functions.invoke("cloudflare-domain-connect", {
+            body: { tenant_id: site.id, hostname },
+            headers: { Authorization: authHeader },
+          });
+        } catch (e) {
+          console.warn("cloudflare-domain-connect kickoff failed:", String((e as Error)?.message ?? e));
+        }
       }
+    }
+
+    // Optional custom domain provided by the caller
+    let domain_row: any = null;
+    if (domain && site_row) {
+      const { data: dom, error: domErr } = await admin
+        .from("tenant_domains")
+        .insert({ site_id: site_row.id, organization_id: org.id, hostname: domain, is_primary: false })
+        .select()
+        .maybeSingle();
+      if (domErr) console.warn("custom domain insert warning:", domErr.message);
+      domain_row = dom;
     }
 
     return new Response(
@@ -146,8 +177,10 @@ Deno.serve(async (req) => {
         name: org.name,
         owner_user_id,
         owner_email,
-        generated_password: password_returned, // null if user already existed
+        generated_password: password_returned,
         modules,
+        site_id: site_row?.id ?? null,
+        auto_subdomain,
         domain: domain_row?.hostname ?? null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
