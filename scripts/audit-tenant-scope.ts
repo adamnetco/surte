@@ -63,6 +63,20 @@ const GLOBAL_TABLES = new Set([
   "subscription_invoices",
   "subscriptions",
   "license_audit",
+  // Tablas con scope implícito vía parent (RLS por foreign key)
+  "landing_page_products",
+  "invoice_scan_items",
+  "table_order_items",
+  "pos_order_items",
+  "purchase_order_items",
+  "modifier_options",
+  "stock_transfer_items",
+  "catalog_template_items",
+  "catalog_template_applications",
+  "catalog_templates",
+  "licenses",
+  "license_activations",
+  "onboarding_progress",
 ]);
 
 interface Hit {
