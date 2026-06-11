@@ -110,7 +110,7 @@ export default function Mesas() {
       status: "open",
     }).select().single();
     if (error) return toast.error(error.message);
-    await supabase.from("dining_tables").update({ status: "occupied" }).eq("id", t.id);
+    await supabase.from("dining_tables").update({ status: "occupied" }).eq("id", t.id).eq("organization_id", orgId!);
     setOpenTableId(t.id);
   };
 
