@@ -11,7 +11,7 @@ const corsHeaders = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-Deno.serve(async (req) => {
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
@@ -67,4 +67,6 @@ Deno.serve(async (req) => {
     ownership_verification: patchJson.result.ownership_verification ?? null,
     ssl_validation_records: patchJson.result.ssl?.validation_records ?? null,
   });
-});
+};
+
+Deno.serve(handler);
