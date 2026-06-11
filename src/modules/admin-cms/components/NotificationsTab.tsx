@@ -67,37 +67,36 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
   const requiredVarCount = selectedTemplate?.variableCount || 0;
 
   const { data: subscribers } = useQuery({
-    queryKey: ["admin-notification-subs"],
+    queryKey: ["admin-notification-subs", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("notification_subscriptions")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await scopedFrom("notification_subscriptions", currentOrg!.id).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
   const { data: settings } = useQuery({
-    queryKey: ["app_settings_notif"],
+    queryKey: ["app_settings_notif", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("app_settings")
         .select("key, value")
+        .eq("organization_id", currentOrg!.id)
         .in("key", ["ycloud_api_key", "ycloud_from_number"]);
       if (error) throw error;
       const s: Record<string, string> = {};
-      data.forEach((r: any) => { s[r.key] = r.value; });
+      (data ?? []).forEach((r: any) => { s[r.key] = r.value; });
       return s;
     },
   });
 
   const { data: history } = useQuery({
-    queryKey: ["broadcast-logs"],
+    queryKey: ["broadcast-logs", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("broadcast_logs")
-        .select("*")
+      const { data, error } = await scopedFrom("broadcast_logs", currentOrg!.id)
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
