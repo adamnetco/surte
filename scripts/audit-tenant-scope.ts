@@ -167,7 +167,9 @@ for (const file of files) {
 
   // 1. hardcoded slug + default_org_id
   src.split("\n").forEach((line, i) => {
-    if (HARDCODED_SURTEYA.test(line) && !/legacy|deprecated|comment|\/\//i.test(line.slice(0, 40))) {
+    const isCommentOrPlaceholder =
+      /^\s*\*|^\s*\/\/|^\s*\/\*|placeholder=|legacy|deprecated|example/i.test(line);
+    if (HARDCODED_SURTEYA.test(line) && !isCommentOrPlaceholder) {
       hits.push({
         file: rel, line: i + 1, severity: "high",
         rule: "hardcoded 'surteya' slug", snippet: line.trim().slice(0, 140),
