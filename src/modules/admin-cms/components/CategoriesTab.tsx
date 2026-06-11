@@ -68,7 +68,8 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
         if (error) throw error;
         toast.success("Categoría actualizada");
       } else {
-        const { error } = await supabase.from("categories").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("categories").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Categoría creada");
       }
