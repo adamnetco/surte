@@ -97,6 +97,9 @@ export async function flushOutbox(): Promise<{ sent: number; failed: number; ski
 
 async function executeOp(item: OutboxItem) {
   const { op, payload } = item;
+  const orgId = item.organization_id;
+  if (!orgId) throw new Error(`outbox: ${op} sin organization_id`);
+
   switch (op) {
     case "pos_order_create": {
       // Idempotent: if an order with this client_uuid already exists, reuse it.
@@ -104,6 +107,7 @@ async function executeOp(item: OutboxItem) {
         .from("pos_orders")
         .select("id")
         .eq("client_uuid", item.client_uuid)
+        .eq("organization_id", orgId)
         .maybeSingle();
 
       let orderId: string;
@@ -112,19 +116,27 @@ async function executeOp(item: OutboxItem) {
       } else {
         const { data: order, error } = await supabase
           .from("pos_orders")
-          .insert({ ...payload.header, client_uuid: item.client_uuid })
+          .insert({ ...payload.header, organization_id: orgId, client_uuid: item.client_uuid })
           .select("id")
           .single();
         if (error) throw error;
         orderId = order.id;
 
         if (payload.items?.length) {
-          const lines = payload.items.map((l: any) => ({ ...l, pos_order_id: orderId }));
+          const lines = payload.items.map((l: any) => ({
+            ...l,
+            organization_id: orgId,
+            pos_order_id: orderId,
+          }));
           const { error: e2 } = await supabase.from("pos_order_items").insert(lines);
           if (e2) throw e2;
         }
         if (payload.payments?.length) {
-          const pays = payload.payments.map((p: any) => ({ ...p, pos_order_id: orderId }));
+          const pays = payload.payments.map((p: any) => ({
+            ...p,
+            organization_id: orgId,
+            pos_order_id: orderId,
+          }));
           const { error: e3 } = await supabase.from("pos_payments").insert(pays);
           if (e3) throw e3;
         }
@@ -132,27 +144,39 @@ async function executeOp(item: OutboxItem) {
       return orderId;
     }
     case "pos_payment_register": {
-      const { error } = await supabase.from("pos_payments").insert(payload);
+      const { error } = await supabase
+        .from("pos_payments")
+        .insert({ ...payload, organization_id: orgId });
       if (error) throw error;
       return;
     }
     case "einvoice_emit": {
-      const { error } = await supabase.functions.invoke("innapsis-emit", { body: payload });
+      const { error } = await supabase.functions.invoke("innapsis-emit", {
+        body: { ...payload, organization_id: orgId },
+      });
       if (error) throw error;
       return;
     }
     case "quote_save": {
-      const { error } = await supabase.from("pos_quotes").insert(payload);
+      const { error } = await supabase
+        .from("pos_quotes")
+        .insert({ ...payload, organization_id: orgId });
       if (error) throw error;
       return;
     }
     case "park_ticket": {
-      const { error } = await supabase.from("parked_tickets").insert(payload);
+      const { error } = await supabase
+        .from("parked_tickets")
+        .insert({ ...payload, organization_id: orgId });
       if (error) throw error;
       return;
     }
     case "stock_movement": {
-      const { error } = await supabase.rpc("apply_stock_movement", payload);
+      // RPC apply_stock_movement(_org_id, ...) requires the org id as first arg.
+      const { error } = await supabase.rpc("apply_stock_movement", {
+        ...payload,
+        _org_id: payload._org_id ?? orgId,
+      });
       if (error) throw error;
       return;
     }
