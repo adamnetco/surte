@@ -6,3 +6,4 @@
 - [SaaS Refactor Etapa 4](mem://features/saas-refactor-etapa4) — organization_id NOT NULL+FK en 16 tablas, default_org_id deprecada, current_org_id helper, 11 tabs CMS inyectan org_id
 - [SaaS Refactor Etapa 5](mem://features/saas-refactor-etapa5) — Audit v2 (330→78 hits), 9 tabs CMS migrados a scopedFrom, top offenders identificados (outbox.ts, TableOrderDrawer, sitemap)
 - [SaaS Refactor Etapa 6](mem://features/saas-refactor-etapa6) — Outbox POS inyecta org_id en todos los inserts, hook useTenantSite resuelve por hostname, Hub.tsx y sitemap multi-tenant
+- [SaaS Refactor Etapa 7](mem://features/saas-refactor-etapa7) — useStore hooks reciben orgId del tenant, ProductoDetalle/LandingPage filtran por organization_id, tabs Categorías/Cupones/Productos inyectan org_id en inserts
