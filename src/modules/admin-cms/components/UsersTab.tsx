@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/modules/auth/context/AuthContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Search, Shield, ShieldCheck, ShieldAlert, User, Pencil, Save, Briefcase, UserPlus, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import {
