@@ -65,9 +65,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cached = readCachedRole(userId);
     if (cached) applyRole(cached, userId);
 
+    type RpcResult = Awaited<ReturnType<typeof supabase.rpc<"get_current_user_role">>>;
+    const timeoutFallback = { data: null, error: { message: "Role lookup timeout", details: "", hint: "", code: "timeout", name: "PostgrestError" } } as unknown as RpcResult;
     const { data: effectiveRole, error: rpcError } = await withTimeout(
       Promise.resolve(supabase.rpc("get_current_user_role")),
-      { data: null as AppRole | null, error: new Error("Role lookup timeout") as Error | null },
+      timeoutFallback,
     );
 
     if (!rpcError && effectiveRole) {
