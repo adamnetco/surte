@@ -3,38 +3,40 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Star, Check, X, MessageCircle, Eye, EyeOff, Loader2, Search } from "lucide-react";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const CustomerReviewsTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
 
   const { data: reviews, isLoading } = useQuery({
-    queryKey: ["admin-customer-reviews"],
+    queryKey: ["admin-customer-reviews", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      // RPC SECURITY DEFINER que devuelve PII a admin/superadmin/editor.
-      // El SELECT directo a la tabla ya no expone customer_email/phone a
-      // usuarios normales (REVOKE de columnas).
+      // RPC SECURITY DEFINER; filtramos por tenant en cliente (TODO: mover el
+      // filtro al RPC con current_org_id() en una siguiente iteración).
       const { data, error } = await supabase.rpc("admin_list_customer_reviews");
       if (error) throw error;
-      return data;
+      return (data ?? []).filter((r: any) => r.organization_id === currentOrg!.id);
     },
   });
 
   const toggleApproval = async (id: string, approved: boolean) => {
-    const { error } = await supabase.from("customer_reviews").update({ is_approved: approved }).eq("id", id);
+    const { error } = await supabase.from("customer_reviews").update({ is_approved: approved }).eq("id", id).eq("organization_id", currentOrg!.id);
     if (error) { toast.error(error.message); return; }
     toast.success(approved ? "Comentario aprobado" : "Comentario ocultado");
     queryClient.invalidateQueries({ queryKey: ["admin-customer-reviews"] });
   };
 
   const toggleActive = async (id: string, active: boolean) => {
-    const { error } = await supabase.from("customer_reviews").update({ is_active: active }).eq("id", id);
+    const { error } = await supabase.from("customer_reviews").update({ is_active: active }).eq("id", id).eq("organization_id", currentOrg!.id);
     if (error) { toast.error(error.message); return; }
     queryClient.invalidateQueries({ queryKey: ["admin-customer-reviews"] });
   };
 
   const saveResponse = async (id: string, response: string) => {
-    const { error } = await supabase.from("customer_reviews").update({ admin_response: response }).eq("id", id);
+    const { error } = await supabase.from("customer_reviews").update({ admin_response: response }).eq("id", id).eq("organization_id", currentOrg!.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Respuesta guardada");
     queryClient.invalidateQueries({ queryKey: ["admin-customer-reviews"] });
