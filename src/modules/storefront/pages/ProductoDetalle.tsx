@@ -66,23 +66,27 @@ const ProductoDetalle = () => {
 
   const productId = product?.id;
   const { data: media } = useQuery({
-    queryKey: ["product-media", productId],
+    queryKey: ["product-media", productId, tenantOrgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("product_media").select("*").eq("product_id", productId!).order("sort_order");
+      const { data, error } = await supabase.from("product_media").select("*")
+        .eq("organization_id", tenantOrgId!)
+        .eq("product_id", productId!).order("sort_order");
       if (error) throw error;
       return data;
     },
-    enabled: !!productId,
+    enabled: !!productId && !!tenantOrgId,
   });
 
   const { data: presentations } = useQuery({
-    queryKey: ["product-presentations", productId],
+    queryKey: ["product-presentations", productId, tenantOrgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("product_presentations").select("*").eq("product_id", productId!).eq("is_active", true).order("sort_order");
+      const { data, error } = await supabase.from("product_presentations").select("*")
+        .eq("organization_id", tenantOrgId!)
+        .eq("product_id", productId!).eq("is_active", true).order("sort_order");
       if (error) throw error;
       return data;
     },
-    enabled: !!productId,
+    enabled: !!productId && !!tenantOrgId,
   });
 
   // Default to base presentation (conversion_factor = 1) on load

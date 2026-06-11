@@ -172,9 +172,11 @@ const AdminDashboard = () => {
   });
 
   const { data: categories } = useQuery({
-    queryKey: ["admin-categories"],
+    queryKey: ["admin-categories", currentOrg?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("*").order("sort_order");
+      let q = supabase.from("categories").select("*").order("sort_order");
+      if (currentOrg?.id) q = q.eq("organization_id", currentOrg.id);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
@@ -187,14 +189,16 @@ const AdminDashboard = () => {
   // si la tab activa lo necesita. Limit 200 cubre el rango operativo del día.
   const ordersHasItems = activeTab === "orders" || activeTab === "overview";
   const { data: orders } = useQuery({
-    queryKey: ["admin-orders", ordersHasItems ? "with-items" : "light"],
+    queryKey: ["admin-orders", currentOrg?.id, ordersHasItems ? "with-items" : "light"],
     queryFn: async () => {
       const select = ordersHasItems ? "*, order_items(*)" : "*";
-      const { data, error } = await supabase
+      let q = supabase
         .from("orders")
         .select(select)
         .order("created_at", { ascending: false })
         .limit(200);
+      if (currentOrg?.id) q = q.eq("organization_id", currentOrg.id);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
@@ -203,9 +207,11 @@ const AdminDashboard = () => {
   });
 
   const { data: settings } = useQuery({
-    queryKey: ["admin-settings"],
+    queryKey: ["admin-settings", currentOrg?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("app_settings").select("*");
+      let q = supabase.from("app_settings").select("*");
+      if (currentOrg?.id) q = q.eq("organization_id", currentOrg.id);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
