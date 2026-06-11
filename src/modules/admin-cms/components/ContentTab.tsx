@@ -6,6 +6,7 @@ import { Plus, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Star, Messa
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import SortableList from "./SortableList";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const ContentTab = ({ queryClient }: { queryClient: any }) => {
   const [section, setSection] = useState<"banners" | "testimonials" | "gallery">("banners");
@@ -28,6 +29,7 @@ const ContentTab = ({ queryClient }: { queryClient: any }) => {
 };
 
 const BannersSection = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const { data: banners } = useQuery({
     queryKey: ["admin-banners"],
     queryFn: async () => {
@@ -53,7 +55,8 @@ const BannersSection = ({ queryClient }: { queryClient: any }) => {
       const { error } = await supabase.from("banners").update(payload).eq("id", editing);
       if (error) { toast.error(error.message); return; }
     } else {
-      const { error } = await supabase.from("banners").insert(payload);
+      if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+      const { error } = await supabase.from("banners").insert({ ...payload, organization_id: currentOrg.id });
       if (error) { toast.error(error.message); return; }
     }
     toast.success("Banner guardado");
@@ -195,6 +198,7 @@ const TestimonialsSection = ({ queryClient }: { queryClient: any }) => {
 };
 
 const GallerySection = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const { data: gallery } = useQuery({
     queryKey: ["admin-gallery"],
     queryFn: async () => {
@@ -210,11 +214,12 @@ const GallerySection = ({ queryClient }: { queryClient: any }) => {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+    if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
     let successCount = 0;
     for (const file of Array.from(files)) {
       const url = await upload(file, "gallery");
       if (url) {
-        const { error } = await supabase.from("gallery").insert({ image_url: url, caption: "", is_active: true, sort_order: (gallery?.length || 0) + successCount });
+        const { error } = await supabase.from("gallery").insert({ image_url: url, caption: "", is_active: true, sort_order: (gallery?.length || 0) + successCount, organization_id: currentOrg.id });
         if (error) {
           console.error("Gallery insert error:", error);
           toast.error(`Error guardando ${file.name}: ${error.message}`);
