@@ -107,10 +107,7 @@ Deno.serve(async (req) => {
     const data = await aiRes.json();
     const args = JSON.parse(data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments ?? "{}");
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    // (supabase client ya inicializado arriba)
 
     // Resolver supplier_id por NIT si no se mandó
     let resolvedSupplierId: string | null = supplier_id ?? null;
