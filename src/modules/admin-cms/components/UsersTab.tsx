@@ -133,6 +133,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
             full_name: createForm.full_name,
             business_type: createForm.business_type,
             phone: createForm.phone || "",
+            organization_slug: currentOrg?.slug || undefined,
           },
         },
       });
