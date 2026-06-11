@@ -27,9 +27,10 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
   const CITIES = cities.length > 0 ? cities : DEFAULT_CITIES;
 
   const { data: zones, isLoading } = useQuery({
-    queryKey: ["admin-shipping-zones"],
+    queryKey: ["admin-shipping-zones", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("shipping_zones").select("*").order("city").order("neighborhood");
+      const { data, error } = await scopedFrom("shipping_zones", currentOrg!.id).order("city").order("neighborhood");
       if (error) throw error;
       return data;
     },
