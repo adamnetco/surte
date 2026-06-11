@@ -2877,6 +2877,7 @@ export type Database = {
           metadata: Json
           notes: string | null
           organization_id: string
+          payment_reference: string | null
           plan: string
           plan_type: string | null
           public_key: string
@@ -2898,6 +2899,7 @@ export type Database = {
           metadata?: Json
           notes?: string | null
           organization_id: string
+          payment_reference?: string | null
           plan?: string
           plan_type?: string | null
           public_key: string
@@ -2919,6 +2921,7 @@ export type Database = {
           metadata?: Json
           notes?: string | null
           organization_id?: string
+          payment_reference?: string | null
           plan?: string
           plan_type?: string | null
           public_key?: string
@@ -7059,6 +7062,26 @@ export type Database = {
         Returns: number
       }
       org_role: { Args: { _org_id: string }; Returns: string }
+      provision_organization: {
+        Args: {
+          _business_type?: string
+          _expires_at?: string
+          _full_name?: string
+          _max_terminals?: number
+          _metadata?: Json
+          _modules?: string[]
+          _org_name: string
+          _org_slug: string
+          _owner_email: string
+          _owner_user_id: string
+          _payment_reference?: string
+          _phone?: string
+          _plan?: string
+          _public_key?: string
+          _signing_key_id?: string
+        }
+        Returns: Json
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
