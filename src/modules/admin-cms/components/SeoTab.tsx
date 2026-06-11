@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Save, Loader2, CheckCircle2, Search, Globe, Tag, BarChart3, Upload, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: string; description?: string }[] = [
   { key: "seo_site_name", label: "Nombre del Sitio", placeholder: "SURTÉ YA - Soluciones Alimenticias", group: "general" },
