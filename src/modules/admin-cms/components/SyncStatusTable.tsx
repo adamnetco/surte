@@ -7,6 +7,7 @@ import { RefreshCw, CheckCircle2, AlertCircle, Clock, Loader2 } from "lucide-rea
 import { toast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 interface SyncLog {
   id: string;
