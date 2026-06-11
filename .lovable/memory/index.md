@@ -14,4 +14,5 @@
 - [SaaS Refactor Etapa 12](mem://features/saas-refactor-etapa12) — Fiscal, AdminDashboard, ProductoDetalle, GerenteIA, welcome-email scoped
 - [SaaS Refactor Etapa 13](mem://features/saas-refactor-etapa13) — ProductsTab/ShippingTab/ModifiersTab/PresentationsTab scoped + defense-in-depth en mutations
 - [SaaS Refactor Etapa 14](mem://features/saas-refactor-etapa14) — Inventario/KDS/Mesas/POS verificados; SyncStatusTable scoped; audit regex look-back (33 hits)
-- [SaaS Refactor Etapa 15](mem://features/saas-refactor-etapa15) — CIERRE: Storefront scoped + audit final (2 hallazgos aceptables)
+- [SaaS Refactor Etapa 15](mem://features/saas-refactor-etapa15) — CIERRE FE: Storefront scoped + audit final (2 hallazgos aceptables)
+- [SaaS Refactor Etapa 16](mem://features/saas-refactor-etapa16) — Hardening final: push_subs.organization_id, send-web-push + sync-order auth+membership, E2E isolation script

@@ -5066,6 +5066,7 @@ export type Database = {
           failed: number
           icon: string | null
           id: string
+          organization_id: string | null
           segment: string
           sent: number
           sent_at: string | null
@@ -5082,6 +5083,7 @@ export type Database = {
           failed?: number
           icon?: string | null
           id?: string
+          organization_id?: string | null
           segment?: string
           sent?: number
           sent_at?: string | null
@@ -5098,6 +5100,7 @@ export type Database = {
           failed?: number
           icon?: string | null
           id?: string
+          organization_id?: string | null
           segment?: string
           sent?: number
           sent_at?: string | null
@@ -5107,7 +5110,15 @@ export type Database = {
           total?: number
           url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "push_broadcast_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -5119,6 +5130,7 @@ export type Database = {
           notify_news: boolean
           notify_offers: boolean
           notify_order_updates: boolean
+          organization_id: string | null
           p256dh: string
           updated_at: string
           user_agent: string | null
@@ -5133,6 +5145,7 @@ export type Database = {
           notify_news?: boolean
           notify_offers?: boolean
           notify_order_updates?: boolean
+          organization_id?: string | null
           p256dh: string
           updated_at?: string
           user_agent?: string | null
@@ -5147,12 +5160,21 @@ export type Database = {
           notify_news?: boolean
           notify_offers?: boolean
           notify_order_updates?: boolean
+          organization_id?: string | null
           p256dh?: string
           updated_at?: string
           user_agent?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saas_plans: {
         Row: {

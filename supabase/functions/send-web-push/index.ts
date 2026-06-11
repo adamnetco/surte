@@ -138,15 +138,58 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { title, body: msg, url, icon, segment = "all", sent_by = null } = body;
+    // ── AUTH + TENANT SCOPE (Etapa 16) ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: claims } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    const userId = claims?.claims?.sub;
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { title, body: msg, url, icon, segment = "all", sent_by = null, organization_id } = body;
     if (!title || !msg) {
       return new Response(JSON.stringify({ error: "title y body son requeridos" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (!organization_id) {
+      return new Response(JSON.stringify({ error: "organization_id es requerido" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Audience
-    let q = supabase.from("push_subscriptions").select("*").eq("is_active", true);
+    // Membership + role check: solo owner/admin puede hacer broadcast
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("role")
+      .eq("organization_id", organization_id)
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!membership || !["owner", "admin"].includes(membership.role)) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Audience scoped to the organization
+    let q = supabase
+      .from("push_subscriptions")
+      .select("*")
+      .eq("is_active", true)
+      .eq("organization_id", organization_id);
     if (segment === "offers") q = q.eq("notify_offers", true);
     if (segment === "news") q = q.eq("notify_news", true);
     if (segment === "order_updates") q = q.eq("notify_order_updates", true);
@@ -197,7 +240,8 @@ Deno.serve(async (req) => {
       total: subs?.length || 0, sent, failed,
       status: failed === (subs?.length || 0) && sent === 0 ? "failed" : "completed",
       errors: errors.slice(0, 50),
-      sent_by,
+      sent_by: sent_by ?? userId,
+      organization_id,
     });
 
     return new Response(JSON.stringify({ success: true, total: subs?.length || 0, sent, failed }), {
