@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     // Find scheduled broadcasts that are due
     const { data: due, error } = await supabase
       .from("broadcast_logs")
-      .select("id, message, segment, sent_by, scheduled_at")
+      .select("id, message, segment, sent_by, scheduled_at, organization_id")
       .eq("status", "pending")
       .lte("scheduled_at", nowIso)
       .order("scheduled_at", { ascending: true })
@@ -51,6 +51,9 @@ Deno.serve(async (req) => {
           .eq("id", job.id)
           .eq("status", "pending"); // CAS-style guard
 
+        if (!job.organization_id) {
+          throw new Error("broadcast_log_missing_organization_id");
+        }
         const { data, error: invokeErr } = await supabase.functions.invoke(
           "broadcast-whatsapp-ycloud",
           {
@@ -59,6 +62,7 @@ Deno.serve(async (req) => {
               segment: job.segment,
               sent_by: job.sent_by,
               log_id: job.id,
+              organization_id: job.organization_id,
             },
           }
         );

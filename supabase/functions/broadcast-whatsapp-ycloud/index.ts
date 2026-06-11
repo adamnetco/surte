@@ -37,6 +37,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // ── Auth: validar caller y resolver organization_id ──
+    // Bypass para cron / service_role: aceptamos el JWT del service-role para que
+    // process-scheduled-broadcasts pueda invocar; en ese caso confiamos en que el
+    // payload provee organization_id (validado abajo) y el role es system.
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -48,12 +51,19 @@ Deno.serve(async (req) => {
     });
     const token = authHeader.replace("Bearer ", "");
     const { data: claims, error: claimErr } = await userClient.auth.getClaims(token);
-    if (claimErr || !claims?.claims?.sub) {
+    if (claimErr || !claims?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = claims.claims.sub;
+    const callerRole = (claims.claims as any).role as string | undefined;
+    const isService = callerRole === "service_role";
+    const userId = (claims.claims as any).sub as string | undefined;
+    if (!isService && !userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const body = await req.json().catch(() => ({}));
     const organizationId: string | null = body?.organization_id || null;
@@ -63,12 +73,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (organizationId) {
+    if (organizationId && !isService) {
       const { data: member } = await supabase
         .from("organization_members")
         .select("role, is_active")
         .eq("organization_id", organizationId)
-        .eq("user_id", userId)
+        .eq("user_id", userId!)
         .eq("is_active", true)
         .maybeSingle();
       const allowed = member && ["owner", "admin", "cashier"].includes(member.role);
@@ -78,6 +88,7 @@ Deno.serve(async (req) => {
         });
       }
     }
+
 
     // ── Action: list_templates ──
     if (body?.action === "list_templates") {
