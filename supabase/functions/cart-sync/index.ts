@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       const url = new URL(req.url);
       const token =
         url.searchParams.get("token") || req.headers.get("x-cart-token") || "";
-      if (!isUuid(token)) return json({ error: "invalid_token" }, 400);
+      if (!Uuid.safeParse(token).success) return json({ error: "invalid_token" }, 400);
 
       const { data, error } = await supabase.rpc("get_persistent_cart", {
         _cart_token: token,
@@ -72,7 +72,6 @@ Deno.serve(async (req) => {
       const cart = (data || [])[0] || null;
       if (!cart) return json({ cart: null }, 404);
 
-      // Hydrate items with live stock from products
       const ids = Array.isArray(cart.items)
         ? cart.items.map((i: any) => i.product_id).filter(Boolean)
         : [];
@@ -93,17 +92,18 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "POST") {
-      const body = await req.json().catch(() => null);
-      if (!body || !isUuid(body.cart_token)) {
-        return json({ error: "invalid_payload" }, 400);
+      const raw = await req.json().catch(() => null);
+      const parsed = PostSchema.safeParse(raw);
+      if (!parsed.success) {
+        return json({ error: "invalid_payload", details: parsed.error.flatten() }, 400);
       }
-      // Etapa 23: nunca confiar en _user_id del body — la asociación de cart
-      // a usuario se hace vía trigger handle_new_user o checkout autenticado.
+      const body = parsed.data;
+      // Etapa 23: nunca confiar en _user_id del body.
       const { error } = await supabase.rpc("upsert_persistent_cart", {
         _cart_token: body.cart_token,
-        _items: body.items ?? [],
-        _subtotal: Number(body.subtotal ?? 0),
-        _total_items: Number(body.total_items ?? 0),
+        _items: body.items,
+        _subtotal: body.subtotal ?? 0,
+        _total_items: body.total_items ?? 0,
         _phone: body.phone ?? null,
         _user_id: null,
         _channel: body.channel ?? "web",
@@ -114,21 +114,20 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "PATCH") {
-      const body = await req.json().catch(() => null);
-      if (!body || !isUuid(body.cart_token)) {
-        return json({ error: "invalid_payload" }, 400);
+      const raw = await req.json().catch(() => null);
+      const parsed = PatchSchema.safeParse(raw);
+      if (!parsed.success) {
+        return json({ error: "invalid_payload", details: parsed.error.flatten() }, 400);
       }
-      if (body.status === "completed") {
-        const { error } = await supabase.rpc("complete_persistent_cart", {
-          _cart_token: body.cart_token,
-        });
-        if (error) return json({ error: error.message }, 500);
-        return json({ ok: true });
-      }
-      return json({ error: "unsupported_status" }, 400);
+      const { error } = await supabase.rpc("complete_persistent_cart", {
+        _cart_token: parsed.data.cart_token,
+      });
+      if (error) return json({ error: error.message }, 500);
+      return json({ ok: true });
     }
 
     return json({ error: "method_not_allowed" }, 405);
+
   } catch (e: any) {
     return json({ error: e?.message || "internal_error" }, 500);
   }
