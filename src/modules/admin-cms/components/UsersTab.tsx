@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/modules/auth/context/AuthContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Search, Shield, ShieldCheck, ShieldAlert, User, Pencil, Save, Briefcase, UserPlus, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -30,6 +31,7 @@ const businessMeta: Record<BusinessType, { label: string; color: string }> = {
 
 const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const { user: currentUser, role: currentRole } = useAuth();
+  const { currentOrg } = useOrganization();
   const canManageRoles = currentRole === "admin" || currentRole === "superadmin";
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | AppRole>("all");
@@ -45,10 +47,14 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const { data: users, isLoading } = useQuery({
-    queryKey: ["admin-users"],
+    queryKey: ["admin-users", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
+      // Profiles del tenant + miembros activos de la organización
       const { data: profiles, error } = await supabase
-        .from("profiles").select("*").order("created_at", { ascending: false });
+        .from("profiles").select("*")
+        .eq("organization_id", currentOrg!.id)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       const { data: roles, error: rolesError } = await supabase.from("user_roles").select("*");
       if (rolesError) throw rolesError;
@@ -127,6 +133,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
             full_name: createForm.full_name,
             business_type: createForm.business_type,
             phone: createForm.phone || "",
+            organization_slug: currentOrg?.slug || undefined,
           },
         },
       });

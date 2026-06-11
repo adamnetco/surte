@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Bell, Send, Users, MessageSquare, Loader2, Smartphone, Radio, AlertTriangle, Clock, History, Calendar, CheckCircle2, XCircle, Hourglass, FileText, RefreshCw, Plus, Minus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 type Segment = "all" | "offers" | "fresh" | "new_products";
 
@@ -29,6 +31,7 @@ const STATUS_META: Record<string, { label: string; cls: string; icon: any }> = {
 };
 
 const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
   const [segment, setSegment] = useState<Segment>("all");
@@ -64,37 +67,36 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
   const requiredVarCount = selectedTemplate?.variableCount || 0;
 
   const { data: subscribers } = useQuery({
-    queryKey: ["admin-notification-subs"],
+    queryKey: ["admin-notification-subs", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("notification_subscriptions")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await scopedFrom("notification_subscriptions", currentOrg!.id).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
   const { data: settings } = useQuery({
-    queryKey: ["app_settings_notif"],
+    queryKey: ["app_settings_notif", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("app_settings")
         .select("key, value")
+        .eq("organization_id", currentOrg!.id)
         .in("key", ["ycloud_api_key", "ycloud_from_number"]);
       if (error) throw error;
       const s: Record<string, string> = {};
-      data.forEach((r: any) => { s[r.key] = r.value; });
+      (data ?? []).forEach((r: any) => { s[r.key] = r.value; });
       return s;
     },
   });
 
   const { data: history } = useQuery({
-    queryKey: ["broadcast-logs"],
+    queryKey: ["broadcast-logs", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("broadcast_logs")
-        .select("*")
+      const { data, error } = await scopedFrom("broadcast_logs", currentOrg!.id)
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
@@ -518,7 +520,7 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
       </div>
 
       {/* Web Push (PWA) ─────────────────────────────────────── */}
-      <WebPushSection />
+      <WebPushSection orgId={currentOrg?.id} />
 
       {/* Subscribers list */}
       <div className="space-y-2">
@@ -554,7 +556,7 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
 export default NotificationsTab;
 
 // ── Web Push (PWA) admin section ─────────────────────────────────
-function WebPushSection() {
+function WebPushSection({ orgId }: { orgId?: string | null }) {
   const [title, setTitle] = useState("SURTÉ YA");
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("/");
@@ -562,11 +564,13 @@ function WebPushSection() {
   const [busy, setBusy] = useState(false);
 
   const { data: subs } = useQuery({
-    queryKey: ["push_subs_admin"],
+    queryKey: ["push_subs_admin", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from("push_subscriptions")
         .select("*", { count: "exact", head: true })
+        .eq("organization_id", orgId)
         .eq("is_active", true);
       return count || 0;
     },

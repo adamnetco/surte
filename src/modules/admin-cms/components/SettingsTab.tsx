@@ -76,7 +76,10 @@ const GROUP_LABELS: Record<string, string> = {
   checkout: "🛒 Checkout — Campos Visibles",
 };
 
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+
 const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const [values, setValues] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -149,7 +152,8 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
       const { error } = await supabase.from("app_settings").update({ value }).eq("id", existing.id);
       if (error) throw error;
     } else {
-      const { error } = await supabase.from("app_settings").insert({ key, value });
+      if (!currentOrg?.id) throw new Error("Selecciona una organización");
+      const { error } = await supabase.from("app_settings").insert({ key, value, organization_id: currentOrg.id });
       if (error) throw error;
     }
   };

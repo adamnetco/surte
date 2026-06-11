@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Download, Upload, Loader2, FileSpreadsheet, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const InventoryTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ created: number; updated: number; errors: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -211,7 +213,8 @@ const InventoryTab = ({ products, categories, queryClient }: { products: any[]; 
           if (error) { errors.push(`Fila ${rowNum}: ${error.message}`); continue; }
           updated++;
         } else {
-          const { error } = await supabase.from("products").insert(payload);
+          if (!currentOrg?.id) { errors.push(`Fila ${rowNum}: Selecciona una organización antes de importar`); continue; }
+          const { error } = await supabase.from("products").insert({ ...payload, organization_id: currentOrg.id });
           if (error) { errors.push(`Fila ${rowNum}: ${error.message}`); continue; }
           created++;
         }
