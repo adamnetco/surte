@@ -12,6 +12,8 @@ import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useProducts, useCategories, useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 import { ArrowUpDown, Package, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
