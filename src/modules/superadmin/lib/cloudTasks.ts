@@ -10,6 +10,9 @@
  * localStorage para no depender del backend mientras está inestable.
  */
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type PublicTable = keyof Database["public"]["Tables"];
 
 export type EnvKey = "test" | "live";
 export type TaskStatus = "done" | "pending" | "partial" | "error" | "unknown";
