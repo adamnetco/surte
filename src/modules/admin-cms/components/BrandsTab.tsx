@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import SortableList from "./SortableList";
 import { brandSchema, type BrandFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const slugify = (v: string) =>
   v.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -27,6 +28,7 @@ const defaultValues: BrandFormValues = {
 };
 
 const BrandsTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const { data: brands } = useQuery({
     queryKey: ["admin-brands"],
     queryFn: async () => {
@@ -95,7 +97,8 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
         if (error) throw error;
         toast.success("Marca actualizada");
       } else {
-        const { error } = await supabase.from("brands").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("brands").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Marca creada");
       }

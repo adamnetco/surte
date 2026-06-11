@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import TiptapEditor from "./TiptapEditor";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 interface LandingPage {
   id: string;
@@ -144,6 +145,7 @@ const SeoScoreBadge = ({ score }: { score: number }) => {
 
 const LandingPagesTab = () => {
   const queryClient = useQueryClient();
+  const { currentOrg } = useOrganization();
   const [editing, setEditing] = useState<Partial<LandingPage> | null>(null);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -251,7 +253,8 @@ const LandingPagesTab = () => {
         const { error } = await supabase.from("landing_pages").update(payload).eq("id", editing.id);
         if (error) throw error;
       } else {
-        const { data: inserted, error } = await supabase.from("landing_pages").insert(payload).select("id").single();
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { data: inserted, error } = await supabase.from("landing_pages").insert({ ...payload, organization_id: currentOrg.id }).select("id").single();
         if (error) throw error;
         pageId = inserted.id;
       }
@@ -287,9 +290,10 @@ const LandingPagesTab = () => {
 
   const handleDuplicate = async (page: LandingPage) => {
     if (!confirm(`¿Duplicar la página "${page.title}"?\nSe creará una copia con slug: ${page.slug}-copia`)) return;
+    if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
     const { id, ...rest } = page;
     const newSlug = `${rest.slug}-copia`;
-    const { error } = await supabase.from("landing_pages").insert({ ...rest, slug: newSlug, title: `${rest.title} (Copia)` });
+    const { error } = await supabase.from("landing_pages").insert({ ...rest, slug: newSlug, title: `${rest.title} (Copia)`, organization_id: currentOrg.id });
     if (error) toast.error(error.message);
     else {
       toast.success("Pagina duplicada");
@@ -459,7 +463,8 @@ const LandingPagesTab = () => {
             updated++;
           }
         } else {
-          const { error } = await supabase.from("landing_pages").insert(payload);
+          if (!currentOrg?.id) { errors++; continue; }
+          const { error } = await supabase.from("landing_pages").insert({ ...payload, organization_id: currentOrg.id });
           if (error) throw error;
           created++;
         }

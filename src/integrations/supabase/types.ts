@@ -441,7 +441,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean | null
-          organization_id: string | null
+          organization_id: string
           sort_order: number | null
           subtitle: string | null
           title: string
@@ -454,7 +454,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
-          organization_id?: string | null
+          organization_id: string
           sort_order?: number | null
           subtitle?: string | null
           title: string
@@ -467,7 +467,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
-          organization_id?: string | null
+          organization_id?: string
           sort_order?: number | null
           subtitle?: string | null
           title?: string
@@ -493,7 +493,7 @@ export type Database = {
           meta_title: string | null
           name: string
           og_image_url: string | null
-          organization_id: string | null
+          organization_id: string
           slug: string | null
           sort_order: number | null
           website_url: string | null
@@ -507,7 +507,7 @@ export type Database = {
           meta_title?: string | null
           name: string
           og_image_url?: string | null
-          organization_id?: string | null
+          organization_id: string
           slug?: string | null
           sort_order?: number | null
           website_url?: string | null
@@ -521,7 +521,7 @@ export type Database = {
           meta_title?: string | null
           name?: string
           og_image_url?: string | null
-          organization_id?: string | null
+          organization_id?: string
           slug?: string | null
           sort_order?: number | null
           website_url?: string | null
@@ -1019,7 +1019,7 @@ export type Database = {
           meta_title: string | null
           name: string
           og_image_url: string | null
-          organization_id: string | null
+          organization_id: string
           slug: string
           sort_order: number | null
           updated_at: string
@@ -1035,7 +1035,7 @@ export type Database = {
           meta_title?: string | null
           name: string
           og_image_url?: string | null
-          organization_id?: string | null
+          organization_id: string
           slug: string
           sort_order?: number | null
           updated_at?: string
@@ -1051,7 +1051,7 @@ export type Database = {
           meta_title?: string | null
           name?: string
           og_image_url?: string | null
-          organization_id?: string | null
+          organization_id?: string
           slug?: string
           sort_order?: number | null
           updated_at?: string
@@ -1281,7 +1281,7 @@ export type Database = {
           message: string | null
           modules_interest: string[] | null
           notes: string | null
-          organization_id: string | null
+          organization_id: string
           phone: string | null
           plan_interest: string | null
           source: string
@@ -1303,7 +1303,7 @@ export type Database = {
           message?: string | null
           modules_interest?: string[] | null
           notes?: string | null
-          organization_id?: string | null
+          organization_id: string
           phone?: string | null
           plan_interest?: string | null
           source?: string
@@ -1325,7 +1325,7 @@ export type Database = {
           message?: string | null
           modules_interest?: string[] | null
           notes?: string | null
-          organization_id?: string | null
+          organization_id?: string
           phone?: string | null
           plan_interest?: string | null
           source?: string
@@ -1350,7 +1350,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
-          organization_id: string | null
+          organization_id: string
           position: string
           script_content: string
           sort_order: number
@@ -1361,7 +1361,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
-          organization_id?: string | null
+          organization_id: string
           position?: string
           script_content: string
           sort_order?: number
@@ -1372,7 +1372,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
-          organization_id?: string | null
+          organization_id?: string
           position?: string
           script_content?: string
           sort_order?: number
@@ -1400,7 +1400,7 @@ export type Database = {
           is_active: boolean
           is_approved: boolean
           order_id: string | null
-          organization_id: string | null
+          organization_id: string
           rating: number
           updated_at: string
         }
@@ -1415,7 +1415,7 @@ export type Database = {
           is_active?: boolean
           is_approved?: boolean
           order_id?: string | null
-          organization_id?: string | null
+          organization_id: string
           rating?: number
           updated_at?: string
         }
@@ -1430,7 +1430,7 @@ export type Database = {
           is_active?: boolean
           is_approved?: boolean
           order_id?: string | null
-          organization_id?: string | null
+          organization_id?: string
           rating?: number
           updated_at?: string
         }
@@ -2055,7 +2055,7 @@ export type Database = {
           id: string
           is_active: boolean
           label: string
-          organization_id: string | null
+          organization_id: string
           sort_order: number
           updated_at: string
         }
@@ -2067,7 +2067,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           label: string
-          organization_id?: string | null
+          organization_id: string
           sort_order?: number
           updated_at?: string
         }
@@ -2079,7 +2079,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           label?: string
-          organization_id?: string | null
+          organization_id?: string
           sort_order?: number
           updated_at?: string
         }
@@ -2101,7 +2101,7 @@ export type Database = {
           id: string
           image_url: string
           is_active: boolean | null
-          organization_id: string | null
+          organization_id: string
           sort_order: number | null
         }
         Insert: {
@@ -2111,7 +2111,7 @@ export type Database = {
           id?: string
           image_url: string
           is_active?: boolean | null
-          organization_id?: string | null
+          organization_id: string
           sort_order?: number | null
         }
         Update: {
@@ -2121,7 +2121,7 @@ export type Database = {
           id?: string
           image_url?: string
           is_active?: boolean | null
-          organization_id?: string | null
+          organization_id?: string
           sort_order?: number | null
         }
         Relationships: [
@@ -2238,7 +2238,7 @@ export type Database = {
           image_mobile_url: string | null
           image_url: string | null
           is_active: boolean | null
-          organization_id: string | null
+          organization_id: string
           sort_order: number | null
           subtitle: string | null
           title: string
@@ -2253,7 +2253,7 @@ export type Database = {
           image_mobile_url?: string | null
           image_url?: string | null
           is_active?: boolean | null
-          organization_id?: string | null
+          organization_id: string
           sort_order?: number | null
           subtitle?: string | null
           title: string
@@ -2268,7 +2268,7 @@ export type Database = {
           image_mobile_url?: string | null
           image_url?: string | null
           is_active?: boolean | null
-          organization_id?: string | null
+          organization_id?: string
           sort_order?: number | null
           subtitle?: string | null
           title?: string
@@ -2620,7 +2620,7 @@ export type Database = {
           meta_title: string | null
           noindex: boolean
           og_image_url: string | null
-          organization_id: string | null
+          organization_id: string
           page_type: string
           site_scope: string
           slug: string
@@ -2645,7 +2645,7 @@ export type Database = {
           meta_title?: string | null
           noindex?: boolean
           og_image_url?: string | null
-          organization_id?: string | null
+          organization_id: string
           page_type?: string
           site_scope?: string
           slug: string
@@ -2670,7 +2670,7 @@ export type Database = {
           meta_title?: string | null
           noindex?: boolean
           og_image_url?: string | null
-          organization_id?: string | null
+          organization_id?: string
           page_type?: string
           site_scope?: string
           slug?: string
@@ -3001,7 +3001,7 @@ export type Database = {
           max_selections: number
           min_selections: number
           name: string
-          organization_id: string | null
+          organization_id: string
           pricing_mode: string
           product_id: string
           selection_type: string
@@ -3017,7 +3017,7 @@ export type Database = {
           max_selections?: number
           min_selections?: number
           name: string
-          organization_id?: string | null
+          organization_id: string
           pricing_mode?: string
           product_id: string
           selection_type?: string
@@ -3033,7 +3033,7 @@ export type Database = {
           max_selections?: number
           min_selections?: number
           name?: string
-          organization_id?: string | null
+          organization_id?: string
           pricing_mode?: string
           product_id?: string
           selection_type?: string
@@ -3073,7 +3073,7 @@ export type Database = {
           linked_product_id: string | null
           max_quantity: number
           modifier_group_id: string
-          organization_id: string | null
+          organization_id: string
           price_adjustment: number
           sort_order: number
           updated_at: string
@@ -3086,7 +3086,7 @@ export type Database = {
           linked_product_id?: string | null
           max_quantity?: number
           modifier_group_id: string
-          organization_id?: string | null
+          organization_id: string
           price_adjustment?: number
           sort_order?: number
           updated_at?: string
@@ -3099,7 +3099,7 @@ export type Database = {
           linked_product_id?: string | null
           max_quantity?: number
           modifier_group_id?: string
-          organization_id?: string | null
+          organization_id?: string
           price_adjustment?: number
           sort_order?: number
           updated_at?: string
@@ -4625,7 +4625,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
-          organization_id: string | null
+          organization_id: string
           price: number
           product_id: string
           sort_order: number
@@ -4638,7 +4638,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
-          organization_id?: string | null
+          organization_id: string
           price: number
           product_id: string
           sort_order?: number
@@ -4651,7 +4651,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
-          organization_id?: string | null
+          organization_id?: string
           price?: number
           product_id?: string
           sort_order?: number
@@ -4758,7 +4758,7 @@ export type Database = {
           meta_title: string | null
           name: string
           net_weight_grams: number | null
-          organization_id: string | null
+          organization_id: string
           original_price: number | null
           price: number
           price_distributor: number | null
@@ -4797,7 +4797,7 @@ export type Database = {
           meta_title?: string | null
           name: string
           net_weight_grams?: number | null
-          organization_id?: string | null
+          organization_id: string
           original_price?: number | null
           price: number
           price_distributor?: number | null
@@ -4836,7 +4836,7 @@ export type Database = {
           meta_title?: string | null
           name?: string
           net_weight_grams?: number | null
-          organization_id?: string | null
+          organization_id?: string
           original_price?: number | null
           price?: number
           price_distributor?: number | null
@@ -5216,7 +5216,7 @@ export type Database = {
           heading: string | null
           id: string
           is_active: boolean
-          organization_id: string | null
+          organization_id: string
           sort_order: number
           updated_at: string
         }
@@ -5230,7 +5230,7 @@ export type Database = {
           heading?: string | null
           id?: string
           is_active?: boolean
-          organization_id?: string | null
+          organization_id: string
           sort_order?: number
           updated_at?: string
         }
@@ -5244,7 +5244,7 @@ export type Database = {
           heading?: string | null
           id?: string
           is_active?: boolean
-          organization_id?: string | null
+          organization_id?: string
           sort_order?: number
           updated_at?: string
         }
@@ -5407,7 +5407,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           neighborhood: string
-          organization_id: string | null
+          organization_id: string
         }
         Insert: {
           city?: string
@@ -5416,7 +5416,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           neighborhood: string
-          organization_id?: string | null
+          organization_id: string
         }
         Update: {
           city?: string
@@ -5425,7 +5425,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           neighborhood?: string
-          organization_id?: string | null
+          organization_id?: string
         }
         Relationships: [
           {
@@ -6781,7 +6781,7 @@ export type Database = {
           is_active: boolean
           is_approved: boolean
           order_id: string | null
-          organization_id: string | null
+          organization_id: string
           rating: number
           updated_at: string
         }[]
@@ -6840,6 +6840,7 @@ export type Database = {
         }
         Returns: Json
       }
+      current_org_id: { Args: never; Returns: string }
       default_org_id: { Args: never; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }

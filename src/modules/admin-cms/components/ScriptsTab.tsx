@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Pencil, Trash2, Save, X, Code, Loader2, Eye, EyeOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const POSITIONS = [
   { value: "head", label: "Head (antes de </head>)" },
@@ -12,6 +13,7 @@ const POSITIONS = [
 ];
 
 const ScriptsTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", script_content: "", position: "head", is_active: true, sort_order: 0 });
 
@@ -52,7 +54,8 @@ const ScriptsTab = ({ queryClient }: { queryClient: any }) => {
         if (error) throw error;
         toast.success("Script actualizado");
       } else {
-        const { error } = await supabase.from("custom_scripts").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("custom_scripts").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Script creado");
       }

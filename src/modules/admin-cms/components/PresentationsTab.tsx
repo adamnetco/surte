@@ -5,11 +5,13 @@ import { Plus, Pencil, Trash2, Save, X, Package, Box, Layers, Download, Upload, 
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
 const PresentationsTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [editing, setEditing] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -100,7 +102,8 @@ const PresentationsTab = ({ queryClient }: { queryClient: any }) => {
         if (error) throw error;
         toast.success("Presentación actualizada");
       } else {
-        const { error } = await supabase.from("product_presentations").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("product_presentations").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Presentación creada");
       }
@@ -184,7 +187,8 @@ const PresentationsTab = ({ queryClient }: { queryClient: any }) => {
             const { error } = await supabase.from("product_presentations").update(payload).eq("id", row.id);
             if (error) { errors++; } else { updated++; }
           } else {
-            const { error } = await supabase.from("product_presentations").insert(payload);
+            if (!currentOrg?.id) { errors++; continue; }
+            const { error } = await supabase.from("product_presentations").insert({ ...payload, organization_id: currentOrg.id });
             if (error) { errors++; } else { created++; }
           }
         }
