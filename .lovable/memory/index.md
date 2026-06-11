@@ -1,3 +1,4 @@
 - [Modules Catalog Source](mem://features/modules-catalog-source) — DB-driven modules; never hardcode module keys (FK to public.modules)
 - [Demo DNS Pending](mem://features/demo-dns-pending) — Cliente debe publicar TXT _acme-challenge + A 185.158.133.1 para demo.sistecpos.com (seguimiento en /superadmin/cloud-tareas)
 - [SaaS Refactor Etapa 1](mem://features/saas-refactor-etapa1) — Audit tenant-scope: 5 HIGH slug surteya hardcoded, 322 MEDIUM .from() (muchos OK), reporte en docs/audit/
+- [SaaS Refactor Etapa 2](mem://features/saas-refactor-etapa2) — RPC atómico provision_organization + edge function provision-organization (idempotente por payment_reference, encola welcome_email/whatsapp)
