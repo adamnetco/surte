@@ -19,6 +19,8 @@ const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: st
 ];
 
 const SeoTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }) => {
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id;
   const { upload, uploading } = useImageUpload();
   const [values, setValues] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState<Set<string>>(new Set());
@@ -40,14 +42,15 @@ const SeoTab = ({ settings, queryClient }: { settings: any[]; queryClient: any }
 
   const saveAll = async () => {
     if (dirty.size === 0) return;
+    if (!orgId) { toast.error("Selecciona una organización"); return; }
     setSaving(true);
     try {
       for (const key of dirty) {
         const existing = settings?.find((s: any) => s.key === key);
         if (existing) {
-          await supabase.from("app_settings").update({ value: values[key] || "" }).eq("id", existing.id);
+          await supabase.from("app_settings").update({ value: values[key] || "" }).eq("id", existing.id).eq("organization_id", orgId);
         } else {
-          await supabase.from("app_settings").insert({ key, value: values[key] || "" });
+          await supabase.from("app_settings").insert({ key, value: values[key] || "", organization_id: orgId });
         }
       }
       toast.success("SEO guardado");
