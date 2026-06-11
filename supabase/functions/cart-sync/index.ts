@@ -9,6 +9,7 @@
 //        → marks the cart as completed (after order creation)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,8 +24,31 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const isUuid = (s: string) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+// Etapa 27: schemas estrictos.
+const Uuid = z.string().uuid();
+const CartItem = z.object({
+  product_id: Uuid,
+  quantity: z.number().int().min(1).max(9999),
+  price: z.number().min(0).max(1e9).optional(),
+  name: z.string().max(300).optional(),
+  presentation_id: Uuid.optional().nullable(),
+}).passthrough();
+
+const PostSchema = z.object({
+  cart_token: Uuid,
+  items: z.array(CartItem).max(500).default([]),
+  subtotal: z.number().min(0).max(1e10).optional(),
+  total_items: z.number().int().min(0).max(99999).optional(),
+  phone: z.string().max(30).optional().nullable(),
+  channel: z.string().max(40).optional(),
+  metadata: z.record(z.string().max(60), z.any()).optional(),
+});
+
+const PatchSchema = z.object({
+  cart_token: Uuid,
+  status: z.enum(["completed"]),
+});
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
