@@ -35,23 +35,31 @@ const Hub = () => {
 
   const { data: settings } = useAppSettings();
   const { data: categories } = useCategories();
+  const tenantOrgId = useTenantOrgId();
+
   const { data: brands } = useQuery({
-    queryKey: ["brands"],
+    queryKey: ["brands", tenantOrgId],
+    enabled: !!tenantOrgId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("brands").select("*").eq("is_active", true).order("sort_order");
+      const { data, error } = await scopedFrom("brands", tenantOrgId!)
+        .eq("is_active", true)
+        .order("sort_order");
       if (error) throw error;
       return data;
     },
   });
 
   const { data: featuredSections } = useQuery({
-    queryKey: ["featured_sections"],
+    queryKey: ["featured_sections", tenantOrgId],
+    enabled: !!tenantOrgId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("featured_sections").select("*").order("sort_order");
+      const { data, error } = await scopedFrom("featured_sections", tenantOrgId!).order("sort_order");
       if (error) throw error;
       return data;
     },
   });
+
+
 
   // Long-form SEO content (H2 + body + own FAQs) per category/brand/city/tag
   const seoEntityType = type === "categoria" ? "category" : type === "marca" ? "brand" : type === "ciudad" ? "city" : type === "etiqueta" ? "tag" : null;
