@@ -79,8 +79,8 @@ export const template = {
   displayName: 'Bienvenida a la organización',
   previewData: {
     full_name: 'Eduardo',
-    org_name: 'Surteya',
-    org_slug: 'surteya',
+    org_name: 'Mi Tienda Demo',
+    org_slug: 'mi-tienda-demo',
     invite_link: 'https://admin.sistecpos.com/onboarding',
   },
 } satisfies TemplateEntry
