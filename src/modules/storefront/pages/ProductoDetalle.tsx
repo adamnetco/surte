@@ -19,6 +19,7 @@ import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/modules/mar
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useAppSettings, useInactiveBrands } from "@/modules/storefront/hooks/useStore";
+import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 import { trackViewProduct, trackAddToCart } from "@/modules/marketing/seo/Analytics";
 
 const formatPrice = (price: number) =>
