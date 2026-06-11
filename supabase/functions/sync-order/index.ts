@@ -1,3 +1,8 @@
+// sync-order — Envía un pedido a un webhook externo (ERP de cliente).
+// Etapa 16: requiere auth + membership en la organización dueña del pedido.
+// El webhook URL se busca en app_settings con clave por-org:
+//   external_sync_webhook_url:<organization_id>   (preferida)
+//   external_sync_webhook_url                     (fallback legacy)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
@@ -6,25 +11,29 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const json = (b: unknown, status = 200) =>
+  new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const userClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
     );
+    const { data: claims } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    const userId = claims?.claims?.sub;
+    if (!userId) return json({ error: "Unauthorized" }, 401);
 
     const { order_id, webhook_url } = await req.json();
-
-    if (!order_id) {
-      return new Response(JSON.stringify({ error: "order_id is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!order_id) return json({ error: "order_id is required" }, 400);
 
     // Fetch order with items
     const { data: order, error: orderErr } = await supabase
@@ -32,42 +41,53 @@ Deno.serve(async (req) => {
       .select("*, order_items(*)")
       .eq("id", order_id)
       .single();
+    if (orderErr || !order) return json({ error: "Order not found" }, 404);
 
-    if (orderErr || !order) {
-      return new Response(JSON.stringify({ error: "Order not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const orgId = (order as any).organization_id as string | null;
+    if (!orgId) return json({ error: "Order has no organization_id" }, 422);
 
-    // Get webhook URL from settings if not provided
-    let targetUrl = webhook_url;
+    // Membership check
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("id")
+      .eq("organization_id", orgId)
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!membership) return json({ error: "Forbidden" }, 403);
+
+    // Resolve webhook URL — prefer org-scoped key, then legacy global
+    let targetUrl = webhook_url as string | undefined;
     if (!targetUrl) {
-      const { data: setting } = await supabase
+      const { data: setOrg } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", `external_sync_webhook_url:${orgId}`)
+        .maybeSingle();
+      targetUrl = (setOrg?.value as any) ?? undefined;
+    }
+    if (!targetUrl) {
+      const { data: setLegacy } = await supabase
         .from("app_settings")
         .select("value")
         .eq("key", "external_sync_webhook_url")
         .maybeSingle();
-      targetUrl = setting?.value;
+      targetUrl = (setLegacy?.value as any) ?? undefined;
     }
 
     if (!targetUrl) {
-      // No webhook configured, just mark as ready
       await supabase
         .from("orders")
         .update({
           external_sync_status: "no_webhook",
           external_sync_sent_at: new Date().toISOString(),
         })
-        .eq("id", order_id);
+        .eq("id", order_id)
+        .eq("organization_id", orgId);
 
-      return new Response(
-        JSON.stringify({ success: true, message: "No webhook configured, order marked" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return json({ success: true, message: "No webhook configured, order marked" });
     }
 
-    // Send to external system
     const payload = {
       order_number: order.order_number,
       customer_name: order.customer_name,
@@ -78,7 +98,8 @@ Deno.serve(async (req) => {
       total: order.total,
       notes: order.notes,
       status: order.status,
-      items: order.order_items.map((item: any) => ({
+      organization_id: orgId,
+      items: (order as any).order_items.map((item: any) => ({
         product_name: item.product_name,
         quantity: item.quantity,
         unit_price: item.unit_price,
@@ -101,16 +122,11 @@ Deno.serve(async (req) => {
         external_sync_status: syncStatus,
         external_sync_sent_at: new Date().toISOString(),
       })
-      .eq("id", order_id);
+      .eq("id", order_id)
+      .eq("organization_id", orgId);
 
-    return new Response(
-      JSON.stringify({ success: response.ok, status: syncStatus }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ success: response.ok, status: syncStatus });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: err instanceof Error ? err.message : String(err) }, 500);
   }
 });
