@@ -215,14 +215,19 @@ Deno.serve(async (req) => {
   }
 
   if (type === 'pages') {
-    const { data: landingPages } = await supabase
+    let lpQ = supabase
       .from('landing_pages')
       .select('slug, updated_at, meta_title, image_url')
       .eq('is_active', true);
-    const { data: featuredSections } = await supabase
+    if (tenantOrgId) lpQ = lpQ.eq('organization_id', tenantOrgId);
+    const { data: landingPages } = await lpQ;
+
+    let fsQ = supabase
       .from('featured_sections')
       .select('label, filter_type, filter_value, updated_at')
       .eq('is_active', true);
+    if (tenantOrgId) fsQ = fsQ.eq('organization_id', tenantOrgId);
+    const { data: featuredSections } = await fsQ;
 
     const urls: string[] = [];
     (landingPages || []).forEach((lp: any) => {
@@ -238,11 +243,16 @@ Deno.serve(async (req) => {
   }
 
   // ─── Default: full sitemap (backwards compatible) ─────────
+  const productsBuilder = supabase.from('products').select('slug, id, updated_at, image_url, name').eq('is_active', true).order('updated_at', { ascending: false });
+  const categoriesBuilder = supabase.from('categories').select('slug, name, updated_at, og_image_url').eq('is_active', true).order('sort_order');
+  const brandsBuilder = supabase.from('brands').select('slug, name, logo_url, created_at').eq('is_active', true).order('sort_order');
+  const landingBuilder = supabase.from('landing_pages').select('slug, updated_at, meta_title, image_url').eq('is_active', true);
+
   const [productsRes, categoriesRes, brandsRes, landingRes] = await Promise.all([
-    supabase.from('products').select('slug, id, updated_at, image_url, name').eq('is_active', true).order('updated_at', { ascending: false }),
-    supabase.from('categories').select('slug, name, updated_at, og_image_url').eq('is_active', true).order('sort_order'),
-    supabase.from('brands').select('slug, name, logo_url, created_at').eq('is_active', true).order('sort_order'),
-    supabase.from('landing_pages').select('slug, updated_at, meta_title, image_url').eq('is_active', true),
+    tenantOrgId ? productsBuilder.eq('organization_id', tenantOrgId) : productsBuilder,
+    tenantOrgId ? categoriesBuilder.eq('organization_id', tenantOrgId) : categoriesBuilder,
+    tenantOrgId ? brandsBuilder.eq('organization_id', tenantOrgId) : brandsBuilder,
+    tenantOrgId ? landingBuilder.eq('organization_id', tenantOrgId) : landingBuilder,
   ]);
 
   const allUrls: string[] = [
