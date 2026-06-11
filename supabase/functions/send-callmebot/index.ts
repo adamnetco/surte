@@ -58,7 +58,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { phone, message, apikey, organization_id } = await req.json();
+    const rawBody = await req.json().catch(() => null);
+    const parsedBody = PayloadSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return new Response(JSON.stringify({ error: 'invalid_payload', details: parsedBody.error.flatten() }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { phone, message, apikey, organization_id } = parsedBody.data;
 
     // Etapa 24: scope app_settings por organización (fallback global).
     const { getOrgScopedSettings, resolveCallerOrgId } = await import('../_shared/tenant-guard.ts');
