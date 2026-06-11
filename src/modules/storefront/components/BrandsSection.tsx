@@ -12,7 +12,7 @@ const BrandsSection = () => {
   const { data: brands } = useQuery({
     queryKey: ["brands", tenantOrgId],
     queryFn: async () => {
-      let q = supabase.from("brands").select("*").eq("is_active", true).order("sort_order");
+      let q: any = supabase.from("brands").select("*").eq("is_active", true).order("sort_order");
       if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
       const { data, error } = await q;
       if (error) throw error;
