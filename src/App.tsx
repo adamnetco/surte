@@ -226,13 +226,13 @@ const App = () => (
                     <Route path="/producto/:id" element={<HostGuard require="storefront"><ProductoDetalle /></HostGuard>} />
                     <Route path="/p/:id" element={<HostGuard require="storefront"><ProductoDetalle /></HostGuard>} />
                     <Route path="/pedido/:orderNumber" element={<HostGuard require="storefront"><Pedido /></HostGuard>} />
-                    <Route path="/pedidos" element={<HostGuard require="storefront"><MisPedidos /></HostGuard>} />
-                    <Route path="/favoritos" element={<HostGuard require="storefront"><Favoritos /></HostGuard>} />
-                    <Route path="/perfil" element={<HostGuard require="storefront"><Perfil /></HostGuard>} />
-                    <Route path="/ayuda" element={<HostGuard require="storefront"><Ayuda /></HostGuard>} />
-                   <Route path="/configuracion" element={<HostGuard require="storefront"><Configuracion /></HostGuard>} />
-                   <Route path="/mi/seguridad" element={<HostGuard require="storefront"><MiSeguridad /></HostGuard>} />
-                    <Route path="/clientes" element={<HostGuard require="storefront"><ClientPortalShell /></HostGuard>} />
+                    <Route path="/pedidos" element={<MisPedidos />} />
+                    <Route path="/favoritos" element={<Favoritos />} />
+                    <Route path="/perfil" element={<Perfil />} />
+                    <Route path="/ayuda" element={<Ayuda />} />
+                    <Route path="/configuracion" element={<Configuracion />} />
+                    <Route path="/mi/seguridad" element={<MiSeguridad />} />
+                    <Route path="/clientes" element={<ClientPortalShell />} />
 
                     {/* SEO local (hubs por ciudad) → solo en hosts de tenant */}
                     <Route path="/hub/:type/:slug" element={<HostGuard require="storefront"><Hub /></HostGuard>} />
@@ -242,20 +242,23 @@ const App = () => (
                     <Route path="/:city" element={<HostGuard require="storefront"><Hub /></HostGuard>} />
                     <Route path="/s/:slug" element={<HostGuard require="storefront"><LandingPage /></HostGuard>} />
 
-                    {/* === Operativa de un negocio (solo en su subdominio) === */}
-                    <Route path="/admin" element={<HostGuard require="storefront"><RoleGuard section="admin"><AdminDashboard /></RoleGuard></HostGuard>} />
-                    <Route path="/pos" element={<HostGuard require="storefront"><PosHub /></HostGuard>} />
-                    <Route path="/pos/vender" element={<HostGuard require="storefront"><POS /></HostGuard>} />
-                    <Route path="/mesas" element={<HostGuard require="storefront"><Mesas /></HostGuard>} />
-                    <Route path="/kds" element={<HostGuard require="storefront"><KDS /></HostGuard>} />
-                    <Route path="/inventario" element={<HostGuard require="storefront"><Inventario /></HostGuard>} />
-                    <Route path="/facturacion" element={<HostGuard require="storefront"><Facturacion /></HostGuard>} />
-                    <Route path="/compras" element={<HostGuard require="storefront"><Compras /></HostGuard>} />
-                    <Route path="/admin/health-logs" element={<HostGuard require="storefront"><RoleGuard section="admin"><HealthLogs /></RoleGuard></HostGuard>} />
-                    <Route path="/gerente-ia" element={<HostGuard require="storefront"><GerenteIA /></HostGuard>} />
-                    <Route path="/onboarding" element={<HostGuard require="storefront"><Onboarding /></HostGuard>} />
-                    <Route path="/activacion" element={<HostGuard require="storefront"><ActivationStatus /></HostGuard>} />
-                    <Route path="/billing" element={<HostGuard require="storefront"><Billing /></HostGuard>} />
+                    {/* === Operativa / configuración de un negocio ===
+                        Accesible tanto desde admin.sistecpos.com (panel SaaS) como
+                        desde <slug>.sistecpos.com (subdominio del tenant). El acceso
+                        real lo controlan RoleGuard / módulos, no el host. */}
+                    <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
+                    <Route path="/pos" element={<PosHub />} />
+                    <Route path="/pos/vender" element={<POS />} />
+                    <Route path="/mesas" element={<Mesas />} />
+                    <Route path="/kds" element={<KDS />} />
+                    <Route path="/inventario" element={<Inventario />} />
+                    <Route path="/facturacion" element={<Facturacion />} />
+                    <Route path="/compras" element={<Compras />} />
+                    <Route path="/admin/health-logs" element={<RoleGuard section="admin"><HealthLogs /></RoleGuard>} />
+                    <Route path="/gerente-ia" element={<GerenteIA />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
+                    <Route path="/activacion" element={<ActivationStatus />} />
+                    <Route path="/billing" element={<Billing />} />
 
                     {/* === Panel SistecPOS (solo en hosts del sistema) === */}
                     <Route path="/superadmin/*" element={<HostGuard require="system"><SuperadminDashboard /></HostGuard>} />
