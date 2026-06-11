@@ -73,13 +73,15 @@ Deno.serve(async (req) => {
       if (!body || !isUuid(body.cart_token)) {
         return json({ error: "invalid_payload" }, 400);
       }
+      // Etapa 23: nunca confiar en _user_id del body — la asociación de cart
+      // a usuario se hace vía trigger handle_new_user o checkout autenticado.
       const { error } = await supabase.rpc("upsert_persistent_cart", {
         _cart_token: body.cart_token,
         _items: body.items ?? [],
         _subtotal: Number(body.subtotal ?? 0),
         _total_items: Number(body.total_items ?? 0),
         _phone: body.phone ?? null,
-        _user_id: body.user_id ?? null,
+        _user_id: null,
         _channel: body.channel ?? "web",
         _metadata: body.metadata ?? {},
       });

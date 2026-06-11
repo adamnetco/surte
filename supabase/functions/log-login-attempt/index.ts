@@ -19,15 +19,9 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    let userId: string | null = null;
-    if (email) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .ilike("email" as never, email)
-        .maybeSingle();
-      userId = (data as { user_id?: string } | null)?.user_id ?? null;
-    }
+    // Etapa 23: eliminado lookup reverso profiles.email → user_id (info-leak).
+    // El user_id se asocia más tarde vía trigger handle_new_user u otros mecanismos.
+    const userId: string | null = typeof body.user_id === "string" ? body.user_id : null;
 
     const { error } = await supabase.from("auth_login_events").insert({
       user_id: userId,
