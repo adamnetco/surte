@@ -108,6 +108,7 @@ export default function GerenteIA() {
 
   async function openScanDetail(s: Scan) {
     setOpenScan(s);
+    // invoice_scan_items no tiene organization_id propio: scan_id ya está scoped por currentOrg.id (filtrado en loadAll)
     const { data } = await supabase.from("invoice_scan_items").select("*").eq("scan_id", s.id).order("line_no");
     setScanItems((data as any) ?? []);
   }
@@ -221,7 +222,7 @@ export default function GerenteIA() {
                   <Button variant="ghost" onClick={() => setOpenScan(null)}>Cerrar</Button>
                 </div>
               </div>
-              <ItemMatcher items={scanItems} onMatchChange={updateItemMatch} />
+              <ItemMatcher items={scanItems} onMatchChange={updateItemMatch} orgId={currentOrg.id} />
             </Card>
           )}
 
