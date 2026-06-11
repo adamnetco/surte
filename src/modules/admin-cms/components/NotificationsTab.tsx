@@ -556,7 +556,7 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
 export default NotificationsTab;
 
 // ── Web Push (PWA) admin section ─────────────────────────────────
-function WebPushSection() {
+function WebPushSection({ orgId }: { orgId?: string | null }) {
   const [title, setTitle] = useState("SURTÉ YA");
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("/");
@@ -564,11 +564,13 @@ function WebPushSection() {
   const [busy, setBusy] = useState(false);
 
   const { data: subs } = useQuery({
-    queryKey: ["push_subs_admin"],
+    queryKey: ["push_subs_admin", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
       const { count } = await supabase
         .from("push_subscriptions")
         .select("*", { count: "exact", head: true })
+        .eq("organization_id", orgId!)
         .eq("is_active", true);
       return count || 0;
     },
