@@ -172,9 +172,15 @@ for (const file of files) {
     const chain = extractChain(src, pos);
     const isGlobal = GLOBAL_TABLES.has(table);
     const usesScopedFrom = /scopedFrom|scopedSelect/.test(src.slice(Math.max(0, pos - 60), pos));
+    // Look-back: organization_id assignment in same scope (≤ 600 chars before .from)
+    const lookback = src.slice(Math.max(0, pos - 600), pos);
+    const orgInScope =
+      /organization_id\s*[:=]/.test(lookback) ||
+      /\.eq\(\s*['"`]organization_id['"`]/.test(lookback);
     const filtersOrg =
       /\.eq\(\s*['"`]organization_id['"`]/.test(chain) ||
-      /organization_id\s*:/.test(chain);
+      /organization_id\s*:/.test(chain) ||
+      orgInScope;
     const isInsert = /\.insert\(/.test(chain);
     const isSelect = /\.select\(/.test(chain) && !isInsert;
     const isUpdateOrDelete = /\.update\(|\.delete\(/.test(chain) && !isSelect;
