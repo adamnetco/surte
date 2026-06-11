@@ -18,7 +18,7 @@ function json(body: unknown, status = 200) {
 
 interface ReqBody { tenant_id: string; hostname: string; }
 
-Deno.serve(async (req) => {
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
@@ -114,4 +114,6 @@ Deno.serve(async (req) => {
     ownership_verification: ownership,
     dcv_method: dcv ? "http" : null,
   });
-});
+};
+
+Deno.serve(handler);
