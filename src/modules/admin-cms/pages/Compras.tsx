@@ -81,7 +81,8 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
   };
 
   const toggleActive = async (s: any) => {
-    await supabase.from("suppliers").update({ is_active: !s.is_active }).eq("id", s.id);
+    await supabase.from("suppliers").update({ is_active: !s.is_active })
+      .eq("organization_id", orgId).eq("id", s.id);
     qc.invalidateQueries({ queryKey: ["suppliers", orgId] });
   };
 
@@ -148,11 +149,12 @@ function SupplierCatalogTab({ orgId, qc }: { orgId: string; qc: any }) {
   });
 
   const { data: rows } = useQuery({
-    queryKey: ["supplier-products", supplierId],
+    queryKey: ["supplier-products", orgId, supplierId],
     queryFn: async () => {
       if (!supplierId) return [];
       const { data } = await supabase.from("supplier_products")
         .select("*, products(name, sku, gtin, image_url)")
+        .eq("organization_id", orgId)
         .eq("supplier_id", supplierId).order("supplier_sku");
       return data ?? [];
     },
@@ -160,10 +162,12 @@ function SupplierCatalogTab({ orgId, qc }: { orgId: string; qc: any }) {
   });
 
   const { data: searchProducts } = useQuery({
-    queryKey: ["product-search", search],
+    queryKey: ["product-search", orgId, search],
     queryFn: async () => {
       if (!search || search.length < 2) return [];
-      const { data } = await supabase.from("products").select("id,name,sku").ilike("name", `%${search}%`).limit(10);
+      const { data } = await supabase.from("products").select("id,name,sku")
+        .eq("organization_id", orgId)
+        .ilike("name", `%${search}%`).limit(10);
       return data ?? [];
     },
     enabled: search.length >= 2,
@@ -180,14 +184,16 @@ function SupplierCatalogTab({ orgId, qc }: { orgId: string; qc: any }) {
   };
 
   const togglePreferred = async (r: any) => {
-    await supabase.from("supplier_products").update({ is_preferred: !r.is_preferred }).eq("id", r.id);
-    qc.invalidateQueries({ queryKey: ["supplier-products", supplierId] });
+    await supabase.from("supplier_products").update({ is_preferred: !r.is_preferred })
+      .eq("organization_id", orgId).eq("id", r.id);
+    qc.invalidateQueries({ queryKey: ["supplier-products", orgId, supplierId] });
   };
 
   const remove = async (id: string) => {
     if (!confirm("¿Eliminar vinculación?")) return;
-    await supabase.from("supplier_products").delete().eq("id", id);
-    qc.invalidateQueries({ queryKey: ["supplier-products", supplierId] });
+    await supabase.from("supplier_products").delete()
+      .eq("organization_id", orgId).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["supplier-products", orgId, supplierId] });
   };
 
   return (

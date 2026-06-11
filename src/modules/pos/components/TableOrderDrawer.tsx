@@ -37,6 +37,7 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
     const { data: ord } = await supabase
       .from("table_orders")
       .select("id,location_id,status,subtotal,total,dining_table_id,guest_count")
+      .eq("organization_id", organizationId)
       .eq("dining_table_id", tableId)
       .in("status", ["open","sent","billed"])
       .order("opened_at", { ascending: false })
@@ -45,8 +46,9 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
     setOrder(ord as TableOrder);
     const [{ data: its }, { data: t }, { data: st }] = await Promise.all([
       supabase.from("table_order_items").select("id,product_name,quantity,unit_price,total,status,notes")
+        .eq("organization_id", organizationId)
         .eq("table_order_id", ord.id).order("created_at"),
-      supabase.from("dining_tables").select("label").eq("id", tableId).single(),
+      supabase.from("dining_tables").select("label").eq("organization_id", organizationId).eq("id", tableId).single(),
       supabase.from("kitchen_stations").select("id,name").eq("organization_id", organizationId).eq("is_active", true).order("sort_order"),
     ]);
     setItems((its as Item[]) ?? []);
@@ -58,16 +60,18 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
   useEffect(() => {
     load();
     (async () => {
-      const { data } = await supabase.from("products").select("id,name,price").eq("is_active", true).order("name").limit(120);
+      const { data } = await supabase.from("products").select("id,name,price")
+        .eq("organization_id", organizationId)
+        .eq("is_active", true).order("name").limit(120);
       setProducts((data as Product[]) ?? []);
     })();
     const ch = supabase
       .channel(`table-${tableId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "table_order_items" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "table_order_items", filter: `organization_id=eq.${organizationId}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line
-  }, [tableId]);
+  }, [tableId, organizationId]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -75,9 +79,11 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
   }, [products, search]);
 
   const recalc = async (orderId: string) => {
-    const { data } = await supabase.from("table_order_items").select("total").eq("table_order_id", orderId);
+    const { data } = await supabase.from("table_order_items").select("total")
+      .eq("organization_id", organizationId).eq("table_order_id", orderId);
     const subtotal = (data ?? []).reduce((s: number, r: any) => s + Number(r.total), 0);
-    await supabase.from("table_orders").update({ subtotal, total: subtotal }).eq("id", orderId);
+    await supabase.from("table_orders").update({ subtotal, total: subtotal })
+      .eq("organization_id", organizationId).eq("id", orderId);
     setOrder(prev => prev ? { ...prev, subtotal, total: subtotal } : prev);
   };
 
@@ -101,9 +107,11 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
   const changeQty = async (item: Item, delta: number) => {
     const q = Math.max(0, item.quantity + delta);
     if (q === 0) {
-      await supabase.from("table_order_items").delete().eq("id", item.id);
+      await supabase.from("table_order_items").delete()
+        .eq("organization_id", organizationId).eq("id", item.id);
     } else {
-      await supabase.from("table_order_items").update({ quantity: q, total: q * item.unit_price }).eq("id", item.id);
+      await supabase.from("table_order_items").update({ quantity: q, total: q * item.unit_price })
+        .eq("organization_id", organizationId).eq("id", item.id);
     }
     if (order) await recalc(order.id);
   };
@@ -116,6 +124,7 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
     // Group by station: simplificamos, todos a defaultStation
     const { data: full } = await supabase.from("table_order_items")
       .select("id,product_name,quantity,notes,kitchen_station_id")
+      .eq("organization_id", organizationId)
       .eq("table_order_id", order.id).eq("status", "pending");
 
     const byStation = new Map<string | null, any[]>();
@@ -138,9 +147,11 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
     }
     const itemIds = (full ?? []).map((i: any) => i.id);
     if (itemIds.length) {
-      await supabase.from("table_order_items").update({ status: "sent", sent_at: new Date().toISOString() }).in("id", itemIds);
+      await supabase.from("table_order_items").update({ status: "sent", sent_at: new Date().toISOString() })
+        .eq("organization_id", organizationId).in("id", itemIds);
     }
-    await supabase.from("table_orders").update({ status: "sent" }).eq("id", order.id);
+    await supabase.from("table_orders").update({ status: "sent" })
+      .eq("organization_id", organizationId).eq("id", order.id);
     toast.success("Comanda enviada a cocina");
     load();
   };
@@ -148,8 +159,10 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
   const closeBill = async () => {
     if (!order) return;
     if (!confirm("¿Cerrar y liberar mesa? (cobrar en POS)")) return;
-    await supabase.from("table_orders").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", order.id);
-    await supabase.from("dining_tables").update({ status: "available" }).eq("id", tableId);
+    await supabase.from("table_orders").update({ status: "paid", paid_at: new Date().toISOString() })
+      .eq("organization_id", organizationId).eq("id", order.id);
+    await supabase.from("dining_tables").update({ status: "available" })
+      .eq("organization_id", organizationId).eq("id", tableId);
     toast.success("Mesa liberada");
     onClose();
   };

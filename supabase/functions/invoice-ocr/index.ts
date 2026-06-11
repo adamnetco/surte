@@ -107,10 +107,7 @@ Deno.serve(async (req) => {
     const data = await aiRes.json();
     const args = JSON.parse(data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments ?? "{}");
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    // (supabase client ya inicializado arriba)
 
     // Resolver supplier_id por NIT si no se mandó
     let resolvedSupplierId: string | null = supplier_id ?? null;
@@ -148,20 +145,24 @@ Deno.serve(async (req) => {
       total: it.total ?? (it.unit_cost * it.quantity),
     }));
 
-    // Auto-match: 1) supplier_sku via supplier_products, 2) GTIN, 3) nombre
+    // Auto-match: 1) supplier_sku via supplier_products, 2) GTIN, 3) nombre — todo scoped por organization_id
     for (const it of items) {
       let matched: string | null = null;
       if (resolvedSupplierId && it.supplier_sku) {
         const { data: sp } = await supabase.from("supplier_products").select("product_id")
+          .eq("organization_id", organization_id)
           .eq("supplier_id", resolvedSupplierId).eq("supplier_sku", it.supplier_sku).maybeSingle();
         matched = sp?.product_id ?? null;
       }
       if (!matched && it.gtin) {
-        const { data: p } = await supabase.from("products").select("id").eq("gtin", it.gtin).maybeSingle();
+        const { data: p } = await supabase.from("products").select("id")
+          .eq("organization_id", organization_id)
+          .eq("gtin", it.gtin).maybeSingle();
         matched = p?.id ?? null;
       }
       if (!matched) {
         const { data: p } = await supabase.from("products").select("id")
+          .eq("organization_id", organization_id)
           .ilike("name", `%${it.description.slice(0, 24)}%`).limit(1).maybeSingle();
         matched = p?.id ?? null;
       }
