@@ -66,8 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (cached) applyRole(cached, userId);
 
     const { data: effectiveRole, error: rpcError } = await withTimeout(
-      supabase.rpc("get_current_user_role"),
-      { data: null, error: new Error("Role lookup timeout") } as Awaited<ReturnType<typeof supabase.rpc<"get_current_user_role">>>,
+      supabase.rpc("get_current_user_role").then((r) => r),
+      { data: null as AppRole | null, error: new Error("Role lookup timeout") as Error | null },
     );
 
     if (!rpcError && effectiveRole) {
