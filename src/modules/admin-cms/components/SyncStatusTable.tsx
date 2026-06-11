@@ -80,11 +80,9 @@ export default function SyncStatusTable() {
       // Para sync-products-to-wp se requiere site_id: lo tomamos del primer tenant_site del usuario.
       let body: any = {};
       if (fnName === "sync-products-to-wp") {
-        const { data: site } = await (supabase as any)
-          .from("tenant_sites")
-          .select("id")
-          .limit(1)
-          .maybeSingle();
+        let siteQuery = (supabase as any).from("tenant_sites").select("id").limit(1);
+        if (currentOrg?.id) siteQuery = siteQuery.eq("organization_id", currentOrg.id);
+        const { data: site } = await siteQuery.maybeSingle();
         if (!site?.id) {
           toast({ title: "Sin tenant_site configurado", variant: "destructive" });
           setBusy(null);
