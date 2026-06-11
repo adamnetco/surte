@@ -20,7 +20,16 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
       // Fase 1 del refactor: el POS legacy en `softwarepos.online` quedó
       // deprecado. Cualquier nuevo literal con ese dominio en el código
       // (no en comentarios) re-introduce el bug del redirect externo.

@@ -3,8 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import { isAuthLockAbort, isTransientAuthError, purgeLocalAuth } from "@/modules/auth/lib/authRecovery";
 import { isDevBypassEnabled, buildBypassSession, buildBypassUser } from "@/modules/auth/lib/devBypass";
+import {
+  type AppRole,
+  normalizeRole,
+  pickHighestRole,
+  readCachedRole,
+  writeCachedRole,
+} from "@/modules/auth/lib/roleCache";
+import { logLoginFailure, logLoginSuccess } from "@/modules/auth/lib/loginTelemetry";
 
-export type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
+export type { AppRole };
 
 interface AuthContextType {
   user: User | null;
@@ -29,18 +37,6 @@ const withTimeout = async <T,>(promise: Promise<T>, fallback: T): Promise<T> =>
     new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ROLE_LOOKUP_TIMEOUT_MS)),
   ]);
 
-const ROLE_CACHE_PREFIX = "sps_role:";
-
-const readCachedRole = (userId: string | null | undefined): AppRole | null => {
-  if (!userId || typeof window === "undefined") return null;
-  const v = window.localStorage.getItem(ROLE_CACHE_PREFIX + userId);
-  return v && ["superadmin", "admin", "editor", "agente", "user"].includes(v) ? (v as AppRole) : null;
-};
-
-const writeCachedRole = (userId: string, role: AppRole) => {
-  try { window.localStorage.setItem(ROLE_CACHE_PREFIX + userId, role); } catch { /* quota */ }
-};
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -56,7 +52,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (userId) writeCachedRole(userId, nextRole);
   };
 
-
   const resetAuthState = () => {
     setSession(null);
     setUser(null);
@@ -65,23 +60,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole("user");
   };
 
-  const normalizeRole = (value: string | null | undefined): AppRole => {
-    const validRoles: AppRole[] = ["superadmin", "admin", "editor", "agente", "user"];
-    return validRoles.includes(value as AppRole) ? (value as AppRole) : "user";
-  };
-
   const checkRole = async (userId: string): Promise<AppRole> => {
     // Hydrate from localStorage cache first → kills the "Verificando permisos…" flash.
     const cached = readCachedRole(userId);
     if (cached) applyRole(cached, userId);
 
     const { data: effectiveRole, error: rpcError } = await withTimeout(
-      (supabase as any).rpc("get_current_user_role"),
-      { data: null, error: new Error("Role lookup timeout") }
+      supabase.rpc("get_current_user_role"),
+      { data: null, error: new Error("Role lookup timeout") } as Awaited<ReturnType<typeof supabase.rpc<"get_current_user_role">>>,
     );
 
     if (!rpcError && effectiveRole) {
-      const nextRole = normalizeRole(effectiveRole);
+      const nextRole = normalizeRole(effectiveRole as string);
       applyRole(nextRole, userId);
       return nextRole;
     }
@@ -96,10 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return cached ?? "user";
     }
 
-    const priority: AppRole[] = ["superadmin", "admin", "editor", "agente", "user"];
-    const assignedRoles = (data ?? []).map(({ role }) => role as AppRole);
-    const userRole = priority.find((candidate) => assignedRoles.includes(candidate)) || "user";
-
+    const userRole = pickHighestRole((data ?? []).map((r) => r.role));
     applyRole(userRole, userId);
     return userRole;
   };
@@ -114,10 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (nextSession?.user) {
         return await checkRole(nextSession.user.id);
-      } else {
-        resetAuthState();
-        return "user";
       }
+      resetAuthState();
+      return "user";
     } catch (error) {
       console.warn("Auth sync failed", error);
       if (nextSession?.user) {
@@ -131,7 +117,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-
   useEffect(() => {
     // === Dev bypass: salta toda la lógica real de auth ===
     if (isDevBypassEnabled()) {
@@ -142,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       applyRole("superadmin", fakeUser.id);
       setLoading(false);
       console.warn(
-        "[Auth] DEV BYPASS activo — sesión simulada de superadmin. NO se monta en producción."
+        "[Auth] DEV BYPASS activo — sesión simulada de superadmin. NO se monta en producción.",
       );
       return;
     }
@@ -163,12 +148,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { data: { session }, error } = await withTimeout(
           supabase.auth.getSession(),
-          { data: { session: null }, error: new Error("Session lookup timeout") } as Awaited<ReturnType<typeof supabase.auth.getSession>>
+          { data: { session: null }, error: new Error("Session lookup timeout") } as Awaited<ReturnType<typeof supabase.auth.getSession>>,
         );
 
         // Self-heal: retryable upstream / invalid refresh → wipe stale tokens so the user can log in fresh.
-        if (error && (isTransientAuthError(error) || (error as any)?.code === "refresh_token_not_found")) {
-          console.warn("[Auth] Boot session failed, purging stale tokens:", (error as any)?.message);
+        const errCode = (error as { code?: string } | null)?.code;
+        if (error && (isTransientAuthError(error) || errCode === "refresh_token_not_found")) {
+          console.warn("[Auth] Boot session failed, purging stale tokens:", (error as Error).message);
           purgeLocalAuth();
           resetAuthState();
           setLoading(false);
@@ -194,29 +180,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     const nextRole = !error ? await syncAuthState(data.session) : null;
 
-    // Telemetría unificada: login exitoso vía cliente (RLS authenticated);
-    // login fallido vía edge function log-login-attempt (service role).
-    const route = typeof window !== "undefined" ? window.location.pathname : null;
-    const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
-
     if (!error && data.session?.user?.id) {
-      void supabase.from("auth_login_events").insert({
-        user_id: data.session.user.id,
-        email,
-        method: "password",
-        success: true,
-        user_agent: ua,
-        details: { route },
-      });
+      logLoginSuccess({ userId: data.session.user.id, email, method: "password" });
     } else if (error) {
-      void supabase.functions.invoke("log-login-attempt", {
-        body: {
-          email,
-          method: "password",
-          success: false,
-          details: { route, reason: (error as { message?: string })?.message ?? "unknown" },
-        },
-      });
+      logLoginFailure({ email, method: "password", reason: error.message ?? "unknown" });
     }
 
     return { error: error as Error | null, session: data.session ?? null, role: nextRole };
@@ -247,7 +214,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const globalSignOut = async (): Promise<{ error: Error | null }> => {
     try {
       const { error } = await supabase.functions.invoke("auth-global-logout", { body: {} });
-      // En todos los casos limpiamos la sesión local
       await supabase.auth.signOut();
       return { error: (error as Error) ?? null };
     } catch (err) {
@@ -266,7 +232,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         void supabase.auth.signOut();
       })
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => {
+      void supabase.removeChannel(ch);
+    };
   }, [user?.id]);
 
   return (
@@ -288,8 +256,6 @@ const FALLBACK_AUTH: AuthContextType = {
   signOut: async () => {},
   globalSignOut: async () => ({ error: new Error("AuthProvider not mounted") }),
 };
-
-
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
