@@ -23,7 +23,9 @@ Deno.serve(async (req) => {
       });
     }
     const token = authHeader.replace('Bearer ', '');
-    if (token !== serviceRoleKey) {
+    const isServiceCall = token === serviceRoleKey;
+    let callerUserId = "service";
+    if (!isServiceCall) {
       const sb = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
         global: { headers: { Authorization: authHeader } },
       });
@@ -34,6 +36,7 @@ Deno.serve(async (req) => {
           status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      callerUserId = userId;
       const { data: allowed } = await supabase.rpc('has_any_role', {
         _user_id: userId,
         _roles: ['admin', 'superadmin', 'agente'],
@@ -45,19 +48,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { phone, message, apikey } = await req.json();
+    const { phone, message, apikey, organization_id } = await req.json();
 
-    // Get CallMeBot settings from app_settings if not provided
-    const { data: settingsRows } = await supabase
-      .from('app_settings')
-      .select('key, value')
-      .in('key', ['callmebot_api_key', 'callmebot_phone']);
-
-    const settings: Record<string, string> = {};
-    settingsRows?.forEach((r: any) => { settings[r.key] = r.value; });
+    // Etapa 24: scope app_settings por organización (fallback global).
+    const { getOrgScopedSettings, resolveCallerOrgId } = await import('../_shared/tenant-guard.ts');
+    const orgId = await resolveCallerOrgId(supabase, callerUserId, isServiceCall, organization_id ?? null);
+    const settings = await getOrgScopedSettings(supabase, orgId, ['callmebot_api_key', 'callmebot_phone']);
 
     const targetPhone = phone || settings.callmebot_phone;
     const targetApiKey = apikey || settings.callmebot_api_key;
+
 
     if (!targetPhone || !targetApiKey || !message) {
       return new Response(JSON.stringify({ error: 'Faltan datos: phone, apikey y message son requeridos' }), {
