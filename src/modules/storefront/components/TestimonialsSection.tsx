@@ -9,7 +9,7 @@ const TestimonialsSection = () => {
   const { data: testimonials } = useQuery({
     queryKey: ["testimonials", tenantOrgId],
     queryFn: async () => {
-      let q = supabase.from("testimonials").select("*").eq("is_active", true).order("sort_order");
+      let q: any = supabase.from("testimonials").select("*").eq("is_active", true).order("sort_order");
       if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
       const { data, error } = await q;
       if (error) throw error;
