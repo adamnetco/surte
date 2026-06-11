@@ -130,10 +130,12 @@ const BannersSection = ({ queryClient }: { queryClient: any }) => {
 };
 
 const TestimonialsSection = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const { data: testimonials } = useQuery({
-    queryKey: ["admin-testimonials"],
+    queryKey: ["admin-testimonials", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("testimonials").select("*").order("sort_order");
+      const { data, error } = await scopedFrom("testimonials", currentOrg!.id).order("sort_order");
       if (error) throw error;
       return data;
     },
@@ -147,7 +149,8 @@ const TestimonialsSection = ({ queryClient }: { queryClient: any }) => {
       const { error } = await supabase.from("testimonials").update(payload).eq("id", editing);
       if (error) { toast.error(error.message); return; }
     } else {
-      const { error } = await supabase.from("testimonials").insert(payload);
+      if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+      const { error } = await supabase.from("testimonials").insert({ ...payload, organization_id: currentOrg.id });
       if (error) { toast.error(error.message); return; }
     }
     toast.success("Testimonio guardado");
