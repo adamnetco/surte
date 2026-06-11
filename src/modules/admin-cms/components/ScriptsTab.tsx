@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Save, X, Code, Loader2, Eye, EyeOff } from "lucid
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 const POSITIONS = [
   { value: "head", label: "Head (antes de </head>)" },
