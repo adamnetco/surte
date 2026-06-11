@@ -201,19 +201,23 @@ const LandingPagesTab = () => {
   }, []);
 
   const saveLinkedProducts = useCallback(async (pageId: string) => {
-    // Delete existing links
-    await supabase.from("landing_page_products").delete().eq("landing_page_id", pageId);
+    const orgId = currentOrg?.id;
+    // Delete existing links (scope by org for defense-in-depth)
+    let delQ: any = supabase.from("landing_page_products").delete().eq("landing_page_id", pageId);
+    if (orgId) delQ = delQ.eq("organization_id", orgId);
+    await delQ;
     // Insert new links
     if (linkedProducts.length > 0) {
       const rows = linkedProducts.map((product_id, i) => ({
         landing_page_id: pageId,
         product_id,
         sort_order: i,
+        organization_id: orgId,
       }));
       await supabase.from("landing_page_products").insert(rows);
     }
     queryClient.invalidateQueries({ queryKey: ["landing_page_products"] });
-  }, [linkedProducts, queryClient]);
+  }, [linkedProducts, queryClient, currentOrg?.id]);
 
   const { data: pages, isLoading } = useQuery({
     queryKey: ["landing_pages", currentOrg?.id],
