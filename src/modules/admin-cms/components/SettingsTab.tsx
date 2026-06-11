@@ -152,7 +152,8 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
       const { error } = await supabase.from("app_settings").update({ value }).eq("id", existing.id);
       if (error) throw error;
     } else {
-      const { error } = await supabase.from("app_settings").insert({ key, value });
+      if (!currentOrg?.id) throw new Error("Selecciona una organización");
+      const { error } = await supabase.from("app_settings").insert({ key, value, organization_id: currentOrg.id });
       if (error) throw error;
     }
   };
