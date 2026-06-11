@@ -73,6 +73,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
   };
 
   const save = async () => {
+    if (!orgId) { toast.error("Selecciona una organización"); return; }
     if (!form.city.trim()) { toast.error("Ciudad es obligatoria"); return; }
     setSaving(true);
     const slug = form.slug.trim() || genSlug(form.city);
@@ -86,11 +87,12 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
       og_image_url: form.og_image_url.trim() || null,
       free_shipping_enabled: form.free_shipping_enabled,
       free_shipping_threshold: Number(form.free_shipping_threshold) || 150000,
+      organization_id: orgId,
     };
 
     try {
       if (editing && editing !== "new") {
-        const { error } = await supabase.from("municipality_settings").update(payload).eq("id", editing);
+        const { error } = await supabase.from("municipality_settings").update(payload).eq("id", editing).eq("organization_id", orgId);
         if (error) { toast.error(friendlyError(error.message)); return; }
         toast.success("Municipio actualizado");
       } else {
@@ -108,18 +110,20 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
   };
 
   const del = async (id: string) => {
+    if (!orgId) return;
     if (!confirm("¿Eliminar municipio?")) return;
-    const { error } = await supabase.from("municipality_settings").delete().eq("id", id);
+    const { error } = await supabase.from("municipality_settings").delete().eq("id", id).eq("organization_id", orgId);
     if (error) { toast.error(friendlyError(error.message)); return; }
     invalidate();
     toast.success("Municipio eliminado");
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    queryClient.setQueryData(["admin-municipalities"], (old: any) =>
+    if (!orgId) return;
+    queryClient.setQueryData(["admin-municipalities", orgId], (old: any) =>
       old?.map((m: any) => m.id === id ? { ...m, is_active: !current } : m)
     );
-    const { error } = await supabase.from("municipality_settings").update({ is_active: !current }).eq("id", id);
+    const { error } = await supabase.from("municipality_settings").update({ is_active: !current }).eq("id", id).eq("organization_id", orgId);
     if (error) {
       toast.error(friendlyError(error.message));
       invalidate();
