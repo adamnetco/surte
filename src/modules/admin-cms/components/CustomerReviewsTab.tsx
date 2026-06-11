@@ -18,7 +18,7 @@ const CustomerReviewsTab = ({ queryClient }: { queryClient: any }) => {
       // filtro al RPC con current_org_id() en una siguiente iteración).
       const { data, error } = await supabase.rpc("admin_list_customer_reviews");
       if (error) throw error;
-      return (data ?? []).filter((r: any) => r.organization_id === currentOrg!.id);
+      return data ?? [];
     },
   });
 

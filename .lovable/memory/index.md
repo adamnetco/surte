@@ -9,3 +9,4 @@
 - [SaaS Refactor Etapa 7](mem://features/saas-refactor-etapa7) — useStore hooks reciben orgId del tenant, ProductoDetalle/LandingPage filtran por organization_id, tabs Categorías/Cupones/Productos inyectan org_id en inserts
 - [SaaS Refactor Etapa 8](mem://features/saas-refactor-etapa8) — Tabs Inventory/Reviews/Notifications/Settings/Users con filtros tenant en lists e inserts (org_id explícito), WebPushSection recibe orgId por prop
 - [SaaS Refactor Etapa 9](mem://features/saas-refactor-etapa9) — Tabs Contacts/GoogleReviews/Municipalities/Overview/SeoContent/Seo con scopedFrom + org_id en mutaciones; CrmLeads global
+- [SaaS Refactor Etapa 10](mem://features/saas-refactor-etapa10) — admin_list_customer_reviews filtra por current_org_id; audit v3 (69 hits, 58 high). Pendiente: TableOrderDrawer, sitemap, Compras, CloseSessionDialog, invoice-ocr

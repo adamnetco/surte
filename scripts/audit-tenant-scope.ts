@@ -28,14 +28,12 @@ const EXTS = new Set([".ts", ".tsx", ".js", ".jsx"]);
 
 /** Tablas que NO son multi-tenant (globales o gestionadas por superadmin). */
 const GLOBAL_TABLES = new Set([
-  "app_settings",
   "saas_plans",
   "modules",
   "plan_modules",
   "feature_flags",
   "desktop_releases",
   "admin_section_access",
-  "municipality_settings",
   "user_roles",
   "auth_settings",
   "auth_factors",
@@ -54,6 +52,7 @@ const GLOBAL_TABLES = new Set([
   "organization_modules",
   "leads_trials",
   "org_signup_requests",
+  "crm_leads",
   "suppressed_emails",
   "email_unsubscribe_tokens",
   "email_send_log",
