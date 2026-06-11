@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { shippingZoneSchema, type ShippingZoneFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 const useCities = () => useQuery({
   queryKey: ["admin-municipality-cities"],
