@@ -567,10 +567,10 @@ function WebPushSection({ orgId }: { orgId?: string | null }) {
     queryKey: ["push_subs_admin", orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from("push_subscriptions")
         .select("*", { count: "exact", head: true })
-        .eq("organization_id", orgId!)
+        .eq("organization_id", orgId)
         .eq("is_active", true);
       return count || 0;
     },
