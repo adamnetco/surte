@@ -81,7 +81,8 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
   };
 
   const toggleActive = async (s: any) => {
-    await supabase.from("suppliers").update({ is_active: !s.is_active }).eq("id", s.id);
+    await supabase.from("suppliers").update({ is_active: !s.is_active })
+      .eq("organization_id", orgId).eq("id", s.id);
     qc.invalidateQueries({ queryKey: ["suppliers", orgId] });
   };
 
