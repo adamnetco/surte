@@ -48,13 +48,27 @@ Deno.serve(async (req) => {
   const type = url.searchParams.get('type'); // products|categories|brands|cities|pages|static
   const now = new Date().toISOString().split('T')[0];
 
+  // ─── Multi-tenant: resuelve organization_id por host ──────
+  // Acepta ?host=foo.com o lo deriva del Host header. Si no resuelve, hace
+  // fallback al comportamiento legacy (surteya) para mantener compatibilidad.
+  const requestedHost = (url.searchParams.get('host') || req.headers.get('host') || '').toLowerCase();
+  let tenantOrgId: string | null = null;
+  if (requestedHost) {
+    try {
+      const { data } = await supabase.rpc('resolve_tenant_by_host', { _host: requestedHost });
+      tenantOrgId = (data as any)?.organization_id ?? null;
+    } catch { /* ignore */ }
+  }
+
   // ─── Google Merchant Center feed (RSS) ────────────────────
   if (format === 'gmc') {
-    const { data: products } = await supabase
+    let q = supabase
       .from('products')
       .select('*, categories(name)')
       .eq('is_active', true)
       .order('name');
+    if (tenantOrgId) q = q.eq('organization_id', tenantOrgId);
+    const { data: products } = await q;
 
     const { data: settingsRows } = await supabase
       .from('app_settings')
@@ -131,11 +145,13 @@ Deno.serve(async (req) => {
   }
 
   if (type === 'products') {
-    const { data: products } = await supabase
+    let q = supabase
       .from('products')
       .select('slug, id, updated_at, image_url, name')
       .eq('is_active', true)
       .order('updated_at', { ascending: false });
+    if (tenantOrgId) q = q.eq('organization_id', tenantOrgId);
+    const { data: products } = await q;
     const urls = (products || []).map((p: any) => {
       const slug = p.slug || p.id;
       const lastmod = p.updated_at?.split('T')[0] || now;
@@ -146,11 +162,13 @@ Deno.serve(async (req) => {
   }
 
   if (type === 'categories') {
-    const { data: categories } = await supabase
+    let q = supabase
       .from('categories')
       .select('slug, name, updated_at, og_image_url')
       .eq('is_active', true)
       .order('sort_order');
+    if (tenantOrgId) q = q.eq('organization_id', tenantOrgId);
+    const { data: categories } = await q;
 
     const urls: string[] = [];
     (categories || []).forEach((c: any) => {
@@ -167,11 +185,13 @@ Deno.serve(async (req) => {
   }
 
   if (type === 'brands') {
-    const { data: brands } = await supabase
+    let q = supabase
       .from('brands')
       .select('slug, name, logo_url, created_at')
       .eq('is_active', true)
       .order('sort_order');
+    if (tenantOrgId) q = q.eq('organization_id', tenantOrgId);
+    const { data: brands } = await q;
     const urls: string[] = [];
     (brands || []).forEach((b: any) => {
       const slug = b.slug || b.name.toLowerCase().replace(/\s+/g, '-');
