@@ -81,7 +81,7 @@ const GoogleReviewsTab = ({ queryClient }: { queryClient: any }) => {
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       toast.success(`Sincronizado: ${data.imported} nuevas, ${data.skipped} existentes`);
-      queryClient.invalidateQueries({ queryKey: ["admin-google-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-google-reviews", orgId] });
     } catch (err: any) {
       toast.error(err.message || "Error al sincronizar");
     } finally {
