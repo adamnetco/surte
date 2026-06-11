@@ -205,9 +205,10 @@ const TestimonialsSection = ({ queryClient }: { queryClient: any }) => {
 const GallerySection = ({ queryClient }: { queryClient: any }) => {
   const { currentOrg } = useOrganization();
   const { data: gallery } = useQuery({
-    queryKey: ["admin-gallery"],
+    queryKey: ["admin-gallery", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("gallery").select("*").order("sort_order");
+      const { data, error } = await scopedFrom("gallery", currentOrg!.id).order("sort_order");
       if (error) throw error;
       return data;
     },
