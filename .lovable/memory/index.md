@@ -10,3 +10,4 @@
 - [SaaS Refactor Etapa 8](mem://features/saas-refactor-etapa8) — Tabs Inventory/Reviews/Notifications/Settings/Users con filtros tenant en lists e inserts (org_id explícito), WebPushSection recibe orgId por prop
 - [SaaS Refactor Etapa 9](mem://features/saas-refactor-etapa9) — Tabs Contacts/GoogleReviews/Municipalities/Overview/SeoContent/Seo con scopedFrom + org_id en mutaciones; CrmLeads global
 - [SaaS Refactor Etapa 10](mem://features/saas-refactor-etapa10) — admin_list_customer_reviews filtra por current_org_id; audit v3 (69 hits, 58 high). Pendiente: TableOrderDrawer, sitemap, Compras, CloseSessionDialog, invoice-ocr
+- [SaaS Refactor Etapa 11](mem://features/saas-refactor-etapa11) — Top 6 offenders tenant-scoped (POS TableOrderDrawer, CloseSessionDialog, Compras, sitemap pages/default, invoice-ocr auto-match). Pendiente: Fiscal, AdminDashboard, outbox, ProductoDetalle, GerenteIA
