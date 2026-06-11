@@ -1,29 +1,24 @@
 // Verifica el registro TXT _lovable-tenant.<dominio> usando Google DNS-over-HTTPS.
-// Si encuentra el verification_token, marca el dominio como verificado.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Etapa 22: usa anon client para auth, service_role solo para escritura, + membership check.
+import {
+  corsHeaders, jsonResponse, requireAuth, requireMembership, serviceClient,
+} from "../_shared/tenant-guard.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const auth = req.headers.get("Authorization");
-    if (!auth) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
-    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
-      global: { headers: { Authorization: auth } },
-    });
-    const { data: u } = await supabase.auth.getUser();
-    if (!u?.user) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const auth = await requireAuth(req);
+    if (!auth.ok) return auth.response;
+    const supabase = serviceClient();
 
     const { domain_id } = await req.json();
-    if (!domain_id) return new Response(JSON.stringify({ error: "domain_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!domain_id) return jsonResponse({ error: "domain_id required" }, 400);
 
     const { data: d } = await supabase.from("tenant_domains").select("*").eq("id", domain_id).maybeSingle();
-    if (!d) return new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!d) return jsonResponse({ error: "not_found" }, 404);
+
+    const memGate = await requireMembership(supabase, auth.userId, d.organization_id, auth.isServiceRole);
+    if (memGate !== true) return memGate;
 
     const txtName = `_lovable-tenant.${d.hostname}`;
     const dohRes = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(txtName)}&type=TXT`, {
@@ -53,10 +48,8 @@ Deno.serve(async (req) => {
       error: found ? null : "TXT record not found",
     });
 
-    return new Response(JSON.stringify({ verified: found, txt: records, a: aRecords }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ verified: found, txt: records, a: aRecords });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return jsonResponse({ error: String(e) }, 500);
   }
 });

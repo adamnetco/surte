@@ -24,11 +24,19 @@ Deno.serve(async (req) => {
     // Service role client for admin operations
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    let userId: string | null = null;
-    if (authHeader?.startsWith('Bearer ')) {
-      const { data: { user } } = await supabaseUser.auth.getUser();
-      userId = user?.id || null;
+    // Etapa 22: JWT obligatorio para evitar creación anónima de órdenes
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+    const { data: { user }, error: userErr } = await supabaseUser.auth.getUser();
+    if (userErr || !user) {
+      return new Response(JSON.stringify({ error: 'unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userId: string = user.id;
 
     const { items, customer_name, customer_phone, customer_email, customer_address, notes, delivery_price, delivery_zone_id, preferred_delivery_date, preferred_time_slot, payment_method, geo_location, agent_id, customer_profile_id } = await req.json();
 
