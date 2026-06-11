@@ -31,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { productSchema, firstZodMessage } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -212,7 +213,8 @@ const FeaturedTagsPicker = ({ tags, onTagsChange }: { tags: string; onTagsChange
 };
 
 const ProductsTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
-  const { data: inactiveBrands } = useInactiveBrands();
+  const { currentOrg } = useOrganization();
+  const { data: inactiveBrands } = useInactiveBrands(currentOrg?.id);
   const isBrandHidden = (p: any) => !!p.brand && !!inactiveBrands && inactiveBrands.has(p.brand.toLowerCase());
   const [editing, setEditing] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -351,7 +353,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       if (error) { toast.error(errorToMessage(error)); return; }
       toast.success("Producto actualizado");
     } else {
-      const { data: newProduct, error } = await supabase.from("products").insert(payload).select("id, name, price, base_unit").single();
+      if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+      const { data: newProduct, error } = await supabase.from("products").insert({ ...payload, organization_id: currentOrg.id }).select("id, name, price, base_unit").single();
       if (error) { toast.error(errorToMessage(error)); return; }
       // Base presentation is auto-created by the DB trigger (trg_auto_base_presentation)
       toast.success("Producto creado con presentación base");

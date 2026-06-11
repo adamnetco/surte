@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 
 export type Product = Tables<"products">;
 export type Category = Tables<"categories">;
@@ -37,33 +38,43 @@ const withTimeout = (ms = 3500) => {
 };
 
 /** Returns a Set of inactive brand names (lowercased) to filter products */
-export const useInactiveBrands = () =>
-  useQuery({
-    queryKey: ["inactive-brands"],
+export const useInactiveBrands = (orgId?: string | null) => {
+  const tenantOrgId = useTenantOrgId();
+  const effectiveOrgId = orgId ?? tenantOrgId;
+  return useQuery({
+    queryKey: ["inactive-brands", effectiveOrgId],
+    enabled: !!effectiveOrgId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("brands")
         .select("name")
+        .eq("organization_id", effectiveOrgId!)
         .eq("is_active", false);
       if (error) throw error;
       return new Set((data ?? []).map((b) => b.name.toLowerCase()));
     },
     staleTime: 5 * 60 * 1000,
   });
+};
 
-export const useCategories = () =>
-  useQuery({
-    queryKey: ["categories"],
+export const useCategories = (orgId?: string | null) => {
+  const tenantOrgId = useTenantOrgId();
+  const effectiveOrgId = orgId ?? tenantOrgId;
+  return useQuery({
+    queryKey: ["categories", effectiveOrgId],
+    enabled: !!effectiveOrgId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
         .select("id,slug,name,sort_order,meta_title,meta_description,og_image_url")
+        .eq("organization_id", effectiveOrgId!)
         .eq("is_active", true)
         .order("sort_order");
       if (error) throw error;
       return data as Category[];
     },
   });
+};
 
 /** Returns true if a product is currently available based on its scheduling fields. */
 const isProductAvailableNow = (p: any): boolean => {
@@ -81,16 +92,20 @@ const isProductAvailableNow = (p: any): boolean => {
   return true;
 };
 
-export const useProducts = (categorySlug?: string, search?: string) => {
-  const { data: inactiveBrands } = useInactiveBrands();
+export const useProducts = (categorySlug?: string, search?: string, orgId?: string | null) => {
+  const tenantOrgId = useTenantOrgId();
+  const effectiveOrgId = orgId ?? tenantOrgId;
+  const { data: inactiveBrands } = useInactiveBrands(effectiveOrgId);
 
   return useQuery({
-    queryKey: ["products", categorySlug, search, inactiveBrands ? Array.from(inactiveBrands) : []],
+    queryKey: ["products", effectiveOrgId, categorySlug, search, inactiveBrands ? Array.from(inactiveBrands) : []],
+    enabled: !!effectiveOrgId && inactiveBrands !== undefined,
     queryFn: async () => {
       const categoryJoin = categorySlug ? "categories!inner(slug,name)" : "categories(slug,name)";
       let query = (supabase as any)
         .from("products")
         .select(`${PRODUCT_CARD_COLUMNS},${categoryJoin}`)
+        .eq("organization_id", effectiveOrgId)
         .eq("is_active", true);
       if (categorySlug) query = query.eq("categories.slug", categorySlug);
       if (search) {
@@ -99,32 +114,30 @@ export const useProducts = (categorySlug?: string, search?: string) => {
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       let result = data;
-      // Filter out products from inactive brands
       if (inactiveBrands && inactiveBrands.size > 0) {
         result = result.filter((p: any) => !p.brand || !inactiveBrands.has(p.brand.toLowerCase()));
       }
-      // Filter by scheduling/availability
       result = result.filter((p: any) => isProductAvailableNow(p));
       return result as (Product & { categories: { slug: string; name: string } | null })[];
     },
-    enabled: inactiveBrands !== undefined,
-    refetchInterval: 5 * 60 * 1000, // re-evaluate scheduling every 5 min
+    refetchInterval: 5 * 60 * 1000,
   });
 };
 
-export const useAppSettings = (enabled = true) =>
-  useQuery({
-    queryKey: ["app_settings"],
+export const useAppSettings = (enabled = true, orgId?: string | null) => {
+  const tenantOrgId = useTenantOrgId();
+  const effectiveOrgId = orgId ?? tenantOrgId;
+  return useQuery({
+    queryKey: ["app_settings", effectiveOrgId],
     queryFn: async () => {
       const timeout = withTimeout();
       try {
-        const { data, error } = await supabase
-          .from("app_settings")
-          .select("key,value")
-          .abortSignal(timeout.signal);
+        let query = (supabase as any).from("app_settings").select("key,value");
+        if (effectiveOrgId) query = query.eq("organization_id", effectiveOrgId);
+        const { data, error } = await query.abortSignal(timeout.signal);
         if (error) throw error;
         const settings: Record<string, string> = {};
-        data.forEach((s) => { settings[s.key] = s.value; });
+        (data ?? []).forEach((s: any) => { settings[s.key] = s.value; });
         return settings;
       } finally {
         timeout.done();
@@ -134,3 +147,4 @@ export const useAppSettings = (enabled = true) =>
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
+};

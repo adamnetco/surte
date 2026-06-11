@@ -10,6 +10,7 @@ import CategoryIcon, { AVAILABLE_ICONS, isCustomSvgUrl } from "@/modules/storefr
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { categorySchema, type CategoryFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const DEFAULTS: CategoryFormValues = {
   name: "",
@@ -25,6 +26,7 @@ const DEFAULTS: CategoryFormValues = {
 const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
   const { upload, uploading } = useImageUpload();
+  const { currentOrg } = useOrganization();
 
   const {
     register,
@@ -66,7 +68,8 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
         if (error) throw error;
         toast.success("Categoría actualizada");
       } else {
-        const { error } = await supabase.from("categories").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("categories").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Categoría creada");
       }

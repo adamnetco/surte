@@ -19,6 +19,7 @@ import JsonLd, { buildProductSchema, buildBreadcrumbSchema } from "@/modules/mar
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useAppSettings, useInactiveBrands } from "@/modules/storefront/hooks/useStore";
+import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 import { trackViewProduct, trackAddToCart } from "@/modules/marketing/seo/Analytics";
 
 const formatPrice = (price: number) =>
@@ -48,18 +49,19 @@ const ProductoDetalle = () => {
 
 
   const isUuid = id && /^[0-9a-f]{8}-/.test(id);
+  const tenantOrgId = useTenantOrgId();
 
   const { data: product, isLoading } = useQuery({
-    queryKey: ["product", id],
+    queryKey: ["product", id, tenantOrgId],
+    enabled: !!id && !!tenantOrgId,
     queryFn: async () => {
-      let query = supabase.from("products").select("*, categories(name, slug)");
+      let query = supabase.from("products").select("*, categories(name, slug)").eq("organization_id", tenantOrgId!);
       if (isUuid) query = query.eq("id", id!);
       else query = query.eq("slug", id!);
       const { data, error } = await query.single();
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
   });
 
   const productId = product?.id;

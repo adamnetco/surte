@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { couponSchema, type CouponFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -24,6 +26,7 @@ const defaultValues: CouponFormValues = {
 
 const CouponsTab = ({ queryClient }: { queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
+  const { currentOrg } = useOrganization();
 
   const {
     register,
@@ -42,9 +45,10 @@ const CouponsTab = ({ queryClient }: { queryClient: any }) => {
   const isActive = watch("is_active");
 
   const { data: coupons, isLoading } = useQuery({
-    queryKey: ["admin-coupons"],
+    queryKey: ["admin-coupons", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("coupons").select("*").order("created_at", { ascending: false });
+      const { data, error } = await scopedFrom("coupons", currentOrg!.id).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -84,7 +88,8 @@ const CouponsTab = ({ queryClient }: { queryClient: any }) => {
         if (error) throw error;
         toast.success("Cupón actualizado");
       } else {
-        const { error } = await supabase.from("coupons").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("coupons").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Cupón creado");
       }
