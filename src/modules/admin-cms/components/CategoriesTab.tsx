@@ -26,6 +26,7 @@ const DEFAULTS: CategoryFormValues = {
 const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
   const { upload, uploading } = useImageUpload();
+  const { currentOrg } = useOrganization();
 
   const {
     register,
