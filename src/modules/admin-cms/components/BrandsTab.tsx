@@ -11,6 +11,7 @@ import SortableList from "./SortableList";
 import { brandSchema, type BrandFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 const slugify = (v: string) =>
   v.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -30,9 +31,10 @@ const defaultValues: BrandFormValues = {
 const BrandsTab = ({ queryClient }: { queryClient: any }) => {
   const { currentOrg } = useOrganization();
   const { data: brands } = useQuery({
-    queryKey: ["admin-brands"],
+    queryKey: ["admin-brands", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("brands").select("*").order("sort_order");
+      const { data, error } = await scopedFrom("brands", currentOrg!.id).order("sort_order");
       if (error) throw error;
       return data;
     },

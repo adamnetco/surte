@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Plus, Trash2, GripVertical, Save, Pencil, Eye, EyeOff, ExternalLink, Copy, Link } from "lucide-react";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 interface FeaturedSection {
   id: string;
@@ -46,22 +47,22 @@ const FeaturedSectionsTab = ({ queryClient }: { queryClient: QueryClient }) => {
   const [editing, setEditing] = useState<FeaturedSection | null>(null);
 
   const { data: sections = [], isLoading } = useQuery({
-    queryKey: ["featured_sections"],
+    queryKey: ["featured_sections", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("featured_sections")
-        .select("*")
-        .order("sort_order");
+      const { data, error } = await scopedFrom("featured_sections", currentOrg!.id).order("sort_order");
       if (error) throw error;
       return data as FeaturedSection[];
     },
   });
 
-  // Fetch products to show match count
+  // Fetch products to show match count (scoped al tenant activo)
   const { data: products } = useQuery({
-    queryKey: ["admin-products-for-sections"],
+    queryKey: ["admin-products-for-sections", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("id, name, tags, is_fresh, is_wholesale, original_price, price, categories(slug)").eq("is_active", true);
+      const { data, error } = await scopedFrom("products", currentOrg!.id)
+        .eq("is_active", true);
       if (error) throw error;
       return data;
     },

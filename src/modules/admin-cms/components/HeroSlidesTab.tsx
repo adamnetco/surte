@@ -11,6 +11,7 @@ import SortableList from "./SortableList";
 import { heroSlideSchema, type HeroSlideFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 const CITIES = ["", "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
 
@@ -28,9 +29,10 @@ const defaultValues: HeroSlideFormValues = {
 const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
   const { currentOrg } = useOrganization();
   const { data: slides } = useQuery({
-    queryKey: ["admin-hero-slides"],
+    queryKey: ["admin-hero-slides", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("hero_slides").select("*").order("sort_order");
+      const { data, error } = await scopedFrom("hero_slides", currentOrg!.id).order("sort_order");
       if (error) throw error;
       return data;
     },

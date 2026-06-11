@@ -4,3 +4,4 @@
 - [SaaS Refactor Etapa 2](mem://features/saas-refactor-etapa2) — RPC atómico provision_organization + edge function provision-organization (idempotente por payment_reference, encola welcome_email/whatsapp)
 - [SaaS Refactor Etapa 3](mem://features/saas-refactor-etapa3) — welcome-dispatcher (worker sync_outbox), template organization-welcome, cron pg_cron 1 min
 - [SaaS Refactor Etapa 4](mem://features/saas-refactor-etapa4) — organization_id NOT NULL+FK en 16 tablas, default_org_id deprecada, current_org_id helper, 11 tabs CMS inyectan org_id
+- [SaaS Refactor Etapa 5](mem://features/saas-refactor-etapa5) — Audit v2 (330→78 hits), 9 tabs CMS migrados a scopedFrom, top offenders identificados (outbox.ts, TableOrderDrawer, sitemap)

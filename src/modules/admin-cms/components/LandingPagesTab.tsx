@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import * as XLSX from "xlsx";
 import TiptapEditor from "./TiptapEditor";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 interface LandingPage {
   id: string;
@@ -215,9 +216,10 @@ const LandingPagesTab = () => {
   }, [linkedProducts, queryClient]);
 
   const { data: pages, isLoading } = useQuery({
-    queryKey: ["landing_pages"],
+    queryKey: ["landing_pages", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("landing_pages").select("*").order("sort_order");
+      const { data, error } = await scopedFrom("landing_pages", currentOrg!.id).order("sort_order");
       if (error) throw error;
       return data as LandingPage[];
     },
