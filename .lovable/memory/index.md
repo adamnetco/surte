@@ -24,3 +24,5 @@
 - [SaaS Refactor Etapa 22](mem://features/saas-refactor-etapa22) — Tenant-scope v7: helper `_shared/tenant-guard.ts` + hardening 6 edge functions (cloudflare-*, optimize-image, send-whatsapp-order, verify-tenant-domain)
 - [SaaS Refactor Etapa 23](mem://features/saas-refactor-etapa23) — Hardening MEDIO: log-login-attempt sin lookup user_id, fetch-google-reviews requiere admin, send-transactional-email role gate, cart-sync ignora user_id del body
 - [SaaS Refactor Etapa 24](mem://features/saas-refactor-etapa24) — app_settings multi-tenant: send-ycloud-whatsapp y send-callmebot scoped por org con fallback global
+- [SaaS Refactor Etapa 25](mem://features/saas-refactor-etapa25) — CSP enforcing (cambio de Report-Only a enforcing tras telemetría limpia)
+- [SaaS Refactor Etapa 26](mem://features/saas-refactor-etapa26) — Validación Zod estricta en lead-capture (pivote: rate-limit no disponible en plataforma)
