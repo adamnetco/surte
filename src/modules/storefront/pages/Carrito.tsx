@@ -161,9 +161,11 @@ const Carrito = () => {
   }, [estimatedDays]);
 
   const { data: shippingZones } = useQuery({
-    queryKey: ["shipping-zones"],
+    queryKey: ["shipping-zones", tenantOrgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("shipping_zones").select("*").eq("is_active", true).order("city").order("neighborhood");
+      let q: any = supabase.from("shipping_zones").select("*").eq("is_active", true).order("city").order("neighborhood");
+      if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
