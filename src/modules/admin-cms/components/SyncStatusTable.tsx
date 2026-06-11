@@ -7,6 +7,7 @@ import { RefreshCw, CheckCircle2, AlertCircle, Clock, Loader2 } from "lucide-rea
 import { toast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 interface SyncLog {
   id: string;
@@ -33,6 +34,7 @@ const TRACKED_SERVICES = [
 ] as const;
 
 export default function SyncStatusTable() {
+  const { currentOrg } = useOrganization();
   const [rows, setRows] = useState<ServiceRow[]>(
     TRACKED_SERVICES.map((s) => ({ service_name: s.key })),
   );
@@ -78,11 +80,9 @@ export default function SyncStatusTable() {
       // Para sync-products-to-wp se requiere site_id: lo tomamos del primer tenant_site del usuario.
       let body: any = {};
       if (fnName === "sync-products-to-wp") {
-        const { data: site } = await (supabase as any)
-          .from("tenant_sites")
-          .select("id")
-          .limit(1)
-          .maybeSingle();
+        let siteQuery = (supabase as any).from("tenant_sites").select("id").limit(1);
+        if (currentOrg?.id) siteQuery = siteQuery.eq("organization_id", currentOrg.id);
+        const { data: site } = await siteQuery.maybeSingle();
         if (!site?.id) {
           toast({ title: "Sin tenant_site configurado", variant: "destructive" });
           setBusy(null);

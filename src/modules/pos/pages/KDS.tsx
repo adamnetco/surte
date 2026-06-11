@@ -80,7 +80,7 @@ export default function KDS() {
     if (next === "in_progress") patch.started_at = new Date().toISOString();
     if (next === "ready") patch.ready_at = new Date().toISOString();
     if (next === "served") patch.served_at = new Date().toISOString();
-    const { error } = await supabase.from("kds_tickets").update(patch).eq("id", t.id);
+    const { error } = await supabase.from("kds_tickets").update(patch).eq("id", t.id).eq("organization_id", orgId!);
     if (error) return toast.error(error.message);
   };
 
