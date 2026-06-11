@@ -126,8 +126,9 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
       setBulkSaving(false);
       return;
     }
+    if (!currentOrg?.id) { toast.error("Selecciona una organización"); setBulkSaving(false); return; }
     try {
-      const { error } = await supabase.from("shipping_zones").insert(rows);
+      const { error } = await supabase.from("shipping_zones").insert(rows.map(r => ({ ...r, organization_id: currentOrg.id })));
       if (error) throw error;
       const skipped = errs.length;
       toast.success(`${rows.length} zonas importadas${skipped ? ` · ${skipped} líneas ignoradas` : ""}`);
