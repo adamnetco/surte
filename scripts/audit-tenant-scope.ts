@@ -63,6 +63,11 @@ const GLOBAL_TABLES = new Set([
   "subscription_invoices",
   "subscriptions",
   "license_audit",
+  // Per-user tables (RLS por user_id, no multi-tenant)
+  "profiles",
+  "push_subscriptions",
+  "notification_subscriptions",
+  "favorites",
   // Tablas con scope implícito vía parent (RLS por foreign key)
   "landing_page_products",
   "invoice_scan_items",
