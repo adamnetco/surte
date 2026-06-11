@@ -19,9 +19,10 @@ const ScriptsTab = ({ queryClient }: { queryClient: any }) => {
   const [form, setForm] = useState({ name: "", script_content: "", position: "head", is_active: true, sort_order: 0 });
 
   const { data: scripts, isLoading } = useQuery({
-    queryKey: ["admin-custom-scripts"],
+    queryKey: ["admin-custom-scripts", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("custom_scripts").select("*").order("sort_order");
+      const { data, error } = await scopedFrom("custom_scripts", currentOrg!.id).order("sort_order");
       if (error) throw error;
       return data;
     },
