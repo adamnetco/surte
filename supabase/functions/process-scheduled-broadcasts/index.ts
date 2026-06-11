@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     // Find scheduled broadcasts that are due
     const { data: due, error } = await supabase
       .from("broadcast_logs")
-      .select("id, message, segment, sent_by, scheduled_at")
+      .select("id, message, segment, sent_by, scheduled_at, organization_id")
       .eq("status", "pending")
       .lte("scheduled_at", nowIso)
       .order("scheduled_at", { ascending: true })
