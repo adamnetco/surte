@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Pencil, Trash2, Save, X, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import TiptapEditor from "@/modules/admin-cms/components/TiptapEditor";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 type EntityType = "category" | "brand" | "city" | "tag";
 type Faq = { q: string; a: string };
@@ -32,15 +34,16 @@ const empty: Row = {
 };
 
 const SeoContentTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id;
   const [editing, setEditing] = useState<Row | null>(null);
   const [filter, setFilter] = useState<EntityType | "all">("all");
 
   const { data: rows, isLoading } = useQuery({
-    queryKey: ["seo_content_admin"],
+    queryKey: ["seo_content_admin", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("seo_content")
-        .select("*")
+      const { data, error } = await scopedFrom("seo_content", orgId)
         .order("entity_type")
         .order("entity_slug");
       if (error) throw error;
@@ -52,6 +55,7 @@ const SeoContentTab = ({ queryClient }: { queryClient: any }) => {
 
   const save = async () => {
     if (!editing) return;
+    if (!orgId) return toast.error("Selecciona una organización");
     if (!editing.entity_slug.trim()) return toast.error("Slug requerido");
     const payload: any = {
       entity_type: editing.entity_type,
@@ -62,23 +66,25 @@ const SeoContentTab = ({ queryClient }: { queryClient: any }) => {
       faqs: editing.faqs || [],
       is_active: editing.is_active,
       sort_order: editing.sort_order || 0,
+      organization_id: orgId,
     };
     const q = editing.id
-      ? supabase.from("seo_content").update(payload).eq("id", editing.id)
+      ? supabase.from("seo_content").update(payload).eq("id", editing.id).eq("organization_id", orgId)
       : supabase.from("seo_content").insert(payload);
     const { error } = await q;
     if (error) return toast.error(error.message);
     toast.success("Contenido SEO guardado");
     setEditing(null);
-    queryClient.invalidateQueries({ queryKey: ["seo_content_admin"] });
+    queryClient.invalidateQueries({ queryKey: ["seo_content_admin", orgId] });
   };
 
   const remove = async (id: string) => {
+    if (!orgId) return;
     if (!window.confirm("¿Eliminar este bloque SEO?")) return;
-    const { error } = await supabase.from("seo_content").delete().eq("id", id);
+    const { error } = await supabase.from("seo_content").delete().eq("id", id).eq("organization_id", orgId);
     if (error) return toast.error(error.message);
     toast.success("Eliminado");
-    queryClient.invalidateQueries({ queryKey: ["seo_content_admin"] });
+    queryClient.invalidateQueries({ queryKey: ["seo_content_admin", orgId] });
   };
 
   const updateFaq = (i: number, field: keyof Faq, value: string) => {

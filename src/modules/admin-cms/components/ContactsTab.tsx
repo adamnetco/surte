@@ -4,39 +4,44 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Users, Truck, Phone, Mail, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 type TabKind = "customers" | "suppliers";
 
 const ContactsTab = () => {
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id;
   const [tab, setTab] = useState<TabKind>("customers");
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data: customers, isLoading: lc } = useQuery({
-    queryKey: ["admin-customers"],
+    queryKey: ["admin-customers", orgId],
+    enabled: tab === "customers" && !!orgId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id,user_id,full_name,phone,city,business_name,business_type,customer_code,created_at")
+        .eq("organization_id", orgId!)
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
       return data || [];
     },
-    enabled: tab === "customers",
   });
 
   const { data: suppliers, isLoading: ls } = useQuery({
-    queryKey: ["admin-suppliers"],
+    queryKey: ["admin-suppliers", orgId],
+    enabled: tab === "suppliers" && !!orgId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("suppliers")
         .select("id,name,tax_id,contact_name,phone,email,city,is_active,created_at")
+        .eq("organization_id", orgId!)
         .order("name");
       if (error) throw error;
       return data || [];
     },
-    enabled: tab === "suppliers",
   });
 
   const list = tab === "customers" ? customers : suppliers;
@@ -54,8 +59,8 @@ const ContactsTab = () => {
 
   // History for the selected contact
   const { data: history, isLoading: lh } = useQuery({
-    queryKey: ["contact-history", tab, selectedId],
-    enabled: !!selectedId,
+    queryKey: ["contact-history", tab, selectedId, orgId],
+    enabled: !!selectedId && !!orgId,
     queryFn: async () => {
       if (tab === "customers") {
         const customer = (customers || []).find((c: any) => c.id === selectedId);
@@ -64,6 +69,7 @@ const ContactsTab = () => {
         let query = supabase
           .from("orders")
           .select("id,order_number,total,status,created_at,customer_phone,user_id")
+          .eq("organization_id", orgId!)
           .order("created_at", { ascending: false })
           .limit(50);
         if (customer.user_id) {
@@ -78,6 +84,7 @@ const ContactsTab = () => {
         const { data, error } = await supabase
           .from("purchase_orders")
           .select("id,po_code,total,status,created_at,received_at")
+          .eq("organization_id", orgId!)
           .eq("supplier_id", selectedId)
           .order("created_at", { ascending: false })
           .limit(50);
@@ -88,6 +95,11 @@ const ContactsTab = () => {
   });
 
   const selected = filtered.find((it: any) => it.id === selectedId);
+
+  if (!currentOrg) {
+    return <div className="p-4 text-sm text-muted-foreground">Selecciona una organización para ver contactos.</div>;
+  }
+
 
   return (
     <div className="space-y-4">

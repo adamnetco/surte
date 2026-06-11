@@ -1,11 +1,14 @@
 import { Package, ShoppingCart, Clock, TrendingUp, Activity, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
 const OverviewTab = ({ products, orders }: { products: any[]; orders: any[] }) => {
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id;
   const totalProducts = products?.length || 0;
   const totalOrders = orders?.length || 0;
   const totalRevenue = orders?.reduce((sum: number, o: any) => sum + Number(o.total), 0) || 0;
@@ -14,18 +17,20 @@ const OverviewTab = ({ products, orders }: { products: any[]; orders: any[] }) =
 
   const [syncErrors, setSyncErrors] = useState<number | null>(null);
   useEffect(() => {
+    if (!orgId) { setSyncErrors(null); return; }
     let active = true;
     (async () => {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { count } = await supabase
         .from("sync_logs")
         .select("id", { count: "exact", head: true })
+        .eq("organization_id", orgId)
         .eq("status", "error")
         .gte("last_run_at", since);
       if (active) setSyncErrors(count ?? 0);
     })();
     return () => { active = false; };
-  }, []);
+  }, [orgId]);
 
   const stats = [
     { label: "Productos", value: totalProducts, icon: Package, color: "text-accent" },

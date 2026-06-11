@@ -5,6 +5,8 @@ import { Plus, Trash2, Save, X, MapPin, Pencil, ExternalLink, Link as LinkIcon, 
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 const genSlug = (city: string) =>
   city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -27,10 +29,13 @@ const scoreBadge = (score: number) => {
 };
 
 const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id;
   const { data: municipalities, isLoading, error: queryError } = useQuery({
-    queryKey: ["admin-municipalities"],
+    queryKey: ["admin-municipalities", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("municipality_settings").select("*").order("city");
+      const { data, error } = await scopedFrom("municipality_settings", orgId).order("city");
       if (error) throw error;
       return data;
     },
@@ -47,7 +52,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
   const { upload, uploading } = useImageUpload();
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["admin-municipalities"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-municipalities", orgId] });
     queryClient.invalidateQueries({ queryKey: ["municipalities"] });
   };
 
@@ -68,6 +73,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
   };
 
   const save = async () => {
+    if (!orgId) { toast.error("Selecciona una organización"); return; }
     if (!form.city.trim()) { toast.error("Ciudad es obligatoria"); return; }
     setSaving(true);
     const slug = form.slug.trim() || genSlug(form.city);
@@ -81,11 +87,12 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
       og_image_url: form.og_image_url.trim() || null,
       free_shipping_enabled: form.free_shipping_enabled,
       free_shipping_threshold: Number(form.free_shipping_threshold) || 150000,
+      organization_id: orgId,
     };
 
     try {
       if (editing && editing !== "new") {
-        const { error } = await supabase.from("municipality_settings").update(payload).eq("id", editing);
+        const { error } = await supabase.from("municipality_settings").update(payload).eq("id", editing).eq("organization_id", orgId);
         if (error) { toast.error(friendlyError(error.message)); return; }
         toast.success("Municipio actualizado");
       } else {
@@ -103,18 +110,20 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
   };
 
   const del = async (id: string) => {
+    if (!orgId) return;
     if (!confirm("¿Eliminar municipio?")) return;
-    const { error } = await supabase.from("municipality_settings").delete().eq("id", id);
+    const { error } = await supabase.from("municipality_settings").delete().eq("id", id).eq("organization_id", orgId);
     if (error) { toast.error(friendlyError(error.message)); return; }
     invalidate();
     toast.success("Municipio eliminado");
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    queryClient.setQueryData(["admin-municipalities"], (old: any) =>
+    if (!orgId) return;
+    queryClient.setQueryData(["admin-municipalities", orgId], (old: any) =>
       old?.map((m: any) => m.id === id ? { ...m, is_active: !current } : m)
     );
-    const { error } = await supabase.from("municipality_settings").update({ is_active: !current }).eq("id", id);
+    const { error } = await supabase.from("municipality_settings").update({ is_active: !current }).eq("id", id).eq("organization_id", orgId);
     if (error) {
       toast.error(friendlyError(error.message));
       invalidate();
