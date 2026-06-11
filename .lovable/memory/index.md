@@ -22,3 +22,4 @@
 - [SaaS Refactor Etapa 20](mem://features/saas-refactor-etapa20) — Telemetría CSP: tabla csp_violations + edge function csp-report + listener cliente (sendBeacon)
 - [SaaS Refactor Etapa 21](mem://features/saas-refactor-etapa21) — Página /superadmin/seguridad/csp para revisar violaciones agregadas antes de endurecer CSP
 - [SaaS Refactor Etapa 22](mem://features/saas-refactor-etapa22) — Tenant-scope v7: helper `_shared/tenant-guard.ts` + hardening 6 edge functions (cloudflare-*, optimize-image, send-whatsapp-order, verify-tenant-domain)
+- [SaaS Refactor Etapa 23](mem://features/saas-refactor-etapa23) — Hardening MEDIO: log-login-attempt sin lookup user_id, fetch-google-reviews requiere admin, send-transactional-email role gate, cart-sync ignora user_id del body
