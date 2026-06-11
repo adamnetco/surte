@@ -16,3 +16,4 @@
 - [SaaS Refactor Etapa 14](mem://features/saas-refactor-etapa14) — Inventario/KDS/Mesas/POS verificados; SyncStatusTable scoped; audit regex look-back (33 hits)
 - [SaaS Refactor Etapa 15](mem://features/saas-refactor-etapa15) — CIERRE FE: Storefront scoped + audit final (2 hallazgos aceptables)
 - [SaaS Refactor Etapa 16](mem://features/saas-refactor-etapa16) — Hardening final: push_subs.organization_id, send-web-push + sync-order auth+membership, E2E isolation script
+- [SaaS Refactor Etapa 17](mem://features/saas-refactor-etapa17) — broadcast-whatsapp-ycloud auth+org scope, notification_subscriptions/broadcast_logs.organization_id, perf indexes hot tables

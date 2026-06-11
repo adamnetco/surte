@@ -543,6 +543,7 @@ export type Database = {
           failed: number
           id: string
           message: string
+          organization_id: string | null
           scheduled_at: string | null
           segment: string
           sent: number
@@ -558,6 +559,7 @@ export type Database = {
           failed?: number
           id?: string
           message: string
+          organization_id?: string | null
           scheduled_at?: string | null
           segment?: string
           sent?: number
@@ -573,6 +575,7 @@ export type Database = {
           failed?: number
           id?: string
           message?: string
+          organization_id?: string | null
           scheduled_at?: string | null
           segment?: string
           sent?: number
@@ -582,7 +585,15 @@ export type Database = {
           total?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cash_denominations: {
         Row: {
@@ -3235,6 +3246,7 @@ export type Database = {
           notify_fresh: boolean | null
           notify_new_products: boolean | null
           notify_offers: boolean | null
+          organization_id: string | null
           phone: string
           updated_at: string | null
           user_id: string | null
@@ -3246,6 +3258,7 @@ export type Database = {
           notify_fresh?: boolean | null
           notify_new_products?: boolean | null
           notify_offers?: boolean | null
+          organization_id?: string | null
           phone: string
           updated_at?: string | null
           user_id?: string | null
@@ -3257,11 +3270,20 @@ export type Database = {
           notify_fresh?: boolean | null
           notify_new_products?: boolean | null
           notify_offers?: boolean | null
+          organization_id?: string | null
           phone?: string
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notification_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       onboarding_progress: {
         Row: {

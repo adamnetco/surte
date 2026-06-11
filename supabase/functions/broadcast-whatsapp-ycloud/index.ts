@@ -18,7 +18,6 @@ interface SubscriberRow {
   notify_new_products: boolean | null;
 }
 
-// Normalise phone to international format for YCloud (must include leading +)
 const normalisePhone = (raw: string): string | null => {
   const digits = (raw || "").replace(/\D/g, "");
   if (digits.length < 10) return null;
@@ -34,16 +33,56 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const body = await req.json().catch(() => ({}));
+    // ── Auth: validar caller y resolver organization_id ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: claimErr } = await userClient.auth.getClaims(token);
+    if (claimErr || !claims?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = claims.claims.sub;
 
-    // ── Action: list_templates (introspect available approved HSM templates) ──
+    const body = await req.json().catch(() => ({}));
+    const organizationId: string | null = body?.organization_id || null;
+    if (!organizationId && body?.action !== "list_templates") {
+      return new Response(JSON.stringify({ error: "organization_id requerido" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (organizationId) {
+      const { data: member } = await supabase
+        .from("organization_members")
+        .select("role, is_active")
+        .eq("organization_id", organizationId)
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .maybeSingle();
+      const allowed = member && ["owner", "admin", "cashier"].includes(member.role);
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: "Forbidden — not org admin" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // ── Action: list_templates ──
     if (body?.action === "list_templates") {
       const { data: settingsRows } = await supabase
-        .from("app_settings")
-        .select("key, value")
-        .in("key", ["ycloud_api_key"]);
+        .from("app_settings").select("key, value").in("key", ["ycloud_api_key"]);
       const apiKey = settingsRows?.find((r: any) => r.key === "ycloud_api_key")?.value;
       if (!apiKey) {
         return new Response(JSON.stringify({ error: "YCloud API Key no configurado" }), {
@@ -59,17 +98,13 @@ Deno.serve(async (req) => {
           status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      // Normalise to a slim list { name, language, status, body }
       const items = Array.isArray(tplBody) ? tplBody : (tplBody?.items || tplBody?.data || []);
       const templates = items.map((t: any) => {
         const components = Array.isArray(t.components) ? t.components : [];
         const bodyText = components.find((c: any) => c.type === "BODY")?.text || "";
         return {
-          name: t.name,
-          language: t.language,
-          status: t.status || "UNKNOWN",
-          body: bodyText,
-          variableCount: (bodyText.match(/\{\{\d+\}\}/g) || []).length,
+          name: t.name, language: t.language, status: t.status || "UNKNOWN",
+          body: bodyText, variableCount: (bodyText.match(/\{\{\d+\}\}/g) || []).length,
         };
       });
       return new Response(JSON.stringify({ success: true, templates }), {
@@ -82,10 +117,8 @@ Deno.serve(async (req) => {
     const dryRun: boolean = !!body?.dry_run;
     const delayMs: number = Math.max(150, Number(body?.delay_ms) || 350);
     const scheduledAt: string | null = body?.scheduled_at || null;
-    const sentBy: string | null = body?.sent_by || null;
     const existingLogId: string | null = body?.log_id || null;
 
-    // Template (HSM) support
     const templateName: string | null = body?.template_name || null;
     const templateLang: string = body?.template_language || "es";
     const templateVariables: string[] = Array.isArray(body?.template_variables) ? body.template_variables : [];
@@ -102,7 +135,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Schedule for later ──────────────────────────────────
+    // ── Schedule ──
     if (scheduledAt && !dryRun) {
       const when = new Date(scheduledAt);
       if (isNaN(when.getTime()) || when.getTime() <= Date.now()) {
@@ -114,46 +147,38 @@ Deno.serve(async (req) => {
         .from("broadcast_logs")
         .insert({
           message: usingTemplate ? `[TEMPLATE:${templateName}] ${templateVariables.join(" | ")}` : message,
-          segment,
-          status: "pending",
+          segment, status: "pending",
           scheduled_at: when.toISOString(),
-          sent_by: sentBy,
+          sent_by: userId,
+          organization_id: organizationId,
         })
-        .select()
-        .single();
+        .select().single();
       if (schedErr) throw schedErr;
       return new Response(JSON.stringify({
-        success: true, scheduled: true,
-        log_id: scheduled.id,
-        scheduled_at: scheduled.scheduled_at,
+        success: true, scheduled: true, log_id: scheduled.id, scheduled_at: scheduled.scheduled_at,
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ── YCloud credentials ──────────────────────────────────
+    // ── YCloud creds ──
     const { data: settingsRows } = await supabase
-      .from("app_settings")
-      .select("key, value")
-      .in("key", ["ycloud_api_key", "ycloud_from_number"]);
+      .from("app_settings").select("key, value").in("key", ["ycloud_api_key", "ycloud_from_number"]);
     const settings: Record<string, string> = {};
     settingsRows?.forEach((r: any) => { settings[r.key] = r.value; });
-
     const apiKey = settings.ycloud_api_key;
     const fromNumber = settings.ycloud_from_number;
-
     if (!apiKey || !fromNumber) {
-      return new Response(JSON.stringify({ error: "YCloud no configurado. Agrega API Key y número remitente en Configuración." }), {
+      return new Response(JSON.stringify({ error: "YCloud no configurado." }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
     const fromFormatted = fromNumber.startsWith("+") ? fromNumber : `+${fromNumber.replace(/\D/g, "")}`;
 
-    // ── Audience ────────────────────────────────────────────
+    // ── Audience scoped por organization_id ──
     let query = supabase
       .from("notification_subscriptions")
       .select("id, phone, is_active, notify_offers, notify_fresh, notify_new_products")
-      .eq("is_active", true);
-
+      .eq("is_active", true)
+      .eq("organization_id", organizationId);
     if (segment === "offers") query = query.eq("notify_offers", true);
     else if (segment === "fresh") query = query.eq("notify_fresh", true);
     else if (segment === "new_products") query = query.eq("notify_new_products", true);
@@ -162,7 +187,6 @@ Deno.serve(async (req) => {
     if (subsError) throw subsError;
 
     const recipients: SubscriberRow[] = (subs || []) as any;
-
     const seen = new Set<string>();
     const targets = recipients
       .map((s) => ({ ...s, normPhone: normalisePhone(s.phone) }))
@@ -175,69 +199,49 @@ Deno.serve(async (req) => {
 
     if (dryRun) {
       return new Response(JSON.stringify({
-        success: true, dry_run: true, segment,
-        total: targets.length,
+        success: true, dry_run: true, segment, total: targets.length,
         preview: targets.slice(0, 5).map((t) => t.normPhone),
         mode: usingTemplate ? `template:${templateName}` : "text",
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (targets.length === 0) {
-      return new Response(JSON.stringify({ error: "No hay suscriptores activos para este segmento" }), {
+      return new Response(JSON.stringify({ error: "No hay suscriptores activos para este segmento en tu organización" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ── Create / update broadcast_logs row ─────────────────
     let logId = existingLogId;
     const logMessage = usingTemplate ? `[TEMPLATE:${templateName}] ${templateVariables.join(" | ")}` : message;
     if (!logId) {
       const { data: logRow, error: logErr } = await supabase
         .from("broadcast_logs")
-        .insert({ message: logMessage, segment, status: "running", total: targets.length, sent_by: sentBy })
-        .select()
-        .single();
+        .insert({ message: logMessage, segment, status: "running", total: targets.length, sent_by: userId, organization_id: organizationId })
+        .select().single();
       if (logErr) throw logErr;
       logId = logRow.id;
     } else {
       await supabase
         .from("broadcast_logs")
         .update({ status: "running", total: targets.length })
-        .eq("id", logId);
+        .eq("id", logId)
+        .eq("organization_id", organizationId);
     }
 
-    // ── Broadcast loop ─────────────────────────────────────
-    let sent = 0;
-    let failed = 0;
+    let sent = 0, failed = 0;
     const errors: Array<{ phone: string; error: string }> = [];
-
-    // Build template payload once (parameters are the same per broadcast)
     const templateBodyComponent = usingTemplate && templateVariables.length > 0
-      ? [{
-          type: "body",
-          parameters: templateVariables.map((v) => ({ type: "text", text: String(v) })),
-        }]
+      ? [{ type: "body", parameters: templateVariables.map((v) => ({ type: "text", text: String(v) })) }]
       : [];
 
     for (const t of targets) {
       try {
         const payload: any = usingTemplate
           ? {
-              from: fromFormatted,
-              to: t.normPhone,
-              type: "template",
-              template: {
-                name: templateName,
-                language: { code: templateLang, policy: "deterministic" },
-                components: templateBodyComponent,
-              },
+              from: fromFormatted, to: t.normPhone, type: "template",
+              template: { name: templateName, language: { code: templateLang, policy: "deterministic" }, components: templateBodyComponent },
             }
-          : {
-              from: fromFormatted,
-              to: t.normPhone,
-              type: "text",
-              text: { body: message },
-            };
+          : { from: fromFormatted, to: t.normPhone, type: "text", text: { body: message } };
 
         const yRes = await fetch(`${YCLOUD_API}/whatsapp/messages`, {
           method: "POST",
@@ -246,18 +250,14 @@ Deno.serve(async (req) => {
         });
         if (yRes.ok) {
           sent++;
-          console.log(`[YCloud] ✓ ${t.normPhone} (${usingTemplate ? `tpl:${templateName}` : "text"})`);
         } else {
           failed++;
           const errBody = await yRes.text().catch(() => "");
           errors.push({ phone: t.phone, error: `HTTP ${yRes.status}: ${errBody.slice(0, 200)}` });
-          console.error(`[YCloud] ✗ ${t.normPhone} → HTTP ${yRes.status}: ${errBody}`);
         }
       } catch (err) {
         failed++;
-        const msg = err instanceof Error ? err.message : "Error desconocido";
-        errors.push({ phone: t.phone, error: msg });
-        console.error(`[YCloud] ✗ ${t.normPhone} → ${msg}`);
+        errors.push({ phone: t.phone, error: err instanceof Error ? err.message : "Error desconocido" });
       }
       await sleep(delayMs);
     }
@@ -266,17 +266,14 @@ Deno.serve(async (req) => {
       .from("broadcast_logs")
       .update({
         status: failed === targets.length ? "failed" : "completed",
-        sent, failed,
-        errors: errors.slice(0, 50),
+        sent, failed, errors: errors.slice(0, 50),
         sent_at: new Date().toISOString(),
       })
-      .eq("id", logId);
+      .eq("id", logId)
+      .eq("organization_id", organizationId);
 
     return new Response(JSON.stringify({
-      success: true, segment,
-      total: targets.length,
-      sent, failed,
-      log_id: logId,
+      success: true, segment, total: targets.length, sent, failed, log_id: logId,
       mode: usingTemplate ? `template:${templateName}` : "text",
       errors: errors.slice(0, 10),
     }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
