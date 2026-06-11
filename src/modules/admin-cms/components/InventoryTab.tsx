@@ -213,7 +213,8 @@ const InventoryTab = ({ products, categories, queryClient }: { products: any[]; 
           if (error) { errors.push(`Fila ${rowNum}: ${error.message}`); continue; }
           updated++;
         } else {
-          const { error } = await supabase.from("products").insert(payload);
+          if (!currentOrg?.id) { errors.push(`Fila ${rowNum}: Selecciona una organización antes de importar`); continue; }
+          const { error } = await supabase.from("products").insert({ ...payload, organization_id: currentOrg.id });
           if (error) { errors.push(`Fila ${rowNum}: ${error.message}`); continue; }
           created++;
         }
