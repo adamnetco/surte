@@ -30,3 +30,4 @@
 - [SaaS Refactor Etapa 28](mem://features/saas-refactor-etapa28) — CSP endurecida: script/style/font/frame-src acotados a hosts conocidos
 - [SaaS Refactor Etapa 29](mem://features/saas-refactor-etapa29) — CSP img-src y connect-src endurecidos a hosts conocidos (telemetría 7d limpia)
 - [SaaS Refactor Etapa 30](mem://features/saas-refactor-etapa30) — Auditoría edge funcs: fix cross-tenant en sync-products-to-wp, auth en sync-outbox-flush, superadmin-only en reseed-demo
+- [SaaS Refactor Etapa 31](mem://features/saas-refactor-etapa31) — Trusted Types report-only (mitigación DOM-XSS, telemetría reutiliza csp-report)
