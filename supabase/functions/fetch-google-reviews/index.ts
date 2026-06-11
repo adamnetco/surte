@@ -1,9 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.99.1";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Etapa 23: JWT + role admin requerido (operación de backoffice).
+import {
+  corsHeaders, jsonResponse, requireAuth, requireAdminRole, serviceClient,
+} from "../_shared/tenant-guard.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -13,15 +11,14 @@ Deno.serve(async (req) => {
   try {
     const GOOGLE_API_KEY = Deno.env.get("GOOGLE_PLACES_API_KEY");
     if (!GOOGLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "GOOGLE_PLACES_API_KEY not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "GOOGLE_PLACES_API_KEY not configured" }, 500);
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const auth = await requireAuth(req);
+    if (!auth.ok) return auth.response;
+    const supabase = serviceClient();
+    const roleGate = await requireAdminRole(supabase, auth.userId, auth.isServiceRole);
+    if (roleGate !== true) return roleGate;
 
     // Get place_id from app_settings
     const { data: settingsData } = await supabase
