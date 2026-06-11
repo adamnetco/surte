@@ -8,3 +8,4 @@
 - [SaaS Refactor Etapa 6](mem://features/saas-refactor-etapa6) — Outbox POS inyecta org_id en todos los inserts, hook useTenantSite resuelve por hostname, Hub.tsx y sitemap multi-tenant
 - [SaaS Refactor Etapa 7](mem://features/saas-refactor-etapa7) — useStore hooks reciben orgId del tenant, ProductoDetalle/LandingPage filtran por organization_id, tabs Categorías/Cupones/Productos inyectan org_id en inserts
 - [SaaS Refactor Etapa 8](mem://features/saas-refactor-etapa8) — Tabs Inventory/Reviews/Notifications/Settings/Users con filtros tenant en lists e inserts (org_id explícito), WebPushSection recibe orgId por prop
+- [SaaS Refactor Etapa 9](mem://features/saas-refactor-etapa9) — Tabs Contacts/GoogleReviews/Municipalities/Overview/SeoContent/Seo con scopedFrom + org_id en mutaciones; CrmLeads global
