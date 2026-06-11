@@ -29,10 +29,13 @@ const scoreBadge = (score: number) => {
 };
 
 const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id;
   const { data: municipalities, isLoading, error: queryError } = useQuery({
-    queryKey: ["admin-municipalities"],
+    queryKey: ["admin-municipalities", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("municipality_settings").select("*").order("city");
+      const { data, error } = await scopedFrom("municipality_settings", orgId).order("city");
       if (error) throw error;
       return data;
     },
