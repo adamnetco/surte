@@ -240,7 +240,8 @@ Deno.serve(async (req) => {
       total: subs?.length || 0, sent, failed,
       status: failed === (subs?.length || 0) && sent === 0 ? "failed" : "completed",
       errors: errors.slice(0, 50),
-      sent_by,
+      sent_by: sent_by ?? userId,
+      organization_id,
     });
 
     return new Response(JSON.stringify({ success: true, total: subs?.length || 0, sent, failed }), {
