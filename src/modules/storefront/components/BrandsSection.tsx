@@ -4,13 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSwipe } from "@/modules/storefront/context/SwipeContext";
 import { Layers } from "lucide-react";
+import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 
 const BrandsSection = () => {
   const { open: openSwipe } = useSwipe();
+  const tenantOrgId = useTenantOrgId();
   const { data: brands } = useQuery({
-    queryKey: ["brands"],
+    queryKey: ["brands", tenantOrgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("brands").select("*").eq("is_active", true).order("sort_order");
+      let q: any = supabase.from("brands").select("*").eq("is_active", true).order("sort_order");
+      if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },

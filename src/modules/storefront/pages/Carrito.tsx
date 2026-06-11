@@ -10,6 +10,7 @@ import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useAgent } from "@/modules/pos/context/AgentContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Trash2, Minus, Plus, ShoppingCart, AlertTriangle, MessageCircle, Loader2, MapPin, ExternalLink, Ticket, X, CheckCircle2, CalendarIcon, Clock, Banknote, CreditCard, Truck, Navigation } from "lucide-react";
@@ -110,6 +111,7 @@ const COUNTRY_CODES = [
 
 const Carrito = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart, cartToken, attachPhone } = useCart();
+  const tenantOrgId = useTenantOrgId();
   const { data: settings } = useAppSettings();
   const { user, isAgent } = useAuth();
   const { customer: agentCustomer, deliveryDate: agentDeliveryDate, clearAgent } = useAgent();
@@ -159,9 +161,11 @@ const Carrito = () => {
   }, [estimatedDays]);
 
   const { data: shippingZones } = useQuery({
-    queryKey: ["shipping-zones"],
+    queryKey: ["shipping-zones", tenantOrgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("shipping_zones").select("*").eq("is_active", true).order("city").order("neighborhood");
+      let q: any = supabase.from("shipping_zones").select("*").eq("is_active", true).order("city").order("neighborhood");
+      if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },

@@ -2,12 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Star, Quote } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 
 const TestimonialsSection = () => {
+  const tenantOrgId = useTenantOrgId();
   const { data: testimonials } = useQuery({
-    queryKey: ["testimonials"],
+    queryKey: ["testimonials", tenantOrgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("testimonials").select("*").eq("is_active", true).order("sort_order");
+      let q: any = supabase.from("testimonials").select("*").eq("is_active", true).order("sort_order");
+      if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },

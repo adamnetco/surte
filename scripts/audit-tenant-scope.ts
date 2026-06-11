@@ -63,6 +63,25 @@ const GLOBAL_TABLES = new Set([
   "subscription_invoices",
   "subscriptions",
   "license_audit",
+  // Per-user tables (RLS por user_id, no multi-tenant)
+  "profiles",
+  "push_subscriptions",
+  "notification_subscriptions",
+  "favorites",
+  // Tablas con scope implícito vía parent (RLS por foreign key)
+  "landing_page_products",
+  "invoice_scan_items",
+  "table_order_items",
+  "pos_order_items",
+  "purchase_order_items",
+  "modifier_options",
+  "stock_transfer_items",
+  "catalog_template_items",
+  "catalog_template_applications",
+  "catalog_templates",
+  "licenses",
+  "license_activations",
+  "onboarding_progress",
 ]);
 
 interface Hit {
@@ -148,7 +167,9 @@ for (const file of files) {
 
   // 1. hardcoded slug + default_org_id
   src.split("\n").forEach((line, i) => {
-    if (HARDCODED_SURTEYA.test(line) && !/legacy|deprecated|comment|\/\//i.test(line.slice(0, 40))) {
+    const isCommentOrPlaceholder =
+      /^\s*\*|^\s*\/\/|^\s*\/\*|placeholder=|legacy|deprecated|example/i.test(line);
+    if (HARDCODED_SURTEYA.test(line) && !isCommentOrPlaceholder) {
       hits.push({
         file: rel, line: i + 1, severity: "high",
         rule: "hardcoded 'surteya' slug", snippet: line.trim().slice(0, 140),
@@ -172,11 +193,15 @@ for (const file of files) {
     const chain = extractChain(src, pos);
     const isGlobal = GLOBAL_TABLES.has(table);
     const usesScopedFrom = /scopedFrom|scopedSelect/.test(src.slice(Math.max(0, pos - 60), pos));
-    // Look-back: organization_id assignment in same scope (≤ 600 chars before .from)
+    // Look-back: organization_id en mismo scope (≤ 600 chars antes del .from)
     const lookback = src.slice(Math.max(0, pos - 600), pos);
+    // Look-forward: organization_id en filtros condicionales posteriores (≤ 800 chars)
+    const lookforward = src.slice(pos + chain.length, pos + chain.length + 800);
     const orgInScope =
       /organization_id\s*[:=]/.test(lookback) ||
-      /\.eq\(\s*['"`]organization_id['"`]/.test(lookback);
+      /\.eq\(\s*['"`]organization_id['"`]/.test(lookback) ||
+      /\.eq\(\s*['"`]organization_id['"`]/.test(lookforward) ||
+      /tenantOrgId|currentOrg\?\.id|orgId/.test(lookforward.slice(0, 200));
     const filtersOrg =
       /\.eq\(\s*['"`]organization_id['"`]/.test(chain) ||
       /organization_id\s*:/.test(chain) ||

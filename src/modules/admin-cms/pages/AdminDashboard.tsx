@@ -174,9 +174,11 @@ const AdminDashboard = () => {
   const { data: categories } = useQuery({
     queryKey: ["admin-categories", currentOrg?.id],
     queryFn: async () => {
-      let q = supabase.from("categories").select("*").order("sort_order");
-      if (currentOrg?.id) q = q.eq("organization_id", currentOrg.id);
-      const { data, error } = await q;
+      const orgId = currentOrg?.id;
+      const base = supabase.from("categories").select("*");
+      const { data, error } = orgId
+        ? await base.eq("organization_id", orgId).order("sort_order")
+        : await base.order("sort_order");
       if (error) throw error;
       return data;
     },

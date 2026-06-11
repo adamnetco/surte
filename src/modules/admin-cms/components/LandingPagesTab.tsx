@@ -201,9 +201,8 @@ const LandingPagesTab = () => {
   }, []);
 
   const saveLinkedProducts = useCallback(async (pageId: string) => {
-    // Delete existing links
+    // landing_page_products no tiene organization_id; scope implícito vía landing_page_id (RLS).
     await supabase.from("landing_page_products").delete().eq("landing_page_id", pageId);
-    // Insert new links
     if (linkedProducts.length > 0) {
       const rows = linkedProducts.map((product_id, i) => ({
         landing_page_id: pageId,
