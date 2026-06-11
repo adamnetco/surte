@@ -26,6 +26,7 @@ const defaultValues: CouponFormValues = {
 
 const CouponsTab = ({ queryClient }: { queryClient: any }) => {
   const [editing, setEditing] = useState<string | null>(null);
+  const { currentOrg } = useOrganization();
 
   const {
     register,
