@@ -24,7 +24,7 @@ const DEFAULT_CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"]
 
 const ShippingTab = ({ queryClient }: { queryClient: any }) => {
   const { currentOrg } = useOrganization();
-  const { data: cities = [] } = useCities();
+  const { data: cities = [] } = useCities(currentOrg?.id);
   const CITIES = cities.length > 0 ? cities : DEFAULT_CITIES;
 
   const { data: zones, isLoading } = useQuery({
