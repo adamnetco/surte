@@ -774,7 +774,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           </div>
 
           {/* Tags + Featured Sections */}
-          <FeaturedTagsPicker tags={form.tags} onTagsChange={(t) => setForm({ ...form, tags: t })} />
+          <FeaturedTagsPicker tags={form.tags} onTagsChange={(t) => setForm({ ...form, tags: t })} orgId={currentOrg?.id} />
 
           {/* Scheduling / Availability */}
           <div className="space-y-2 border-t border-border pt-3">
