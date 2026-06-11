@@ -31,6 +31,7 @@ const STATUS_META: Record<string, { label: string; cls: string; icon: any }> = {
 };
 
 const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
   const [segment, setSegment] = useState<Segment>("all");
