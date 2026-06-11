@@ -246,15 +246,18 @@ export default function GerenteIA() {
   );
 }
 
-function ItemMatcher({ items, onMatchChange }: {
+function ItemMatcher({ items, onMatchChange, orgId }: {
   items: ScanItem[];
   onMatchChange: (id: string, productId: string | null) => void;
+  orgId: string;
 }) {
   const [search, setSearch] = useState<Record<string, any[]>>({});
 
   async function searchProducts(itemId: string, q: string) {
     if (!q || q.length < 2) return setSearch(p => ({ ...p, [itemId]: [] }));
-    const { data } = await supabase.from("products").select("id,name,brand").ilike("name", `%${q}%`).limit(8);
+    const { data } = await supabase.from("products").select("id,name,brand")
+      .eq("organization_id", orgId)
+      .ilike("name", `%${q}%`).limit(8);
     setSearch(p => ({ ...p, [itemId]: data ?? [] }));
   }
 
