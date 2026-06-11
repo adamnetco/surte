@@ -184,14 +184,16 @@ function SupplierCatalogTab({ orgId, qc }: { orgId: string; qc: any }) {
   };
 
   const togglePreferred = async (r: any) => {
-    await supabase.from("supplier_products").update({ is_preferred: !r.is_preferred }).eq("id", r.id);
-    qc.invalidateQueries({ queryKey: ["supplier-products", supplierId] });
+    await supabase.from("supplier_products").update({ is_preferred: !r.is_preferred })
+      .eq("organization_id", orgId).eq("id", r.id);
+    qc.invalidateQueries({ queryKey: ["supplier-products", orgId, supplierId] });
   };
 
   const remove = async (id: string) => {
     if (!confirm("¿Eliminar vinculación?")) return;
-    await supabase.from("supplier_products").delete().eq("id", id);
-    qc.invalidateQueries({ queryKey: ["supplier-products", supplierId] });
+    await supabase.from("supplier_products").delete()
+      .eq("organization_id", orgId).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["supplier-products", orgId, supplierId] });
   };
 
   return (
