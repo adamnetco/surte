@@ -290,9 +290,10 @@ const LandingPagesTab = () => {
 
   const handleDuplicate = async (page: LandingPage) => {
     if (!confirm(`¿Duplicar la página "${page.title}"?\nSe creará una copia con slug: ${page.slug}-copia`)) return;
+    if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
     const { id, ...rest } = page;
     const newSlug = `${rest.slug}-copia`;
-    const { error } = await supabase.from("landing_pages").insert({ ...rest, slug: newSlug, title: `${rest.title} (Copia)` });
+    const { error } = await supabase.from("landing_pages").insert({ ...rest, slug: newSlug, title: `${rest.title} (Copia)`, organization_id: currentOrg.id });
     if (error) toast.error(error.message);
     else {
       toast.success("Pagina duplicada");
@@ -462,7 +463,8 @@ const LandingPagesTab = () => {
             updated++;
           }
         } else {
-          const { error } = await supabase.from("landing_pages").insert(payload);
+          if (!currentOrg?.id) { errors++; continue; }
+          const { error } = await supabase.from("landing_pages").insert({ ...payload, organization_id: currentOrg.id });
           if (error) throw error;
           created++;
         }
