@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     }
     const token = authHeader.replace("Bearer ", "");
     const isServiceCall = token === serviceKey;
+    let callerUserId = "service";
     if (!isServiceCall) {
       const sb = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } },
@@ -39,6 +40,7 @@ Deno.serve(async (req) => {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      callerUserId = userId;
       const { data: allowed } = await supabase.rpc("has_any_role", {
         _user_id: userId,
         _roles: ["admin", "superadmin", "agente"],
@@ -53,11 +55,7 @@ Deno.serve(async (req) => {
     // Etapa 24: scope app_settings por organización (fallback global).
     const { getOrgScopedSettings, resolveCallerOrgId } = await import("../_shared/tenant-guard.ts");
     const bodyPeek = await req.clone().json().catch(() => ({} as any));
-    const orgId = await resolveCallerOrgId(supabase, isServiceCall ? "service" : (await (async () => {
-      const sb = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
-      const { data } = await sb.auth.getClaims(token);
-      return data?.claims?.sub ?? "";
-    })()), isServiceCall, bodyPeek?.organization_id ?? null);
+    const orgId = await resolveCallerOrgId(supabase, callerUserId, isServiceCall, bodyPeek?.organization_id ?? null);
 
     const settings = await getOrgScopedSettings(supabase, orgId, ["ycloud_api_key", "ycloud_from_number"]);
     const apiKey = settings.ycloud_api_key;
@@ -69,6 +67,7 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
 
 
     const body = await req.json();
