@@ -117,6 +117,41 @@ async function tableLeakCount(client: any, table: string, otherOrgId: string) {
     leaks++;
   }
 
+  // Edge function: broadcast-whatsapp-ycloud cross-tenant
+  console.log("\n=== A intenta broadcast-whatsapp-ycloud para org B ===");
+  const { data: bwRes, error: bwErr } = await A.client.functions.invoke("broadcast-whatsapp-ycloud", {
+    body: { action: "preview_audience", organization_id: B.orgId, segment: "all" },
+  });
+  if (bwErr || (bwRes && (bwRes as any).error)) {
+    console.log("✅ broadcast-whatsapp rechazado:", (bwErr as any)?.message ?? (bwRes as any).error);
+  } else {
+    console.error("❌ LEAK broadcast-whatsapp aceptó org ajena:", bwRes);
+    leaks++;
+  }
+
+  // Edge function: sync-outbox-retry — A intenta resetear un outbox de B (id ficticio,
+  // pero el control de acceso debe rechazar ANTES de validar existencia).
+  console.log("\n=== A intenta sync-outbox-retry sobre fila de B ===");
+  const { data: outRow } = await B.client
+    .from("sync_outbox")
+    .select("id")
+    .eq("organization_id", B.orgId)
+    .limit(1)
+    .maybeSingle();
+  if (outRow?.id) {
+    const { data: retryRes, error: retryErr } = await A.client.functions.invoke("sync-outbox-retry", {
+      body: { id: outRow.id },
+    });
+    if (retryErr || (retryRes && (retryRes as any).error)) {
+      console.log("✅ sync-outbox-retry rechazado:", (retryErr as any)?.message ?? (retryRes as any).error);
+    } else {
+      console.error("❌ LEAK sync-outbox-retry aceptó fila ajena:", retryRes);
+      leaks++;
+    }
+  } else {
+    console.log("ℹ️  Sin filas sync_outbox en org B para probar retry");
+  }
+
   console.log(`\n────── RESULT: ${leaks === 0 ? "✅ ISOLATION OK" : `❌ ${leaks} LEAKS`}`);
   process.exit(leaks === 0 ? 0 : 1);
 })();

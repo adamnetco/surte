@@ -17,3 +17,4 @@
 - [SaaS Refactor Etapa 15](mem://features/saas-refactor-etapa15) — CIERRE FE: Storefront scoped + audit final (2 hallazgos aceptables)
 - [SaaS Refactor Etapa 16](mem://features/saas-refactor-etapa16) — Hardening final: push_subs.organization_id, send-web-push + sync-order auth+membership, E2E isolation script
 - [SaaS Refactor Etapa 17](mem://features/saas-refactor-etapa17) — broadcast-whatsapp-ycloud auth+org scope, notification_subscriptions/broadcast_logs.organization_id, perf indexes hot tables
+- [SaaS Refactor Etapa 18](mem://features/saas-refactor-etapa18) — sync-outbox-retry valida membership de org del row; CSP report-only en index.html; E2E ampliado (broadcast + outbox cross-tenant)
