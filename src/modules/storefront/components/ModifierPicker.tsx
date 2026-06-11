@@ -64,10 +64,12 @@ const ModifierPicker = ({ productId, onModifiersChange }: ModifierPickerProps) =
   // Linked product names
   const linkedIds = allOptions?.filter((o) => o.linked_product_id).map((o) => o.linked_product_id!) || [];
   const { data: linkedProducts } = useQuery({
-    queryKey: ["linked-products", linkedIds.join(",")],
+    queryKey: ["linked-products", linkedIds.join(","), tenantOrgId],
     queryFn: async () => {
       if (linkedIds.length === 0) return [];
-      const { data, error } = await supabase.from("products").select("id, name, stock, image_url").in("id", linkedIds);
+      let q: any = supabase.from("products").select("id, name, stock, image_url").in("id", linkedIds);
+      if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
