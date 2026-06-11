@@ -10,6 +10,7 @@ import CategoryIcon, { AVAILABLE_ICONS, isCustomSvgUrl } from "@/modules/storefr
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { categorySchema, type CategoryFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const DEFAULTS: CategoryFormValues = {
   name: "",
