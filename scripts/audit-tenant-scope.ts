@@ -193,8 +193,8 @@ for (const file of files) {
     const usesScopedFrom = /scopedFrom|scopedSelect/.test(src.slice(Math.max(0, pos - 60), pos));
     // Look-back: organization_id en mismo scope (≤ 600 chars antes del .from)
     const lookback = src.slice(Math.max(0, pos - 600), pos);
-    // Look-forward: organization_id en filtros condicionales posteriores (≤ 400 chars)
-    const lookforward = src.slice(pos + chain.length, pos + chain.length + 400);
+    // Look-forward: organization_id en filtros condicionales posteriores (≤ 800 chars)
+    const lookforward = src.slice(pos + chain.length, pos + chain.length + 800);
     const orgInScope =
       /organization_id\s*[:=]/.test(lookback) ||
       /\.eq\(\s*['"`]organization_id['"`]/.test(lookback) ||
