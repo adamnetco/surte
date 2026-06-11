@@ -59,8 +59,8 @@ const ContactsTab = () => {
 
   // History for the selected contact
   const { data: history, isLoading: lh } = useQuery({
-    queryKey: ["contact-history", tab, selectedId],
-    enabled: !!selectedId,
+    queryKey: ["contact-history", tab, selectedId, orgId],
+    enabled: !!selectedId && !!orgId,
     queryFn: async () => {
       if (tab === "customers") {
         const customer = (customers || []).find((c: any) => c.id === selectedId);
@@ -69,6 +69,7 @@ const ContactsTab = () => {
         let query = supabase
           .from("orders")
           .select("id,order_number,total,status,created_at,customer_phone,user_id")
+          .eq("organization_id", orgId!)
           .order("created_at", { ascending: false })
           .limit(50);
         if (customer.user_id) {
@@ -83,6 +84,7 @@ const ContactsTab = () => {
         const { data, error } = await supabase
           .from("purchase_orders")
           .select("id,po_code,total,status,created_at,received_at")
+          .eq("organization_id", orgId!)
           .eq("supplier_id", selectedId)
           .order("created_at", { ascending: false })
           .limit(50);
@@ -93,6 +95,11 @@ const ContactsTab = () => {
   });
 
   const selected = filtered.find((it: any) => it.id === selectedId);
+
+  if (!currentOrg) {
+    return <div className="p-4 text-sm text-muted-foreground">Selecciona una organización para ver contactos.</div>;
+  }
+
 
   return (
     <div className="space-y-4">
