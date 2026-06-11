@@ -11,6 +11,7 @@ import SortableList from "./SortableList";
 import { heroSlideSchema, type HeroSlideFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 const CITIES = ["", "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
 
