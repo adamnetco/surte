@@ -5,6 +5,8 @@ import { Plus, Trash2, Save, X, MapPin, Pencil, ExternalLink, Link as LinkIcon, 
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 const genSlug = (city: string) =>
   city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
