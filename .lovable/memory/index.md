@@ -21,3 +21,4 @@
 - [SaaS Refactor Etapa 19](mem://features/saas-refactor-etapa19) — Fix cron broadcast: bypass service_role en broadcast-whatsapp-ycloud + organization_id en process-scheduled-broadcasts
 - [SaaS Refactor Etapa 20](mem://features/saas-refactor-etapa20) — Telemetría CSP: tabla csp_violations + edge function csp-report + listener cliente (sendBeacon)
 - [SaaS Refactor Etapa 21](mem://features/saas-refactor-etapa21) — Página /superadmin/seguridad/csp para revisar violaciones agregadas antes de endurecer CSP
+- [SaaS Refactor Etapa 22](mem://features/saas-refactor-etapa22) — Tenant-scope v7: helper `_shared/tenant-guard.ts` + hardening 6 edge functions (cloudflare-*, optimize-image, send-whatsapp-order, verify-tenant-domain)
