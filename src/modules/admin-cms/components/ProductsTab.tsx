@@ -213,7 +213,8 @@ const FeaturedTagsPicker = ({ tags, onTagsChange }: { tags: string; onTagsChange
 };
 
 const ProductsTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
-  const { data: inactiveBrands } = useInactiveBrands();
+  const { currentOrg } = useOrganization();
+  const { data: inactiveBrands } = useInactiveBrands(currentOrg?.id);
   const isBrandHidden = (p: any) => !!p.brand && !!inactiveBrands && inactiveBrands.has(p.brand.toLowerCase());
   const [editing, setEditing] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
