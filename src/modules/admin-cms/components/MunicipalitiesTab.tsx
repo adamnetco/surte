@@ -52,7 +52,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
   const { upload, uploading } = useImageUpload();
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["admin-municipalities"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-municipalities", orgId] });
     queryClient.invalidateQueries({ queryKey: ["municipalities"] });
   };
 
