@@ -112,7 +112,15 @@ Deno.serve(async (req) => {
 
 
 
-    const body = await req.json();
+    const rawBody = await req.json();
+    const parsedBody = BodySchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return new Response(
+        JSON.stringify({ error: "invalid_payload", details: parsedBody.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const body = parsedBody.data;
     const { action } = body;
 
     // ACTION: send_order — send order confirmation via WhatsApp
