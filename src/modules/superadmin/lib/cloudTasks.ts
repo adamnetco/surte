@@ -203,7 +203,7 @@ export const CLOUD_TASKS: CloudTask[] = [
       "El cliente edita su DNS. Ver TXT exactos en /superadmin/sitios → demo → Reprovisionar.",
     check: (env) =>
       queryEnv(env, async () =>
-        (supabase as any)
+        supabase
           .from("tenant_domains")
           .select("cf_ssl_status,cf_status")
           .eq("hostname", "demo.sistecpos.com")
@@ -211,7 +211,7 @@ export const CLOUD_TASKS: CloudTask[] = [
       ).then<EnvResult>((r) => {
         if (!r.ok) return { status: "unknown", detail: r.error ?? "Sin respuesta", checkedAt: now() };
         if (!r.data) return { status: "pending", detail: "Dominio no registrado aún", checkedAt: now() };
-        const ssl = (r.data as any).cf_ssl_status;
+        const ssl = r.data.cf_ssl_status;
         if (ssl === "active") return { status: "done", detail: "SSL activo — DNS publicado por el cliente", checkedAt: now() };
         return { status: "pending", detail: `SSL: ${ssl ?? "n/a"} — esperando TXT/A del cliente`, checkedAt: now() };
       }),
@@ -225,7 +225,7 @@ export const CLOUD_TASKS: CloudTask[] = [
     howToRun: "Crear fila en tenant_domains + tenant_cloudflare_accounts del cliente.",
     check: (env) =>
       queryEnv(env, async () =>
-        (supabase as any).from("tenant_domains").select("id").eq("domain", "surteya.com").maybeSingle(),
+        supabase.from("tenant_domains").select("id").eq("hostname", "surteya.com").maybeSingle(),
       ).then<EnvResult>((r) => {
         if (r.ok && r.data) return { status: "done", detail: "Registrado", checkedAt: now() };
         if (r.ok) return { status: "pending", detail: "No registrado", checkedAt: now() };
