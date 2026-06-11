@@ -520,7 +520,7 @@ const NotificationsTab = ({ queryClient }: { queryClient: any }) => {
       </div>
 
       {/* Web Push (PWA) ─────────────────────────────────────── */}
-      <WebPushSection />
+      <WebPushSection orgId={currentOrg?.id} />
 
       {/* Subscribers list */}
       <div className="space-y-2">
