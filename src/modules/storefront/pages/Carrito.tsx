@@ -111,6 +111,7 @@ const COUNTRY_CODES = [
 
 const Carrito = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart, cartToken, attachPhone } = useCart();
+  const tenantOrgId = useTenantOrgId();
   const { data: settings } = useAppSettings();
   const { user, isAgent } = useAuth();
   const { customer: agentCustomer, deliveryDate: agentDeliveryDate, clearAgent } = useAgent();
