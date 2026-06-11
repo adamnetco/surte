@@ -19,7 +19,7 @@ const BannerCarousel = () => {
   const { data: banners } = useQuery({
     queryKey: ["banners", tenantOrgId],
     queryFn: async () => {
-      let q = supabase.from("banners").select("*").eq("is_active", true).order("sort_order");
+      let q: any = supabase.from("banners").select("*").eq("is_active", true).order("sort_order");
       if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
       const { data, error } = await q;
       if (error) throw error;
