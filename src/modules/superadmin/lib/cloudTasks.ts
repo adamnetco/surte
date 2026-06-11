@@ -10,6 +10,9 @@
  * localStorage para no depender del backend mientras está inestable.
  */
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type PublicTable = keyof Database["public"]["Tables"];
 
 export type EnvKey = "test" | "live";
 export type TaskStatus = "done" | "pending" | "partial" | "error" | "unknown";
@@ -63,9 +66,14 @@ async function queryEnv<T>(
   }
 }
 
-async function checkColumnExists(env: EnvKey, table: string, column: string): Promise<EnvResult> {
+async function checkColumnExists(env: EnvKey, table: PublicTable, column: string): Promise<EnvResult> {
+  // Introspección: tabla viene tipada (keyof Tables) pero la columna es dinámica,
+  // por lo que el builder no la puede validar en compile-time. Acotamos el cast
+  // a la firma mínima necesaria en lugar de un `as any` global.
   const r = await queryEnv(env, async () =>
-    (supabase as any).from(table).select(column).limit(1),
+    (supabase.from(table) as unknown as { select: (c: string) => { limit: (n: number) => Promise<{ data: unknown; error: { message: string } | null }> } })
+      .select(column)
+      .limit(1),
   );
   if (r.ok) return { status: "done", detail: `Columna ${column} existe`, checkedAt: now() };
   if (r.error?.includes("does not exist") || r.error?.includes("column"))
@@ -74,7 +82,13 @@ async function checkColumnExists(env: EnvKey, table: string, column: string): Pr
 }
 
 async function checkTableExists(env: EnvKey, table: string): Promise<EnvResult> {
-  const r = await queryEnv(env, async () => (supabase as any).from(table).select("id").limit(1));
+  // `table` puede no existir todavía: por eso aceptamos `string` y acotamos el
+  // cast a la firma mínima.
+  const r = await queryEnv(env, async () =>
+    (supabase.from(table as PublicTable) as unknown as { select: (c: string) => { limit: (n: number) => Promise<{ data: unknown; error: { message: string } | null }> } })
+      .select("id")
+      .limit(1),
+  );
   if (r.ok) return { status: "done", detail: `Tabla ${table} existe`, checkedAt: now() };
   if (r.error?.includes("does not exist") || r.error?.includes("relation"))
     return { status: "pending", detail: `Falta tabla ${table}`, checkedAt: now() };
@@ -189,7 +203,7 @@ export const CLOUD_TASKS: CloudTask[] = [
       "El cliente edita su DNS. Ver TXT exactos en /superadmin/sitios → demo → Reprovisionar.",
     check: (env) =>
       queryEnv(env, async () =>
-        (supabase as any)
+        supabase
           .from("tenant_domains")
           .select("cf_ssl_status,cf_status")
           .eq("hostname", "demo.sistecpos.com")
@@ -197,7 +211,7 @@ export const CLOUD_TASKS: CloudTask[] = [
       ).then<EnvResult>((r) => {
         if (!r.ok) return { status: "unknown", detail: r.error ?? "Sin respuesta", checkedAt: now() };
         if (!r.data) return { status: "pending", detail: "Dominio no registrado aún", checkedAt: now() };
-        const ssl = (r.data as any).cf_ssl_status;
+        const ssl = r.data.cf_ssl_status;
         if (ssl === "active") return { status: "done", detail: "SSL activo — DNS publicado por el cliente", checkedAt: now() };
         return { status: "pending", detail: `SSL: ${ssl ?? "n/a"} — esperando TXT/A del cliente`, checkedAt: now() };
       }),
@@ -211,7 +225,7 @@ export const CLOUD_TASKS: CloudTask[] = [
     howToRun: "Crear fila en tenant_domains + tenant_cloudflare_accounts del cliente.",
     check: (env) =>
       queryEnv(env, async () =>
-        (supabase as any).from("tenant_domains").select("id").eq("domain", "surteya.com").maybeSingle(),
+        supabase.from("tenant_domains").select("id").eq("hostname", "surteya.com").maybeSingle(),
       ).then<EnvResult>((r) => {
         if (r.ok && r.data) return { status: "done", detail: "Registrado", checkedAt: now() };
         if (r.ok) return { status: "pending", detail: "No registrado", checkedAt: now() };
