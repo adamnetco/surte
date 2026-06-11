@@ -430,17 +430,21 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
     setBulkApplying(true);
     try {
+      if (!currentOrg?.id) { toast.error("Selecciona una organización"); setBulkApplying(false); return; }
+      const orgId = currentOrg.id;
       if (bulkAction === "activate" || bulkAction === "deactivate") {
         const { error } = await supabase
           .from("products")
           .update({ is_active: bulkAction === "activate" })
-          .in("id", ids);
+          .in("id", ids)
+          .eq("organization_id", orgId);
         if (error) throw error;
       } else if (bulkAction === "set_category") {
         const { error } = await supabase
           .from("products")
           .update({ category_id: bulkValue || null })
-          .in("id", ids);
+          .in("id", ids)
+          .eq("organization_id", orgId);
         if (error) throw error;
       } else if (bulkAction === "price_pct") {
         const pct = Number(bulkValue);
@@ -451,7 +455,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           const newPayload: any = { price: Math.round(Number(p.price) * factor) };
           if (p.price_wholesale) newPayload.price_wholesale = Math.round(Number(p.price_wholesale) * factor);
           if (p.price_distributor) newPayload.price_distributor = Math.round(Number(p.price_distributor) * factor);
-          return supabase.from("products").update(newPayload).eq("id", p.id);
+          return supabase.from("products").update(newPayload).eq("id", p.id).eq("organization_id", orgId);
         }));
       } else if (bulkAction === "add_tag" || bulkAction === "remove_tag") {
         const tag = bulkValue.trim().toLowerCase();
@@ -464,7 +468,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           } else {
             next = current.filter((t) => t !== tag);
           }
-          return supabase.from("products").update({ tags: next }).eq("id", p.id);
+          return supabase.from("products").update({ tags: next }).eq("id", p.id).eq("organization_id", orgId);
         }));
       }
       toast.success(`✓ ${ids.length} producto(s) actualizados`);
