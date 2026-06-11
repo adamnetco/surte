@@ -145,11 +145,13 @@ Deno.serve(async (req) => {
   }
 
   if (type === 'products') {
-    const { data: products } = await supabase
+    let q = supabase
       .from('products')
       .select('slug, id, updated_at, image_url, name')
       .eq('is_active', true)
       .order('updated_at', { ascending: false });
+    if (tenantOrgId) q = q.eq('organization_id', tenantOrgId);
+    const { data: products } = await q;
     const urls = (products || []).map((p: any) => {
       const slug = p.slug || p.id;
       const lastmod = p.updated_at?.split('T')[0] || now;
@@ -160,11 +162,13 @@ Deno.serve(async (req) => {
   }
 
   if (type === 'categories') {
-    const { data: categories } = await supabase
+    let q = supabase
       .from('categories')
       .select('slug, name, updated_at, og_image_url')
       .eq('is_active', true)
       .order('sort_order');
+    if (tenantOrgId) q = q.eq('organization_id', tenantOrgId);
+    const { data: categories } = await q;
 
     const urls: string[] = [];
     (categories || []).forEach((c: any) => {
@@ -181,11 +185,13 @@ Deno.serve(async (req) => {
   }
 
   if (type === 'brands') {
-    const { data: brands } = await supabase
+    let q = supabase
       .from('brands')
       .select('slug, name, logo_url, created_at')
       .eq('is_active', true)
       .order('sort_order');
+    if (tenantOrgId) q = q.eq('organization_id', tenantOrgId);
+    const { data: brands } = await q;
     const urls: string[] = [];
     (brands || []).forEach((b: any) => {
       const slug = b.slug || b.name.toLowerCase().replace(/\s+/g, '-');
