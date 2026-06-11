@@ -48,13 +48,27 @@ Deno.serve(async (req) => {
   const type = url.searchParams.get('type'); // products|categories|brands|cities|pages|static
   const now = new Date().toISOString().split('T')[0];
 
+  // ─── Multi-tenant: resuelve organization_id por host ──────
+  // Acepta ?host=foo.com o lo deriva del Host header. Si no resuelve, hace
+  // fallback al comportamiento legacy (surteya) para mantener compatibilidad.
+  const requestedHost = (url.searchParams.get('host') || req.headers.get('host') || '').toLowerCase();
+  let tenantOrgId: string | null = null;
+  if (requestedHost) {
+    try {
+      const { data } = await supabase.rpc('resolve_tenant_by_host', { _host: requestedHost });
+      tenantOrgId = (data as any)?.organization_id ?? null;
+    } catch { /* ignore */ }
+  }
+
   // ─── Google Merchant Center feed (RSS) ────────────────────
   if (format === 'gmc') {
-    const { data: products } = await supabase
+    let q = supabase
       .from('products')
       .select('*, categories(name)')
       .eq('is_active', true)
       .order('name');
+    if (tenantOrgId) q = q.eq('organization_id', tenantOrgId);
+    const { data: products } = await q;
 
     const { data: settingsRows } = await supabase
       .from('app_settings')
