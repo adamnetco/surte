@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Plus, Trash2, GripVertical, Save, Pencil, Eye, EyeOff, ExternalLink, Copy, Link } from "lucide-react";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 interface FeaturedSection {
   id: string;
