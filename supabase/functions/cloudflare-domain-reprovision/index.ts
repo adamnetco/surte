@@ -1,39 +1,35 @@
-// Forces Cloudflare to re-issue the SSL certificate for a custom hostname
-// by PATCHing the SSL block (method=txt, type=dv). After patching, fetches
-// the fresh status and persists it in tenant_domains.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-const json = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+// Forces Cloudflare to re-issue the SSL certificate for a custom hostname.
+// Etapa 22: agregado JWT + role admin + membership-check sobre la org dueña del dominio.
+import {
+  corsHeaders, jsonResponse, requireAuth, requireAdminRole, requireMembership, serviceClient,
+} from "../_shared/tenant-guard.ts";
 
 export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  if (req.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
 
   const token = Deno.env.get("CLOUDFLARE_API_TOKEN");
   const zoneId = Deno.env.get("CLOUDFLARE_FALLBACK_ZONE_ID");
-  if (!token || !zoneId) return json({ error: "cloudflare_not_configured" }, 500);
+  if (!token || !zoneId) return jsonResponse({ error: "cloudflare_not_configured" }, 500);
+
+  const auth = await requireAuth(req);
+  if (!auth.ok) return auth.response;
+  const svc = serviceClient();
+  const roleGate = await requireAdminRole(svc, auth.userId, auth.isServiceRole);
+  if (roleGate !== true) return roleGate;
 
   let body: { hostname?: string };
-  try { body = await req.json(); } catch { return json({ error: "invalid_json" }, 400); }
+  try { body = await req.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
   const hostname = String(body?.hostname ?? "").trim().toLowerCase();
-  if (!hostname) return json({ error: "hostname_required" }, 400);
+  if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(hostname)) return jsonResponse({ error: "invalid_hostname" }, 400);
 
-  const svc = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } },
-  );
   const { data: row } = await svc.from("tenant_domains")
-    .select("cf_hostname_id").eq("hostname", hostname).maybeSingle();
-  if (!row?.cf_hostname_id) return json({ error: "not_registered" }, 404);
+    .select("cf_hostname_id, organization_id").eq("hostname", hostname).maybeSingle();
+  if (!row?.cf_hostname_id) return jsonResponse({ error: "not_registered" }, 404);
 
-  // PATCH SSL block to force re-issuance
+  const memGate = await requireMembership(svc, auth.userId, row.organization_id, auth.isServiceRole);
+  if (memGate !== true) return memGate;
+
   const patchRes = await fetch(
     `https://api.cloudflare.com/client/v4/zones/${zoneId}/custom_hostnames/${row.cf_hostname_id}`,
     {
@@ -46,7 +42,7 @@ export const handler = async (req: Request): Promise<Response> => {
   );
   const patchJson = await patchRes.json();
   if (!patchRes.ok || !patchJson.success) {
-    return json({ error: "cloudflare_patch_failed", cf: patchJson }, 502);
+    return jsonResponse({ error: "cloudflare_patch_failed", cf: patchJson }, 502);
   }
 
   const status = patchJson.result.status;
@@ -59,7 +55,7 @@ export const handler = async (req: Request): Promise<Response> => {
     verified_at: status === "active" ? new Date().toISOString() : null,
   }).eq("hostname", hostname);
 
-  return json({
+  return jsonResponse({
     ok: true,
     hostname,
     status,
