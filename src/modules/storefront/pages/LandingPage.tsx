@@ -11,6 +11,7 @@ import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import JsonLd, { buildBreadcrumbSchema } from "@/modules/marketing/seo/JsonLd";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useProducts, useAppSettings } from "@/modules/storefront/hooks/useStore";
+import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 import { Package } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -19,20 +20,22 @@ const BASE_URL = "https://surteya.com";
 const LandingPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: settings } = useAppSettings();
+  const tenantOrgId = useTenantOrgId();
 
   const { data: page, isLoading: pageLoading } = useQuery({
-    queryKey: ["landing_page", slug],
+    queryKey: ["landing_page", slug, tenantOrgId],
+    enabled: !!slug && !!tenantOrgId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("landing_pages")
         .select("*")
+        .eq("organization_id", tenantOrgId!)
         .eq("slug", slug!)
         .eq("is_active", true)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
-    enabled: !!slug,
   });
 
   const { data: products } = useProducts();
