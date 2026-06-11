@@ -61,9 +61,10 @@ const ModifiersTab = () => {
 
   // Products list
   const { data: products } = useQuery({
-    queryKey: ["admin-products-list"],
+    queryKey: ["admin-products-list", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("id, name, price, stock, image_url, base_unit").order("name");
+      const { data, error } = await supabase.from("products").select("id, name, price, stock, image_url, base_unit").eq("organization_id", currentOrg!.id).order("name");
       if (error) throw error;
       return data;
     },
@@ -71,32 +72,34 @@ const ModifiersTab = () => {
 
   // Modifier groups for selected product
   const { data: groups, refetch: refetchGroups } = useQuery({
-    queryKey: ["modifier-groups", selectedProduct],
+    queryKey: ["modifier-groups", selectedProduct, currentOrg?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("modifier_groups")
         .select("*")
         .eq("product_id", selectedProduct)
+        .eq("organization_id", currentOrg!.id)
         .order("sort_order");
       if (error) throw error;
       return data as ModifierGroup[];
     },
-    enabled: !!selectedProduct,
+    enabled: !!selectedProduct && !!currentOrg?.id,
   });
 
   // Modifier options for expanded group
   const { data: options, refetch: refetchOptions } = useQuery({
-    queryKey: ["modifier-options", expandedGroup],
+    queryKey: ["modifier-options", expandedGroup, currentOrg?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("modifier_options")
         .select("*")
         .eq("modifier_group_id", expandedGroup!)
+        .eq("organization_id", currentOrg!.id)
         .order("sort_order");
       if (error) throw error;
       return data as ModifierOption[];
     },
-    enabled: !!expandedGroup,
+    enabled: !!expandedGroup && !!currentOrg?.id,
   });
 
   const product = products?.find((p) => p.id === selectedProduct);

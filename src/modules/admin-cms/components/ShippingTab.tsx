@@ -10,10 +10,11 @@ import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
-const useCities = () => useQuery({
-  queryKey: ["admin-municipality-cities"],
+const useCities = (orgId?: string | null) => useQuery({
+  queryKey: ["admin-municipality-cities", orgId],
+  enabled: !!orgId,
   queryFn: async () => {
-    const { data, error } = await supabase.from("municipality_settings").select("city").eq("is_active", true).order("city");
+    const { data, error } = await scopedFrom("municipality_settings", orgId!).select("city").eq("is_active", true).order("city");
     if (error) throw error;
     return (data || []).map((m: any) => String(m.city));
   },
@@ -23,7 +24,7 @@ const DEFAULT_CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"]
 
 const ShippingTab = ({ queryClient }: { queryClient: any }) => {
   const { currentOrg } = useOrganization();
-  const { data: cities = [] } = useCities();
+  const { data: cities = [] } = useCities(currentOrg?.id);
   const CITIES = cities.length > 0 ? cities : DEFAULT_CITIES;
 
   const { data: zones, isLoading } = useQuery({
@@ -125,8 +126,9 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
       setBulkSaving(false);
       return;
     }
+    if (!currentOrg?.id) { toast.error("Selecciona una organización"); setBulkSaving(false); return; }
     try {
-      const { error } = await supabase.from("shipping_zones").insert(rows);
+      const { error } = await supabase.from("shipping_zones").insert(rows.map(r => ({ ...r, organization_id: currentOrg.id })));
       if (error) throw error;
       const skipped = errs.length;
       toast.success(`${rows.length} zonas importadas${skipped ? ` · ${skipped} líneas ignoradas` : ""}`);

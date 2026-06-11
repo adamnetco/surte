@@ -37,25 +37,27 @@ const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
 /* ── Multi-image gallery manager per product ── */
-const ProductMediaGallery = ({ productId, queryClient }: { productId: string; queryClient: any }) => {
+const ProductMediaGallery = ({ productId, queryClient, orgId }: { productId: string; queryClient: any; orgId?: string | null }) => {
   const { upload, uploading } = useImageUpload();
   const { data: mediaItems, isLoading } = useQuery({
-    queryKey: ["product-media-admin", productId],
+    queryKey: ["product-media-admin", productId, orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_media")
         .select("*")
         .eq("product_id", productId)
+        .eq("organization_id", orgId!)
         .order("sort_order");
       if (error) throw error;
       return data;
     },
-    enabled: !!productId,
+    enabled: !!productId && !!orgId,
   });
 
   const handleUploadMultiple = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    if (!orgId) { toast.error("Selecciona una organización"); return; }
     const currentMax = mediaItems?.length || 0;
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -63,6 +65,7 @@ const ProductMediaGallery = ({ productId, queryClient }: { productId: string; qu
       if (url) {
         await supabase.from("product_media").insert({
           product_id: productId,
+          organization_id: orgId,
           media_type: "image",
           media_url: url,
           sort_order: currentMax + i,
@@ -140,11 +143,12 @@ const ProductMediaGallery = ({ productId, queryClient }: { productId: string; qu
 };
 
 /* ── Featured Tags Picker — shows featured sections and lets admin quickly add tags ── */
-const FeaturedTagsPicker = ({ tags, onTagsChange }: { tags: string; onTagsChange: (t: string) => void }) => {
+const FeaturedTagsPicker = ({ tags, onTagsChange, orgId }: { tags: string; onTagsChange: (t: string) => void; orgId?: string | null }) => {
   const { data: sections } = useQuery({
-    queryKey: ["featured_sections"],
+    queryKey: ["featured_sections", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("featured_sections").select("*").order("sort_order");
+      const { data, error } = await supabase.from("featured_sections").select("*").eq("organization_id", orgId!).order("sort_order");
       if (error) throw error;
       return data;
     },
@@ -349,7 +353,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     };
 
     if (editing && editing !== "new") {
-      const { error } = await supabase.from("products").update(payload).eq("id", editing);
+      if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+      const { error } = await supabase.from("products").update(payload).eq("id", editing).eq("organization_id", currentOrg.id);
       if (error) { toast.error(errorToMessage(error)); return; }
       toast.success("Producto actualizado");
     } else {
@@ -368,14 +373,16 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
   const deleteProduct = async (id: string) => {
     if (!confirm("¿Eliminar este producto?")) return;
-    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+    const { error } = await supabase.from("products").delete().eq("id", id).eq("organization_id", currentOrg.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Producto eliminado");
     queryClient.invalidateQueries({ queryKey: ["admin-products"] });
   };
 
   const toggleVisibility = async (id: string, currentActive: boolean) => {
-    const { error } = await supabase.from("products").update({ is_active: !currentActive }).eq("id", id);
+    if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+    const { error } = await supabase.from("products").update({ is_active: !currentActive }).eq("id", id).eq("organization_id", currentOrg.id);
     if (error) { toast.error(error.message); return; }
     toast.success(!currentActive ? "Producto visible" : "Producto oculto");
     queryClient.invalidateQueries({ queryKey: ["admin-products"] });
@@ -423,17 +430,21 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
     setBulkApplying(true);
     try {
+      if (!currentOrg?.id) { toast.error("Selecciona una organización"); setBulkApplying(false); return; }
+      const orgId = currentOrg.id;
       if (bulkAction === "activate" || bulkAction === "deactivate") {
         const { error } = await supabase
           .from("products")
           .update({ is_active: bulkAction === "activate" })
-          .in("id", ids);
+          .in("id", ids)
+          .eq("organization_id", orgId);
         if (error) throw error;
       } else if (bulkAction === "set_category") {
         const { error } = await supabase
           .from("products")
           .update({ category_id: bulkValue || null })
-          .in("id", ids);
+          .in("id", ids)
+          .eq("organization_id", orgId);
         if (error) throw error;
       } else if (bulkAction === "price_pct") {
         const pct = Number(bulkValue);
@@ -444,7 +455,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           const newPayload: any = { price: Math.round(Number(p.price) * factor) };
           if (p.price_wholesale) newPayload.price_wholesale = Math.round(Number(p.price_wholesale) * factor);
           if (p.price_distributor) newPayload.price_distributor = Math.round(Number(p.price_distributor) * factor);
-          return supabase.from("products").update(newPayload).eq("id", p.id);
+          return supabase.from("products").update(newPayload).eq("id", p.id).eq("organization_id", orgId);
         }));
       } else if (bulkAction === "add_tag" || bulkAction === "remove_tag") {
         const tag = bulkValue.trim().toLowerCase();
@@ -457,7 +468,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           } else {
             next = current.filter((t) => t !== tag);
           }
-          return supabase.from("products").update({ tags: next }).eq("id", p.id);
+          return supabase.from("products").update({ tags: next }).eq("id", p.id).eq("organization_id", orgId);
         }));
       }
       toast.success(`✓ ${ids.length} producto(s) actualizados`);
@@ -664,7 +675,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
           {/* Multi-image Gallery Manager */}
           {editing && editing !== "new" && (
-            <ProductMediaGallery productId={editing} queryClient={queryClient} />
+            <ProductMediaGallery productId={editing} queryClient={queryClient} orgId={currentOrg?.id} />
           )}
 
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
@@ -770,7 +781,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
           </div>
 
           {/* Tags + Featured Sections */}
-          <FeaturedTagsPicker tags={form.tags} onTagsChange={(t) => setForm({ ...form, tags: t })} />
+          <FeaturedTagsPicker tags={form.tags} onTagsChange={(t) => setForm({ ...form, tags: t })} orgId={currentOrg?.id} />
 
           {/* Scheduling / Availability */}
           <div className="space-y-2 border-t border-border pt-3">

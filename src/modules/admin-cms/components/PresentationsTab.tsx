@@ -22,36 +22,40 @@ const PresentationsTab = ({ queryClient }: { queryClient: any }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: products } = useQuery({
-    queryKey: ["admin-products-list"],
+    queryKey: ["admin-products-list", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("id, name, price, stock, base_unit").order("name");
+      const { data, error } = await supabase.from("products").select("id, name, price, stock, base_unit").eq("organization_id", currentOrg!.id).order("name");
       if (error) throw error;
       return data;
     },
   });
 
   const { data: presentations, refetch } = useQuery({
-    queryKey: ["admin-presentations", selectedProduct],
+    queryKey: ["admin-presentations", selectedProduct, currentOrg?.id],
     queryFn: async () => {
       if (!selectedProduct) return [];
       const { data, error } = await supabase
         .from("product_presentations")
         .select("*")
         .eq("product_id", selectedProduct)
+        .eq("organization_id", currentOrg!.id)
         .order("sort_order");
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedProduct,
+    enabled: !!selectedProduct && !!currentOrg?.id,
   });
 
   // All presentations for export
   const { data: allPresentations } = useQuery({
-    queryKey: ["admin-all-presentations"],
+    queryKey: ["admin-all-presentations", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_presentations")
         .select("*, products(name)")
+        .eq("organization_id", currentOrg!.id)
         .order("product_id")
         .order("sort_order");
       if (error) throw error;
