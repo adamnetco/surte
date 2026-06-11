@@ -68,6 +68,25 @@ Deno.serve(async (req) => {
     )
   }
 
+  // Role gate (defense in depth): service_role o admin/superadmin
+  if (!isServiceRole) {
+    const userId = typeof claims?.sub === 'string' ? claims.sub : null
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const sbCheck = createClient(supabaseUrl, supabaseServiceKey)
+    const { data: roles } = await sbCheck.from('user_roles').select('role').eq('user_id', userId)
+    const ok = roles?.some((r: any) => r.role === 'admin' || r.role === 'superadmin')
+    if (!ok) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+  }
+
+
   // Parse request body
   let templateName: string
   let recipientEmail: string
