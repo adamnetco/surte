@@ -56,7 +56,6 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
           supabase.from("pos_orders").select("id", { count: "exact", head: true })
             .eq("organization_id", organizationId).eq("cash_session_id", sessionId).eq("status", "paid"),
           supabase.from("cash_denominations").select("id,value,kind")
-            .eq("organization_id", organizationId)
             .eq("currency", "COP").eq("is_active", true).order("value", { ascending: false }),
         ]);
 
