@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Bell, Send, Users, MessageSquare, Loader2, Smartphone, Radio, AlertTriangle, Clock, History, Calendar, CheckCircle2, XCircle, Hourglass, FileText, RefreshCw, Plus, Minus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
 type Segment = "all" | "offers" | "fresh" | "new_products";
 
