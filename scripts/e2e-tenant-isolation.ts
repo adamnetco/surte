@@ -152,6 +152,67 @@ async function tableLeakCount(client: any, table: string, otherOrgId: string) {
     console.log("ℹ️  Sin filas sync_outbox en org B para probar retry");
   }
 
+  // Etapa 22: cloudflare-domain-status sobre hostname de B
+  console.log("\n=== A intenta cloudflare-domain-status para hostname de B ===");
+  const { data: domB } = await B.client
+    .from("tenant_domains").select("hostname").eq("organization_id", B.orgId).limit(1).maybeSingle();
+  if (domB?.hostname) {
+    const { data: cfRes, error: cfErr } = await A.client.functions.invoke("cloudflare-domain-status", {
+      body: { hostname: domB.hostname },
+    });
+    if (cfErr || (cfRes && (cfRes as any).error)) {
+      console.log("✅ cloudflare-domain-status rechazado:", (cfErr as any)?.message ?? (cfRes as any).error);
+    } else {
+      console.error("❌ LEAK cloudflare-domain-status aceptó hostname ajeno:", cfRes);
+      leaks++;
+    }
+  } else {
+    console.log("ℹ️  Sin tenant_domains en org B");
+  }
+
+  // Etapa 22: verify-tenant-domain sobre domain_id de B
+  console.log("\n=== A intenta verify-tenant-domain sobre domain_id de B ===");
+  const { data: domIdB } = await B.client
+    .from("tenant_domains").select("id").eq("organization_id", B.orgId).limit(1).maybeSingle();
+  if (domIdB?.id) {
+    const { data: vRes, error: vErr } = await A.client.functions.invoke("verify-tenant-domain", {
+      body: { domain_id: domIdB.id },
+    });
+    if (vErr || (vRes && (vRes as any).error)) {
+      console.log("✅ verify-tenant-domain rechazado:", (vErr as any)?.message ?? (vRes as any).error);
+    } else {
+      console.error("❌ LEAK verify-tenant-domain aceptó dominio ajeno:", vRes);
+      leaks++;
+    }
+  } else {
+    console.log("ℹ️  Sin tenant_domains en org B");
+  }
+
+  // Etapa 22: send-whatsapp-order sin JWT debe ser rechazado
+  console.log("\n=== Anónimo intenta send-whatsapp-order ===");
+  const anonClient = createClient(SUPABASE_URL!, SUPABASE_KEY!);
+  const { data: woRes, error: woErr } = await anonClient.functions.invoke("send-whatsapp-order", {
+    body: { items: [{ name: "x", price: 1, quantity: 1 }], customer_name: "x", customer_phone: "3000000000" },
+  });
+  if (woErr || (woRes && (woRes as any).error)) {
+    console.log("✅ send-whatsapp-order rechazado:", (woErr as any)?.message ?? (woRes as any).error);
+  } else {
+    console.error("❌ LEAK send-whatsapp-order aceptó request anónimo:", woRes);
+    leaks++;
+  }
+
+  // Etapa 22: optimize-image sin JWT debe ser rechazado
+  console.log("\n=== Anónimo intenta optimize-image ===");
+  const { data: oiRes, error: oiErr } = await anonClient.functions.invoke("optimize-image", {
+    body: { imageUrl: "https://example.com/x.jpg", bucket: "secrets", path: "../../etc/passwd" },
+  });
+  if (oiErr || (oiRes && (oiRes as any).error)) {
+    console.log("✅ optimize-image rechazado:", (oiErr as any)?.message ?? (oiRes as any).error);
+  } else {
+    console.error("❌ LEAK optimize-image aceptó request anónimo:", oiRes);
+    leaks++;
+  }
+
   console.log(`\n────── RESULT: ${leaks === 0 ? "✅ ISOLATION OK" : `❌ ${leaks} LEAKS`}`);
   process.exit(leaks === 0 ? 0 : 1);
 })();
