@@ -13,3 +13,4 @@
 - [SaaS Refactor Etapa 11](mem://features/saas-refactor-etapa11) — Top 6 offenders tenant-scoped (POS TableOrderDrawer, CloseSessionDialog, Compras, sitemap pages/default, invoice-ocr auto-match). Pendiente: Fiscal, AdminDashboard, outbox, ProductoDetalle, GerenteIA
 - [SaaS Refactor Etapa 12](mem://features/saas-refactor-etapa12) — Fiscal, AdminDashboard, ProductoDetalle, GerenteIA, welcome-email scoped
 - [SaaS Refactor Etapa 13](mem://features/saas-refactor-etapa13) — ProductsTab/ShippingTab/ModifiersTab/PresentationsTab scoped + defense-in-depth en mutations
+- [SaaS Refactor Etapa 14](mem://features/saas-refactor-etapa14) — Inventario/KDS/Mesas/POS verificados; SyncStatusTable scoped; audit regex look-back (33 hits)
