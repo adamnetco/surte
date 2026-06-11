@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import SortableList from "./SortableList";
 import { heroSlideSchema, type HeroSlideFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const CITIES = ["", "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
 
@@ -25,6 +26,7 @@ const defaultValues: HeroSlideFormValues = {
 };
 
 const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const { data: slides } = useQuery({
     queryKey: ["admin-hero-slides"],
     queryFn: async () => {
@@ -77,7 +79,8 @@ const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
         const { error } = await supabase.from("hero_slides").update(payload).eq("id", editing);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("hero_slides").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("hero_slides").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
       }
       toast.success("Slide guardado");

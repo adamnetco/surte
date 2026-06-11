@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -38,6 +39,7 @@ type ModifierOption = {
 
 const ModifiersTab = () => {
   const queryClient = useQueryClient();
+  const { currentOrg } = useOrganization();
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [search, setSearch] = useState("");
   const [showAllProducts, setShowAllProducts] = useState(false);
@@ -146,7 +148,8 @@ const ModifiersTab = () => {
         if (error) throw error;
         toast.success("Grupo actualizado");
       } else {
-        const { error } = await supabase.from("modifier_groups").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("modifier_groups").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Grupo creado");
       }
@@ -208,7 +211,8 @@ const ModifiersTab = () => {
         if (error) throw error;
         toast.success("Opción actualizada");
       } else {
-        const { error } = await supabase.from("modifier_options").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("modifier_options").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Opción creada");
       }

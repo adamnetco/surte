@@ -42,6 +42,7 @@ const getHubUrl = (s: FeaturedSection) => {
 };
 
 const FeaturedSectionsTab = ({ queryClient }: { queryClient: QueryClient }) => {
+  const { currentOrg } = useOrganization();
   const [editing, setEditing] = useState<FeaturedSection | null>(null);
 
   const { data: sections = [], isLoading } = useQuery({
@@ -101,6 +102,7 @@ const FeaturedSectionsTab = ({ queryClient }: { queryClient: QueryClient }) => {
       if (error) { toast.error(error.message); return; }
       toast.success("Sección actualizada");
     } else {
+      if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
       const { error } = await supabase.from("featured_sections").insert({
         label: section.label,
         emoji: section.emoji || "⭐",
@@ -108,6 +110,7 @@ const FeaturedSectionsTab = ({ queryClient }: { queryClient: QueryClient }) => {
         filter_value: section.filter_value || null,
         sort_order: sections.length,
         is_active: section.is_active ?? true,
+        organization_id: currentOrg.id,
       });
       if (error) { toast.error(error.message); return; }
       toast.success("Sección creada");

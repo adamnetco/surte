@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import TiptapEditor from "./TiptapEditor";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 interface LandingPage {
   id: string;

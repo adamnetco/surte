@@ -7,6 +7,7 @@ import { Plus, Trash2, Save, X, MapPin, Upload, Pencil, Loader2 } from "lucide-r
 import { toast } from "sonner";
 import { shippingZoneSchema, type ShippingZoneFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const useCities = () => useQuery({
   queryKey: ["admin-municipality-cities"],
@@ -20,6 +21,7 @@ const useCities = () => useQuery({
 const DEFAULT_CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
 
 const ShippingTab = ({ queryClient }: { queryClient: any }) => {
+  const { currentOrg } = useOrganization();
   const { data: cities = [] } = useCities();
   const CITIES = cities.length > 0 ? cities : DEFAULT_CITIES;
 
@@ -74,7 +76,8 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
         if (error) throw error;
         toast.success("Zona actualizada");
       } else {
-        const { error } = await supabase.from("shipping_zones").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("shipping_zones").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Zona creada");
       }
