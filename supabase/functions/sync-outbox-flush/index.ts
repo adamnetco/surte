@@ -90,6 +90,16 @@ async function processOne(row: any): Promise<{ ok: boolean; error?: string }> {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // Etapa 30: gate público — exige service_role key o CRON_SECRET para evitar drenajes externos.
+  const auth = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const ok = (auth && auth === SERVICE_KEY) || (cronSecret && auth === cronSecret);
+  if (!ok) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const { data: rows, error } = await supabase
       .from("sync_outbox")

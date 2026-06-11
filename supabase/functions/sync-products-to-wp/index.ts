@@ -72,9 +72,11 @@ Deno.serve(async (req) => {
 
     logHandle = await startSyncLog(sbAdmin, "sync-products-to-wp", orgId, { site_id, cpt, limit });
 
+    // Etapa 30: filtrar por organization_id explícitamente (service_role bypassa RLS)
     const { data: products } = await supabase
       .from("products")
       .select("id,name,slug,description,price,image_url,sku,gtin,brand,is_active,updated_at")
+      .eq("organization_id", orgId)
       .eq("is_active", true)
       .order("updated_at", { ascending: false })
       .limit(limit);

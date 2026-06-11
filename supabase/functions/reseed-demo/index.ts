@@ -34,13 +34,19 @@ Deno.serve(async (req) => {
   if (userErr || !userRes.user) return json({ error: "invalid_token" }, 401);
 
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-  const { data: isSuper } = await admin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userRes.user.id)
-    .in("role", ["superadmin", "admin"])
-    .maybeSingle();
-  if (!isSuper) return json({ error: "forbidden" }, 403);
+  // Etapa 30: solo superadmin (antes aceptaba admin global → cualquier admin de tenant podía reseed).
+  const { data: isMaster } = await admin.rpc("is_master_superadmin", { _user_id: userRes.user.id });
+  let allowed = !!isMaster;
+  if (!allowed) {
+    const { data: superRow } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userRes.user.id)
+      .eq("role", "superadmin")
+      .maybeSingle();
+    allowed = !!superRow;
+  }
+  if (!allowed) return json({ error: "forbidden" }, 403);
 
   // ---- 1. Asegurar usuario demo en Auth ----
   let demoUserId: string | null = null;
