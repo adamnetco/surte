@@ -1,9 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Etapa 27: schema estricto.
+const PayloadSchema = z.object({
+  phone: z.string().max(30).optional().nullable(),
+  message: z.string().min(1).max(2000),
+  apikey: z.string().max(80).optional().nullable(),
+  organization_id: z.string().uuid().optional().nullable(),
+});
+
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -48,7 +58,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { phone, message, apikey, organization_id } = await req.json();
+    const rawBody = await req.json().catch(() => null);
+    const parsedBody = PayloadSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return new Response(JSON.stringify({ error: 'invalid_payload', details: parsedBody.error.flatten() }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { phone, message, apikey, organization_id } = parsedBody.data;
 
     // Etapa 24: scope app_settings por organización (fallback global).
     const { getOrgScopedSettings, resolveCallerOrgId } = await import('../_shared/tenant-guard.ts');

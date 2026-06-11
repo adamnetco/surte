@@ -7,8 +7,8 @@
     <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(self)" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <!-- Etapa 25: CSP enforcing. Telemetría Etapa 21 sin violaciones registradas. Allowlist permisiva (https:) para no romper integraciones de terceros; endurecer a hosts específicos en etapa posterior. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self' https:; frame-ancestors 'self';" />
+    <!-- Etapa 28: CSP endurecida — script-src/frame-src acotados a hosts conocidos. connect/img/font siguen permisivas por integraciones dinámicas (storage signed URLs, terceros). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://*.supabase.in https://*.lovable.app https://*.lovable.dev https://*.lovableproject.com https://*.googletagmanager.com https://www.google-analytics.com https://*.googletagmanager.com https://challenges.cloudflare.com https://www.google.com https://www.gstatic.com https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.lovable.app https://*.lovableproject.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://*.lovable.app; connect-src 'self' https: wss:; frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://*.lovable.app; object-src 'none'; base-uri 'self'; form-action 'self' https:; frame-ancestors 'self';" />
     <meta name="theme-color" content="#0C4B83" />
     <script>
       // Apply dark theme before paint to avoid FOUC
