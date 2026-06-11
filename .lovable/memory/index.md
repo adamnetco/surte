@@ -20,3 +20,4 @@
 - [SaaS Refactor Etapa 18](mem://features/saas-refactor-etapa18) — sync-outbox-retry valida membership de org del row; CSP report-only en index.html; E2E ampliado (broadcast + outbox cross-tenant)
 - [SaaS Refactor Etapa 19](mem://features/saas-refactor-etapa19) — Fix cron broadcast: bypass service_role en broadcast-whatsapp-ycloud + organization_id en process-scheduled-broadcasts
 - [SaaS Refactor Etapa 20](mem://features/saas-refactor-etapa20) — Telemetría CSP: tabla csp_violations + edge function csp-report + listener cliente (sendBeacon)
+- [SaaS Refactor Etapa 21](mem://features/saas-refactor-etapa21) — Página /superadmin/seguridad/csp para revisar violaciones agregadas antes de endurecer CSP

@@ -21,6 +21,7 @@ const TenantHealth = lazy(() => import("@/modules/superadmin/components/TenantHe
 const TenantDataIsland = lazy(() => import("@/modules/superadmin/components/TenantDataIsland"));
 const CloudTasksStatus = lazy(() => import("@/modules/superadmin/pages/CloudTasksStatus"));
 const SeguridadAcceso = lazy(() => import("@/modules/superadmin/pages/SeguridadAcceso"));
+const CspViolations = lazy(() => import("@/modules/superadmin/pages/CspViolations"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -109,6 +110,7 @@ const SuperadminDashboard = () => {
                 <Route path="datos" element={<DataManagementTab />} />
                 <Route path="cloud-tareas" element={<CloudTasksStatus />} />
                 <Route path="seguridad/acceso" element={<SeguridadAcceso />} />
+                <Route path="seguridad/csp" element={<CspViolations />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
