@@ -668,7 +668,7 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
           {/* Multi-image Gallery Manager */}
           {editing && editing !== "new" && (
-            <ProductMediaGallery productId={editing} queryClient={queryClient} />
+            <ProductMediaGallery productId={editing} queryClient={queryClient} orgId={currentOrg?.id} />
           )}
 
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre *" className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors" />
