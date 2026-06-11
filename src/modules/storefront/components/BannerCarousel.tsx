@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
+import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -13,11 +14,14 @@ const BannerCarousel = () => {
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const { data: settings } = useAppSettings();
+  const tenantOrgId = useTenantOrgId();
 
   const { data: banners } = useQuery({
-    queryKey: ["banners"],
+    queryKey: ["banners", tenantOrgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("banners").select("*").eq("is_active", true).order("sort_order");
+      let q = supabase.from("banners").select("*").eq("is_active", true).order("sort_order");
+      if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
