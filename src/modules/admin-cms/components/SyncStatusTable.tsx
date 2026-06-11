@@ -34,6 +34,7 @@ const TRACKED_SERVICES = [
 ] as const;
 
 export default function SyncStatusTable() {
+  const { currentOrg } = useOrganization();
   const [rows, setRows] = useState<ServiceRow[]>(
     TRACKED_SERVICES.map((s) => ({ service_name: s.key })),
   );
