@@ -88,7 +88,8 @@ const CouponsTab = ({ queryClient }: { queryClient: any }) => {
         if (error) throw error;
         toast.success("Cupón actualizado");
       } else {
-        const { error } = await supabase.from("coupons").insert(payload);
+        if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+        const { error } = await supabase.from("coupons").insert({ ...payload, organization_id: currentOrg.id });
         if (error) throw error;
         toast.success("Cupón creado");
       }
