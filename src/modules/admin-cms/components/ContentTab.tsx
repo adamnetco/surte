@@ -32,9 +32,10 @@ const ContentTab = ({ queryClient }: { queryClient: any }) => {
 const BannersSection = ({ queryClient }: { queryClient: any }) => {
   const { currentOrg } = useOrganization();
   const { data: banners } = useQuery({
-    queryKey: ["admin-banners"],
+    queryKey: ["admin-banners", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("banners").select("*").order("sort_order");
+      const { data, error } = await scopedFrom("banners", currentOrg!.id).order("sort_order");
       if (error) throw error;
       return data;
     },
