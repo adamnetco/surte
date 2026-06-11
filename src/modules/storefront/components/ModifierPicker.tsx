@@ -25,6 +25,7 @@ interface ModifierPickerProps {
 }
 
 const ModifierPicker = ({ productId, onModifiersChange }: ModifierPickerProps) => {
+  const tenantOrgId = useTenantOrgId();
   const [selections, setSelections] = useState<Record<string, Record<string, number>>>({});
   // { [groupId]: { [optionId]: quantity } }
 
