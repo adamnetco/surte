@@ -23,3 +23,4 @@
 - [SaaS Refactor Etapa 21](mem://features/saas-refactor-etapa21) — Página /superadmin/seguridad/csp para revisar violaciones agregadas antes de endurecer CSP
 - [SaaS Refactor Etapa 22](mem://features/saas-refactor-etapa22) — Tenant-scope v7: helper `_shared/tenant-guard.ts` + hardening 6 edge functions (cloudflare-*, optimize-image, send-whatsapp-order, verify-tenant-domain)
 - [SaaS Refactor Etapa 23](mem://features/saas-refactor-etapa23) — Hardening MEDIO: log-login-attempt sin lookup user_id, fetch-google-reviews requiere admin, send-transactional-email role gate, cart-sync ignora user_id del body
+- [SaaS Refactor Etapa 24](mem://features/saas-refactor-etapa24) — app_settings multi-tenant: send-ycloud-whatsapp y send-callmebot scoped por org con fallback global

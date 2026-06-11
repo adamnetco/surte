@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     }
     const token = authHeader.replace("Bearer ", "");
     const isServiceCall = token === serviceKey;
+    let callerUserId = "service";
     if (!isServiceCall) {
       const sb = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } },
@@ -39,6 +40,7 @@ Deno.serve(async (req) => {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      callerUserId = userId;
       const { data: allowed } = await supabase.rpc("has_any_role", {
         _user_id: userId,
         _roles: ["admin", "superadmin", "agente"],
@@ -50,25 +52,23 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Etapa 24: scope app_settings por organización (fallback global).
+    const { getOrgScopedSettings, resolveCallerOrgId } = await import("../_shared/tenant-guard.ts");
+    const bodyPeek = await req.clone().json().catch(() => ({} as any));
+    const orgId = await resolveCallerOrgId(supabase, callerUserId, isServiceCall, bodyPeek?.organization_id ?? null);
 
-    // Get YCloud credentials from app_settings
-    const { data: settingsRows } = await supabase
-      .from("app_settings")
-      .select("key, value")
-      .in("key", ["ycloud_api_key", "ycloud_from_number"]);
-
-    const settings: Record<string, string> = {};
-    settingsRows?.forEach((r: any) => { settings[r.key] = r.value; });
-
+    const settings = await getOrgScopedSettings(supabase, orgId, ["ycloud_api_key", "ycloud_from_number"]);
     const apiKey = settings.ycloud_api_key;
     const fromNumber = settings.ycloud_from_number;
 
     if (!apiKey || !fromNumber) {
       return new Response(
-        JSON.stringify({ error: "YCloud no configurado. Agrega API Key y número en Configuración." }),
+        JSON.stringify({ error: "YCloud no configurado para esta organización." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+
 
     const body = await req.json();
     const { action } = body;

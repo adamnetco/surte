@@ -100,3 +100,62 @@ export async function requireAdminRole(
   if (!ok) return jsonResponse({ error: "forbidden" }, 403);
   return true;
 }
+
+/**
+ * Resuelve organization_id del caller. Prioridad:
+ * 1) explicit body.organization_id (validado contra membership salvo service_role/superadmin)
+ * 2) primera org activa donde el user es miembro
+ * Devuelve null si no se puede resolver.
+ */
+export async function resolveCallerOrgId(
+  svc: SupabaseClient,
+  userId: string,
+  isServiceRole: boolean,
+  explicitOrgId?: string | null,
+): Promise<string | null> {
+  if (explicitOrgId) {
+    if (isServiceRole) return explicitOrgId;
+    const mem = await requireMembership(svc, userId, explicitOrgId, false);
+    return mem === true ? explicitOrgId : null;
+  }
+  if (isServiceRole) return null;
+  const { data } = await svc
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
+  return (data as any)?.organization_id ?? null;
+}
+
+/**
+ * Lee claves de app_settings con scope org. Si la org no tiene la clave,
+ * cae a la global (organization_id IS NULL) para back-compat.
+ */
+export async function getOrgScopedSettings(
+  svc: SupabaseClient,
+  orgId: string | null,
+  keys: string[],
+): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  if (orgId) {
+    const { data: scoped } = await svc
+      .from("app_settings")
+      .select("key, value")
+      .eq("organization_id", orgId)
+      .in("key", keys);
+    scoped?.forEach((r: any) => { out[r.key] = r.value; });
+  }
+  const missing = keys.filter((k) => !(k in out));
+  if (missing.length) {
+    const { data: global } = await svc
+      .from("app_settings")
+      .select("key, value")
+      .is("organization_id", null)
+      .in("key", missing);
+    global?.forEach((r: any) => { out[r.key] = r.value; });
+  }
+  return out;
+}
+
