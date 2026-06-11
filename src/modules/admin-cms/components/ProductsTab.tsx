@@ -353,7 +353,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     };
 
     if (editing && editing !== "new") {
-      const { error } = await supabase.from("products").update(payload).eq("id", editing);
+      if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+      const { error } = await supabase.from("products").update(payload).eq("id", editing).eq("organization_id", currentOrg.id);
       if (error) { toast.error(errorToMessage(error)); return; }
       toast.success("Producto actualizado");
     } else {
@@ -372,14 +373,16 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
   const deleteProduct = async (id: string) => {
     if (!confirm("¿Eliminar este producto?")) return;
-    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+    const { error } = await supabase.from("products").delete().eq("id", id).eq("organization_id", currentOrg.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Producto eliminado");
     queryClient.invalidateQueries({ queryKey: ["admin-products"] });
   };
 
   const toggleVisibility = async (id: string, currentActive: boolean) => {
-    const { error } = await supabase.from("products").update({ is_active: !currentActive }).eq("id", id);
+    if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+    const { error } = await supabase.from("products").update({ is_active: !currentActive }).eq("id", id).eq("organization_id", currentOrg.id);
     if (error) { toast.error(error.message); return; }
     toast.success(!currentActive ? "Producto visible" : "Producto oculto");
     queryClient.invalidateQueries({ queryKey: ["admin-products"] });
