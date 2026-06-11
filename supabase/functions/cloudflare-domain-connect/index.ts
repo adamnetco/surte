@@ -73,7 +73,7 @@ export const handler = async (req: Request): Promise<Response> => {
   const ownership = cfJson.result.ownership_verification;
   const dcv = cfJson.result.ssl?.validation_records?.[0];
 
-  // Look up organization_id for the site (required NOT NULL on insert path).
+  // Look up organization_id + verificar membership del caller (Etapa 22).
   const { data: siteRow } = await svc
     .from("tenant_sites")
     .select("organization_id")
@@ -81,6 +81,20 @@ export const handler = async (req: Request): Promise<Response> => {
     .maybeSingle();
   if (!siteRow?.organization_id) {
     return json({ error: "site_not_found", tenant_id: body.tenant_id }, 404);
+  }
+  const { data: isMaster } = await svc.rpc("is_master_superadmin", { _user_id: u.user.id });
+  if (!isMaster) {
+    const isSuper = roles?.some((r) => r.role === "superadmin");
+    if (!isSuper) {
+      const { data: mem } = await svc
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", u.user.id)
+        .eq("organization_id", siteRow.organization_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!mem) return json({ error: "forbidden_not_member" }, 403);
+    }
   }
 
   const { error: upsertErr } = await svc.from("tenant_domains").upsert(
