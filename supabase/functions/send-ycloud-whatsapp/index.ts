@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,6 +8,47 @@ const corsHeaders = {
 };
 
 const YCLOUD_API = "https://api.ycloud.com/v2";
+
+// Etapa 27: schemas estrictos por acción.
+const Phone = z.string().min(7).max(20).regex(/^[\d+\-\s()]+$/);
+const SendOrderSchema = z.object({
+  action: z.literal("send_order"),
+  to: Phone,
+  order_number: z.string().min(1).max(60),
+  customer_name: z.string().max(200).optional(),
+  items: z.array(z.object({
+    quantity: z.number().int().min(1).max(9999),
+    product_name: z.string().max(200),
+    total_price: z.number().min(0).max(1e10),
+  }).passthrough()).max(500).optional(),
+  total: z.number().min(0).max(1e10),
+  delivery_price: z.number().min(0).max(1e10).optional(),
+  subtotal: z.number().min(0).max(1e10).optional(),
+  notes: z.string().max(2000).optional(),
+  organization_id: z.string().uuid().optional(),
+});
+const SendTemplateSchema = z.object({
+  action: z.literal("send_template"),
+  to: Phone,
+  template_name: z.string().min(1).max(120),
+  language: z.string().max(10).optional(),
+  components: z.array(z.any()).max(50).optional(),
+  organization_id: z.string().uuid().optional(),
+});
+const SendTextSchema = z.object({
+  action: z.literal("send_text"),
+  to: Phone,
+  message: z.string().min(1).max(4000),
+  organization_id: z.string().uuid().optional(),
+});
+const CheckBalanceSchema = z.object({
+  action: z.literal("check_balance"),
+  organization_id: z.string().uuid().optional(),
+});
+const BodySchema = z.discriminatedUnion("action", [
+  SendOrderSchema, SendTemplateSchema, SendTextSchema, CheckBalanceSchema,
+]);
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
