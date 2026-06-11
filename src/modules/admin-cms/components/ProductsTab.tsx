@@ -37,25 +37,27 @@ const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
 
 /* ── Multi-image gallery manager per product ── */
-const ProductMediaGallery = ({ productId, queryClient }: { productId: string; queryClient: any }) => {
+const ProductMediaGallery = ({ productId, queryClient, orgId }: { productId: string; queryClient: any; orgId?: string | null }) => {
   const { upload, uploading } = useImageUpload();
   const { data: mediaItems, isLoading } = useQuery({
-    queryKey: ["product-media-admin", productId],
+    queryKey: ["product-media-admin", productId, orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_media")
         .select("*")
         .eq("product_id", productId)
+        .eq("organization_id", orgId!)
         .order("sort_order");
       if (error) throw error;
       return data;
     },
-    enabled: !!productId,
+    enabled: !!productId && !!orgId,
   });
 
   const handleUploadMultiple = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    if (!orgId) { toast.error("Selecciona una organización"); return; }
     const currentMax = mediaItems?.length || 0;
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -63,6 +65,7 @@ const ProductMediaGallery = ({ productId, queryClient }: { productId: string; qu
       if (url) {
         await supabase.from("product_media").insert({
           product_id: productId,
+          organization_id: orgId,
           media_type: "image",
           media_url: url,
           sort_order: currentMax + i,
