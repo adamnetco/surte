@@ -143,11 +143,12 @@ const ProductMediaGallery = ({ productId, queryClient, orgId }: { productId: str
 };
 
 /* ── Featured Tags Picker — shows featured sections and lets admin quickly add tags ── */
-const FeaturedTagsPicker = ({ tags, onTagsChange }: { tags: string; onTagsChange: (t: string) => void }) => {
+const FeaturedTagsPicker = ({ tags, onTagsChange, orgId }: { tags: string; onTagsChange: (t: string) => void; orgId?: string | null }) => {
   const { data: sections } = useQuery({
-    queryKey: ["featured_sections"],
+    queryKey: ["featured_sections", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("featured_sections").select("*").order("sort_order");
+      const { data, error } = await supabase.from("featured_sections").select("*").eq("organization_id", orgId!).order("sort_order");
       if (error) throw error;
       return data;
     },
