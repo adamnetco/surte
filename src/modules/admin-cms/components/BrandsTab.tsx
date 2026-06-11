@@ -31,9 +31,10 @@ const defaultValues: BrandFormValues = {
 const BrandsTab = ({ queryClient }: { queryClient: any }) => {
   const { currentOrg } = useOrganization();
   const { data: brands } = useQuery({
-    queryKey: ["admin-brands"],
+    queryKey: ["admin-brands", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("brands").select("*").order("sort_order");
+      const { data, error } = await scopedFrom("brands", currentOrg!.id).order("sort_order");
       if (error) throw error;
       return data;
     },
