@@ -45,9 +45,10 @@ const CouponsTab = ({ queryClient }: { queryClient: any }) => {
   const isActive = watch("is_active");
 
   const { data: coupons, isLoading } = useQuery({
-    queryKey: ["admin-coupons"],
+    queryKey: ["admin-coupons", currentOrg?.id],
+    enabled: !!currentOrg?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("coupons").select("*").order("created_at", { ascending: false });
+      const { data, error } = await scopedFrom("coupons", currentOrg!.id).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
