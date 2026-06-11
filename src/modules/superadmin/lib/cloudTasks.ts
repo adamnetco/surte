@@ -66,9 +66,14 @@ async function queryEnv<T>(
   }
 }
 
-async function checkColumnExists(env: EnvKey, table: string, column: string): Promise<EnvResult> {
+async function checkColumnExists(env: EnvKey, table: PublicTable, column: string): Promise<EnvResult> {
+  // Introspección: tabla viene tipada (keyof Tables) pero la columna es dinámica,
+  // por lo que el builder no la puede validar en compile-time. Acotamos el cast
+  // a la firma mínima necesaria en lugar de un `as any` global.
   const r = await queryEnv(env, async () =>
-    (supabase as any).from(table).select(column).limit(1),
+    (supabase.from(table) as unknown as { select: (c: string) => { limit: (n: number) => Promise<{ data: unknown; error: { message: string } | null }> } })
+      .select(column)
+      .limit(1),
   );
   if (r.ok) return { status: "done", detail: `Columna ${column} existe`, checkedAt: now() };
   if (r.error?.includes("does not exist") || r.error?.includes("column"))
@@ -77,7 +82,13 @@ async function checkColumnExists(env: EnvKey, table: string, column: string): Pr
 }
 
 async function checkTableExists(env: EnvKey, table: string): Promise<EnvResult> {
-  const r = await queryEnv(env, async () => (supabase as any).from(table).select("id").limit(1));
+  // `table` puede no existir todavía: por eso aceptamos `string` y acotamos el
+  // cast a la firma mínima.
+  const r = await queryEnv(env, async () =>
+    (supabase.from(table as PublicTable) as unknown as { select: (c: string) => { limit: (n: number) => Promise<{ data: unknown; error: { message: string } | null }> } })
+      .select("id")
+      .limit(1),
+  );
   if (r.ok) return { status: "done", detail: `Tabla ${table} existe`, checkedAt: now() };
   if (r.error?.includes("does not exist") || r.error?.includes("relation"))
     return { status: "pending", detail: `Falta tabla ${table}`, checkedAt: now() };
