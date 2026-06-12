@@ -445,22 +445,25 @@ const LoginRouter = () => {
                     type="button"
                     onClick={handleEmailLink}
                     disabled={disabled}
-                    className="w-full mb-2 flex items-center justify-center gap-2.5 bg-white/10 border border-white/10 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors disabled:opacity-60"
+                    aria-busy={emailLinkLoading}
+                    aria-disabled={disabled}
+                    className="w-full min-h-11 mb-2 flex items-center justify-center gap-2.5 bg-white/10 border border-white/10 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none"
                   >
-                    {emailLinkLoading ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
+                    {emailLinkLoading ? <Loader2 className="animate-spin" size={16} aria-hidden="true" /> : <Mail size={16} aria-hidden="true" />}
                     {label}
                   </button>
                   <div className="mb-3 text-[11px] text-white/50 flex items-center justify-between px-1">
                     <span>Intentos: {gate.attemptsUsed}/{gate.attemptsMax}</span>
                     <button
                       type="button"
+                      data-testid="recover-access-link"
                       onClick={() => {
                         const tenantSlug = tienda.trim().toLowerCase();
                         const url = new URL("/reset-password", window.location.origin);
                         if (tenantSlug) url.searchParams.set("tienda", tenantSlug);
                         navigate(url.pathname + url.search);
                       }}
-                      className="underline decoration-white/30 hover:text-white"
+                      className="underline decoration-white/30 hover:text-white focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none rounded px-1"
                     >
                       Recuperar acceso
                     </button>
@@ -468,6 +471,8 @@ const LoginRouter = () => {
                   {emailNotice && (
                     <p
                       data-testid="email-notice"
+                      role={emailNotice.kind === "error" ? "alert" : "status"}
+                      aria-live="polite"
                       className={`mb-2 text-[11px] px-2 py-1.5 rounded-md ${
                         emailNotice.kind === "info"
                           ? "bg-amber-500/10 text-amber-200 border border-amber-500/20"
