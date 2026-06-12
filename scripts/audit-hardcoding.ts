@@ -14,7 +14,7 @@
  */
 import { spawnSync } from "node:child_process";
 
-const BASELINE = 14; // Etapa 38 — categorías genéricas; mantiene baseline post Etapa 37.
+const BASELINE = 6; // Etapa 40 — fallback keys legacy + READMEs + cloudTasks aceptados como deuda controlada.
 const TERMS = [
   "surteya",
   "SurteYa",
@@ -26,11 +26,12 @@ const TERMS = [
 ];
 const SCOPES = ["src/", "supabase/"];
 // Excluidos del audit (legítimos o gestionados por scaffolds):
-// - supabase/migrations: seeds históricos (regla POS-primer: no se editan)
-// - supabase/functions/auth-email-hook & send-transactional-email & resend-mail-service & send-web-push: scaffold de email-domain
-// - supabase/seeds: seeds tenant-específicos aislados (Etapa 37)
-// - SurteyaRedirect.tsx, legacyDomains.ts: redirección de dominio legacy
-// - *.test.ts: fixtures con dominios reales
+// - supabase/migrations + supabase/seeds: seeds históricos / tenant-específicos.
+// - supabase/functions/<scaffolds>: scaffold de email-domain Lovable-managed.
+// - SurteyaRedirect.tsx, legacyDomains.ts: redirección de dominio legacy.
+// - Fallback keys legacy (storage migration): cartToken/CartContext/ThemeContext/OrganizationContext.
+// - READMEs de módulos (documentación histórica).
+// - *.test.ts(x): fixtures con dominios reales.
 const IGNORE_GLOBS = [
   "supabase/migrations",
   "supabase/seeds",
@@ -41,6 +42,11 @@ const IGNORE_GLOBS = [
   "supabase/functions/_shared/transactional-email-templates",
   "src/components/SurteyaRedirect.tsx",
   "src/modules/tenant/lib/legacyDomains.ts",
+  "src/modules/cart/lib/cartToken.ts",
+  "src/modules/cart/context/CartContext.tsx",
+  "src/modules/platform/context/ThemeContext.tsx",
+  "src/modules/platform/context/OrganizationContext.tsx",
+  "**/README.md",
   ".test.ts",
   ".test.tsx",
 ];
