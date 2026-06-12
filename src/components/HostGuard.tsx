@@ -9,7 +9,7 @@ interface Props {
    * "system"     → la ruta solo tiene sentido en hosts del panel SaaS
    *                 (admin.sistecpos.com, app.sistecpos.com, sistecpos.com).
    * "storefront" → la ruta solo tiene sentido en un host de tenant
-   *                 (surteya.sistecpos.com, <slug>.sistecpos.com).
+   *                 (<slug>.sistecpos.com).
    */
   require: Scope;
   children: ReactNode;
