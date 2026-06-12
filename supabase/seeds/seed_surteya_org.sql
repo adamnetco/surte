@@ -96,9 +96,7 @@ FROM org, (VALUES
   ('whatsapp_phone',        '+573001234567'),
   ('whatsapp_greeting',     'Hola SURTÉ YA, quiero hacer un pedido.')
 ) AS kv(key, value)
-ON CONFLICT (organization_id, key) DO UPDATE SET
-  value      = EXCLUDED.value,
-  updated_at = now();
+ON CONFLICT (organization_id, key) WHERE (organization_id IS NOT NULL) DO NOTHING;
 
 -- 4) Modules activos --------------------------------------------------------
 WITH org AS (SELECT id FROM public.organizations WHERE slug = 'surteya')
