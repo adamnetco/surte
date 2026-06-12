@@ -1,6 +1,6 @@
 ---
 name: Demo Tenant Seed
-description: Baseline operativa sembrada para la organización Demo SistecPOS para que POS, KDS, mesas e inventario funcionen sin configuración manual
+description: Baseline operativa sembrada para la organización Demo SistecPOS (vitrina pública en `/t/demo/*`)
 type: feature
 ---
 
@@ -9,29 +9,39 @@ type: feature
 - `id`: `59a4032f-3eeb-4312-a84a-f6d042f019ec`
 - `slug`: `demo`
 - `name`: `Demo SistecPOS`
+- `tenant_sites.slug='demo'` (`id=2f3c3bbc-40bc-459e-be3c-423359b0ac6f`, `is_published=true`)
 
 ## Seed aplicado (idempotente)
 
-- **organization_modules**: `retail`, `pos`, `kds`, `mesas`, `inventario`, `crm`, `licencias`
-- **locations**: `Sede Demo Centro` (code `DEMO-01`, Bucaramanga, `is_main=true`)
-- **cash_registers**: `Caja 1` (code `CAJA-01`)
+- **organization_modules**: 11 módulos activos (`retail`, `pos`, `kds`, `mesas`, `inventario`, `crm`, `licencias`, …)
+- **locations**: `Sede Demo Centro` (1 sede)
+- **cash_registers**: `Caja 1`
 - **kitchen_stations**: `Cocina principal`
-- **dining_areas**: `Salón principal` + 4 mesas (`Mesa 1..4`, capacidad 4)
-- **categories**: Bebidas, Snacks, Panadería (slugs `demo-*`)
-- **products**: 10 ítems con SKU `DEMO-001..DEMO-010`, `price`, `cost_price`, `stock`
+- **dining_areas**: `Salón principal` + 4 mesas
+- **categories**: 3 (`demo-*`)
+- **products**: 10 ítems (`DEMO-001..DEMO-010`)
+- **tenant_domains**: `demo.sistecpos.com` (primary, SSL `pending_validation` — bloqueado por DNS del cliente, ver `demo-dns-pending`) y `demo.ventas.click`.
 
-## Convención
+## Frontend
+- `LoginRouter.tsx` usa `placeholder="ej: demo"` para que el portal sugiera este tenant.
+- Rutas storefront: `/t/demo/*` funcionan sin SSL custom (van por dominio Lovable).
 
-- El `module_key` correcto para el POS nativo es **`pos`** (no `pos_counter`). Cualquier `hasModule("pos_counter")` en código es un bug.
-- Las mesas usan columna `label` (no `name`).
-- Los slugs de categorías/productos demo van prefijados con `demo-` para evitar choques con otros tenants.
+## Convenciones
+- `module_key` correcto del POS nativo es **`pos`** (no `pos_counter`).
+- Mesas usan columna `label` (no `name`).
+- Slugs demo prefijados con `demo-` para evitar choques con otros tenants.
 
-## Pendiente (Fase 2.5)
+## Pendiente (Fase 2.5) — usuario demo
 
-Cuando exista un usuario auth para el demo (`demo@sistecpos.com` u otro):
+Hoy `organization_members` para esta org tiene **0 filas**. Para habilitar login real:
+- Invocar edge fn `reseed-demo` (solo superadmin) que:
+  1. Crea/recupera `demo@sistecpos.com` en `auth.users`.
+  2. Upsert `organization_members` con `role='admin'`.
+  3. Upsert `user_roles` con `role='admin'` global.
+- Alternativa SQL manual si el usuario auth ya existe:
 ```sql
 INSERT INTO public.organization_members (organization_id, user_id, role)
-VALUES ('59a4032f-1f2f-47c1-81c7-...', '<auth.uid>', 'admin')
+VALUES ('59a4032f-3eeb-4312-a84a-f6d042f019ec', '<auth.uid>', 'admin')
 ON CONFLICT (organization_id, user_id) DO UPDATE SET role = 'admin';
 
 INSERT INTO public.user_roles (user_id, role)
