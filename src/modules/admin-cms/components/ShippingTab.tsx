@@ -181,7 +181,7 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             rows={5}
-            placeholder={"Bucaramanga, Cabecera, 5000\nFloridablanca, Cañaveral, 6000"}
+            placeholder={"Ciudad, Barrio, 5000\nCiudad, Otro Barrio, 6000"}
             className="w-full bg-muted rounded-lg px-3 py-2 text-sm font-mono border border-transparent focus:border-accent focus:outline-none transition-colors"
           />
           <div className="flex gap-2">
