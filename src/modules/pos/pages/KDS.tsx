@@ -35,7 +35,7 @@ export default function KDS() {
   const [, force] = useState(0);
 
   useEffect(() => { if (!authLoading && !user) navigate("/login"); }, [user, authLoading, navigate]);
-  useEffect(() => { document.title = "KDS · SurteYa"; }, []);
+  useEffect(() => { document.title = `KDS · ${currentOrg?.name ?? "Mi Negocio"}`; }, [currentOrg?.name]);
 
   // Re-render every 30s to update timers
   useEffect(() => {
