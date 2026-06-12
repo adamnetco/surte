@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
-import { errorToMessage } from "@/lib/errors";
+import { errorToMessage, isTenantNotWritableError } from "@/lib/errors";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/modules/cart/context/CartContext";
 import { AuthProvider } from "@/modules/auth/context/AuthContext";
