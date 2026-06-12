@@ -91,11 +91,19 @@ Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surtey
 
 ## Etapa 37 — Limpieza [SEED] en migraciones y edge functions
 
-- Edge functions con literales: `sitemap`, `send-web-push`, `send-transactional-email`, `auth-email-hook`, `resend-mail-service`, `get-landing`, `_shared/transactional-email-templates/order-confirmation.tsx`.
-  - Aceptar `organization_id` o `host` y resolver tenant vía `resolve-tenant`.
-  - Plantillas leen branding/contact desde `organizations` + `app_settings`.
-- Migraciones históricas con seed de SurteYa: **no** se modifican (regla de POS-primer). En su lugar, nueva migración `seed_surteya_org.sql` que upserta SurteYa como organización con su slug, dominios, módulos, contenidos legales, hero, branding, números, ciudad. Cualquier migración futura usa orgs genéricas.
-- Verificación: en Test, borrar la org SurteYa y comprobar que el sistema arranca limpio con orgs demo.
+**Hecho:**
+- `sitemap/index.ts` → `storeName` fallback usa env `PUBLIC_SITE_NAME` antes de "Mi Negocio" (sin "SURTÉ YA").
+- `send-web-push/index.ts` → `VAPID_SUBJECT` con fallback genérico `mailto:no-reply@example.com`.
+- `resend-mail-service/index.ts` → `DEFAULT_FROM` desde env `RESEND_DEFAULT_FROM`, fallback "Mi Negocio <noreply@example.com>".
+- `_shared/transactional-email-templates/order-confirmation.tsx` → recibe `siteName`, `tagline`, `footerBrand` por props. Default neutro "Mi Negocio". Renombrados estilos `tagline`→`taglineStyle`, `footerBrand`→`footerBrandStyle` para evitar colisión con props. Preview data sin items específicos.
+- Scaffolds Lovable-managed (`auth-email-hook`, `send-transactional-email`) se dejan intactos por contrato del scaffold (sender domain se fija en deploy time del email setup).
+- Nuevo `supabase/seeds/seed_surteya_org.sql` aislado: upsert idempotente de la org SurteYa con slug, dominios, branding, app_settings (hero, SEO, business hours), módulos. Documenta checklist post-seed (logo, DIAN, YCloud, catálogo).
+- Verificación: `grep` de tokens SurteYa en `supabase/functions/` excluyendo scaffolds Lovable = 0. Baseline auditor 19 → 14.
+
+**Pendiente Etapa 37+:**
+- `cloudTasks.ts` (superadmin) sigue registrando SurteYa por slug — refactor para alimentarse de `org_signup_requests` o del seed.
+- Verificación final: en Test, borrar org SurteYa, ejecutar `seed_surteya_org.sql`, validar storefront 100% funcional sin código específico.
+
 
 ## Etapa 38 — Tipos de negocio y categorías genéricas
 

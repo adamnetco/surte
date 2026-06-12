@@ -18,7 +18,7 @@ import {
 
 import type { TemplateEntry } from './registry.ts'
 
-const SITE_NAME = 'SURTÉ YA'
+const DEFAULT_SITE_NAME = 'Mi Negocio'
 
 interface OrderItem {
   name: string
@@ -32,6 +32,9 @@ interface OrderConfirmationProps {
   items?: OrderItem[]
   total?: number
   address?: string
+  siteName?: string
+  tagline?: string
+  footerBrand?: string
 }
 
 const formatCOP = (n: number) =>
@@ -47,7 +50,12 @@ const OrderConfirmationEmail = ({
   items,
   total,
   address,
-}: OrderConfirmationProps) => (
+  siteName,
+  tagline,
+  footerBrand,
+}: OrderConfirmationProps) => {
+  const SITE_NAME = siteName || DEFAULT_SITE_NAME
+  return (
   <Html lang="es" dir="ltr">
     <Head />
     <Preview>
@@ -57,7 +65,7 @@ const OrderConfirmationEmail = ({
       <Container style={container}>
         <Section style={header}>
           <Heading style={brand}>{SITE_NAME}</Heading>
-          <Text style={tagline}>Soluciones Alimenticias</Text>
+          {tagline && <Text style={taglineStyle}>{tagline}</Text>}
         </Section>
 
         <Heading style={h1}>¡Pedido recibido! 🎉</Heading>
@@ -110,33 +118,33 @@ const OrderConfirmationEmail = ({
           Este correo confirma que recibimos tu pedido. No es necesario
           responder.
         </Text>
-        <Text style={footerBrand}>
-          {SITE_NAME} — Conjuguémonos Grupo Empresarial
-        </Text>
+        {footerBrand && <Text style={footerBrandStyle}>{footerBrand}</Text>}
       </Container>
     </Body>
   </Html>
-)
+  )
+}
 
 export const template = {
   component: OrderConfirmationEmail,
   subject: (data: Record<string, any>) =>
-    `Pedido #${data.orderNumber || '---'} recibido — ${SITE_NAME}`,
+    `Pedido #${data.orderNumber || '---'} recibido — ${data.siteName || DEFAULT_SITE_NAME}`,
   displayName: 'Confirmación de pedido',
   previewData: {
     customerName: 'María López',
     orderNumber: 1042,
     items: [
-      { name: 'Pulpa de Mango 1kg', quantity: 2, price: 12000 },
-      { name: 'Pechuga de Pollo', quantity: 1, price: 18500 },
-      { name: 'Agua Natural 20L', quantity: 1, price: 9000 },
+      { name: 'Producto A', quantity: 2, price: 12000 },
+      { name: 'Producto B', quantity: 1, price: 18500 },
+      { name: 'Producto C', quantity: 1, price: 9000 },
     ],
     total: 51500,
-    address: 'Cra 27 #36-15, Cabecera, Bucaramanga',
+    address: 'Dirección de ejemplo',
+    siteName: 'Mi Negocio',
   },
 } satisfies TemplateEntry
 
-// Styles — SURTÉ YA brand palette
+// Styles — neutral brand palette (tenant brand applied via props)
 const main = {
   backgroundColor: '#ffffff',
   fontFamily: "'Inter', 'Montserrat', Arial, sans-serif",
@@ -155,7 +163,7 @@ const brand = {
   margin: '0',
   letterSpacing: '1px',
 }
-const tagline = {
+const taglineStyle = {
   fontSize: '11px',
   color: '#76B833',
   margin: '4px 0 0',
@@ -235,7 +243,7 @@ const footer = {
   color: '#999999',
   margin: '16px 25px 8px',
 }
-const footerBrand = {
+const footerBrandStyle = {
   fontSize: '11px',
   color: '#0C4B83',
   margin: '0 25px 24px',
