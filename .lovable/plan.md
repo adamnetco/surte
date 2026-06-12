@@ -1,166 +1,100 @@
-# Plan — Health Observability, Tenant Provisioning E2E y UX de Activación
 
-Este plan cubre 5 frentes solicitados. Se puede ejecutar por fases independientes; recomiendo el orden listado.
+# Refactor: SurteYa como tenant autónomo + limpieza multi-tenant
 
----
+**Objetivo:** eliminar todo hardcoding de SurteYa, Bucaramanga, Santander, slugs, copys, cárnicos/pulpas/panificados, números de WhatsApp, etc. del core. SurteYa pasa a ser una organización más, alimentada exclusivamente desde `organizations`, `organization_modules`, `tenant_sites`, `tenant_domains`, `app_settings` y seeds propios.
 
-## Fase 1 — Verificación E2E del aprovisionamiento de subdominio (.sistecpos.com)
+**Estado actual auditado:** ~230 ocurrencias de `surteya / SurteYa / Bucaramanga` en **74 archivos** (src + supabase). 2 hallazgos pendientes en `tenant-scope v5`: `src/lib/errors.ts:96` (query sin org filter) y `src/modules/auth/pages/Login.tsx:45` (slug `surteya` hardcodeado).
 
-**Objetivo:** garantizar que al crear una tienda quede `<slug>.sistecpos.com` con DNS + SSL emitido y visible en la UI.
-
-**Backend**
-- `tenant-create-with-owner`: confirmar que llama a `cloudflare-domain-connect` y persiste `tenant_domains.cloudflare_hostname_id`, `ssl_status='pending_validation'`.
-- Nueva edge function `tenant-provision-verify` (idempotente): recibe `organization_id`, refresca SSL via Cloudflare API, actualiza `tenant_domains.ssl_status` + `last_checked_at`. Reusa lógica de `cloudflare-domain-status`.
-- Tests Deno: `tenant-create-with-owner.test.ts` valida que tras crear org se inserta `tenant_sites` + `tenant_domains` con hostname `slug.sistecpos.com`.
-
-**Frontend**
-- `SiteDetailsPanel.tsx`: añadir bloque "Aprovisionamiento" con 3 chips: DNS (CNAME OK / pendiente), SSL (issued / pending / failed), Cloudflare hostname id.
-- Botón "Reintentar verificación" → invoca `tenant-provision-verify`.
-- Polling cada 30s mientras `ssl_status !== 'active'`, máximo 10 min, luego detener y mostrar acción manual.
+Skill base: **POS-fix-hardcoding** (búsqueda → clasificar [SEED]/[CONFIG]/[COPY] → migrar → verificar grep=0).
 
 ---
 
-## Fase 2 — Timeline de salud en la barra de estado
+## Etapa 32 — Inventario y clasificación (1 PR, sin código)
 
-**Objetivo:** auditar cambios de estado (printer/core/wp) con historial inspeccionable.
+- Ejecutar grep exhaustivo y volcar a `docs/refactor/hardcoding-surteya.csv` con columnas: `archivo, línea, snippet, tipo ([SEED]|[CONFIG]|[COPY]|[FALLBACK]), módulo, etapa destino`.
+- Cerrar baseline en `docs/refactor-baseline.md` con conteo inicial (230) y meta = 0.
+- Verificación: CSV completo + script `scripts/audit-hardcoding.ts` que falla CI si vuelve a aparecer cualquier término en una lista de carpetas blindadas.
 
-**Cliente (sin persistencia adicional)**
-- Nuevo `src/modules/pos/lib/healthTimeline.ts`: ring buffer en memoria (últimos 200 eventos) + espejo en `sessionStorage` (`__sistecpos_health_timeline__`).
-- API: `recordHealthEvent({ source, prevStatus, status, latency_ms, message, correlationId })`.
-- En `useHealthSnapshot.ts`: comparar snapshot anterior vs nuevo; si cambia status de core/wp → record.
-- En `POSStatusBar.tsx` (printer): record en cada cambio de estado.
-- Genera `correlationId` (crypto.randomUUID()) por cada request snapshot y se propaga al `health-snapshot` via header `x-correlation-id` y se devuelve.
+## Etapa 33 — Modelo de datos para tenant autónomo
 
-**UI**
-- `StatusPill.tsx`: nueva sección "Historial reciente" en el Popover con últimos 5 eventos del source (ícono según severidad, hora relativa, correlationId truncado copiable).
-- Componente nuevo `HealthTimelineSheet.tsx`: Sheet completo con filtros por source/status y export CSV. Trigger desde un botón "Ver historial completo" al final del popover.
+Garantizar que `organizations` + tablas asociadas cubren todo lo que hoy está hardcodeado.
 
----
+- Añadir a `organizations` (si faltan): `city`, `region`, `country`, `whatsapp_phone`, `support_email`, `legal_name`, `tax_id`, `hero_title`, `hero_subtitle`, `tagline`, `default_currency`, `default_locale`, `timezone`.
+- `app_settings` por organización: keys `seo.default_og_image`, `seo.site_name`, `whatsapp.flow_id`, `whatsapp.template`, `branding.favicon`, `branding.logo`, `legal.privacy_html`, `legal.terms_html`, `legal.data_treatment_html`.
+- Migrar contenidos hoy embebidos en `src/pages/Politicas.tsx`, `TratamientoDatos.tsx`, `Perfil.tsx`, `Ayuda.tsx` a `app_settings` o tabla `legal_documents` por org.
+- Verificación: linter Supabase + RLS sobre nuevas columnas/keys; sin GRANTs faltantes.
 
-## Fase 3 — Panel de logs en Admin
+## Etapa 34 — Capa de acceso tenant-aware (hooks/utilidades)
 
-**Objetivo:** centralizar eventos de salud con correlationId para investigación.
+- Nuevos hooks en `@/modules/tenant`:
+  - `useTenantBranding()` → logo, colores, hero, favicon.
+  - `useTenantContact()` → whatsapp, email, dirección, ciudad.
+  - `useTenantLegal()` → políticas/tratamiento/términos.
+  - `useTenantSeo()` → site_name, og_image, locale.
+- Todos leen de `OrganizationContext` + `app_settings`. Cero strings literales.
+- Fallbacks neutros (`'Mi Negocio'`, `'Colombia'`, `'+57'`, etc.) — nunca `SurteYa`/`Bucaramanga`.
+- Verificación: tests Vitest por hook con dos orgs sintéticas (SurteYa y Demo) confirmando aislamiento.
 
-**Backend**
-- Migración: tabla `health_events` (organization_id, source, status, prev_status, latency_ms, message, correlation_id, metadata jsonb, created_at). RLS: admin/owner pueden leer; service_role insert. GRANTs explícitos.
-- Edge function `health-snapshot`: además de devolver snapshot, hace insert async (fire-and-forget) en `health_events` cuando detecta cambio de estado vs último registro.
-- Edge function `printer-event-log` (nueva): cliente reporta eventos de impresora.
+## Etapa 35 — Limpieza [COPY] en storefront
 
-**Frontend**
-- Nueva página `src/modules/admin-cms/pages/HealthLogs.tsx` accesible desde Configuración → Logs de sistema.
-- Tabla virtualizada (TanStack) con columnas: fecha, source (chip), estado (prev→new), latencia, mensaje, correlationId (copiable), acciones (ver metadata json en Sheet).
-- Filtros: rango de fechas, source, status. Búsqueda por correlationId.
-- Realtime: suscripción a `health_events` para nuevos eventos en vivo.
+Archivos blanco: `src/modules/storefront/**`, `src/components/SurteyaRedirect.tsx`, `TopBar.tsx`, `CityPickerModal.tsx`, `NotificationBanner.tsx`, `Hub.tsx`, `LandingPage.tsx`, `ProductoDetalle.tsx`, `Carrito.tsx`.
 
----
+- Reemplazar todo literal por hooks de Etapa 34.
+- `CityPickerModal`: lista de ciudades viene de `shipping_zones`/`municipality_settings`, no de array fijo.
+- `SurteyaRedirect.tsx`: renombrar a `LegacyDomainRedirect.tsx` y manejar redirects desde tabla `tenant_domains` (campo `redirect_to`).
+- Verificación: `grep -i "surteya\|bucaramanga"` sobre `src/modules/storefront` debe retornar 0.
 
-## Fase 4 — Tests automatizados de accesibilidad
+## Etapa 36 — Limpieza [COPY] en admin-cms, POS y auth
 
-**Objetivo:** asegurar a11y en POSStatusBar y grid de Sitios en cada PR.
+Archivos blanco: `src/modules/admin-cms/components/*Tab.tsx`, `src/modules/pos/pages/*`, `src/modules/auth/pages/Login.tsx`, `LoginRouter.tsx`, `TenantAwareLogin.tsx`, `Onboarding.tsx`, `CustomerQuickDialog.tsx`, `Mesas.tsx`, `KDS.tsx`, `POS.tsx`.
 
-**Setup**
-- Añadir `vitest-axe` + `@axe-core/react` a devDependencies.
-- `src/test/a11y.ts` helper: `expectNoA11yViolations(container)`.
+- Resolver hallazgo **v5**: eliminar `const isSurteya = brand.slug === "surteya"` en `Login.tsx:45` → usar `useTenantBranding().isLegacyStorefront` o feature flag por org.
+- Resolver hallazgo **v5**: `src/lib/errors.ts:96` → envolver con `scopedFrom` o eliminar la query.
+- Verificación: `npm run audit:tenant-scope` → 0 hallazgos high.
 
-**Tests**
-- `src/modules/pos/components/POSStatusBar.test.tsx`: render con mock de `useHealthSnapshot` (3 escenarios: ok, degraded, off) → axe + foco visible (tab navega entre pills) + aria-label presente.
-- `src/modules/superadmin/pages/Sitios.test.tsx`: render con mock de sitios (vacío, 1, varios) → axe + roles `article` + botones icon-only con `aria-label`.
-- `StatusPill.test.tsx`: contraste de tokens (verificar clases `text-foreground` no arbitrarias) + popover navegable por teclado (Escape cierra).
+## Etapa 37 — Limpieza [SEED] en migraciones y edge functions
 
-**CI**
-- Añadir job `a11y` en `.github/workflows/e2e.yml` que ejecute `bunx vitest run --reporter=verbose **/*.a11y.test.tsx`.
+- Edge functions con literales: `sitemap`, `send-web-push`, `send-transactional-email`, `auth-email-hook`, `resend-mail-service`, `get-landing`, `_shared/transactional-email-templates/order-confirmation.tsx`.
+  - Aceptar `organization_id` o `host` y resolver tenant vía `resolve-tenant`.
+  - Plantillas leen branding/contact desde `organizations` + `app_settings`.
+- Migraciones históricas con seed de SurteYa: **no** se modifican (regla de POS-primer). En su lugar, nueva migración `seed_surteya_org.sql` que upserta SurteYa como organización con su slug, dominios, módulos, contenidos legales, hero, branding, números, ciudad. Cualquier migración futura usa orgs genéricas.
+- Verificación: en Test, borrar la org SurteYa y comprobar que el sistema arranca limpio con orgs demo.
 
----
+## Etapa 38 — Tipos de negocio y categorías genéricas
 
-## Fase 5 — UX del flujo Licencia → Onboarding → POS (clave para el usuario)
+- Quitar referencias hardcodeadas a Cárnicos / Pulpas / Panificados / Mayorista del core (UI + lógica).
+- Migrar a `catalog_templates` + `catalog_template_items` por `business_type`. SurteYa aplica template `food-mayorista` al provisionar.
+- Verificación: `grep -i "cárnicos\|pulpas\|panificados\|mayorista"` en `src/` = 0 fuera de templates/seeds.
 
-**Problema reportado:** "al crear licencia empieza onboarding, pero al ingresar a crear tienda sale 'módulo POS no activo'."
+## Etapa 39 — SurteYa como tenant autónomo (cutover)
 
-**Diagnóstico previsto:**
-- La licencia se crea pero `organization_modules` no incluye `pos` automáticamente, o `OrganizationContext` no refresca tras el wizard.
-- Falta feedback de estado: el usuario no sabe en qué paso está bloqueado.
+- Ejecutar `seed_surteya_org.sql` en Test → validar storefront `surteya.sistecpos.com` 100% funcional sin código específico.
+- E2E nuevo `e2e/surteya-as-tenant.spec.ts`: storefront, login, checkout WhatsApp, admin, POS — todo pasa sin referencias al slug en código.
+- Toggle de feature flag `legacy.surteya-hardcode` que ya no hace nada → eliminar.
+- Publicar a Live.
 
-**Cambios**
+## Etapa 40 — Guardas anti-regresión
 
-**5.1 — Activación automática del módulo POS**
-- En `tenant-create-with-owner`: garantizar insert en `organization_modules` con los módulos seleccionados en el wizard (`pos` siempre incluido si la plantilla lo trae).
-- Trigger SQL `trg_license_activate_default_modules`: al insertar licencia activa, si no hay `organization_modules` para esa org, insertar los del `saas_plan.plan_modules`.
-
-**5.2 — Pantalla de estado de activación (`/activacion`)**
-- Nueva ruta + componente `ActivationStatus.tsx` (módulo onboarding).
-- Stepper visual con 5 hitos:
-  1. Cuenta creada ✓
-  2. Licencia activa (con plan)
-  3. Tienda configurada (slug, NIT)
-  4. Módulos activos (lista con check por módulo)
-  5. Subdominio + SSL listo (lee `tenant_domains.ssl_status`)
-- Cada paso pendiente muestra CTA: "Continuar onboarding", "Activar módulo POS", "Reintentar SSL".
-- Botón "Ir al POS" se habilita solo cuando 1-4 están completos; muestra warning si 5 pendiente pero no bloquea.
-
-**5.3 — Guardia mejorada de "módulo POS no activo"**
-- Actualmente probablemente se muestra un texto seco. Reemplazar por componente `ModuleInactiveScreen.tsx`:
-  - Icono + título claro: "El módulo POS aún no está activo en esta tienda."
-  - Diagnóstico: lista qué falta (licencia, plan, módulo) leyendo de BD.
-  - 2 CTAs: "Ver estado de activación" (→ `/activacion`) y "Contactar soporte" (WhatsApp).
-  - Breadcrumb arriba: `Tiendas › <nombre> › POS (inactivo)`.
-
-**5.4 — Breadcrumbs + botones de retorno globales en flujo onboarding/admin**
-- Nuevo componente `src/components/AppBreadcrumb.tsx` que consume `useLocation` y un mapa de rutas a labels (define en `src/lib/routeLabels.ts`).
-- Integrar en headers de: `PosHub`, `Sitios`, `TenantWorkspace`, `ActivationStatus`, `Onboarding`, `Billing`, `HealthLogs`.
-- Cada página con `<AppBreadcrumb />` + botón "Volver" (flecha) que use `navigate(-1)` con fallback a la ruta padre.
-
-**5.5 — Guía contextual (tour ligero)**
-- Componente `OnboardingChecklist.tsx`: chip flotante (bottom-right) visible para owners con onboarding incompleto, abre Popover con los 5 hitos de 5.2 en miniatura. Cierra y recuerda en `localStorage` cuando todo completo.
+- ESLint rule custom `no-tenant-hardcode` que prohíbe literales: `surteya`, `SurteYa`, `Bucaramanga`, `Santander`, números `+573…` específicos, en `src/` (excepto `src/modules/tenant/lib/legacyDomains.ts` y tests).
+- CI step: `scripts/audit-hardcoding.ts` falla el build si grep > 0.
+- Añadir a `mem://core` la regla: "Nada específico de un tenant vive en código del core."
 
 ---
 
-## Técnicas / archivos clave
+## Resumen ejecutable
 
-```
-Backend
-  supabase/functions/tenant-provision-verify/index.ts    (nuevo)
-  supabase/functions/health-snapshot/index.ts            (insert health_events)
-  supabase/functions/printer-event-log/index.ts          (nuevo)
-  supabase/functions/tenant-create-with-owner/index.ts   (asegurar organization_modules)
-  Migración: health_events + trigger trg_license_activate_default_modules
+| Etapa | Entregable principal | Verificación |
+|---|---|---|
+| 32 | CSV de hallazgos + script audit | CSV con 230 filas clasificadas |
+| 33 | Migración columnas + app_settings keys | Linter Supabase 0 errores |
+| 34 | Hooks tenant-aware | Vitest verde 2 orgs |
+| 35 | Storefront limpio | grep storefront = 0 |
+| 36 | Admin/POS/Auth limpios + 2 hallazgos v5 cerrados | audit v6 = 0 high |
+| 37 | Edge functions + seed SurteYa aislado | Test sin SurteYa arranca |
+| 38 | Categorías vía templates | grep categorías = 0 |
+| 39 | Cutover SurteYa autónoma | e2e verde + publish |
+| 40 | ESLint + CI guard | CI rojo si regresa hardcode |
 
-Frontend
-  src/modules/pos/lib/healthTimeline.ts                  (nuevo)
-  src/modules/pos/components/HealthTimelineSheet.tsx     (nuevo)
-  src/modules/pos/components/StatusPill.tsx              (timeline en popover)
-  src/modules/pos/hooks/useHealthSnapshot.ts             (correlationId + diff)
-  src/modules/superadmin/components/SiteDetailsPanel.tsx (bloque SSL)
-  src/modules/admin-cms/pages/HealthLogs.tsx             (nuevo)
-  src/modules/onboarding/pages/ActivationStatus.tsx      (nuevo)
-  src/modules/onboarding/components/OnboardingChecklist.tsx (nuevo)
-  src/components/AppBreadcrumb.tsx                       (nuevo)
-  src/components/ModuleInactiveScreen.tsx                (nuevo)
-  src/lib/routeLabels.ts                                 (nuevo)
+Skill aplicada en cada etapa: **POS-fix-hardcoding** (clasificar [SEED]/[CONFIG]/[COPY], reemplazar, verificar grep=0, commit por archivo).
 
-Tests
-  vitest-axe setup + a11y helpers
-  POSStatusBar.a11y.test.tsx, Sitios.a11y.test.tsx, StatusPill.a11y.test.tsx
-  tenant-create-with-owner.test.ts
-```
-
----
-
-## Verificación final
-
-- Crear tienda nueva desde wizard → ver `<slug>.sistecpos.com` en SiteDetailsPanel con SSL pasando de pending → active en <5min.
-- Acceder al POS de la nueva tienda como owner → módulo POS activo sin pantalla "no activo".
-- Forzar fallo de printer agent → ver evento en timeline del pill + fila en HealthLogs con correlationId.
-- `bunx vitest run` con suite a11y en verde.
-- Lighthouse a11y ≥ 95 en /pos/vender, /sitios, /admin/health-logs.
-
----
-
-## Orden recomendado
-
-1. Fase 5.1 + 5.3 (desbloqueo inmediato del usuario)
-2. Fase 1 (verificación SSL)
-3. Fase 5.2 + 5.4 + 5.5 (UX guiada)
-4. Fase 3 (panel logs) + Fase 2 (timeline en pills)
-5. Fase 4 (tests a11y) como red de seguridad final
-
-¿Apruebas el plan completo, o prefieres que arranque solo por la Fase 5 (desbloqueo POS + breadcrumbs) primero?
+Cada etapa = 1 PR atómico, detrás de feature flag `refactor.tenant-autonomy.<n>` para rollback inmediato.
