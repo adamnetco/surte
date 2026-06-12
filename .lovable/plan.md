@@ -136,8 +136,12 @@ Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surtey
 - Console limpia salvo warning cosmético `X-Frame-Options en <meta>` (no funcional, ya conocido).
 - Cero errores JS; resolución `tenant_domains.hostname → organization_id` OK.
 
+**Etapa 39.c — E2E `e2e/surteya-as-tenant.spec.ts` ✅:**
+- 6 tests: 3 smoke contra dominio real del tenant (skip si no hay `PLAYWRIGHT_TENANT_BASE_URL`), 3 estáticos always-on (audit baseline, whitelist de literal `'surteya'`, idempotencia del seed).
+- Whitelist legítima documentada (SurteyaRedirect, legacyDomains, cloudTasks, seeds, migrations, docs, scripts, astro-starter, tests). 0 archivos fuera de whitelist en el código aplicación.
+- Static tests pasan en local; los E2E con browser corren en CI con `PLAYWRIGHT_TENANT_BASE_URL=https://surteya.sistecpos.com`.
+
 **Pendiente Etapa 39:**
-- 39.c — E2E `e2e/surteya-as-tenant.spec.ts` cubriendo storefront/login/checkout/admin/POS sin referencias al slug en código.
 - 39.d — Publicar a Live (requiere confirmación explícita del usuario).
 - 39.e — Eliminar feature flag `legacy.surteya-hardcode` (ya no hace nada).
 
