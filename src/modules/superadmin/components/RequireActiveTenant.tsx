@@ -3,6 +3,7 @@ import { Navigate, useParams } from "react-router-dom";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Building2 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
+import TenantScopeBanner from "./TenantScopeBanner";
 
 /**
  * Garantiza que haya una tienda seleccionada antes de mostrar pantallas por-tenant.
