@@ -18,7 +18,7 @@ import {
 
 import type { TemplateEntry } from './registry.ts'
 
-const SITE_NAME = 'SURTÉ YA'
+const DEFAULT_SITE_NAME = 'Mi Negocio'
 
 interface OrderItem {
   name: string
@@ -32,6 +32,9 @@ interface OrderConfirmationProps {
   items?: OrderItem[]
   total?: number
   address?: string
+  siteName?: string
+  tagline?: string
+  footerBrand?: string
 }
 
 const formatCOP = (n: number) =>
