@@ -23,7 +23,7 @@ const Politicas = () => {
         <section className="space-y-2">
           <h2 className="text-base font-heading font-semibold text-foreground">Política de Privacidad</h2>
           {privacyHtml ? (
-            <div className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: privacyHtml }} />
+            <div className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(privacyHtml) }} />
           ) : (
             <p className="text-sm text-muted-foreground leading-relaxed">
               En {storeName} nos comprometemos a proteger tu información personal. Los datos recopilados (nombre, teléfono, dirección, correo electrónico) son utilizados exclusivamente para procesar tus pedidos y mejorar tu experiencia de compra. No compartimos tu información con terceros sin tu consentimiento.
