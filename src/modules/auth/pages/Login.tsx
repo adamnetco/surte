@@ -7,7 +7,7 @@ import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone, ShieldCheck, ExternalL
 import { toast } from "sonner";
 import { mailService } from "@/modules/email/mailService";
 import { welcomeTemplate } from "@/modules/email/emailTemplates";
-import surteLogo from "@/assets/surte-logo.png";
+import defaultLogo from "@/assets/surte-logo.png";
 import { useTenantBrand } from "@/modules/auth/hooks/useTenantBrand";
 import { verifySignupTenantLinkWithRetry } from "@/modules/auth/lib/verifySignupTenantLink";
 
