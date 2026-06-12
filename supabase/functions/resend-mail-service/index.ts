@@ -15,7 +15,7 @@ interface EmailRequest {
   from?: string;
 }
 
-const DEFAULT_FROM = "SURTÉ YA <noreply@surteya.com>";
+const DEFAULT_FROM = Deno.env.get("RESEND_DEFAULT_FROM") || "Mi Negocio <noreply@example.com>";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
