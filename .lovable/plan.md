@@ -119,7 +119,7 @@ Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surtey
 - Crear `catalog_templates` con presets de categorías por `business_type` (food, retail, services) — opcional para acelerar onboarding.
 
 
- ## Etapa 39 — SurteYa como tenant autónomo (cutover) 🚧 (39.a + 39.b hechos)
+ ## Etapa 39 — SurteYa como tenant autónomo (cutover) 🚧 (39.a + 39.b + 39.c hechos)
 
 **Etapa 39.a — Seed aplicado en Test:**
 - Corregido `supabase/seeds/seed_surteya_org.sql` para alinearse con el schema real (`currency` no `currency_code`, `support_email` no `contact_email`, `organization_modules.module_key/enabled`, partial unique index `app_settings_org_key_uidx WHERE organization_id IS NOT NULL`).
@@ -136,8 +136,12 @@ Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surtey
 - Console limpia salvo warning cosmético `X-Frame-Options en <meta>` (no funcional, ya conocido).
 - Cero errores JS; resolución `tenant_domains.hostname → organization_id` OK.
 
+**Etapa 39.c — E2E `e2e/surteya-as-tenant.spec.ts` ✅:**
+- 6 tests: 3 smoke contra dominio real del tenant (skip si no hay `PLAYWRIGHT_TENANT_BASE_URL`), 3 estáticos always-on (audit baseline, whitelist de literal `'surteya'`, idempotencia del seed).
+- Whitelist legítima documentada (SurteyaRedirect, legacyDomains, cloudTasks, seeds, migrations, docs, scripts, astro-starter, tests). 0 archivos fuera de whitelist en el código aplicación.
+- Static tests pasan en local; los E2E con browser corren en CI con `PLAYWRIGHT_TENANT_BASE_URL=https://surteya.sistecpos.com`.
+
 **Pendiente Etapa 39:**
-- 39.c — E2E `e2e/surteya-as-tenant.spec.ts` cubriendo storefront/login/checkout/admin/POS sin referencias al slug en código.
 - 39.d — Publicar a Live (requiere confirmación explícita del usuario).
 - 39.e — Eliminar feature flag `legacy.surteya-hardcode` (ya no hace nada).
 
