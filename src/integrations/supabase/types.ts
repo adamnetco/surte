@@ -3753,12 +3753,15 @@ export type Database = {
       organizations: {
         Row: {
           accent_color: string | null
+          archived_payload: Json | null
           business_type: string
           city: string | null
           country: string
           created_at: string
           currency: string
           default_locale: string
+          deleted_at: string | null
+          deleted_by: string | null
           hero_subtitle: string | null
           hero_title: string | null
           id: string
@@ -3781,12 +3784,15 @@ export type Database = {
         }
         Insert: {
           accent_color?: string | null
+          archived_payload?: Json | null
           business_type?: string
           city?: string | null
           country?: string
           created_at?: string
           currency?: string
           default_locale?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: string
@@ -3809,12 +3815,15 @@ export type Database = {
         }
         Update: {
           accent_color?: string | null
+          archived_payload?: Json | null
           business_type?: string
           city?: string | null
           country?: string
           created_at?: string
           currency?: string
           default_locale?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: string
@@ -6348,6 +6357,39 @@ export type Database = {
           },
         ]
       }
+      tenant_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          id: string
+          organization_id: string | null
+          organization_slug: string | null
+          payload: Json
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          organization_slug?: string | null
+          payload?: Json
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          organization_slug?: string | null
+          payload?: Json
+        }
+        Relationships: []
+      }
       tenant_cloudflare_accounts: {
         Row: {
           api_token_encrypted: string
@@ -6904,6 +6946,11 @@ export type Database = {
       }
     }
     Functions: {
+      _require_superadmin: { Args: never; Returns: undefined }
+      _tenant_log: {
+        Args: { _action: string; _org: string; _payload: Json }
+        Returns: undefined
+      }
       admin_list_customer_reviews: {
         Args: never
         Returns: {
@@ -6952,6 +6999,10 @@ export type Database = {
         }
         Returns: string
       }
+      archive_tenant: {
+        Args: { _org_id: string; _reason?: string }
+        Returns: Json
+      }
       can_access_section: { Args: { _section: string }; Returns: boolean }
       can_write_org: { Args: { _org_id: string }; Returns: boolean }
       cleanup_sso_tokens: { Args: never; Returns: number }
@@ -6990,6 +7041,7 @@ export type Database = {
         Args: { _kind?: string; _order_id: string }
         Returns: string[]
       }
+      export_tenant_snapshot: { Args: { _org_id: string }; Returns: Json }
       get_admin_products_secure:
         | {
             Args: never
@@ -7157,6 +7209,10 @@ export type Database = {
         Args: { _fingerprint: string; _license_key: string }
         Returns: Json
       }
+      import_tenant_snapshot: {
+        Args: { _overwrite?: boolean; _payload: Json }
+        Returns: Json
+      }
       is_master_superadmin: { Args: { _user_id?: string }; Returns: boolean }
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
       log_sync_event:
@@ -7223,6 +7279,7 @@ export type Database = {
         }
         Returns: Json
       }
+      purge_tenant_hard: { Args: { _org_id: string }; Returns: Json }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -7248,6 +7305,7 @@ export type Database = {
       }
       rematch_invoice_scan: { Args: { _scan_id: string }; Returns: Json }
       resolve_tenant_by_host: { Args: { _host: string }; Returns: Json }
+      restore_tenant: { Args: { _org_id: string }; Returns: Json }
       revoke_activation: {
         Args: { _activation_id: string; _reason?: string }
         Returns: boolean
