@@ -301,31 +301,35 @@ const LoginRouter = () => {
           </div>
 
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur">
-            <form onSubmit={handleSubmit} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3" aria-busy={loading}>
               <div>
-                <label className="text-[11px] font-medium text-white/60 ml-1 mb-1 block uppercase tracking-wider">
+                <label htmlFor="login-tienda" className="text-[11px] font-medium text-white/60 ml-1 mb-1 block uppercase tracking-wider">
                   Tienda (id_negocio)
                 </label>
                 <div className="relative">
-                  <Store size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                  <Store size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
                   <input
+                    id="login-tienda"
+                    name="tienda"
                     type="text"
                     value={tienda}
                     onChange={(e) => setTienda(e.target.value.toLowerCase().trim())}
                     placeholder="ej: demo"
                     autoComplete="organization"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none focus:border-primary/60 focus:bg-white/10 transition-colors"
+                    className="w-full min-h-11 bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus:border-primary/60 focus:bg-white/10 transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-medium text-white/60 ml-1 mb-1 block uppercase tracking-wider">
+                <label htmlFor="login-email" className="text-[11px] font-medium text-white/60 ml-1 mb-1 block uppercase tracking-wider">
                   Usuario / Email
                 </label>
                 <div className="relative">
-                  <UserIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                  <UserIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
                   <input
+                    id="login-email"
+                    name="email"
                     type="email"
                     inputMode="email"
                     autoComplete="email"
@@ -333,18 +337,20 @@ const LoginRouter = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="tu@correo.com"
                     required
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none focus:border-primary/60 focus:bg-white/10 transition-colors"
+                    className="w-full min-h-11 bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus:border-primary/60 focus:bg-white/10 transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-medium text-white/60 ml-1 mb-1 block uppercase tracking-wider">
+                <label htmlFor="login-password" className="text-[11px] font-medium text-white/60 ml-1 mb-1 block uppercase tracking-wider">
                   Contraseña
                 </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
                   <input
+                    id="login-password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     value={password}
@@ -352,13 +358,14 @@ const LoginRouter = () => {
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-sm outline-none focus:border-primary/60 focus:bg-white/10 transition-colors"
+                    className="w-full min-h-11 bg-white/5 border border-white/10 rounded-xl pl-10 pr-11 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus:border-primary/60 focus:bg-white/10 transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
-                    aria-label={showPassword ? "Ocultar" : "Mostrar"}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 inline-flex items-center justify-center rounded-md text-white/40 hover:text-white/80 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-pressed={showPassword}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -368,8 +375,13 @@ const LoginRouter = () => {
               <div className="flex items-center justify-between pt-1">
                 <button
                   type="button"
-                  onClick={() => navigate("/reset-password")}
-                  className="text-xs text-white/60 hover:text-white"
+                  onClick={() => {
+                    const tenantSlug = tienda.trim().toLowerCase();
+                    const url = new URL("/reset-password", window.location.origin);
+                    if (tenantSlug) url.searchParams.set("tienda", tenantSlug);
+                    navigate(url.pathname + url.search);
+                  }}
+                  className="text-xs text-white/60 hover:text-white focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none rounded px-1"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -378,15 +390,21 @@ const LoginRouter = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-xl py-3 text-sm disabled:opacity-50 flex items-center justify-center gap-2 hover:opacity-95 transition-opacity"
+                aria-busy={loading}
+                aria-disabled={loading}
+                className="w-full min-h-11 mt-2 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-xl py-3 text-sm disabled:opacity-50 flex items-center justify-center gap-2 hover:opacity-95 transition-opacity focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none"
               >
-                {loading && <Loader2 className="animate-spin" size={16} />}
+                {loading && <Loader2 className="animate-spin" size={16} aria-hidden="true" />}
                 {loading ? "Entrando…" : "Entrar"}
               </button>
             </form>
 
             {(backendDown || hasStaleTokens) && (
-              <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/60">
+              <div
+                role="alert"
+                aria-live="polite"
+                className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/60"
+              >
                 <p>
                   {backendDown
                     ? "La autenticación está tardando más de lo normal. Si el problema continúa, limpia la sesión local e intenta de nuevo."
@@ -395,7 +413,7 @@ const LoginRouter = () => {
                 <button
                   type="button"
                   onClick={clearStaleAuthAndReload}
-                  className="mt-2 text-white underline decoration-white/30 underline-offset-4 hover:text-white/80"
+                  className="mt-2 text-white underline decoration-white/30 underline-offset-4 hover:text-white/80 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none rounded"
                 >
                   Limpiar sesión local
                 </button>
@@ -427,22 +445,25 @@ const LoginRouter = () => {
                     type="button"
                     onClick={handleEmailLink}
                     disabled={disabled}
-                    className="w-full mb-2 flex items-center justify-center gap-2.5 bg-white/10 border border-white/10 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors disabled:opacity-60"
+                    aria-busy={emailLinkLoading}
+                    aria-disabled={disabled}
+                    className="w-full min-h-11 mb-2 flex items-center justify-center gap-2.5 bg-white/10 border border-white/10 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none"
                   >
-                    {emailLinkLoading ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
+                    {emailLinkLoading ? <Loader2 className="animate-spin" size={16} aria-hidden="true" /> : <Mail size={16} aria-hidden="true" />}
                     {label}
                   </button>
                   <div className="mb-3 text-[11px] text-white/50 flex items-center justify-between px-1">
                     <span>Intentos: {gate.attemptsUsed}/{gate.attemptsMax}</span>
                     <button
                       type="button"
+                      data-testid="recover-access-link"
                       onClick={() => {
                         const tenantSlug = tienda.trim().toLowerCase();
                         const url = new URL("/reset-password", window.location.origin);
                         if (tenantSlug) url.searchParams.set("tienda", tenantSlug);
                         navigate(url.pathname + url.search);
                       }}
-                      className="underline decoration-white/30 hover:text-white"
+                      className="underline decoration-white/30 hover:text-white focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none rounded px-1"
                     >
                       Recuperar acceso
                     </button>
@@ -450,6 +471,8 @@ const LoginRouter = () => {
                   {emailNotice && (
                     <p
                       data-testid="email-notice"
+                      role={emailNotice.kind === "error" ? "alert" : "status"}
+                      aria-live="polite"
                       className={`mb-2 text-[11px] px-2 py-1.5 rounded-md ${
                         emailNotice.kind === "info"
                           ? "bg-amber-500/10 text-amber-200 border border-amber-500/20"
@@ -473,7 +496,9 @@ const LoginRouter = () => {
               type="button"
               onClick={handleGoogle}
               disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-2.5 bg-white text-slate-900 rounded-xl py-2.5 text-sm font-semibold hover:bg-white/90 transition-colors disabled:opacity-60"
+              aria-busy={googleLoading}
+              aria-disabled={googleLoading}
+              className="w-full min-h-11 flex items-center justify-center gap-2.5 bg-white text-slate-900 rounded-xl py-2.5 text-sm font-semibold hover:bg-white/90 transition-colors disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none"
             >
               {googleLoading ? (
                 <Loader2 className="animate-spin" size={16} />
