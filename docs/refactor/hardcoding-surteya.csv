@@ -1,0 +1,242 @@
+file,line,snippet,type,module,target_stage
+src/pages/TratamientoDatos.tsx,25,"{storeName}{nit ? ` — NIT: ${nit}` : """"}, con domicilio en Bucaramanga, Santander, Colombia. {email ? `Correo electrónico: ${email}` : """"}",COPY,pages,35/36
+src/pages/Politicas.tsx,37,"Realizamos entregas en Bucaramanga y su Área Metropolitana (Floridablanca, Girón y Piedecuesta). Los tiempos de entrega varían según la zona. El costo de envío se calcula según el barrio de destino y ",COPY,pages,35/36
+src/pages/Perfil.tsx,101,"{ key: ""city"", label: ""Ciudad"", icon: MapPin, placeholder: ""Bucaramanga, Floridablanca, Girón, Piedecuesta"" },",COPY,pages,35/36
+src/pages/Index.tsx,38,<Flame size={12} /> Sabor Santandereano,COPY,pages,35/36
+src/pages/Index.tsx,99,"description={s.seo_default_description || ""Salsas, cárnicos y pulpas al mayor en Bucaramanga.""}",COPY,pages,35/36
+src/pages/Index.tsx,100,"canonical=""https://surteya.com""",COPY,pages,35/36
+src/pages/Ayuda.tsx,11,"{ q: ""¿Cuánto demora la entrega?"", a: ""Las entregas se realizan en 24-48 horas hábiles dentro de Bucaramanga y Área Metropolitana (Floridablanca, Girón, Piedecuesta)."" },",COPY,pages,35/36
+src/pages/Ayuda.tsx,15,"{ q: ""¿Hacen entregas fuera de Bucaramanga?"", a: ""Por ahora operamos en Bucaramanga y su Área Metropolitana (Floridablanca, Girón, Piedecuesta). Estamos en expansión."" },",COPY,pages,35/36
+supabase/migrations/20260401042257_e219d9fa-6314-4d2a-ae0b-0a0b2f19d946.sql,41,"('seo_default_description', 'Salsas, cárnicos y pulpas al mayor en Bucaramanga. Directo de fábrica a tu negocio.'),",SEED,migrations,37
+src/modules/tenant/lib/subdomain.ts,12,*   surteya.sistecpos.com  → tenant slug 'surteya' (storefront del negocio),COPY,tenant,35/36
+src/modules/tenant/lib/subdomain.ts,17,* Override manual (solo para inspección puntual): `?tenant=surteya`. Para,COPY,tenant,35/36
+src/modules/tenant/lib/subdomain.ts,22,"// Storefront tenant = cualquier slug de negocio (surteya, <futuro>, ...)",COPY,tenant,35/36
+supabase/migrations/20260611031704_f337d6a0-4baf-4cfc-8166-7ada09ac46fb.sql,18,-- 1.b Backfill orphan persistent_carts to legacy tenant (surteya),SEED,migrations,37
+supabase/migrations/20260611031704_f337d6a0-4baf-4cfc-8166-7ada09ac46fb.sql,20,SET organization_id = (SELECT id FROM public.organizations WHERE slug='surteya' LIMIT 1),SEED,migrations,37
+supabase/migrations/20260328060727_0321d5ea-59b0-473b-94d0-31686a4e9946.sql,90,"('Bucaramanga', COALESCE((SELECT value::numeric FROM public.app_settings WHERE key = 'min_order_amount' LIMIT 1), 40000), true),",SEED,migrations,37
+supabase/migrations/20260611022139_e11e8d6b-9011-4642-a0be-73e57f6705e2.sql,108,"VALUES (v_org_id, 'Sede principal', true, true, 'Bucaramanga', 'America/Bogota')",SEED,migrations,37
+supabase/migrations/20260523193513_562346e6-dd65-4dad-8453-a1bcadc63183.sql,217,-- 10) Seed: módulos + datos demo para SurteYa,SEED,migrations,37
+supabase/migrations/20260523193513_562346e6-dd65-4dad-8453-a1bcadc63183.sql,221,WHERE slug = 'surteya',SEED,migrations,37
+supabase/migrations/20260523193513_562346e6-dd65-4dad-8453-a1bcadc63183.sql,234,WHERE o.slug = 'surteya',SEED,migrations,37
+supabase/migrations/20260523193513_562346e6-dd65-4dad-8453-a1bcadc63183.sql,247,WHERE o.slug = 'surteya' AND l.is_main = true;,SEED,migrations,37
+supabase/migrations/20260523193513_562346e6-dd65-4dad-8453-a1bcadc63183.sql,250,"WITH org AS (SELECT id FROM public.organizations WHERE slug = 'surteya' LIMIT 1),",SEED,migrations,37
+src/App.tsx,136,"* - <slug>.sistecpos.com (surteya, futuros tenants) → Storefront (Index)",COPY,other,35/36
+src/App.tsx,141,"// Los storefronts (surteya.*, futuros tenants) siguen mostrando la tienda.",COPY,other,35/36
+src/App.tsx,220,"{/* === Storefront (solo en hosts de tenant: surteya.sistecpos.com, …) === */}",COPY,other,35/36
+supabase/migrations/20260523192833_4bcda66b-f885-4486-b1d9-b431109ad5a6.sql,13,"city text DEFAULT 'Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260523192833_4bcda66b-f885-4486-b1d9-b431109ad5a6.sql,232,"SELECT id, 'Sede Principal', 'MAIN', 'Bucaramanga', true, true",SEED,migrations,37
+supabase/migrations/20260523192833_4bcda66b-f885-4486-b1d9-b431109ad5a6.sql,233,FROM public.organizations WHERE slug = 'surteya',SEED,migrations,37
+supabase/migrations/20260523192833_4bcda66b-f885-4486-b1d9-b431109ad5a6.sql,240,WHERE o.slug = 'surteya' AND l.is_main = true,SEED,migrations,37
+supabase/migrations/20260523192833_4bcda66b-f885-4486-b1d9-b431109ad5a6.sql,245,"SELECT id, 'pos_counter', true FROM public.organizations WHERE slug = 'surteya'",SEED,migrations,37
+supabase/migrations/20260523192225_5ff59cba-75bf-489a-a2da-711f63fcfa82.sql,125,SELECT id FROM public.organizations WHERE slug = 'surteya' LIMIT 1,SEED,migrations,37
+supabase/migrations/20260523192225_5ff59cba-75bf-489a-a2da-711f63fcfa82.sql,174,"VALUES ('surteya', 'SurteYa Bucaramanga', 'hybrid_ecommerce_pos', 'CO', 'COP', 'America/Bogota',",SEED,migrations,37
+supabase/migrations/20260523192225_5ff59cba-75bf-489a-a2da-711f63fcfa82.sql,190,WHERE o.slug = 'surteya',SEED,migrations,37
+supabase/migrations/20260523192225_5ff59cba-75bf-489a-a2da-711f63fcfa82.sql,196,FROM public.organizations WHERE slug = 'surteya',SEED,migrations,37
+supabase/migrations/20260523192225_5ff59cba-75bf-489a-a2da-711f63fcfa82.sql,203,"(SELECT id FROM public.organizations WHERE slug = 'surteya'),",SEED,migrations,37
+supabase/migrations/20260523192225_5ff59cba-75bf-489a-a2da-711f63fcfa82.sql,255,SELECT id INTO v_org FROM public.organizations WHERE slug = 'surteya';,SEED,migrations,37
+src/modules/platform/context/ThemeContext.tsx,13,"const STORAGE_KEY = ""surteya_theme_pref"";",CONFIG,platform,34/36/37
+src/modules/platform/context/ThemeContext.test.tsx,26,"expect(localStorage.getItem(""surteya_theme_pref"")).toBe(""dark"");",TEST,platform,39
+src/modules/platform/context/OrganizationContext.tsx,31,"const STORAGE_KEY = ""surteya:currentOrgId"";",CONFIG,platform,34/36/37
+supabase/migrations/20260610043229_5f1a3206-26b0-4be7-9ff3-6ae1c3ff9f1b.sql,18,"VALUES (v_org, 'Sede Demo Centro', 'DEMO-01', 'Cra 27 #36-15', 'Bucaramanga', true, true)",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,4,"('Bucaramanga', 120000, true),",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,21,"('salsa-de-pina', 'Salsa de Piña al Mayor', 'Salsa de Piña al Mayor en Bucaramanga | SURTÉ YA', 'Compra salsa de piña artesanal al mayor y detal. Directo de fábrica La Unión. Envío gratis +$120.000 en",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,22,"('pulpas-de-fruta', 'Pulpas de Fruta Naturales', 'Pulpas de Fruta al Mayor en Bucaramanga | SURTÉ YA', 'Pulpas de fruta 100% naturales. Mora, lulo, maracuyá, guanábana y más. Envío gratis en Bucaraman",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,23,"('carnicos-al-mayor', 'Cárnicos al Mayor', 'Cárnicos al Mayor en Bucaramanga | SURTÉ YA', 'Cárnicos al mayor y detal: carne para hamburguesa, milanesas, pollo desmechado. Envío gratis en Bucaramanga.'",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,24,"('salsa-tartara', 'Salsa Tártara Artesanal', 'Salsa Tártara al Mayor en Bucaramanga | SURTÉ YA', 'Salsa tártara artesanal al mayor. Ideal para restaurantes y comidas rápidas. Envío gratis +$120.000.',",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,25,"('proveedores-restaurantes-bucaramanga', 'Proveedores para Restaurantes', 'Proveedor de Restaurantes en Bucaramanga | SURTÉ YA', 'Somos tu proveedor ideal para restaurantes en Bucaramanga. Salsas, cár",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,26,"('comidas-rapidas-insumos', 'Insumos para Comidas Rápidas', 'Insumos para Comidas Rápidas en Bucaramanga | SURTÉ YA', 'Todo lo que necesitas para tu negocio de comidas rápidas. Salsas, cárnicos y más ",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,27,"('distribuidor-salsas-santander', 'Distribuidor de Salsas en Santander', 'Distribuidor de Salsas en Santander | SURTÉ YA', 'Distribución de salsas artesanales en Santander. Tártara, piña, rosada y más",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,28,"('hamburguesas-al-mayor', 'Carne para Hamburguesa al Mayor', 'Carne para Hamburguesa al Mayor | SURTÉ YA', 'Carne para hamburguesa al mayor en Bucaramanga. Diferentes gramajes. Envío gratis +$120.000.",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,29,"('milanesas-al-mayor', 'Milanesas al Mayor', 'Milanesas de Pollo al Mayor en Bucaramanga | SURTÉ YA', 'Milanesas de pollo al mayor. Cryspi y tradicional. Ideales para restaurantes y comidas rápidas.',",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,30,"('pedidos-por-whatsapp', 'Pedidos por WhatsApp', 'Pedidos por WhatsApp en Bucaramanga | SURTÉ YA', 'Haz tu pedido fácil y rápido por WhatsApp. Salsas, cárnicos y pulpas con envío gratis en Bucaramanga",SEED,migrations,37
+supabase/migrations/20260409204503_c2f3bfba-b146-4cae-97d7-a3a4fb6402ea.sql,44,"('seo_default_description', 'Salsas, cárnicos y pulpas al mayor en Bucaramanga. Directo de fábrica a tu negocio.'),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,6,"('Bucaramanga', 120000, true),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,29,"'Salsa de Piña al por Mayor en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,30,"'Salsa de Piña al por Mayor en Bucaramanga | SURTÉ YA',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,31,"'Compra salsa de piña artesanal al por mayor en Bucaramanga. Precios especiales para restaurantes, hoteles y negocios HORECA. Envío a domicilio en el área metropolitana.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,33,'<h2>La Mejor Salsa de Piña para tu Negocio</h2><p>En <strong>SURTÉ YA</strong> somos distribuidores mayoristas de salsa de piña artesanal en Bucaramanga y su área metropolitana. Nuestra salsa de piña,SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,34,"'Bucaramanga', 'seo', true, 0),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,37,"'Salsa Tártara al por Mayor en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,38,"'Salsa Tártara al por Mayor en Bucaramanga | SURTÉ YA',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,39,"'Distribuidores de salsa tártara al por mayor en Bucaramanga. Calidad premium para restaurantes y negocios HORECA. Entrega a domicilio en el área metropolitana.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,41,'<h2>Salsa Tártara Premium para Profesionales</h2><p><strong>SURTÉ YA</strong> es tu proveedor de confianza de salsa tártara al por mayor en Bucaramanga. Nuestra salsa tártara es la elección preferida,SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,42,"'Bucaramanga', 'seo', true, 0),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,45,"'Salsas al por Mayor en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,46,"'Salsas al por Mayor Bucaramanga | SURTÉ YA — Precios de Fábrica',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,47,"'Compra salsas al por mayor en Bucaramanga con precios de fábrica. Salsa de piña, tártara, BBQ y más. Envíos a todo Santander. Pedidos por WhatsApp.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,48,"'Salsas al por Mayor — Precios de Fábrica en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,49,"'<p>En <strong>SURTÉ YA</strong> somos distribuidores autorizados de <strong>La Unión</strong>, la fábrica líder en producción de salsas artesanales en Santander. Ofrecemos precios mayoristas directos",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,50,"'Bucaramanga', 'keyword', true, 1),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,53,"'Pulpas de Fruta al por Mayor en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,54,"'Pulpas de Fruta Mayorista Bucaramanga | SURTÉ YA',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,55,"'Pulpas de fruta 100% naturales al por mayor en Bucaramanga. Maracuyá, mango, lulo, guanábana y más. Envíos a domicilio en Santander.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,56,"'Pulpas de Fruta Naturales — Mayorista Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,57,"'<p>Distribuimos <strong>pulpas de fruta 100% naturales</strong> al por mayor en Bucaramanga y toda el área metropolitana. Producto fresco, sin conservantes artificiales, directo de fábrica.</p><h2>Sa",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,58,"'Bucaramanga', 'keyword', true, 2),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,61,"'Domicilios Bucaramanga — Salsas y Pulpas a tu Puerta',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,62,"'Domicilios Bucaramanga — Salsas y Pulpas | SURTÉ YA',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,63,"'Servicio de domicilios de salsas, pulpas y productos alimenticios en Bucaramanga. Pedidos por WhatsApp con entrega rápida en el área metropolitana.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,64,"'Domicilios en Bucaramanga — Tu Pedido a la Puerta',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,65,"'<p>En <strong>SURTÉ YA</strong> llevamos tus salsas, pulpas y productos alimenticios hasta la puerta de tu negocio o casa en Bucaramanga y el área metropolitana.</p><h2>¿Cómo funciona?</h2><ol><li>El",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,66,"'Bucaramanga', 'local', true, 3),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,69,"'Domicilios de Alimentos en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,70,"'Domicilios de Alimentos Bucaramanga | SURTÉ YA — Pedidos por WhatsApp',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,71,"'Pide alimentos a domicilio en Bucaramanga. Salsas, pulpas, cárnicos y más con envío rápido. Pedidos fáciles por WhatsApp.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,72,"'Domicilios de Alimentos a tu Puerta en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,73,'<p><strong>SURTÉ YA</strong> es tu aliado para surtir tu negocio o tu hogar con alimentos de calidad en Bucaramanga. Realizamos domicilios en toda el área metropolitana.</p><h2>Cobertura de Domicilio,SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,74,"'Bucaramanga', 'ciudad', true, 3),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,77,"'Distribuidores de Salsas en Santander',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,78,"'Distribuidores de Salsas Santander | SURTÉ YA — La Unión',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,79,"'Somos distribuidores oficiales de salsas La Unión en Santander. Precios mayoristas para HORECA, minimercados y distribuidores.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,80,"'Red de Distribución de Salsas La Unión en Santander',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,81,"'<p>Como distribuidores oficiales de <strong>La Unión</strong> en Santander, ofrecemos la línea completa de salsas con precios especiales para el canal mayorista y distribuidores.</p><h2>Beneficios pa",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,82,"'Bucaramanga', 'keyword', true, 4),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,85,"'Proveedor HORECA en Bucaramanga — SURTÉ YA',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,86,"'Proveedor HORECA Bucaramanga | SURTÉ YA — Salsas y Pulpas',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,87,"'Proveedor mayorista para el sector HORECA en Bucaramanga. Salsas, pulpas y productos alimenticios con precios especiales para hoteles, restaurantes y catering.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,88,"'Tu Proveedor HORECA de Confianza en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,89,"'<p><strong>SURTÉ YA</strong> es el proveedor ideal para el sector HORECA (Hoteles, Restaurantes, Catering) en Bucaramanga. Ofrecemos productos alimenticios de alta calidad con precios especiales para",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,90,"'Bucaramanga', 'seo', true, 4),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,93,"'Agua al por Mayor en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,94,"'Agua al por Mayor Bucaramanga | SURTÉ YA — Envíos a Domicilio',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,95,"'Distribución de agua al por mayor en Bucaramanga. Botellones, pacas y más con domicilio. Precios mayoristas para negocios.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,96,"'Agua Potable al por Mayor — Distribución en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,97,"'<p>Distribuimos <strong>agua potable</strong> al por mayor en Bucaramanga y el área metropolitana. Ideal para oficinas, restaurantes, tiendas y hogares que necesitan abastecimiento constante.</p><h2>",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,98,"'Bucaramanga', 'keyword', true, 5),",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,101,"'Distribuidor de Salsas en Santander — SURTÉ YA',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,102,"'Distribuidor Salsas Santander | SURTÉ YA — La Unión',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,103,"'Distribuidor autorizado de salsas La Unión en Santander. Salsas artesanales al por mayor para todo el departamento. Contacta por WhatsApp.',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,104,"'Distribuidor de Salsas La Unión en Santander',",SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,105,'<p>Somos <strong>distribuidores autorizados</strong> de salsas <strong>La Unión</strong> para todo el departamento de Santander. Nuestro catálogo incluye las mejores salsas artesanales colombianas.</,SEED,migrations,37
+supabase/migrations/20260409201412_b2c75e4e-28e1-4339-b414-5c2442d3183b.sql,106,"'Santander', 'seo', true, 5)",SEED,migrations,37
+src/components/SurteyaRedirect.tsx,7,* `/surteya/...` cuando el visitante NO está en el subdominio del tenant,COPY,components,35/36
+src/components/SurteyaRedirect.tsx,10,* En el subdominio `surteya.sistecpos.com` no hace nada → renderiza children.,COPY,components,35/36
+src/components/SurteyaRedirect.tsx,16,"const LEGACY_TENANT_SLUG = ""surteya"";",CONFIG,components,34/36/37
+src/components/SurteyaRedirect.tsx,17,"const CANONICAL_HOST = ""https://surteya.sistecpos.com"";",CONFIG,components,34/36/37
+src/components/SurteyaRedirect.tsx,21,"/** Path bajo `/surteya/` al que se redirige. Ej: ""/catalogo"" → /surteya/catalogo */",COPY,components,35/36
+src/components/SurteyaRedirect.tsx,49,// En sistecpos.com / app / www: redirigir a /surteya/* (client-side 301 equivalente).,COPY,components,35/36
+src/modules/storefront/pages/ProductoDetalle.tsx,214,"const baseUrl = ""https://surteya.com"";",CONFIG,storefront,34/36/37
+src/modules/storefront/pages/ProductoDetalle.tsx,479,description={product.meta_description || product.description || `Compra ${product.name} al mejor precio en Bucaramanga`},COPY,storefront,35/36
+supabase/migrations/20260317020123_647fac5b-6613-4b5a-9862-fcf249afbe41.sql,1,ALTER TABLE public.profiles ALTER COLUMN city SET DEFAULT 'Bucaramanga';,SEED,migrations,37
+supabase/migrations/20260317010101_d2cef913-519f-48af-8b85-3547a17c1532.sql,4,"('Cárnicos', 'carnicos', 'Drumstick', '#C0392B', 1),",SEED,migrations,37
+supabase/migrations/20260317010101_d2cef913-519f-48af-8b85-3547a17c1532.sql,5,"('Pulpas', 'pulpas', 'Cherry', '#E91E63', 2),",SEED,migrations,37
+supabase/migrations/20260317010101_d2cef913-519f-48af-8b85-3547a17c1532.sql,8,"('Panificados', 'panificados', 'Croissant', '#795548', 5)",SEED,migrations,37
+supabase/migrations/20260317010101_d2cef913-519f-48af-8b85-3547a17c1532.sql,28,"('Precios de Fábrica', 'Cárnicos, pulpas y más directo del productor a tu negocio', 'Ver Catálogo', '/catalogo', 1),",SEED,migrations,37
+supabase/functions/get-landing/index.ts,2,"// Consumido por sistecpos.com, surteya.com y cualquier tenant Astro.",CONFIG,fn/get-landing,34/36/37
+src/modules/superadmin/lib/cloudflareDrafts.test.ts,91,"const a = mockConnect(""surteya.com"", ""saas"");",TEST,superadmin,39
+src/modules/superadmin/lib/cloudflareDrafts.test.ts,92,"const b = mockConnect(""surteya.com"", ""saas"");",TEST,superadmin,39
+src/modules/superadmin/lib/cloudflareDrafts.test.ts,97,"const saas = mockConnect(""surteya.com"", ""saas"");",TEST,superadmin,39
+src/modules/superadmin/lib/cloudflareDrafts.test.ts,98,"const own = mockConnect(""surteya.com"", ""cloudflare_account"");",TEST,superadmin,39
+supabase/migrations/20260324044901_71defaff-5295-4c1e-8a8e-ee1542287b77.sql,5,"city text NOT NULL DEFAULT 'Bucaramanga',",SEED,migrations,37
+src/modules/superadmin/lib/cloudTasks.ts,220,"id: ""domain-surteya"",",COPY,superadmin,35/36
+src/modules/superadmin/lib/cloudTasks.ts,222,"title: ""Registro de surteya.com en Cloudflare"",",COPY,superadmin,35/36
+src/modules/superadmin/lib/cloudTasks.ts,228,"supabase.from(""tenant_domains"").select(""id"").eq(""hostname"", ""surteya.com"").maybeSingle(),",CONFIG,superadmin,34/36/37
+supabase/migrations/20260314144744_b54b27d5-ed3e-48ef-a581-af1efd9a94be.sql,172,"('Cárnicos', 'carnicos', 'Drumstick', '#C0392B', 1),",SEED,migrations,37
+supabase/migrations/20260314144744_b54b27d5-ed3e-48ef-a581-af1efd9a94be.sql,173,"('Pulpas', 'pulpas', 'Cherry', '#E91E63', 2),",SEED,migrations,37
+supabase/migrations/20260314144744_b54b27d5-ed3e-48ef-a581-af1efd9a94be.sql,176,"('Panificados', 'panificados', 'Croissant', '#8D6E63', 5);",SEED,migrations,37
+supabase/functions/sitemap/index.ts,8,const BASE_URL = 'https://surteya.com';,CONFIG,fn/sitemap,34/36/37
+supabase/functions/sitemap/index.ts,53,// fallback al comportamiento legacy (surteya) para mantener compatibilidad.,CONFIG,fn/sitemap,34/36/37
+src/modules/onboarding/components/SubdomainPreview.tsx,80,"placeholder=""surteya""",COPY,onboarding,35/36
+supabase/functions/auth-email-hook/index.ts,40,"const SENDER_DOMAIN = ""notify.surteya.com""",CONFIG,fn/auth-email-hook,34/36/37
+supabase/functions/auth-email-hook/index.ts,41,"const ROOT_DOMAIN = ""surteya.com""",CONFIG,fn/auth-email-hook,34/36/37
+supabase/functions/auth-email-hook/index.ts,42,"const FROM_DOMAIN = ""surteya.com"" // Domain shown in From address (may be root or sender subdomain)",CONFIG,fn/auth-email-hook,34/36/37
+supabase/functions/_shared/transactional-email-templates/order-confirmation.tsx,135,"address: 'Cra 27 #36-15, Cabecera, Bucaramanga',",CONFIG,fn/_shared,34/36/37
+src/modules/cart/lib/cartToken.ts,5,"const TOKEN_KEY = ""surteya_cart_token"";",CONFIG,cart,34/36/37
+src/modules/integrations/whatsapp/whatsappFlowTemplate.ts,4,* This schema mirrors the SurteYa `products` table fields so that the,COPY,integrations,35/36
+src/modules/integrations/whatsapp/whatsappFlowTemplate.ts,33,"title: ""Catálogo SurteYa"",",COPY,integrations,35/36
+src/modules/integrations/whatsapp/whatsappFlowTemplate.ts,56,"image_url: ""https://surteya.com/img/mango.jpg"",",COPY,integrations,35/36
+src/modules/cart/context/CartContext.tsx,53,"const STORAGE_KEY = ""surteya_cart"";",CONFIG,cart,34/36/37
+src/modules/cart/context/CartContext.test.tsx,90,"const raw = localStorage.getItem(""surteya_cart"");",TEST,cart,39
+src/modules/cart/README.md,6,"- `lib/cartToken.ts` — UUID anónimo persistido en `localStorage` (`surteya_cart_token`), compartido entre web y WhatsApp Flow para sincronizar el carrito vía `persistent_carts` + edge function `cart-s",DOC,cart,40
+src/components/HostGuard.tsx,12,"*                 (surteya.sistecpos.com, <slug>.sistecpos.com).",COPY,components,35/36
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,3,"SELECT id, 'surteya', 'SURTÉ YA', '#0C4B83', '#F37021', true",SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,4,FROM organizations WHERE slug = 'surteya',SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,11,"('surteya.com', true),",SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,12,"('www.surteya.com', false),",SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,13,"('surteya.lovable.app', false)",SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,15,WHERE ts.slug = 'surteya',SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,20,"o.id, 'surteya', 'surteya-home',",SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,22,"'SURTÉ YA | Salsas, Cárnicos y Pulpas al Por Mayor en Bucaramanga',",SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,23,"'Distribuidor mayorista de salsas, cárnicos, pulpas y agua para HORECA y minimercados en Bucaramanga, Floridablanca, Girón y Piedecuesta. Domicilios el mismo día.',",SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,24,"'https://surteya.com/',",SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,27,"'subtitle', 'Salsas, cárnicos, pulpas y agua al por mayor. Entregas el mismo día en el área metropolitana de Bucaramanga.',",SEED,migrations,37
+supabase/migrations/20260524010856_07632715-b221-4818-b1bb-5111b18f11f7.sql,32,FROM organizations o WHERE o.slug = 'surteya',SEED,migrations,37
+src/modules/storefront/pages/LandingPage.tsx,18,"const BASE_URL = ""https://surteya.com"";",CONFIG,storefront,34/36/37
+src/modules/storefront/pages/LandingPage.tsx,71,const metaDesc = page?.meta_description || `${page?.title} en ${storeName}. Envíos a domicilio en Santander.`;,CONFIG,storefront,34/36/37
+supabase/functions/send-web-push/index.ts,47,"sub: Deno.env.get(""VAPID_SUBJECT"") || ""mailto:hola@surteya.com"",",CONFIG,fn/send-web-push,34/36/37
+src/modules/auth/components/TenantAwareLogin.tsx,10,"*  - Storefront (surteya.sistecpos.com, otros tenants) → Login (branded por tenant).",COPY,auth,35/36
+supabase/functions/send-transactional-email/index.ts,12,"const SENDER_DOMAIN = ""notify.surteya.com""",CONFIG,fn/send-transactional-email,34/36/37
+supabase/functions/send-transactional-email/index.ts,16,"const FROM_DOMAIN = ""surteya.com""",CONFIG,fn/send-transactional-email,34/36/37
+src/modules/offline/lib/db.ts,58,"super(""surteya_offline_v1"");",COPY,offline,35/36
+src/modules/auth/pages/Login.tsx,45,"const isSurteya = brand.slug === ""surteya"";",CONFIG,auth,34/36/37
+src/modules/storefront/pages/Hub.tsx,20,"const BASE_URL = ""https://surteya.com"";",CONFIG,storefront,34/36/37
+src/modules/storefront/pages/Hub.tsx,167,"const cityLabel = cityScope ? cityScope.charAt(0).toUpperCase() + cityScope.slice(1) : ""Bucaramanga"";",CONFIG,storefront,34/36/37
+src/modules/storefront/pages/Hub.tsx,175,"? `${subtitle}. Compra al mejor precio en ${storeName}. Envíos a Bucaramanga, Floridablanca, Girón y Piedecuesta.`",COPY,storefront,35/36
+src/modules/storefront/pages/Hub.tsx,194,"about: { ""@type"": ""City"", name: title, containedInPlace: { ""@type"": ""AdministrativeArea"", name: ""Santander"" } },",COPY,storefront,35/36
+src/modules/storefront/pages/Hub.tsx,199,"const cityName = cityScope ? cityLabel : (type === ""ciudad"" ? title : ""Bucaramanga"");",CONFIG,storefront,34/36/37
+supabase/functions/resend-mail-service/index.ts,18,"const DEFAULT_FROM = ""SURTÉ YA <noreply@surteya.com>"";",CONFIG,fn/resend-mail-service,34/36/37
+src/modules/storefront/pages/Carrito.tsx,33,"const selectedCity = localStorage.getItem(""surte_city"") || ""Bucaramanga"";",CONFIG,storefront,34/36/37
+src/modules/clientes/pages/Onboarding.tsx,43,"const [city, setCity] = useState(""Bucaramanga"");",CONFIG,clientes,34/36/37
+src/modules/auth/pages/LoginRouter.tsx,275,"placeholder=""ej: surteya""",COPY,auth,35/36
+src/modules/email/emailTemplates.ts,2,"const LOGO_URL = ""https://surteya.com/favicon.svg"";",CONFIG,email,34/36/37
+src/modules/email/emailTemplates.ts,43,"Bucaramanga, Santander, Colombia<br/>",COPY,email,35/36
+src/modules/email/emailTemplates.ts,44,"<a href=""https://surteya.com"" style=""color:${BRAND.primary};text-decoration:none;"">surteya.com</a>",COPY,email,35/36
+src/modules/email/emailTemplates.ts,156,"<p style=""margin:2px 0 0;font-size:12px;color:#666;"">Pulpas, cárnicos, salsas y más</p>",COPY,email,35/36
+src/modules/email/emailTemplates.ts,170,"<p style=""margin:2px 0 0;font-size:12px;color:#666;"">Servicio en Bucaramanga y alrededores</p>",COPY,email,35/36
+src/modules/email/emailTemplates.ts,176,"<a href=""https://surteya.com/catalogo"" style=""display:inline-block;background:${BRAND.accent};color:white;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;"">",COPY,email,35/36
+src/modules/marketing/seo/SeoBreadcrumbs.tsx,23,"const BASE_URL = ""https://surteya.com"";",CONFIG,marketing,34/36/37
+src/modules/storefront/components/TopBar.tsx,19,"const CITIES = [""Bucaramanga"", ""Floridablanca"", ""Girón"", ""Piedecuesta""] as const;",CONFIG,storefront,34/36/37
+src/modules/storefront/components/TopBar.tsx,33,"return localStorage.getItem(""surte_city"") || ""Bucaramanga"";",COPY,storefront,35/36
+src/modules/storefront/components/CityPickerModal.tsx,57,"const defaultCity = cities[0] || ""Bucaramanga"";",CONFIG,storefront,34/36/37
+src/modules/storefront/components/CityPickerModal.tsx,61,"const cities = municipalities?.map((m) => m.city) ?? [""Bucaramanga"", ""Floridablanca"", ""Girón"", ""Piedecuesta""];",CONFIG,storefront,34/36/37
+src/modules/admin-cms/components/UsersTab.tsx,45,"const [createForm, setCreateForm] = useState({ email: """", password: """", full_name: """", phone: """", business_name: """", city: ""Bucaramanga"", business_type: ""detal"" as BusinessType, role: ""user"" as AppRol",CONFIG,admin-cms,34/36/37
+src/modules/admin-cms/components/UsersTab.tsx,153,"setCreateForm({ email: """", password: """", full_name: """", phone: """", business_name: """", city: ""Bucaramanga"", business_type: ""detal"", role: ""user"" });",COPY,admin-cms,35/36
+src/modules/storefront/components/BrandsSection.tsx,37,"<p className=""text-sm text-muted-foreground mt-0.5"">Trabajamos con los mejores proveedores de Santander</p>",COPY,storefront,35/36
+src/modules/marketing/seo/JsonLd.tsx,35,"""@id"": ""https://surteya.com/#business"",",COPY,marketing,35/36
+src/modules/marketing/seo/JsonLd.tsx,38,"url: ""https://surteya.com"",",COPY,marketing,35/36
+src/modules/marketing/seo/JsonLd.tsx,44,"addressLocality: ""Bucaramanga"",",COPY,marketing,35/36
+src/modules/marketing/seo/JsonLd.tsx,45,"addressRegion: ""Santander"",",COPY,marketing,35/36
+src/modules/marketing/seo/JsonLd.tsx,54,"{ ""@type"": ""City"", name: ""Bucaramanga"" },",COPY,marketing,35/36
+src/modules/marketing/seo/JsonLd.tsx,81,const url = `https://surteya.com/producto/${product.slug || product.id}`;,CONFIG,marketing,34/36/37
+src/modules/marketing/seo/JsonLd.tsx,142,"url: ""https://surteya.com"",",COPY,marketing,35/36
+src/modules/marketing/seo/JsonLd.tsx,147,"urlTemplate: ""https://surteya.com/catalogo?search={search_term_string}"",",COPY,marketing,35/36
+src/modules/marketing/seo/JsonLd.tsx,169,"url: `https://surteya.com/producto/${p.slug || p.id}`,",COPY,marketing,35/36
+src/modules/storefront/README.md,3,Tienda pública servida en hosts de tenant (ej. `surteya.sistecpos.com`).,DOC,storefront,40
+src/modules/storefront/components/NotificationBanner.tsx,8,"const STORAGE_DISMISSED = ""surteya_notif_dismissed"";",CONFIG,storefront,34/36/37
+src/modules/storefront/components/NotificationBanner.tsx,9,"const STORAGE_SUBSCRIBED = ""surteya_notif_subscribed"";",CONFIG,storefront,34/36/37
+src/modules/pos/pages/POS.tsx,35,"document.title = ""POS · SurteYa"";",COPY,pos,35/36
+src/modules/admin-cms/components/InventoryTab.tsx,57,"p.id, p.name, p.description || p.name, `https://surteya.com/producto/${p.slug || p.id}`,",COPY,admin-cms,35/36
+src/modules/admin-cms/components/HeroSlidesTab.tsx,16,"const CITIES = ["""", ""Bucaramanga"", ""Floridablanca"", ""Girón"", ""Piedecuesta""];",CONFIG,admin-cms,34/36/37
+src/modules/storefront/components/StoreFooter.tsx,72,"Soluciones alimenticias para tu negocio. Pulpas, cárnicos, salsas y más.",COPY,storefront,35/36
+src/modules/storefront/components/HeroSection.tsx,64,"Salsas, Cárnicos<br />y Pulpas{"" ""}",COPY,storefront,35/36
+src/modules/pos/pages/Mesas.tsx,39,"useEffect(() => { document.title = ""Mesas · SurteYa""; }, []);",COPY,pos,35/36
+src/modules/admin-cms/components/CategoriesTab.tsx,127,navigator.clipboard.writeText(`https://surteya.com/hub/categoria/${slug}`);,COPY,admin-cms,35/36
+src/modules/pos/pages/KDS.tsx,38,"useEffect(() => { document.title = ""KDS · SurteYa""; }, []);",COPY,pos,35/36
+src/modules/admin-cms/components/DataManagementTab.tsx,208,"downloadXlsx(allData, `surteya_${def.name}_${timestamp}.xlsx`);",COPY,admin-cms,35/36
+src/modules/admin-cms/components/DataManagementTab.tsx,210,"downloadCsv(jsonToCsv(allData), `surteya_${def.name}_${timestamp}.csv`);",COPY,admin-cms,35/36
+src/modules/admin-cms/components/NotificationsTab.tsx,22,"fresh: ""SURTÉ YA - Llegaron productos frescos del día. Pulpas y cárnicos recién procesados. Reserva el tuyo."",",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,66,"meta_description: `Compra ${cat.toLowerCase()} al por mayor con precios mayoristas. Envio a Bucaramanga y Santander. Calidad garantizada.`,",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,80,"meta_description: `${kw}. Los mejores precios y calidad en SURTE YA. Envio rapido a Bucaramanga y Santander.`,",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,114,"{ label: ""FAQ Schema"", icon: Code, html: `<section>\n  <h2>Preguntas Frecuentes</h2>\n  <details>\n    <summary><strong>Cual es el pedido minimo?</strong></summary>\n    <p>El pedido minimo varia segu",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,359,"city: ""Bucaramanga"",",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,583,"placeholder={templateWizard.type === 0 ? ""Bucaramanga"" : templateWizard.type === 1 ? ""Pulpas de fruta"" : ""salsas para restaurantes""}",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,789,"<p className=""text-[10px] text-muted-foreground mt-0.5"">surteya.com/s/{editing.slug || ""...""}</p>",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,793,"<Input value={editing.title || """"} onChange={e => setEditing({ ...editing, title: e.target.value })} placeholder=""Domicilios en Bucaramanga"" />",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,805,"<Input value={editing.meta_title || """"} onChange={e => setEditing({ ...editing, meta_title: e.target.value })} placeholder=""Domicilios de alimentos en Bucaramanga | SURTE YA"" />",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,814,"<Textarea value={editing.meta_description || """"} onChange={e => setEditing({ ...editing, meta_description: e.target.value })} placeholder=""Pide alimentos a domicilio en Bucaramanga..."" rows={2} />",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,825,"surteya.com/s/{editing.slug || ""...""}",COPY,admin-cms,35/36
+src/modules/admin-cms/components/LandingPagesTab.tsx,907,"<Input value={editing.city || """"} onChange={e => setEditing({ ...editing, city: e.target.value })} placeholder=""Bucaramanga"" className=""h-9"" />",COPY,admin-cms,35/36
+src/modules/admin-cms/components/MunicipalitiesTab.tsx,71,"meta_description: prev.meta_description || `Pide salsas, cárnicos, pulpas y más con envío a domicilio en ${cityName}, Santander. Precios mayoristas y al detal. Pedido mínimo desde $120.000.`,",COPY,admin-cms,35/36
+src/modules/admin-cms/components/MunicipalitiesTab.tsx,214,"placeholder=""Ej: Bucaramanga""",COPY,admin-cms,35/36
+src/modules/admin-cms/components/MunicipalitiesTab.tsx,346,"<p className=""text-[11px] text-[#006621] truncate"">surteya.com › hub › ciudad › {form.slug || genSlug(form.city || ""ciudad"")}</p>",COPY,admin-cms,35/36
+src/modules/admin-cms/components/ShippingTab.tsx,23,"const DEFAULT_CITIES = [""Bucaramanga"", ""Floridablanca"", ""Girón"", ""Piedecuesta""];",CONFIG,admin-cms,34/36/37
+src/modules/admin-cms/components/ShippingTab.tsx,48,"city: CITIES[0] || ""Bucaramanga"",",COPY,admin-cms,35/36
+src/modules/admin-cms/components/ShippingTab.tsx,184,"placeholder={""Bucaramanga, Cabecera, 5000\nFloridablanca, Cañaveral, 6000""}",COPY,admin-cms,35/36
+src/modules/admin-cms/components/ShippingTab.tsx,274,{zones?.length || 0} zonas en total · Área Metropolitana de Bucaramanga,COPY,admin-cms,35/36
+src/modules/admin-cms/components/SeoTab.tsx,11,"{ key: ""seo_default_og_image"", label: ""Imagen OG Predeterminada"", placeholder: ""https://surteya.com/og-default.jpg"", group: ""general"", description: ""Imagen por defecto para Schema.org y Open Graph (12",COPY,admin-cms,35/36
+src/modules/admin-cms/components/FeaturedSectionsTab.tsx,148,navigator.clipboard.writeText(`https://surteya.com${url}`);,COPY,admin-cms,35/36
+src/modules/printing/lib/ticketBuilder.test.ts,5,"org: { business_name: ""Surteya Distribuciones"", nit: ""900.123.456-7"", address: ""Cra 27 # 34-12, Bucaramanga"", phone: ""318 555 1234"", footer: ""Gracias por preferirnos"" },",TEST,printing,39
+src/modules/admin-cms/components/BrandsTab.tsx,146,navigator.clipboard.writeText(`https://surteya.com/hub/marca/${getBrandSlug(b)}`);,COPY,admin-cms,35/36
+src/modules/admin-cms/components/PresentationsTab.tsx,157,"XLSX.writeFile(wb, ""presentaciones_surteya.xlsx"");",COPY,admin-cms,35/36
+src/modules/pos/components/CustomerQuickDialog.tsx,224,"<Input {...register(""city"")} placeholder=""Bucaramanga"" className=""h-10"" aria-invalid={!!errors.city} />",COPY,pos,35/36
+src/modules/admin-cms/components/SeoContentTab.tsx,220,"placeholder=""Pulpas de fruta congeladas en Bucaramanga""",COPY,admin-cms,35/36
