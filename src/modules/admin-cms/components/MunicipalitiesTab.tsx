@@ -305,7 +305,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
                 <textarea
                   value={form.meta_description}
                   onChange={(e) => setForm({ ...form, meta_description: e.target.value })}
-                  placeholder={`Pide salsas, cárnicos, pulpas y más con envío a domicilio en ${form.city || "tu ciudad"}...`}
+                  placeholder={`Compra productos con envío a domicilio en ${form.city || "tu ciudad"}...`}
                   rows={3}
                   className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors resize-none"
                 />
