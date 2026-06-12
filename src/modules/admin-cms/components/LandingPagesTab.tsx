@@ -580,7 +580,7 @@ const LandingPagesTab = () => {
                 <Input
                   value={templateWizard.input}
                   onChange={e => setTemplateWizard({ ...templateWizard, input: e.target.value })}
-                  placeholder={templateWizard.type === 0 ? "Bucaramanga" : templateWizard.type === 1 ? "Pulpas de fruta" : "salsas para restaurantes"}
+                  placeholder={templateWizard.type === 0 ? "Nombre de ciudad" : templateWizard.type === 1 ? "Nombre de categoría" : "palabra clave"}
                   autoFocus
                   onKeyDown={e => e.key === "Enter" && handleCreateFromTemplate()}
                 />
