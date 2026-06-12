@@ -4222,6 +4222,7 @@ export type Database = {
           id: string
           is_active: boolean
           legal_name: string | null
+          lifecycle_state: Database["public"]["Enums"]["tenant_lifecycle_state"]
           logo_url: string | null
           name: string
           pos_default_mode: string
@@ -4253,6 +4254,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           legal_name?: string | null
+          lifecycle_state?: Database["public"]["Enums"]["tenant_lifecycle_state"]
           logo_url?: string | null
           name: string
           pos_default_mode?: string
@@ -4284,6 +4286,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           legal_name?: string | null
+          lifecycle_state?: Database["public"]["Enums"]["tenant_lifecycle_state"]
           logo_url?: string | null
           name?: string
           pos_default_mode?: string
@@ -8158,6 +8161,8 @@ export type Database = {
       }
       is_master_superadmin: { Args: { _user_id?: string }; Returns: boolean }
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
+      is_tenant_readable: { Args: { _org_id: string }; Returns: boolean }
+      is_tenant_writable: { Args: { _org_id: string }; Returns: boolean }
       log_sync_event:
         | {
             Args: {
@@ -8253,6 +8258,14 @@ export type Database = {
         Args: { _activation_id: string; _reason?: string }
         Returns: boolean
       }
+      transition_tenant_lifecycle: {
+        Args: {
+          _new_state: Database["public"]["Enums"]["tenant_lifecycle_state"]
+          _org_id: string
+          _reason?: string
+        }
+        Returns: Json
+      }
       upsert_persistent_cart: {
         Args: {
           _cart_token: string
@@ -8301,6 +8314,13 @@ export type Database = {
         | "minimercado"
         | "distribuidor"
         | "casa"
+      tenant_lifecycle_state:
+        | "pending"
+        | "trial"
+        | "active"
+        | "past_due"
+        | "suspended"
+        | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -8430,6 +8450,14 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user", "superadmin", "editor", "agente", "cashier"],
       business_type: ["detal", "horeca", "minimercado", "distribuidor", "casa"],
+      tenant_lifecycle_state: [
+        "pending",
+        "trial",
+        "active",
+        "past_due",
+        "suspended",
+        "archived",
+      ],
     },
   },
 } as const
