@@ -25,6 +25,8 @@ const CspViolations = lazy(() => import("@/modules/superadmin/pages/CspViolation
 const TenantLicenseSection = lazy(() => import("@/modules/superadmin/components/TenantLicenseSection"));
 const PlansCatalog = lazy(() => import("@/modules/superadmin/pages/PlansCatalog"));
 const TenantEntitlements = lazy(() => import("@/modules/superadmin/pages/TenantEntitlements"));
+const SoporteConfig = lazy(() => import("@/modules/superadmin/pages/SoporteConfig"));
+const CriticalActionsQueue = lazy(() => import("@/modules/superadmin/pages/CriticalActionsQueue"));
 
 const SyncSection = () => (
   <div className="space-y-4">
