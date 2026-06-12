@@ -904,7 +904,7 @@ const LandingPagesTab = () => {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Ciudad</label>
-                  <Input value={editing.city || ""} onChange={e => setEditing({ ...editing, city: e.target.value })} placeholder="Bucaramanga" className="h-9" />
+                  <Input value={editing.city || ""} onChange={e => setEditing({ ...editing, city: e.target.value })} placeholder="Tu ciudad" className="h-9" />
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="text-xs font-medium text-muted-foreground">Imagen URL</label>
