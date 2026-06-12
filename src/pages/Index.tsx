@@ -95,9 +95,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <HeadMeta
-        title={s.seo_site_name || "SURTÉ YA — Soluciones Alimenticias"}
-        description={s.seo_default_description || "Salsas, cárnicos y pulpas al mayor en Bucaramanga."}
-        canonical="https://surteya.com"
+        title={s.seo_site_name || s.store_name || "Tienda online"}
+        description={s.seo_default_description || s.store_description || ""}
       />
       <JsonLd data={buildLocalBusinessSchema(s)} id="local-business" />
       <JsonLd data={buildWebSiteSchema(s)} id="website" />

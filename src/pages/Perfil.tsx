@@ -98,7 +98,7 @@ const Perfil = () => {
     { key: "phone", label: "WhatsApp", icon: Phone, placeholder: "573001234567" },
     { key: "business_name", label: "Negocio / Empresa", icon: Building2, placeholder: "Nombre del negocio" },
     { key: "address", label: "Dirección", icon: MapPin, placeholder: "Tu dirección de entrega" },
-    { key: "city", label: "Ciudad", icon: MapPin, placeholder: "Bucaramanga, Floridablanca, Girón, Piedecuesta" },
+    { key: "city", label: "Ciudad", icon: MapPin, placeholder: "Tu ciudad" },
   ];
 
   return (
