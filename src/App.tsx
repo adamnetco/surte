@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
-import { errorToMessage } from "@/lib/errors";
+import { errorToMessage, isTenantNotWritableError } from "@/lib/errors";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/modules/cart/context/CartContext";
 import { AuthProvider } from "@/modules/auth/context/AuthContext";
@@ -25,6 +25,7 @@ import GlobalCommandPalette from "@/components/GlobalCommandPalette";
 import AuthHealthMonitor from "@/components/AuthHealthMonitor";
 const OnboardingChecklist = lazy(() => import("@/modules/onboarding/components/OnboardingChecklist"));
 import DevBypassBanner from "@/components/DevBypassBanner";
+import TenantSuspendedBanner from "@/components/TenantSuspendedBanner";
 import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
@@ -102,21 +103,42 @@ const queryClient = new QueryClient({
   // porque sonner deduplica por id.
   queryCache: new QueryCache({
     onError: (error, query) => {
-      // Solo molestar al usuario si la query ya tenía datos antes (refetch fallido)
-      // o si fue invocada explícitamente (no en hover/prefetch).
       if (query.state.data === undefined && query.meta?.silent !== true) {
-        const msg = errorToMessage(error);
-        toast.error(msg, { id: `q:${String(query.queryHash)}` });
+        showErrorToast(error, `q:${String(query.queryHash)}`);
       }
     },
   }),
   mutationCache: new MutationCache({
     onError: (error, _vars, _ctx, mutation) => {
       if (mutation.options.onError) return; // ya manejado a nivel local
-      toast.error(errorToMessage(error));
+      showErrorToast(error);
     },
   }),
 });
+
+/** Toast unificado: añade acción "Contactar soporte" cuando es bloqueo de lifecycle. */
+function showErrorToast(error: unknown, id?: string) {
+  const msg = errorToMessage(error);
+  if (isTenantNotWritableError(error)) {
+    toast.error(msg, {
+      id: id ?? "tenant-not-writable",
+      duration: 8000,
+      action: {
+        label: "Contactar soporte",
+        onClick: () => {
+          window.open(
+            "https://wa.me/573001234567?text=" +
+              encodeURIComponent("Hola, mi tienda está bloqueada y necesito reactivarla."),
+            "_blank",
+            "noopener"
+          );
+        },
+      },
+    });
+    return;
+  }
+  toast.error(msg, id ? { id } : undefined);
+}
 
 const RouteFallback = () => (
   <div className="min-h-[100dvh] flex items-center justify-center text-sm text-muted-foreground">
@@ -187,6 +209,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <DevBypassBanner />
+            <TenantSuspendedBanner />
             <GlobalErrorListeners />
             <Suspense fallback={null}><SSOErrorScreen /></Suspense>
 

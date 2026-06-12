@@ -79,13 +79,33 @@ export function normalizeError(err: AnyError): NormalizedError {
     return { message: "El servidor tuvo un problema. Intenta de nuevo en un momento.", code, technical: rawMessage };
   }
 
-  // 4) Mensaje crudo pero acotado para que no se vea espantoso
+  // 4) Lifecycle enforcement: tenant suspendido/archivado (trigger DB)
+  if (/tenant_not_writable/i.test(rawMessage)) {
+    const stateMatch = rawMessage.match(/estado\s+(\w+)/i);
+    const state = stateMatch?.[1]?.toLowerCase();
+    const stateLabel =
+      state === "suspended" ? "suspendida" :
+      state === "archived" ? "archivada" :
+      "inactiva";
+    return {
+      message: `Tu tienda está ${stateLabel} y no admite cambios. Contacta a soporte para reactivarla.`,
+      code: "tenant_not_writable",
+      technical: rawMessage,
+    };
+  }
+
+  // 5) Mensaje crudo pero acotado para que no se vea espantoso
   const trimmed = rawMessage.length > 180 ? `${rawMessage.slice(0, 177)}…` : rawMessage;
   return { message: trimmed, code, technical: rawMessage };
 }
 
 export function errorToMessage(err: AnyError): string {
   return normalizeError(err).message;
+}
+
+/** Detecta el bloqueo de escritura por lifecycle (suspendida/archivada). */
+export function isTenantNotWritableError(err: AnyError): boolean {
+  return normalizeError(err).code === "tenant_not_writable";
 }
 
 /**
