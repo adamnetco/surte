@@ -243,7 +243,7 @@ const footer = {
   color: '#999999',
   margin: '16px 25px 8px',
 }
-const footerBrand = {
+const footerBrandStyle = {
   fontSize: '11px',
   color: '#0C4B83',
   margin: '0 25px 24px',
