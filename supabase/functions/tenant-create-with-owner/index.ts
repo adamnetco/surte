@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
     const generated_password = randomPassword(10);
     let owner_user_id: string | null = null;
     let password_returned: string | null = null;
+    let owner_newly_created = false;
 
     // Try to find user by email
     const { data: listed } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
@@ -94,6 +95,7 @@ Deno.serve(async (req) => {
       }
       owner_user_id = created.user.id;
       password_returned = generated_password;
+      owner_newly_created = true;
     }
 
     // Create organization
@@ -169,6 +171,25 @@ Deno.serve(async (req) => {
       domain_row = dom;
     }
 
+    // POS-RecoveryMailFuncional: send branded recovery email so the owner
+    // can set their own password instead of relying on the generated one.
+    // We use a fresh anon client to trigger the auth-email-hook pipeline.
+    let recovery_email_sent = false;
+    const origin = req.headers.get("Origin") || req.headers.get("Referer")?.split("/").slice(0, 3).join("/") || "https://admin.sistecpos.com";
+    const recovery_redirect_to = `${origin.replace(/\/$/, "")}/reset-password?tienda=${encodeURIComponent(slug)}`;
+    if (owner_newly_created) {
+      try {
+        const anonClient = createClient(SUPABASE_URL, ANON);
+        const { error: recErr } = await anonClient.auth.resetPasswordForEmail(owner_email, {
+          redirectTo: recovery_redirect_to,
+        });
+        if (recErr) console.warn("recovery email send warning:", recErr.message);
+        else recovery_email_sent = true;
+      } catch (e) {
+        console.warn("recovery email send failed:", String((e as Error)?.message ?? e));
+      }
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -178,6 +199,8 @@ Deno.serve(async (req) => {
         owner_user_id,
         owner_email,
         generated_password: password_returned,
+        recovery_email_sent,
+        recovery_redirect_to,
         modules,
         site_id: site_row?.id ?? null,
         auto_subdomain,
