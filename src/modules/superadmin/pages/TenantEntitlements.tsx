@@ -215,9 +215,37 @@ const TenantEntitlements = () => {
             queda auditado. Usar con motivo claro: contrato enterprise, promoción, soporte de incidente.
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Recargar"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              const reason = window.prompt(
+                "Solicitar cambio masivo de módulos para esta tienda.\nRequiere co-firma de otro superadmin.\n\nJustificación:",
+                "Prueba del pipeline de co-firma"
+              );
+              if (!reason?.trim()) return;
+              try {
+                await auditedMutation({
+                  action: "bulk_module_override",
+                  targetOrgId: orgId!,
+                  payload: { test: true, scope: "single-tenant" },
+                  justification: reason.trim(),
+                  run: async () => ({ noop: true }),
+                });
+                toast.success("Solicitud creada y aprobada (no requería co-firma).");
+              } catch (e) {
+                handleAuditError(e);
+              }
+            }}
+            title="Crea una solicitud en la cola de acciones críticas"
+          >
+            <ShieldAlert className="h-3.5 w-3.5 mr-1" /> Test co-firma
+          </Button>
+          <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Recargar"}
+          </Button>
+        </div>
       </header>
 
       {/* MODULES */}
