@@ -4,6 +4,7 @@ import StoreFooter from "@/modules/storefront/components/StoreFooter";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useTenantBranding, useTenantContact, useTenantLegal } from "@/modules/tenant";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 const TratamientoDatos = () => {
   const { legalName, name } = useTenantBranding();
