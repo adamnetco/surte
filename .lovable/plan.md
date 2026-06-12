@@ -176,3 +176,40 @@ Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surtey
 Skill aplicada en cada etapa: **POS-fix-hardcoding** (clasificar [SEED]/[CONFIG]/[COPY], reemplazar, verificar grep=0, commit por archivo).
 
 Cada etapa = 1 PR atómico, detrás de feature flag `refactor.tenant-autonomy.<n>` para rollback inmediato.
+
+---
+
+## Etapa 39.d ✅ shipped (publish a Live)
+
+**Pre-flight security fix antes del publish:**
+
+Migración `tighten_realtime_rls.sql`:
+- Reemplaza la política única `Scoped realtime subscriptions` en `realtime.messages` por una versión **estrictamente scoped por organización**.
+- Topics globales antiguos (`admin-orders-realtime`, `kds-realtime`, `mesas-realtime`, `sync_logs_dash`, `sync_monitor`, `sync_outbox_dlq`, `my-orders-realtime`) ya **no son aceptados**.
+- Nuevos topics aceptados:
+  - `admin-orders:<org_uuid>`, `kds:<org_uuid>`, `mesas:<org_uuid>`, `sync_logs:<org_uuid>`, `sync_outbox:<org_uuid>` → exige `is_member_of(org)`.
+  - `my-orders:<user_uuid>` → exige `auth.uid() = user_uuid`.
+  - `health_events:<org>` y `print_jobs_<org>` (regex tightened) → exige membership.
+  - `user:<uid>`, `persistent_cart:%`, `order-%`, `ticket-%`, `table-%` → unguessable UUID + RLS row-level en la tabla destino.
+- Cierra fuga cross-tenant detectada por el scanner (`REALTIME_DATA_LEAK`).
+
+Código actualizado (canal + `filter: organization_id=eq.<orgId>`):
+- `src/modules/admin-cms/pages/AdminDashboard.tsx` → `admin-orders:${orgId}`
+- `src/modules/pos/pages/KDS.tsx` → `kds:${orgId}`
+- `src/modules/pos/pages/Mesas.tsx` → `mesas:${orgId}`
+- `src/modules/admin-cms/components/SyncStatusTable.tsx` → `sync_logs:${orgId}` + filter
+- `src/modules/admin-cms/components/SyncMonitor.tsx` → `sync_logs:${orgId}` + filter
+- `src/modules/admin-cms/components/DeadLetterQueue.tsx` → `sync_outbox:${orgId}` + filter (+ import de `useOrganization`)
+- `src/pages/MisPedidos.tsx` → `my-orders:${user.id}`
+
+**Falsos positivos confirmados (no requieren fix):**
+- `EXPOSED_SENSITIVE_DATA / customer_reviews`: columnas `customer_email/customer_phone` ya sin `GRANT` a anon/authenticated desde migración 20260607 + reads públicos vía vista `public_customer_reviews`. Acceso directo a la tabla devuelve `42501 permission denied`.
+- `products.cost_price / price_wholesale / price_distributor`: `has_column_privilege('anon', ...)` = `false` para las 3 columnas. Acceso REST devuelve datos sin esas columnas.
+- El scanner reporta esos hallazgos basándose solo en el texto de la política RLS y no chequea los `GRANT` column-level.
+
+**Publish:**
+- `preview_ui--publish` ejecutado el 2026-06-12 con `website_info_status: already_relevant` (index.html y resolve_tenant_by_host ya proveen metadata correcta tanto a `sistecposcore.lovable.app` como a `surteya.sistecpos.com`).
+- Sitio Live: `https://sistecposcore.lovable.app` (+ custom domains: `surteya.sistecpos.com`, `admin.sistecpos.com`).
+- Migración aplicada también a Live automáticamente.
+
+**Etapa 39 cerrada al 100%.** ✅ 39.a + 39.b + 39.c + 39.d + 39.e
