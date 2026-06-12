@@ -15,6 +15,8 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/planes", label: "Catálogo de Planes", icon: Package, desc: "Plan × Módulos × Límites" },
   { to: "/superadmin/seguridad/acceso", label: "Acceso & Seguridad", icon: ShieldCheck, desc: "2FA, passkeys, break-glass" },
   { to: "/superadmin/seguridad/csp", label: "CSP Violaciones", icon: ShieldCheck, desc: "Telemetría CSP report-only" },
+  { to: "/superadmin/acciones-criticas", label: "Acciones críticas", icon: ShieldAlert, desc: "Cola de co-firma · doble aprobación" },
+  { to: "/superadmin/soporte", label: "WhatsApp soporte", icon: MessageCircle, desc: "Número global de ayuda" },
   { to: "/superadmin/cloud-tareas", label: "Cloud / Tareas", icon: Zap, desc: "Migraciones, seeds, secrets" },
 ];
 
