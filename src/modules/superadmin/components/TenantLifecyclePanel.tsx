@@ -159,6 +159,7 @@ export default function TenantLifecyclePanel() {
                   {allowed.map((next) => {
                     const m = STATE_META[next];
                     const danger = next === "archived" || next === "suspended";
+                    const critical = !!CRITICAL_MAP[next];
                     return (
                       <Button
                         key={next}
@@ -166,8 +167,9 @@ export default function TenantLifecyclePanel() {
                         variant={danger ? "destructive" : "outline"}
                         disabled={busy !== null}
                         onClick={() => transition(next)}
+                        title={critical ? "Acción crítica auditada" : undefined}
                       >
-                        {busy === next ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+                        {busy === next ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : critical ? <ShieldAlert className="h-3.5 w-3.5 mr-1" /> : null}
                         → {m.label}
                       </Button>
                     );
