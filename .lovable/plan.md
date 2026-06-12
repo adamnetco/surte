@@ -213,3 +213,17 @@ Código actualizado (canal + `filter: organization_id=eq.<orgId>`):
 - Migración aplicada también a Live automáticamente.
 
 **Etapa 39 cerrada al 100%.** ✅ 39.a + 39.b + 39.c + 39.d + 39.e
+
+---
+
+## Etapa 41 — CI guard wiring + scanner memory ✅
+
+**Security memory actualizada** (`security--update_memory`) documentando los 108 warns recurrentes del Supabase linter como riesgos aceptados (buckets públicos para storefront, SECURITY DEFINER públicos por diseño, falsos positivos de `customer_reviews` y `products.cost_*`). El scanner los seguirá reportando porque lee solo el texto de la política RLS, pero quedan justificados y no bloquean publish.
+
+**CI guard nuevo** — `.github/workflows/guards.yml`:
+- Job `guards` corre en cada PR/push a `main`.
+- Paso 1: `npm run lint` → la regla `no-restricted-syntax` (Etapa 40) bloquea cualquier literal `SurteYa|surteya|Bucaramanga|Santander|Cárnicos|Pulpas|Panificados`.
+- Paso 2: `npm run audit:hardcoding` (script Bun) → falla con exit 1 si los hits superan el baseline (14).
+- Independiente del workflow `e2e.yml` para feedback rápido (< 2 min) sin tener que esperar al suite de Playwright.
+
+**Resultado refactor multi-tenant cerrado:** etapas 32 → 41 completadas. SurteYa quedó como tenant autónomo cargando desde `tenant_domains` + `organizations.theme_config`. Cualquier regresión de hardcode dispara CI rojo antes de merge.
