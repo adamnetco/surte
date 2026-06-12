@@ -784,13 +784,13 @@ const LandingPagesTab = () => {
                   <Input
                     value={editing.slug || ""}
                     onChange={e => setEditing({ ...editing, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })}
-                    placeholder="domicilios-bucaramanga"
+                    placeholder="slug-de-la-pagina"
                   />
-                  <p className="text-[10px] text-muted-foreground mt-0.5">surteya.com/s/{editing.slug || "..."}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{(typeof window !== "undefined" ? window.location.host : "tu-dominio.com")}/s/{editing.slug || "..."}</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Titulo *</label>
-                  <Input value={editing.title || ""} onChange={e => setEditing({ ...editing, title: e.target.value })} placeholder="Domicilios en Bucaramanga" />
+                  <Input value={editing.title || ""} onChange={e => setEditing({ ...editing, title: e.target.value })} placeholder="Título de la página" />
                 </div>
               </div>
 
