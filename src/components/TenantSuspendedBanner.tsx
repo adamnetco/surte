@@ -55,7 +55,7 @@ export default function TenantSuspendedBanner() {
           </span>
         </p>
         <a
-          href={SUPPORT_WHATSAPP}
+          href={support.waUrl("Hola, mi tienda está bloqueada y necesito reactivarla.")}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center rounded-md bg-white/80 hover:bg-white px-3 py-1.5 text-xs font-medium border border-current/30 transition-colors"
