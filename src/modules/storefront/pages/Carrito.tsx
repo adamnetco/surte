@@ -30,7 +30,7 @@ const NeighborhoodSearch = ({ zones, selectedId, onSelect }: { zones: any[]; sel
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const selectedZone = zones.find((z: any) => z.id === selectedId);
-  const selectedCity = localStorage.getItem("surte_city") || "Bucaramanga";
+  const selectedCity = localStorage.getItem("tenant_city") || "";
 
   const filtered = zones.filter((z: any) => {
     const matchCity = z.city === selectedCity;

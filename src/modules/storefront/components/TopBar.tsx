@@ -73,7 +73,7 @@ const TopBar = ({ onSearch }: TopBarProps) => {
 
   const handleCitySelect = (city: string) => {
     setSelectedCity(city);
-    localStorage.setItem("surte_city", city);
+    localStorage.setItem("tenant_city", city);
     setCityOpen(false);
   };
 
