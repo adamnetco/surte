@@ -17,10 +17,10 @@ const SEGMENTS: Record<Segment, { label: string; emoji: string }> = {
 };
 
 const TEMPLATES: Record<Segment, string> = {
-  all: "Hola desde SURTÉ YA. Tenemos novedades que te interesarán. Visítanos en nuestra app.",
-  offers: "SURTÉ YA - Nuevas ofertas disponibles. Descuentos hasta del 30% en cárnicos y salsas. Pide ya antes que se agoten.",
-  fresh: "SURTÉ YA - Llegaron productos frescos del día. Pulpas y cárnicos recién procesados. Reserva el tuyo.",
-  new_products: "SURTÉ YA - Hemos añadido nuevos productos al catálogo. Entra y descubre las novedades.",
+  all: "Hola. Tenemos novedades que te interesarán. Visítanos en nuestra app.",
+  offers: "Nuevas ofertas disponibles. Descuentos hasta del 30%. Pide ya antes que se agoten.",
+  fresh: "Llegaron productos frescos del día. Reserva el tuyo.",
+  new_products: "Hemos añadido nuevos productos al catálogo. Entra y descubre las novedades.",
 };
 
 const STATUS_META: Record<string, { label: string; cls: string; icon: any }> = {
