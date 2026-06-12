@@ -48,7 +48,7 @@ const Politicas = () => {
         <section className="space-y-2">
           <h2 className="text-base font-heading font-semibold text-foreground">Términos y Condiciones</h2>
           {termsHtml ? (
-            <div className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: termsHtml }} />
+            <div className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(termsHtml) }} />
           ) : (
             <p className="text-sm text-muted-foreground leading-relaxed">
               Al realizar un pedido en {storeName}, aceptas nuestros términos y condiciones. Nos reservamos el derecho de modificar precios y disponibilidad sin previo aviso. Todos los precios están expresados en Pesos Colombianos (COP) e incluyen impuestos aplicables.
