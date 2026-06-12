@@ -401,13 +401,30 @@ export default function Licencias() {
               );
             })}
             {licenses.length === 0 && <p className="text-center text-muted-foreground p-8">Sin licencias aún. Emite la primera.</p>}
+            {licenses.length > 0 && scopeToCurrent && currentOrg && licenses.filter((l) => l.organization_id === currentOrg.id).length === 0 && (
+              <p className="text-center text-muted-foreground p-8">
+                {currentOrg.name} aún no tiene licencias. Usa el botón "Emitir para {currentOrg.name}".
+              </p>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="activations" className="space-y-3">
-          <h2 className="font-semibold">{activations.filter(a => !a.revoked_at).length} terminales activos</h2>
-          <div className="grid gap-2">
-            {activations.map(a => {
+          {(() => {
+            const filteredActs = scopeToCurrent && currentOrg
+              ? activations.filter((a) => {
+                  const lic = licenses.find((l) => l.id === a.license_id);
+                  return lic?.organization_id === currentOrg.id;
+                })
+              : activations;
+            return (
+              <>
+                <h2 className="font-semibold">
+                  {filteredActs.filter((a) => !a.revoked_at).length} terminales activos
+                  {scopeToCurrent && currentOrg ? ` en ${currentOrg.name}` : ""}
+                </h2>
+                <div className="grid gap-2">
+                  {filteredActs.map(a => {
               const lic = licenses.find(l => l.id === a.license_id);
               return (
                 <Card key={a.id} className="p-3 flex items-center justify-between flex-wrap gap-2">
