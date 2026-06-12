@@ -22,12 +22,13 @@ const paymentStatusConfig: Record<string, { label: string; icon: any; bg: string
   reembolsado: { label: "Reembolsado", icon: RotateCcw, bg: "bg-muted", text: "text-muted-foreground", emoji: "↩️" },
 };
 
-const categoryEmojis: Record<string, string> = {
-  cárnicos: "🥩", carnicos: "🥩", pulpas: "🍏", agua: "💧", salsas: "🍯", café: "☕", zumos: "🧃",
-};
+// Emoji fallback genérico por nombre de categoría. Tenants pueden sobrescribir
+// el ícono real en `categories.icon` (lucide-react o SVG). Este mapa es solo
+// un guiño visual cuando el ícono no está configurado.
+const categoryEmojis: Record<string, string> = {};
 
 const getEmoji = (name: string) => {
-  const lower = name.toLowerCase();
+  const lower = (name || "").toLowerCase();
   for (const [key, emoji] of Object.entries(categoryEmojis)) {
     if (lower.includes(key)) return emoji;
   }
