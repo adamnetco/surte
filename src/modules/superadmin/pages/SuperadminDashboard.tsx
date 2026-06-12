@@ -104,6 +104,8 @@ const SuperadminDashboard = () => {
                 <Route path="cloud-tareas" element={<CloudTasksStatus />} />
                 <Route path="seguridad/acceso" element={<SeguridadAcceso />} />
                 <Route path="seguridad/csp" element={<CspViolations />} />
+                <Route path="soporte" element={<SoporteConfig />} />
+                <Route path="acciones-criticas" element={<CriticalActionsQueue />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
