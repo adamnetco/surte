@@ -1,0 +1,1 @@
+ALTER FUNCTION public._attach_tenant_writable_guard(regclass) SET search_path = public;
