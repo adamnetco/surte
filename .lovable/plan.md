@@ -119,20 +119,28 @@ Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surtey
 - Crear `catalog_templates` con presets de categorías por `business_type` (food, retail, services) — opcional para acelerar onboarding.
 
 
-## Etapa 39 — SurteYa como tenant autónomo (cutover) 🚧 (39.a hecho)
+ ## Etapa 39 — SurteYa como tenant autónomo (cutover) 🚧 (39.a + 39.b hechos)
 
 **Etapa 39.a — Seed aplicado en Test:**
 - Corregido `supabase/seeds/seed_surteya_org.sql` para alinearse con el schema real (`currency` no `currency_code`, `support_email` no `contact_email`, `organization_modules.module_key/enabled`, partial unique index `app_settings_org_key_uidx WHERE organization_id IS NOT NULL`).
 - Ejecutado vía `supabase--insert` como service_role (psql con anon no tiene permisos).
-- Resultado: organización SurteYa (`8234b6ee-...`) completada con campos faltantes (city=Bucaramanga, region=Santander, primary_color=#0C4B83, accent_color=#F37021, support_email, whatsapp_phone, hero_title, default_locale=es-CO). **15 app_settings nuevos** (`store_description`, `site_url`, `seo_*`, `hero_*`, `footer_description`, `business_hours_*`, `whatsapp_*`) y **9 módulos** confirmados (`retail`, `pos`, `inventario`, `crm`, `mesas`, `kds`, `horeca`, `agenda`, `licencias`).
-- Dominios ya provisionados manualmente (`surteya.com` primario, `www.surteya.com`, `surteya.lovable.app`, `surteya.sistecpos.com`) — el seed los respeta y solo añade lo que falte.
-- Seed marcado como idempotente con `COALESCE(NULLIF(...))` en org y `ON CONFLICT DO NOTHING` en app_settings → no clobbea valores que el admin ya tuneó.
+- Resultado: organización SurteYa (`8234b6ee-...`) completada con campos faltantes (city=Bucaramanga, region=Santander, primary_color=#0C4B83, accent_color=#F37021, support_email, whatsapp_phone, hero_title, default_locale=es-CO). **15 app_settings nuevos** y **9 módulos** confirmados.
+- Dominios ya provisionados manualmente — el seed los respeta y solo añade lo que falte.
+- Seed marcado como idempotente con `COALESCE(NULLIF(...))` y `ON CONFLICT DO NOTHING`.
+
+**Etapa 39.b — Smoke test storefront en Test ✅:**
+- `https://surteya.sistecpos.com/` resuelve tenant correctamente, hero "Alitas Apanadas", colores #0C4B83/#F37021, branding SURTÉ YA aplicado.
+- CityPickerModal muestra Bucaramanga / Floridablanca / Girón / Piedecuesta (datos desde DB, sin hardcode).
+- `/catalogo` renderiza grid con productos y pills de categorías (Aceites, Cárnicos, Pulpas, Plantas).
+- Header (Catálogo, Categorías, Ofertas, Login) y FAB de WhatsApp funcionales.
+- Console limpia salvo warning cosmético `X-Frame-Options en <meta>` (no funcional, ya conocido).
+- Cero errores JS; resolución `tenant_domains.hostname → organization_id` OK.
 
 **Pendiente Etapa 39:**
-- 39.b — Smoke test storefront `surteya.sistecpos.com` (hero, cart, checkout WhatsApp) en Test.
 - 39.c — E2E `e2e/surteya-as-tenant.spec.ts` cubriendo storefront/login/checkout/admin/POS sin referencias al slug en código.
 - 39.d — Publicar a Live (requiere confirmación explícita del usuario).
 - 39.e — Eliminar feature flag `legacy.surteya-hardcode` (ya no hace nada).
+
 
 
 ## Etapa 40 — Guardas anti-regresión
