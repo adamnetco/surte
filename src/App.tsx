@@ -125,9 +125,15 @@ function showErrorToast(error: unknown, id?: string) {
       duration: 8000,
       action: {
         label: "Contactar soporte",
-        onClick: () => {
+        onClick: async () => {
+          // Lee la config global (cacheada por React Query si ya se consultó).
+          let number = "573001234567";
+          try {
+            const cached = queryClient.getQueryData<{ number: string }>(["support-contact"]);
+            if (cached?.number) number = cached.number;
+          } catch {/* ignore */}
           window.open(
-            "https://wa.me/573001234567?text=" +
+            `https://wa.me/${number}?text=` +
               encodeURIComponent("Hola, mi tienda está bloqueada y necesito reactivarla."),
             "_blank",
             "noopener"
