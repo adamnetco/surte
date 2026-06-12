@@ -496,7 +496,9 @@ const LoginRouter = () => {
               type="button"
               onClick={handleGoogle}
               disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-2.5 bg-white text-slate-900 rounded-xl py-2.5 text-sm font-semibold hover:bg-white/90 transition-colors disabled:opacity-60"
+              aria-busy={googleLoading}
+              aria-disabled={googleLoading}
+              className="w-full min-h-11 flex items-center justify-center gap-2.5 bg-white text-slate-900 rounded-xl py-2.5 text-sm font-semibold hover:bg-white/90 transition-colors disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none"
             >
               {googleLoading ? (
                 <Loader2 className="animate-spin" size={16} />
