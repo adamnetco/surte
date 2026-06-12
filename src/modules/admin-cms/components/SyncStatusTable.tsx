@@ -62,17 +62,20 @@ export default function SyncStatusTable() {
   useEffect(() => {
     load();
     // Realtime: cualquier insert/update en sync_logs refresca
-    const ch = supabase
-      .channel("sync_logs_dash")
-      .on("postgres_changes", { event: "*", schema: "public", table: "sync_logs" }, () => load())
-      .subscribe();
+    const orgId = currentOrg?.id;
+    const ch = orgId
+      ? supabase
+          .channel(`sync_logs:${orgId}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "sync_logs", filter: `organization_id=eq.${orgId}` }, () => load())
+          .subscribe()
+      : null;
     const id = setInterval(load, 30_000);
     return () => {
-      supabase.removeChannel(ch);
+      if (ch) supabase.removeChannel(ch);
       clearInterval(id);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currentOrg?.id]);
 
   const trigger = async (svcKey: string, fnName: string) => {
     setBusy(svcKey);
