@@ -1,6 +1,6 @@
 # POS-AuthEmailValid
 
-**Estado:** IN_BUILD
+**Estado:** IN_REVIEW
 **Owner:** Eduardo Tobacia
 **Última actualización:** 2026-06-12
 
