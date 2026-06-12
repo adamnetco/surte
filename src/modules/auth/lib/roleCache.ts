@@ -7,9 +7,9 @@
  *  - Centraliza la prioridad de roles para que no diverja entre componentes.
  */
 
-export type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
+export type AppRole = "superadmin" | "admin" | "editor" | "agente" | "cashier" | "user";
 
-export const ROLE_PRIORITY: AppRole[] = ["superadmin", "admin", "editor", "agente", "user"];
+export const ROLE_PRIORITY: AppRole[] = ["superadmin", "admin", "editor", "agente", "cashier", "user"];
 
 const ROLE_CACHE_PREFIX = "sps_role:";
 
