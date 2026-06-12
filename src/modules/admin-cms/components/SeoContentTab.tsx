@@ -187,7 +187,7 @@ const SeoContentTab = ({ queryClient }: { queryClient: any }) => {
                   <input
                     value={editing.entity_slug}
                     onChange={(e) => setEditing({ ...editing, entity_slug: e.target.value })}
-                    placeholder="pulpas-de-fruta"
+                    placeholder="ej: mi-categoria"
                     className="w-full px-2 py-1.5 rounded border border-border bg-background"
                   />
                 </label>
