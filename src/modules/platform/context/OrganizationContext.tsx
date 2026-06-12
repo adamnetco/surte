@@ -38,7 +38,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(
-    () => (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null)
+    () => (typeof window !== "undefined" ? (localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY)) : null)
   );
   const [modules, setModules] = useState<OrganizationModule[]>([]);
 

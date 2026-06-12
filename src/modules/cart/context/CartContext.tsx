@@ -70,7 +70,7 @@ function saveCart(items: CartItem[]) {
 
 function loadCart(): CartItem[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return [];
     const { items, ts } = JSON.parse(raw) as { items: CartItem[]; ts: number };
     if (Date.now() - ts > TTL_MS) {

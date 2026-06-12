@@ -40,7 +40,7 @@ export default function Onboarding() {
 
   const [companyName, setCompanyName] = useState("");
   const [locationName, setLocationName] = useState("Sede principal");
-  const [city, setCity] = useState("Bucaramanga");
+  const [city, setCity] = useState("");
   const [businessKey, setBusinessKey] = useState<BusinessKey>("retail");
   const [modules, setModules] = useState<string[]>(["pos", "inventario"]);
   const [enableEinvoice, setEnableEinvoice] = useState(true);

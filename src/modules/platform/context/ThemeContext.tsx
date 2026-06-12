@@ -35,7 +35,7 @@ const applyTheme = (theme: Theme) => {
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [preference, setPreferenceState] = useState<ThemePref>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY) as ThemePref | null;
+      const stored = (localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_KEY)) as ThemePref | null;
       if (stored === "light" || stored === "dark" || stored === "system") return stored;
     } catch { /* ignore */ }
     return "system";
