@@ -141,6 +141,9 @@ export default function TenantHealth() {
         <KPI label="Sync con error" value={stats.syncFailed} icon={AlertCircle} tone={stats.syncFailed ? "bad" : "ok"} />
       </div>
 
+      {/* Lifecycle */}
+      <TenantLifecyclePanel />
+
       {/* Checklist */}
       <div className="rounded-xl border border-border bg-card divide-y divide-border">
         <div className="px-5 py-3 flex items-center justify-between">
