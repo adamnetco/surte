@@ -35,14 +35,21 @@ Garantizar que `organizations` + tablas asociadas cubren todo lo que hoy está h
 - Fallbacks neutros (`'Mi Negocio'`, `'Colombia'`, `'+57'`, etc.) — nunca `SurteYa`/`Bucaramanga`.
 - Verificación: tests Vitest por hook con dos orgs sintéticas (SurteYa y Demo) confirmando aislamiento.
 
-## Etapa 35 — Limpieza [COPY] en storefront
+## Etapa 35 — Limpieza [COPY] en storefront (en curso)
 
 Archivos blanco: `src/modules/storefront/**`, `src/components/SurteyaRedirect.tsx`, `TopBar.tsx`, `CityPickerModal.tsx`, `NotificationBanner.tsx`, `Hub.tsx`, `LandingPage.tsx`, `ProductoDetalle.tsx`, `Carrito.tsx`.
 
-- Reemplazar todo literal por hooks de Etapa 34.
-- `CityPickerModal`: lista de ciudades viene de `shipping_zones`/`municipality_settings`, no de array fijo.
-- `SurteyaRedirect.tsx`: renombrar a `LegacyDomainRedirect.tsx` y manejar redirects desde tabla `tenant_domains` (campo `redirect_to`).
-- Verificación: `grep -i "surteya\|bucaramanga"` sobre `src/modules/storefront` debe retornar 0.
+**Etapa 35.a — completado:** páginas legales y home migradas a hooks tenant-aware.
+- `src/pages/Politicas.tsx` → `useTenantBranding/Contact/Legal` con fallback a `legal.privacy_html`/`legal.terms_html`. Eliminado literal "Bucaramanga + Área Metropolitana".
+- `src/pages/TratamientoDatos.tsx` → idem + `legal.data_treatment_html`. Eliminado "Bucaramanga, Santander, Colombia".
+- `src/pages/Ayuda.tsx` → FAQs dinámicas con `city`/`region` de la org, email/WhatsApp desde tenant. Eliminados 3 literales de Bucaramanga.
+- `src/pages/Perfil.tsx` → placeholder genérico de ciudad.
+- `src/pages/Index.tsx` → `HeadMeta` neutral (sin canonical `surteya.com`, sin copy de salsas/cárnicos), `PromoSection` configurable vía `app_settings` (`promo_section_*`).
+- Auditor: **241 → 235 hits** (baseline actualizado en `scripts/audit-hardcoding.ts`).
+
+Pendiente Etapa 35.b: `SurteyaRedirect.tsx`, `TopBar.tsx`, `CityPickerModal.tsx`, `NotificationBanner.tsx`, `Hub.tsx`, `LandingPage.tsx`, `ProductoDetalle.tsx`, `Carrito.tsx`.
+
+Verificación final etapa: `grep -i "surteya\|bucaramanga"` sobre `src/modules/storefront` debe retornar 0.
 
 ## Etapa 36 — Limpieza [COPY] en admin-cms, POS y auth
 
