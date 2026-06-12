@@ -436,9 +436,21 @@ const LoginRouter = () => {
                     <span>Intentos: {gate.attemptsUsed}/{gate.attemptsMax}</span>
                     <a href="/auth-status" className="underline decoration-white/30 hover:text-white">Ver estado de autenticación</a>
                   </div>
+                  {emailNotice && (
+                    <p
+                      data-testid="email-notice"
+                      className={`mb-2 text-[11px] px-2 py-1.5 rounded-md ${
+                        emailNotice.kind === "info"
+                          ? "bg-amber-500/10 text-amber-200 border border-amber-500/20"
+                          : "bg-red-500/10 text-red-200 border border-red-500/20"
+                      }`}
+                    >
+                      {emailNotice.text}
+                    </p>
+                  )}
                   {magicLinkSent && !emailLinkLoading && (
-                    <p className="mb-3 text-[11px] text-green-300/90 px-1">
-                      ✓ Enlace enviado a <code>{email.trim().toLowerCase()}</code>. Revisa tu bandeja y spam.
+                    <p className="mb-3 text-[11px] text-green-300/90 px-1" data-testid="email-sent-confirmation">
+                      ✓ {emailMode === "recovery" ? "Enlace de recuperación" : "Enlace de acceso"} enviado a <code>{email.trim().toLowerCase()}</code>. Revisa tu bandeja y spam.
                     </p>
                   )}
                 </>
