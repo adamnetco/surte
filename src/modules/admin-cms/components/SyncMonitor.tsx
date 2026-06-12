@@ -40,9 +40,11 @@ export default function SyncMonitor() {
 
   useEffect(() => {
     load();
+    const orgId = currentOrg?.id;
+    if (!orgId) return;
     const ch = supabase
-      .channel("sync_monitor")
-      .on("postgres_changes", { event: "*", schema: "public", table: "sync_logs" }, () => load())
+      .channel(`sync_logs:${orgId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "sync_logs", filter: `organization_id=eq.${orgId}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps

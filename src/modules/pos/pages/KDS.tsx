@@ -62,7 +62,7 @@ export default function KDS() {
   useEffect(() => {
     if (!orgId) return;
     const ch = supabase
-      .channel("kds-realtime")
+      .channel(`kds:${orgId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "kds_tickets", filter: `organization_id=eq.${orgId}` },
         () => load())
       .subscribe();

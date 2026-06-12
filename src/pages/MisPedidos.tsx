@@ -48,7 +48,7 @@ const MisPedidos = () => {
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel("my-orders-realtime")
+      .channel(`my-orders:${user.id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, () => {
         refetch();
       })

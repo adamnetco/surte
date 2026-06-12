@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { TableSkeleton } from "@/components/ui/skeleton-presets";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 interface OutboxRow {
   id: string;
@@ -34,6 +35,7 @@ export default function DeadLetterQueue() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [previewRow, setPreviewRow] = useState<OutboxRow | null>(null);
+  const { currentOrg } = useOrganization();
 
   const load = async () => {
     const { data, error } = await (supabase as any)
@@ -53,15 +55,17 @@ export default function DeadLetterQueue() {
 
   useEffect(() => {
     load();
+    const orgId = currentOrg?.id;
+    if (!orgId) return;
     const ch = supabase
-      .channel("sync_outbox_dlq")
-      .on("postgres_changes", { event: "*", schema: "public", table: "sync_outbox" }, () => load())
+      .channel(`sync_outbox:${orgId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "sync_outbox", filter: `organization_id=eq.${orgId}` }, () => load())
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currentOrg?.id]);
 
   const retry = async (row: OutboxRow) => {
     setBusyId(row.id);

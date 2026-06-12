@@ -63,7 +63,7 @@ export default function Mesas() {
   useEffect(() => {
     if (!orgId) return;
     const ch = supabase
-      .channel("mesas-realtime")
+      .channel(`mesas:${orgId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "table_orders", filter: `organization_id=eq.${orgId}` }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${orgId}` }, () => load())
       .subscribe();

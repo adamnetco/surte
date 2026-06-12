@@ -223,6 +223,8 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (!hasAdminAccess) return;
+    const orgId = currentOrg?.id;
+    if (!orgId) return;
     // Perf: en horas pico llegan ráfagas de eventos (estado de pedido, items,
     // pagos). Antes invalidábamos en CADA evento → tormenta de refetches del
     // join pesado `orders + order_items`. Debounce 800ms agrupa la ráfaga en
@@ -236,14 +238,14 @@ const AdminDashboard = () => {
       }, 800);
     };
     const channel = supabase
-      .channel("admin-orders-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, scheduleInvalidate)
+      .channel(`admin-orders:${orgId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `organization_id=eq.${orgId}` }, scheduleInvalidate)
       .subscribe();
     return () => {
       if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
-  }, [hasAdminAccess, queryClient]);
+  }, [hasAdminAccess, queryClient, currentOrg?.id]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Cargando...</p></div>;
   if (!hasAdminAccess) return null;
