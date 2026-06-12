@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test --config=playwright.config.ci.ts",
-    "e2e:ui": "playwright test --config=playwright.config.ci.ts --ui"
+    "e2e:ui": "playwright test --config=playwright.config.ci.ts --ui",
+    "audit:hardcoding": "bun run scripts/audit-hardcoding.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
