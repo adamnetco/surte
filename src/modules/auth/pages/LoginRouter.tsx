@@ -126,19 +126,42 @@ const LoginRouter = () => {
       const redirectTo = new URL("/admin/login", window.location.origin);
       if (tenantSlug) redirectTo.searchParams.set("tienda", tenantSlug);
       logAuth({ level: "info", event: "magic_link_request", detail: `redirectTo=${redirectTo.toString()}`, tenant: tenantSlug, email: mail });
-      const { error } = await supabase.auth.signInWithOtp({
+      const otpResult = await supabase.auth.signInWithOtp({
         email: mail,
         options: {
           shouldCreateUser: false,
           emailRedirectTo: redirectTo.toString(),
         },
       });
-      if (error) throw error;
+      let usedFallback = false;
+      if (otpResult.error) {
+        const otpMsg = otpResult.error.message || "";
+        // Supabase devuelve "Signups not allowed for otp" cuando el proyecto
+        // tiene OTP deshabilitado o cuando, por configuración, no permite
+        // crear cuentas vía OTP. Para usuarios existentes caemos al flujo de
+        // recovery (reset-password) que SIEMPRE funciona y permite entrar.
+        if (/signup|otp_disabled|not allowed|disabled/i.test(otpMsg)) {
+          const recoverRedirect = new URL("/reset-password", window.location.origin);
+          if (tenantSlug) recoverRedirect.searchParams.set("tienda", tenantSlug);
+          const recover = await supabase.auth.resetPasswordForEmail(mail, {
+            redirectTo: recoverRedirect.toString(),
+          });
+          if (recover.error) throw recover.error;
+          usedFallback = true;
+          logAuth({ level: "warn", event: "magic_link_fallback_recovery", detail: otpMsg, tenant: tenantSlug, email: mail });
+        } else {
+          throw otpResult.error;
+        }
+      }
       recordMagicLinkAttempt();
       setGate(checkMagicLinkGate());
       setMagicLinkSent(true);
-      logAuth({ level: "success", event: "magic_link_sent", tenant: tenantSlug, email: mail });
-      toast.success("Te envié un enlace de acceso. Revisa tu correo y entra sin contraseña.");
+      logAuth({ level: "success", event: "magic_link_sent", detail: usedFallback ? "recovery_fallback" : "otp", tenant: tenantSlug, email: mail });
+      toast.success(
+        usedFallback
+          ? "Te envié un enlace para crear/restablecer tu contraseña. Revisa tu correo."
+          : "Te envié un enlace de acceso. Revisa tu correo y entra sin contraseña.",
+      );
     } catch (err: any) {
       const msg = err?.message || "";
       logAuth({ level: "error", event: "magic_link_failed", detail: msg, tenant: tenantSlug, email: mail });
