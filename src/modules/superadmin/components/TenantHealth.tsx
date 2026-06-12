@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import TenantLifecyclePanel from "./TenantLifecyclePanel";
 
 type Check = {
   id: string;
@@ -139,6 +140,9 @@ export default function TenantHealth() {
         <KPI label="Sync en cola" value={stats.syncPending} icon={Clock} tone={stats.syncPending ? "warn" : "ok"} />
         <KPI label="Sync con error" value={stats.syncFailed} icon={AlertCircle} tone={stats.syncFailed ? "bad" : "ok"} />
       </div>
+
+      {/* Lifecycle */}
+      <TenantLifecyclePanel />
 
       {/* Checklist */}
       <div className="rounded-xl border border-border bg-card divide-y divide-border">
