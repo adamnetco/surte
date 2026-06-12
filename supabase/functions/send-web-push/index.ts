@@ -44,7 +44,7 @@ async function makeVapidJWT(audience: string): Promise<string> {
   const payload = {
     aud: audience,
     exp: Math.floor(Date.now() / 1000) + 12 * 3600,
-    sub: Deno.env.get("VAPID_SUBJECT") || "mailto:hola@surteya.com",
+    sub: Deno.env.get("VAPID_SUBJECT") || "mailto:no-reply@example.com",
   };
   const enc = (o: any) => b64urlEncode(new TextEncoder().encode(JSON.stringify(o)));
   const unsigned = `${enc(header)}.${enc(payload)}`;
