@@ -97,7 +97,13 @@ export default function Licencias() {
   const [relNotes, setRelNotes] = useState("");
 
   const navigate = useNavigate();
-  const { switchOrg, refresh: refreshOrgs } = useOrganization();
+  const { switchOrg, refresh: refreshOrgs, currentOrg } = useOrganization();
+  const [scopeToCurrent, setScopeToCurrent] = useState(true);
+
+  // Pre-rellena la organización al abrir el diálogo con la tienda activa.
+  useEffect(() => {
+    if (issueOpen && currentOrg && !issueOrg) setIssueOrg(currentOrg.id);
+  }, [issueOpen, currentOrg, issueOrg]);
 
   useEffect(() => {
     (async () => {
