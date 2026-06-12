@@ -205,9 +205,9 @@ const DataManagementTab = () => {
       }
       const timestamp = new Date().toISOString().slice(0, 10);
       if (format === "xlsx") {
-        downloadXlsx(allData, `surteya_${def.name}_${timestamp}.xlsx`);
+        downloadXlsx(allData, `export_${def.name}_${timestamp}.xlsx`);
       } else {
-        downloadCsv(jsonToCsv(allData), `surteya_${def.name}_${timestamp}.csv`);
+        downloadCsv(jsonToCsv(allData), `export_${def.name}_${timestamp}.csv`);
       }
       setExportStatus((s) => ({
         ...s,
