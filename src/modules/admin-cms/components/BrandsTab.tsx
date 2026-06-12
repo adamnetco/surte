@@ -143,7 +143,7 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
   const getBrandSlug = (b: any) => b.slug || slugify(b.name);
 
   const copyUrl = (b: any) => {
-    navigator.clipboard.writeText(`https://surteya.com/hub/marca/${getBrandSlug(b)}`);
+    navigator.clipboard.writeText(`${window.location.origin}/hub/marca/${getBrandSlug(b)}`);
     toast.success("URL copiada");
   };
 
