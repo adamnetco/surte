@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.has_org_role(uuid, uuid, text[]) FROM PUBLIC, anon;
