@@ -35,21 +35,23 @@ Garantizar que `organizations` + tablas asociadas cubren todo lo que hoy está h
 - Fallbacks neutros (`'Mi Negocio'`, `'Colombia'`, `'+57'`, etc.) — nunca `SurteYa`/`Bucaramanga`.
 - Verificación: tests Vitest por hook con dos orgs sintéticas (SurteYa y Demo) confirmando aislamiento.
 
-## Etapa 35 — Limpieza [COPY] en storefront (en curso)
+## Etapa 35 — Limpieza [COPY] en storefront ✅ COMPLETADO
 
-Archivos blanco: `src/modules/storefront/**`, `src/components/SurteyaRedirect.tsx`, `TopBar.tsx`, `CityPickerModal.tsx`, `NotificationBanner.tsx`, `Hub.tsx`, `LandingPage.tsx`, `ProductoDetalle.tsx`, `Carrito.tsx`.
+**Etapa 35.a:** páginas legales y home migradas (`Politicas`, `TratamientoDatos`, `Ayuda`, `Perfil`, `Index`) — 241→235.
 
-**Etapa 35.a — completado:** páginas legales y home migradas a hooks tenant-aware.
-- `src/pages/Politicas.tsx` → `useTenantBranding/Contact/Legal` con fallback a `legal.privacy_html`/`legal.terms_html`. Eliminado literal "Bucaramanga + Área Metropolitana".
-- `src/pages/TratamientoDatos.tsx` → idem + `legal.data_treatment_html`. Eliminado "Bucaramanga, Santander, Colombia".
-- `src/pages/Ayuda.tsx` → FAQs dinámicas con `city`/`region` de la org, email/WhatsApp desde tenant. Eliminados 3 literales de Bucaramanga.
-- `src/pages/Perfil.tsx` → placeholder genérico de ciudad.
-- `src/pages/Index.tsx` → `HeadMeta` neutral (sin canonical `surteya.com`, sin copy de salsas/cárnicos), `PromoSection` configurable vía `app_settings` (`promo_section_*`).
-- Auditor: **241 → 235 hits** (baseline actualizado en `scripts/audit-hardcoding.ts`).
+**Etapa 35.b:** componentes storefront migrados:
+- `TopBar.tsx` → ciudades desde `municipality_settings`, logo y alt desde `settings`, storage key `tenant_city`.
+- `CityPickerModal.tsx` → sin fallback hardcodeado de ciudades, storage key `tenant_city`, evento `tenant_city_change`.
+- `NotificationBanner.tsx` → mensaje WhatsApp neutro, storage keys `tenant_notif_*`.
+- `BrandsSection.tsx` → subtítulo sin "Santander".
+- `FloatingWhatsApp.tsx` → greeting configurable (`whatsapp_greeting`), oculto si no hay teléfono.
+- `StoreFooter.tsx`, `GallerySection.tsx`, `GoogleReviewsSection.tsx`, `HeroSection.tsx` → eliminados literales "SURTÉ YA".
+- `Hub.tsx`, `LandingPage.tsx`, `ProductoDetalle.tsx` → `BASE_URL = window.location.origin`, ciudad/región desde `useTenantContact()`, sin meta-desc con "Bucaramanga".
+- `Carrito.tsx` → asunto email + storage key actualizados.
 
-Pendiente Etapa 35.b: `SurteyaRedirect.tsx`, `TopBar.tsx`, `CityPickerModal.tsx`, `NotificationBanner.tsx`, `Hub.tsx`, `LandingPage.tsx`, `ProductoDetalle.tsx`, `Carrito.tsx`.
+Auditor: **241 → 218 hits** (-23 en Etapa 35). Baseline actualizado a 218.
 
-Verificación final etapa: `grep -i "surteya\|bucaramanga"` sobre `src/modules/storefront` debe retornar 0.
+Pendiente Etapa 35.c (cosmético): renombrar `SurteyaRedirect.tsx` → `LegacyDomainRedirect.tsx` y leer de `tenant_domains.redirect_to` (no bloqueante, postergado a Etapa 39 cutover).
 
 ## Etapa 36 — Limpieza [COPY] en admin-cms, POS y auth
 
