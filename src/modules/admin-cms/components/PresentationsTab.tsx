@@ -154,7 +154,7 @@ const PresentationsTab = ({ queryClient }: { queryClient: any }) => {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Presentaciones");
-    XLSX.writeFile(wb, "presentaciones_surteya.xlsx");
+    XLSX.writeFile(wb, "presentaciones.xlsx");
     toast.success("Archivo exportado");
   };
 
