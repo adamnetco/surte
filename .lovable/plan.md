@@ -119,7 +119,7 @@ Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surtey
 - Crear `catalog_templates` con presets de categorías por `business_type` (food, retail, services) — opcional para acelerar onboarding.
 
 
- ## Etapa 39 — SurteYa como tenant autónomo (cutover) 🚧 (39.a + 39.b hechos)
+ ## Etapa 39 — SurteYa como tenant autónomo (cutover) 🚧 (39.a + 39.b + 39.c hechos)
 
 **Etapa 39.a — Seed aplicado en Test:**
 - Corregido `supabase/seeds/seed_surteya_org.sql` para alinearse con el schema real (`currency` no `currency_code`, `support_email` no `contact_email`, `organization_modules.module_key/enabled`, partial unique index `app_settings_org_key_uidx WHERE organization_id IS NOT NULL`).
