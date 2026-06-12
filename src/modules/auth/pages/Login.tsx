@@ -171,7 +171,7 @@ const Login = () => {
           .send({
             to: email,
             subject: `¡Bienvenido a ${brandName}!`,
-            html: welcomeTemplate(fullName || "Cliente", brandFromSettings({ store_name: brandName, store_logo: brand.logoUrl ?? "" })),
+            html: welcomeTemplate(fullName || "Cliente", brandFromSettings({ store_name: brandName, store_logo: brand.logo_url ?? "" })),
           })
           .catch((err) => console.warn("Welcome email failed:", err));
         toast.success("¡Cuenta creada! Revisa tu email para confirmar.");
