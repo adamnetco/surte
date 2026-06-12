@@ -1,19 +1,23 @@
 /**
- * Wizard del Superadmin para crear una nueva tienda (organización + dueño
- * + módulos + dominio) de forma conversacional.
+ * Wizard del Superadmin — Crear tienda y asociar plan.
  *
- * Pasos:
- *  1. Tipo de negocio (plantilla) → preselecciona módulos
- *  2. Identidad (nombre + slug con check de disponibilidad)
- *  3. Identificación fiscal (NIT con autocompletar opcional)
- *  4. Dueño (nombre, email, WhatsApp)
- *  5. Módulos (preselección de la plantilla, ajustable)
- *  6. Confirmación → submit → CredentialsCard
+ * Flujo limpio (4 pasos + resultado):
+ *   1. Tipo de negocio (plantilla)
+ *   2. Identidad (nombre + URL + NIT opcional)        ← consolida los antiguos pasos 2 y 3
+ *   3. Dueño (nombre + email + WhatsApp)
+ *   4. Plan (saas_plans)                              ← el plan define los módulos automáticamente
+ *   5. Resumen → submit → crea tenant + emite licencia → CredentialsCard
+ *
+ * Cambios vs versión anterior:
+ *   - Eliminado el paso "seleccionar módulos" (duplicaba el wizard del dueño y confundía).
+ *     Los módulos los hereda del plan elegido (plan_modules) — única fuente de verdad.
+ *   - Identidad fiscal fusionada con la identidad comercial (un solo paso).
+ *   - Se emite licencia del plan elegido en el mismo flujo (antes había que ir a /licencias).
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +25,7 @@ import { WizardShell } from "@/modules/onboarding/components/WizardShell";
 import { SubdomainPreview, type SlugStatus } from "@/modules/onboarding/components/SubdomainPreview";
 import { NitLookup } from "@/modules/onboarding/components/NitLookup";
 import { CredentialsCard } from "@/modules/onboarding/components/CredentialsCard";
-import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "@/modules/onboarding/lib/businessTemplates";
+import { BUSINESS_TEMPLATES, getTemplate, type BusinessKey } from "@/modules/onboarding/lib/businessTemplates";
 import { cn } from "@/lib/utils";
 
 type Result = {
@@ -33,13 +37,31 @@ type Result = {
   generated_password: string | null;
   modules: string[];
   domain: string | null;
+  plan_key: string;
+  license_key?: string | null;
+};
+
+type SaasPlan = {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  price_monthly: number | null;
+  currency: string | null;
+  trial_days: number | null;
+  sort_order: number | null;
 };
 
 const slugify = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
 
-const TOTAL = 6;
+const formatCOP = (n: number | null | undefined) => {
+  if (!n) return "Gratis";
+  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+};
+
+const TOTAL = 5;
 
 const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
   const [step, setStep] = useState(1);
@@ -55,17 +77,41 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
-  const [modules, setModules] = useState<string[]>([]);
+  const [planKey, setPlanKey] = useState<string>("");
+
+  // Planes desde BD
+  const [plans, setPlans] = useState<SaasPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("saas_plans")
+        .select("id,key,name,description,price_monthly,currency,trial_days,sort_order")
+        .eq("is_public", true)
+        .order("sort_order", { ascending: true });
+      if (cancelled) return;
+      const rows = (data as SaasPlan[] | null) ?? [];
+      setPlans(rows);
+      // Preselección sensata: Pro si existe, si no el primero
+      if (!planKey) {
+        const pro = rows.find((p) => p.key === "pro");
+        setPlanKey(pro?.key ?? rows[0]?.key ?? "");
+      }
+      setPlansLoading(false);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const template = useMemo(() => (businessKey ? getTemplate(businessKey) : null), [businessKey]);
-
-  const toggleModule = (k: string) =>
-    setModules((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
+  const selectedPlan = useMemo(() => plans.find((p) => p.key === planKey) ?? null, [plans, planKey]);
 
   const reset = () => {
     setStep(1); setResult(null);
     setBusinessKey(null); setName(""); setSlug(""); setSlugStatus("idle");
-    setTaxId(""); setOwnerName(""); setOwnerEmail(""); setOwnerPhone(""); setModules([]);
+    setTaxId(""); setOwnerName(""); setOwnerEmail(""); setOwnerPhone("");
   };
 
   const back = () => setStep((s) => Math.max(1, s - 1));
@@ -74,10 +120,9 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
     switch (step) {
       case 1: return !!businessKey;
       case 2: return name.trim().length > 1 && slug.length >= 3 && slugStatus === "available";
-      case 3: return true; // NIT opcional
-      case 4: return ownerName.trim().length > 1 && /\S+@\S+\.\S+/.test(ownerEmail);
-      case 5: return modules.length > 0;
-      case 6: return true;
+      case 3: return ownerName.trim().length > 1 && /\S+@\S+\.\S+/.test(ownerEmail);
+      case 4: return !!planKey;
+      case 5: return true;
       default: return false;
     }
   };
@@ -88,20 +133,61 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
       setStep((s) => s + 1);
       return;
     }
-    // Submit
+    // Submit final
     setSaving(true);
     try {
+      // 1) Resolver módulos del plan (única fuente de verdad)
+      const plan = plans.find((p) => p.key === planKey);
+      let planModules: string[] = [];
+      if (plan) {
+        const { data: pm } = await supabase
+          .from("plan_modules")
+          .select("module_key,included")
+          .eq("plan_id", plan.id);
+        planModules = (pm ?? []).filter((r: any) => r.included !== false).map((r: any) => r.module_key);
+      }
+      // Fallback razonable si el plan aún no tiene módulos mapeados
+      if (planModules.length === 0 && template) {
+        planModules = template.modules;
+      }
+
+      // 2) Crear tenant + dueño + módulos + dominio
       const { data, error } = await supabase.functions.invoke("tenant-create-with-owner", {
         body: {
           slug, name, tax_id: taxId || null, business_type: businessKey,
           owner_email: ownerEmail, owner_full_name: ownerName, owner_phone: ownerPhone || null,
-          modules, domain: `${slug}.sistecpos.com`,
+          modules: planModules, domain: `${slug}.sistecpos.com`,
         },
       });
       if (error) throw error;
       if (!data?.ok) throw new Error(data?.detail || data?.error || "Error desconocido");
-      setResult({ ...(data as Result), owner_phone: ownerPhone || null });
-      toast.success("Tienda creada correctamente");
+
+      // 3) Emitir licencia del plan elegido en el mismo flujo
+      let license_key: string | null = null;
+      try {
+        const { data: lic, error: licErr } = await supabase.functions.invoke("license-issue", {
+          body: {
+            organization_id: (data as any).organization_id,
+            plan: planKey,
+            max_terminals: 3,
+            expires_at: null,
+            notes: `Emitida automáticamente desde wizard de alta (${planKey})`,
+          },
+        });
+        if (licErr) console.warn("license-issue warning:", licErr.message);
+        else license_key = (lic as any)?.license_key ?? null;
+      } catch (e) {
+        console.warn("license-issue failed:", (e as Error).message);
+      }
+
+      setResult({
+        ...(data as Result),
+        owner_phone: ownerPhone || null,
+        modules: planModules,
+        plan_key: planKey,
+        license_key,
+      });
+      toast.success("Tienda creada y plan activado");
       onCreated?.();
     } catch (e: any) {
       toast.error(e?.message ?? "No se pudo crear la tienda");
@@ -115,9 +201,9 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
       <WizardShell
         step={TOTAL}
         totalSteps={TOTAL}
-        eyebrow="Listo"
+        eyebrow={`Plan ${result.plan_key}`}
         title={`${result.name} está activa`}
-        subtitle="Comparte el acceso con su dueño."
+        subtitle="Comparte el acceso con su dueño. La licencia ya quedó emitida."
         hideFooter
       >
         <CredentialsCard
@@ -129,12 +215,19 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
           loginUrl={`https://${result.slug}.sistecpos.com`}
           onCreateAnother={reset}
         />
+        {result.license_key ? (
+          <div className="mt-4 rounded-lg border bg-muted/40 p-3 text-xs">
+            <div className="font-semibold mb-1 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-primary" /> Licencia emitida
+            </div>
+            <code className="block break-all font-mono text-[11px] text-foreground/80">{result.license_key}</code>
+          </div>
+        ) : null}
       </WizardShell>
     );
   }
 
-  // ---- Steps ----
-
+  // ---------- Paso 1: Tipo de negocio ----------
   if (step === 1) {
     return (
       <WizardShell
@@ -142,11 +235,11 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
         totalSteps={TOTAL}
         eyebrow="Nueva tienda"
         title="¿Qué tipo de negocio vamos a montar?"
-        subtitle="Preconfiguramos los módulos típicos para ahorrarte tiempo."
+        subtitle="Preconfiguramos lo típico para ahorrarte tiempo. Lo puedes ajustar luego."
         onNext={next}
         nextDisabled={!canAdvance()}
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div role="radiogroup" aria-label="Tipo de negocio" className="grid grid-cols-2 gap-3">
           {BUSINESS_TEMPLATES.map((t) => {
             const Icon = t.icon;
             const active = businessKey === t.key;
@@ -154,21 +247,19 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
               <button
                 key={t.key}
                 type="button"
-                onClick={() => {
-                  setBusinessKey(t.key);
-                  setModules(t.modules);
-                }}
+                role="radio"
+                aria-checked={active}
+                onClick={() => setBusinessKey(t.key)}
                 className={cn(
-                  "text-left rounded-xl border-2 p-4 transition-all",
+                  "text-left rounded-xl border-2 p-4 transition-all min-h-[88px]",
                   "hover:border-primary/50 hover:bg-primary/[0.02]",
-                  active
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-border bg-background",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                  active ? "border-primary bg-primary/5 shadow-sm" : "border-border bg-background",
                 )}
               >
                 <div className="flex items-start justify-between mb-2">
-                  <Icon className={cn("h-6 w-6", active ? "text-primary" : "text-muted-foreground")} />
-                  {active && <Check className="h-4 w-4 text-primary" />}
+                  <Icon className={cn("h-6 w-6", active ? "text-primary" : "text-muted-foreground")} aria-hidden />
+                  {active && <Check className="h-4 w-4 text-primary" aria-hidden />}
                 </div>
                 <div className="font-semibold text-sm">{t.label}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{t.tagline}</div>
@@ -180,6 +271,7 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
     );
   }
 
+  // ---------- Paso 2: Identidad (nombre + URL + NIT opcional) ----------
   if (step === 2) {
     return (
       <WizardShell
@@ -187,11 +279,11 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
         totalSteps={TOTAL}
         eyebrow={template?.label}
         title="¿Cómo se llama tu tienda?"
-        subtitle="El nombre comercial que verán los clientes y la dirección de su tienda online."
+        subtitle="Nombre comercial, dirección web y, si lo tienes a mano, el NIT."
         onBack={back}
         onNext={next}
         nextDisabled={!canAdvance()}
-        reassurance={slugStatus === "available" ? "Listo, esa dirección está disponible." : undefined}
+        reassurance={slugStatus === "available" ? "Esa dirección está libre." : undefined}
       >
         <div className="space-y-5">
           <div className="space-y-2">
@@ -199,6 +291,7 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
             <Input
               id="name-input"
               autoFocus
+              autoComplete="organization"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -206,46 +299,39 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
               }}
               placeholder="Surteya"
               className="h-12 text-base"
+              required
+              aria-required="true"
             />
           </div>
 
           <SubdomainPreview value={slug} onChange={setSlug} onStatusChange={setSlugStatus} />
+
+          <details className="rounded-lg border border-dashed bg-muted/30 px-3 py-2 group">
+            <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground select-none">
+              ¿Tienes el NIT a mano? <span className="text-xs">(opcional)</span>
+            </summary>
+            <div className="pt-3">
+              <NitLookup
+                value={taxId}
+                onChange={setTaxId}
+                onResolved={(r) => { if (r.legal_name && !name) setName(r.legal_name); }}
+              />
+            </div>
+          </details>
         </div>
       </WizardShell>
     );
   }
 
+  // ---------- Paso 3: Dueño ----------
   if (step === 3) {
     return (
       <WizardShell
         step={3}
         totalSteps={TOTAL}
-        eyebrow={name}
-        title="Identificación fiscal"
-        subtitle="Si nos das el NIT, autocompletamos los datos legales. Puedes saltarlo."
-        onBack={back}
-        onNext={next}
-        nextLabel={taxId ? "Continuar" : "Saltar"}
-      >
-        <NitLookup
-          value={taxId}
-          onChange={setTaxId}
-          onResolved={(r) => {
-            if (r.legal_name && !name) setName(r.legal_name);
-          }}
-        />
-      </WizardShell>
-    );
-  }
-
-  if (step === 4) {
-    return (
-      <WizardShell
-        step={4}
-        totalSteps={TOTAL}
         eyebrow="Dueño de la tienda"
         title="¿Quién va a operarla?"
-        subtitle="Le crearemos su cuenta y le enviarás las credenciales al final."
+        subtitle="Le creamos la cuenta y te mostramos sus credenciales al final."
         onBack={back}
         onNext={next}
         nextDisabled={!canAdvance()}
@@ -253,77 +339,117 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="own-name">Nombre completo</Label>
-            <Input id="own-name" autoFocus value={ownerName} onChange={(e) => setOwnerName(e.target.value)} placeholder="Eduardo Tovar" className="h-12 text-base" />
+            <Input id="own-name" autoFocus autoComplete="name" value={ownerName}
+              onChange={(e) => setOwnerName(e.target.value)} placeholder="Eduardo Tovar"
+              className="h-12 text-base" required aria-required="true" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="own-email">Email</Label>
-            <Input id="own-email" type="email" inputMode="email" autoComplete="email" value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value.trim().toLowerCase())} placeholder="dueno@tienda.com" className="h-12 text-base" />
+            <Input id="own-email" type="email" inputMode="email" autoComplete="email"
+              value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value.trim().toLowerCase())}
+              placeholder="dueno@tienda.com" className="h-12 text-base" required aria-required="true" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="own-phone">
               WhatsApp <span className="text-muted-foreground font-normal">(recomendado)</span>
             </Label>
-            <Input id="own-phone" inputMode="tel" autoComplete="tel" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} placeholder="+57 300 000 0000" className="h-12 text-base" />
-            <p className="text-xs text-muted-foreground">Le enviaremos sus credenciales por WhatsApp con un toque.</p>
+            <Input id="own-phone" inputMode="tel" autoComplete="tel" value={ownerPhone}
+              onChange={(e) => setOwnerPhone(e.target.value)} placeholder="+57 300 000 0000"
+              className="h-12 text-base" aria-describedby="own-phone-help" />
+            <p id="own-phone-help" className="text-xs text-muted-foreground">
+              Le enviaremos sus credenciales con un toque.
+            </p>
           </div>
         </div>
       </WizardShell>
     );
   }
 
-  if (step === 5) {
+  // ---------- Paso 4: Plan ----------
+  if (step === 4) {
     return (
       <WizardShell
-        step={5}
+        step={4}
         totalSteps={TOTAL}
-        eyebrow={template?.label}
-        title="Confirma los módulos activos"
-        subtitle="Preseleccionamos los típicos para tu tipo de negocio. Puedes ajustar."
+        eyebrow={name || "Plan y módulos"}
+        title="Elige el plan"
+        subtitle="El plan define automáticamente los módulos activos. Podrás cambiarlo en cualquier momento."
         onBack={back}
         onNext={next}
-        nextDisabled={!canAdvance()}
+        nextDisabled={!canAdvance() || plansLoading}
       >
-        <div className="grid gap-2 sm:grid-cols-2">
-          {ALL_MODULES.map((m) => {
-            const active = modules.includes(m.key);
-            return (
-              <button
-                key={m.key}
-                type="button"
-                onClick={() => toggleModule(m.key)}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg border-2 px-3 py-2.5 text-left transition-colors",
-                  active ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/40",
-                )}
-              >
-                <div className={cn(
-                  "h-5 w-5 rounded-md border-2 grid place-items-center shrink-0",
-                  active ? "border-primary bg-primary" : "border-muted-foreground/40",
-                )}>
-                  {active && <Check className="h-3 w-3 text-primary-foreground" />}
-                </div>
-                <span className="text-sm font-medium">{m.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {plansLoading ? (
+          <div className="grid gap-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-20 rounded-xl border bg-muted/40 animate-pulse" />
+            ))}
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+            No hay planes públicos disponibles. Crea uno en <code className="font-mono">/superadmin/planes</code>.
+          </div>
+        ) : (
+          <div role="radiogroup" aria-label="Plan" className="grid gap-2">
+            {plans.map((p) => {
+              const active = planKey === p.key;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setPlanKey(p.key)}
+                  className={cn(
+                    "flex items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all min-h-[64px]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                    active ? "border-primary bg-primary/5 shadow-sm" : "border-border bg-background hover:border-primary/40",
+                  )}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">{p.name}</span>
+                      {p.trial_days ? (
+                        <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-success/15 text-success font-semibold">
+                          {p.trial_days}d trial
+                        </span>
+                      ) : null}
+                    </div>
+                    {p.description ? (
+                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{p.description}</div>
+                    ) : null}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-bold tabular-nums">{formatCOP(p.price_monthly)}</div>
+                    {p.price_monthly ? <div className="text-[10px] text-muted-foreground">/ mes</div> : null}
+                  </div>
+                  <div className={cn(
+                    "h-5 w-5 rounded-full border-2 grid place-items-center shrink-0",
+                    active ? "border-primary bg-primary" : "border-muted-foreground/40",
+                  )} aria-hidden>
+                    {active && <Check className="h-3 w-3 text-primary-foreground" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </WizardShell>
     );
   }
 
-  // step 6 — confirm
+  // ---------- Paso 5: Resumen ----------
   return (
     <WizardShell
-      step={6}
+      step={5}
       totalSteps={TOTAL}
       eyebrow="Último paso"
       title="Todo listo. ¿Creamos la tienda?"
-      subtitle="Vamos a crear la organización, el usuario dueño y activar los módulos en una sola operación."
+      subtitle="Creamos la organización, el dueño, activamos los módulos del plan y emitimos su licencia, todo en una sola operación."
       onBack={back}
       onNext={next}
       nextLabel="Crear tienda"
       loading={saving}
-      reassurance="Generaremos una contraseña temporal y te la mostraremos al instante."
+      reassurance="Generaremos contraseña temporal y la verás al instante."
     >
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border bg-card divide-y">
         <SummaryRow label="Tipo de negocio" value={template?.label ?? "—"} />
@@ -332,7 +458,10 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
         <SummaryRow label="NIT" value={taxId || "Sin NIT"} />
         <SummaryRow label="Dueño" value={`${ownerName} · ${ownerEmail}`} />
         {ownerPhone ? <SummaryRow label="WhatsApp" value={ownerPhone} /> : null}
-        <SummaryRow label="Módulos" value={`${modules.length} activos`} />
+        <SummaryRow
+          label="Plan"
+          value={selectedPlan ? `${selectedPlan.name} · ${formatCOP(selectedPlan.price_monthly)}` : planKey}
+        />
       </motion.div>
     </WizardShell>
   );
