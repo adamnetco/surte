@@ -53,14 +53,15 @@ const InventoryTab = ({ products, categories, queryClient }: { products: any[]; 
       "id", "title", "description", "link", "image_link", "availability", "price",
       "sale_price", "brand", "condition", "product_type", "gtin", "mpn", "shipping_weight",
     ];
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const rows = (products || []).filter((p: any) => p.is_active !== false).map((p: any) => [
-      p.id, p.name, p.description || p.name, `https://surteya.com/producto/${p.slug || p.id}`,
+      p.id, p.name, p.description || p.name, `${baseUrl}/producto/${p.slug || p.id}`,
       p.image_url || "", p.stock > 0 ? "in_stock" : "out_of_stock", `${p.price} COP`,
-      p.original_price ? `${p.price} COP` : "", p.brand || "SURTÉ YA", "new",
-      categoryIdMap[p.category_id] || "Alimentos", p.gtin || "", p.sku || "", p.weight || "",
+      p.original_price ? `${p.price} COP` : "", p.brand || "", "new",
+      categoryIdMap[p.category_id] || "", p.gtin || "", p.sku || "", p.weight || "",
     ]);
     const tsvContent = [headers, ...rows].map((row) => row.map((v: any) => String(v).replace(/\t/g, " ")).join("\t")).join("\n");
-    downloadBlob(new Blob(["\uFEFF" + tsvContent], { type: "text/tab-separated-values;charset=utf-8;" }), `google_merchant_surte_${dateStr()}.tsv`);
+    downloadBlob(new Blob(["\uFEFF" + tsvContent], { type: "text/tab-separated-values;charset=utf-8;" }), `google_merchant_${dateStr()}.tsv`);
     toast.success(`${rows.length} productos exportados para Google Merchant Center`);
   };
 
