@@ -211,7 +211,7 @@ const ProductoDetalle = () => {
   };
 
   const settings = appSettings || {};
-  const baseUrl = "https://surteya.com";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const productUrl = `${baseUrl}/producto/${product.slug || product.id}`;
   const breadcrumbs = [
     { name: "Inicio", url: baseUrl },
@@ -475,8 +475,8 @@ const ProductoDetalle = () => {
   return (
     <>
       <HeadMeta
-        title={product.meta_title || `${product.name} — SURTÉ YA`}
-        description={product.meta_description || product.description || `Compra ${product.name} al mejor precio en Bucaramanga`}
+        title={product.meta_title || `${product.name}${settings.store_name ? ` — ${settings.store_name}` : ""}`}
+        description={product.meta_description || product.description || `Compra ${product.name} al mejor precio`}
         canonical={productUrl}
         ogImage={product.image_url || settings.default_product_image}
         ogType="product"
