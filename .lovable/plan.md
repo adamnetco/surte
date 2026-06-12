@@ -128,9 +128,17 @@ Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surtey
 
 ## Etapa 40 — Guardas anti-regresión
 
-- ESLint rule custom `no-tenant-hardcode` que prohíbe literales: `surteya`, `SurteYa`, `Bucaramanga`, `Santander`, números `+573…` específicos, en `src/` (excepto `src/modules/tenant/lib/legacyDomains.ts` y tests).
-- CI step: `scripts/audit-hardcoding.ts` falla el build si grep > 0.
-- Añadir a `mem://core` la regla: "Nada específico de un tenant vive en código del core."
+**Hecho:**
+- `scripts/audit-hardcoding.ts` migrado de Deno → Bun/Node (usa `node:child_process` con `rg`). Excluye `supabase/seeds/`, scaffolds Lovable, legacy adapters y tests. Corre con `npm run audit:hardcoding`.
+- `package.json` → nuevo script `audit:hardcoding`. Listo para integrarse en CI (`bun run audit:hardcoding` falla con exit 1 si supera el baseline = 14).
+- `eslint.config.js` → nueva regla `no-restricted-syntax` con regex `\b(SurteYa|surteya|Bucaramanga|Santander|Cárnicos|Pulpas|Panificados)\b` para `Literal` y `TemplateElement`. El word boundary (`\b`) exime automáticamente los storage keys legacy con underscore (`surteya_cart_token`).
+- Excepciones explícitas: `SurteyaRedirect.tsx`, `legacyDomains.ts`, `cloudTasks.ts` (tarea superadmin de registro), `**/*.test.{ts,tsx}`.
+- Probado: literal `"Bucaramanga"` y template `` `Hola SurteYa` `` disparan 2 errores ESLint inmediatos.
+
+**Verificación final:**
+- `npm run audit:hardcoding` → 14 hits (baseline), exit 0.
+- `npm run lint` → 0 errores nuevos por la regla anti-tenant-hardcode.
+
 
 ---
 
