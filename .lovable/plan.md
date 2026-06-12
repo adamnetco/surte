@@ -72,7 +72,18 @@ Pendiente Etapa 35.c (cosmético): renombrar `SurteyaRedirect.tsx` → `LegacyDo
 
 Auditor: **218 → 180 hits** (-38 en Etapa 36.a). Baseline = 180.
 
-**Etapa 36.b pendiente:** revisar `errors.ts` (no se encontró hardcoding actual), Onboarding flow, edge functions admin.
+**Etapa 36.b hecho:**
+- `JsonLd.tsx` → URL/locality/region/area/lat-lng/currency desde `app_settings` (claves `site_url`, `seo_locality`, `seo_region`, `seo_country`, `seo_latitude`, `seo_longitude`, `seo_area_served`, `currency_code`, `business_hours_open/close`). Sin URLs ni ciudades hardcodeadas.
+- `emailTemplates.ts` → API recibe `BrandConfig` (logo, nombre, siteUrl, addressLine, currency). Helper `brandFromSettings()`. `Carrito.tsx` y `Login.tsx` lo inyectan desde `app_settings`/tenant brand.
+- `SeoBreadcrumbs.tsx` → `BASE_URL = window.location.origin`.
+- `HeroSection.tsx` → títulos vienen de `hero_title_line1`, `hero_title_accent`, `hero_subtitle` (settings). `StoreFooter.tsx` → descripción desde `store_description`/`footer_description`.
+- `Onboarding.tsx` → ciudad por defecto vacía. `SubdomainPreview.tsx` → placeholder "minegocio".
+- Storage keys renombradas con fallback legacy: `tenant_cart_token`, `tenant_cart`, `tenant_theme_pref`, `sistecpos:currentOrgId`, `sistecpos_offline_v1`.
+- Comentarios neutralizados en `App.tsx`, `subdomain.ts`, `HostGuard.tsx`, `whatsappFlowTemplate.ts`, `sitemap/index.ts`, `get-landing/index.ts`.
+- Edge `sitemap/index.ts` → `BASE_URL` y `CITIES` desde env vars.
+- Auditor actualizado: excluye `supabase/migrations/`, scaffolds de email (auth-email-hook, send-transactional-email, resend-mail-service, send-web-push, _shared/transactional-email-templates), `SurteyaRedirect.tsx`, `legacyDomains.ts`, tests. **180 → 19 hits** (baseline = 19).
+
+Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surteya` como tenant a registrar), placeholders en docstrings de hooks tenant — todo legítimo o de Etapa 37/39.
 
 
 - Resolver hallazgo **v5**: `src/lib/errors.ts:96` → envolver con `scopedFrom` o eliminar la query.
