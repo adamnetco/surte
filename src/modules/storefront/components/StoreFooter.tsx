@@ -69,7 +69,7 @@ const StoreFooter = () => {
             <h3 className="font-heading font-bold text-lg mb-2">{storeName}</h3>
             {nit && <p className="text-xs opacity-70 mb-3">NIT: {nit}</p>}
             <p className="text-sm opacity-80 leading-relaxed">
-              Soluciones alimenticias para tu negocio. Pulpas, cárnicos, salsas y más.
+              {description || "Tu catálogo siempre disponible."}
             </p>
             {hasSocial && (
               <div className="flex items-center gap-2 mt-4">

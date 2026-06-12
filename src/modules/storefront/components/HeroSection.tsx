@@ -61,11 +61,11 @@ const HeroSection = () => {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <h1 className="text-2xl md:text-4xl font-heading font-extrabold text-primary-foreground leading-[1.1] mb-2">
-              Salsas, Cárnicos<br />y Pulpas{" "}
-              <span className="text-accent">al Mayor</span>
+              {settings?.hero_title_line1 || "Tu catálogo"}<br />
+              <span className="text-accent">{settings?.hero_title_accent || "siempre disponible"}</span>
             </h1>
             <p className="text-primary-foreground/70 text-sm mb-5 max-w-[320px] leading-relaxed">
-              Directo de fábrica a tu negocio.
+              {settings?.hero_subtitle || "Directo de fábrica a tu negocio."}
             </p>
             <button
               onClick={() => navigate("/catalogo")}
