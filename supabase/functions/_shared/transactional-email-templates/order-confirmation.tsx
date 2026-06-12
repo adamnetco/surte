@@ -50,7 +50,12 @@ const OrderConfirmationEmail = ({
   items,
   total,
   address,
-}: OrderConfirmationProps) => (
+  siteName,
+  tagline,
+  footerBrand,
+}: OrderConfirmationProps) => {
+  const SITE_NAME = siteName || DEFAULT_SITE_NAME
+  return (
   <Html lang="es" dir="ltr">
     <Head />
     <Preview>
@@ -60,7 +65,7 @@ const OrderConfirmationEmail = ({
       <Container style={container}>
         <Section style={header}>
           <Heading style={brand}>{SITE_NAME}</Heading>
-          <Text style={tagline}>Soluciones Alimenticias</Text>
+          {tagline && <Text style={taglineStyle}>{tagline}</Text>}
         </Section>
 
         <Heading style={h1}>¡Pedido recibido! 🎉</Heading>
@@ -113,13 +118,12 @@ const OrderConfirmationEmail = ({
           Este correo confirma que recibimos tu pedido. No es necesario
           responder.
         </Text>
-        <Text style={footerBrand}>
-          {SITE_NAME} — Conjuguémonos Grupo Empresarial
-        </Text>
+        {footerBrand && <Text style={footerBrandStyle}>{footerBrand}</Text>}
       </Container>
     </Body>
   </Html>
-)
+  )
+}
 
 export const template = {
   component: OrderConfirmationEmail,
