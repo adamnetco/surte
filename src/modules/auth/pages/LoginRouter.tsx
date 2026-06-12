@@ -48,6 +48,8 @@ const LoginRouter = () => {
   const [backendDown, setBackendDown] = useState(false);
   const [hasStaleTokens, setHasStaleTokens] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [emailMode, setEmailMode] = useState<"magic_link" | "recovery" | null>(null);
+  const [emailNotice, setEmailNotice] = useState<{ kind: "info" | "error"; text: string } | null>(null);
   const [gate, setGate] = useState<MagicLinkGate>(() => checkMagicLinkGate());
   const redirectedRef = useRef(false);
 
