@@ -21,6 +21,13 @@ import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 
 const PromoSection = () => {
   const navigate = useNavigate();
+  const { data: settings } = useAppSettings();
+  const eyebrow = settings?.promo_section_eyebrow || "";
+  const title = settings?.promo_section_title || "Lo mejor para tu negocio";
+  const subtitle = settings?.promo_section_subtitle || "Descubre nuestras categorías destacadas.";
+  const ctaLabel = settings?.promo_section_cta_label || "Ver más";
+  const ctaHref = settings?.promo_section_cta_href || "/catalogo";
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
@@ -34,20 +41,22 @@ const PromoSection = () => {
         style={{ background: "var(--gradient-cta)" }}
       >
         <div className="relative z-10 md:max-w-lg">
-          <span className="inline-flex items-center gap-1 text-white/80 text-xs font-medium mb-2">
-            <Flame size={12} /> Sabor Santandereano
-          </span>
+          {eyebrow && (
+            <span className="inline-flex items-center gap-1 text-white/80 text-xs font-medium mb-2">
+              <Flame size={12} /> {eyebrow}
+            </span>
+          )}
           <h3 className="text-lg md:text-2xl font-heading font-bold text-white leading-tight mb-1" style={{ textWrap: "balance" }}>
-            Salsas artesanales para tu negocio
+            {title}
           </h3>
           <p className="text-white/70 text-sm md:text-base mb-3 max-w-[360px]">
-            Tártara, piña y más. El sabor "de la calle" que tus clientes buscan.
+            {subtitle}
           </p>
           <button
-            onClick={() => navigate("/catalogo?cat=salsas")}
+            onClick={() => navigate(ctaHref)}
             className="bg-white text-surte-naranja font-heading font-semibold text-sm px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-white/90 transition-colors active:scale-[0.97]"
           >
-            Ver Salsas <ArrowRight size={14} />
+            {ctaLabel} <ArrowRight size={14} />
           </button>
         </div>
         <div className="absolute -right-8 -bottom-8 w-32 h-32 md:w-48 md:h-48 rounded-full bg-white/5" />
