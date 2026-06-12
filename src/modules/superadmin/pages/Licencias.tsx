@@ -13,7 +13,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, KeyRound, Plus, ShieldCheck, ShieldOff, Cpu, Building2, Settings, Sparkles, Copy, ArrowRight } from "lucide-react";
+import { Download, KeyRound, Plus, ShieldCheck, ShieldOff, Cpu, Building2, Settings, Sparkles, Copy, ArrowRight, Store, Filter, X } from "lucide-react";
+import TenantSwitcher from "@/modules/superadmin/components/TenantSwitcher";
 
 type OnboardingProgress = {
   organization_id: string;
