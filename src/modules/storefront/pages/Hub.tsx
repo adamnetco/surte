@@ -16,8 +16,9 @@ import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 import { ArrowUpDown, Package, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTenantContact } from "@/modules/tenant";
 
-const BASE_URL = "https://surteya.com";
+const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
 
 const VALID_CITIES = ["bucaramanga", "floridablanca", "giron", "piedecuesta"];
 
@@ -160,19 +161,20 @@ const Hub = () => {
   const cycleSortBy = () =>
     setSortBy(sortBy === "default" ? "price-asc" : sortBy === "price-asc" ? "price-desc" : "default");
 
+  const { city: tenantCity, region: tenantRegion } = useTenantContact();
   // City-aware canonical URL: prefer /:city/:type/:slug if cityScope
   const pageUrl = cityScope
     ? (type === "ciudad" ? `${BASE_URL}/${cityScope}` : `${BASE_URL}/${cityScope}/${type}/${slug}`)
     : `${BASE_URL}/hub/${type}/${slug}`;
-  const cityLabel = cityScope ? cityScope.charAt(0).toUpperCase() + cityScope.slice(1) : "Bucaramanga";
-  const storeName = settings?.store_name || "SURTÉ YA";
+  const cityLabel = cityScope ? cityScope.charAt(0).toUpperCase() + cityScope.slice(1) : (tenantCity || "");
+  const storeName = settings?.store_name || "";
   const metaTitle = entitySeo?.meta_title || (cityScope
     ? `${title} en ${cityLabel} — ${storeName} | Domicilios mismo día`
     : `${title} — ${storeName} | Compra en línea`);
   const metaDesc = entitySeo?.meta_description || (cityScope
-    ? `Compra ${title.toLowerCase()} en ${cityLabel} con domicilio rápido. ${storeName}: precios mayoristas para HORECA, pago contra entrega y envíos en 1-2 días hábiles.`
+    ? `Compra ${title.toLowerCase()} en ${cityLabel} con domicilio rápido. ${storeName}: precios mayoristas, pago contra entrega y envíos en 1-2 días hábiles.`
     : (subtitle
-      ? `${subtitle}. Compra al mejor precio en ${storeName}. Envíos a Bucaramanga, Floridablanca, Girón y Piedecuesta.`
+      ? `${subtitle}. Compra al mejor precio en ${storeName}.`
       : `Productos de ${title} en ${storeName}`));
   const ogImage = entitySeo?.og_image_url || undefined;
 
@@ -190,21 +192,21 @@ const Hub = () => {
     description: metaDesc,
     url: pageUrl,
     isPartOf: { "@type": "WebSite", name: storeName, url: BASE_URL },
-    ...(type === "ciudad" && {
-      about: { "@type": "City", name: title, containedInPlace: { "@type": "AdministrativeArea", name: "Santander" } },
+    ...(type === "ciudad" && tenantRegion && {
+      about: { "@type": "City", name: title, containedInPlace: { "@type": "AdministrativeArea", name: tenantRegion } },
     }),
   };
 
   // FAQ for local SEO — answers common buyer questions for any hub page.
-  const cityName = cityScope ? cityLabel : (type === "ciudad" ? title : "Bucaramanga");
+  const cityName = cityScope ? cityLabel : (type === "ciudad" ? title : (tenantCity || ""));
   const faqs = [
     {
-      question: `¿Hacen domicilios de ${title} en ${cityName}?`,
-      answer: `Sí. Entregamos ${title.toLowerCase()} a domicilio en ${cityName} y su área metropolitana (Floridablanca, Girón y Piedecuesta) en 1 a 2 días hábiles. Consulta el costo de envío al ingresar tu barrio en el carrito.`,
+      question: `¿Hacen domicilios de ${title}${cityName ? ` en ${cityName}` : ""}?`,
+      answer: `Sí. Entregamos ${title.toLowerCase()} a domicilio${cityName ? ` en ${cityName} y su área de cobertura` : ""} en 1 a 2 días hábiles. Consulta el costo de envío al ingresar tu barrio en el carrito.`,
     },
     {
       question: `¿Cuál es el pedido mínimo para comprar ${title}?`,
-      answer: `El pedido mínimo en ${storeName} es de $40.000 COP. Aceptamos pago en efectivo contra entrega o transferencia bancaria. En municipios seleccionados ofrecemos envío gratis al superar el umbral configurado.`,
+      answer: `Aceptamos pago en efectivo contra entrega o transferencia bancaria. En municipios seleccionados ofrecemos envío gratis al superar el umbral configurado por la tienda.`,
     },
     {
       question: `¿Los precios de ${title} incluyen mayorista para HORECA?`,

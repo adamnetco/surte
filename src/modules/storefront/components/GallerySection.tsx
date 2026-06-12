@@ -48,7 +48,7 @@ const GallerySection = () => {
             >
               <img
                 src={g.image_url}
-                alt={g.caption || "Galería SURTÉ YA"}
+                alt={g.caption || "Galería"}
                 className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 loading="lazy"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}

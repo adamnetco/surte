@@ -11,7 +11,7 @@ const HeroSection = () => {
   const [direction, setDirection] = useState(1);
 
   // Get selected city from localStorage
-  const selectedCity = typeof window !== "undefined" ? localStorage.getItem("surte_city") || "" : "";
+  const selectedCity = typeof window !== "undefined" ? localStorage.getItem("tenant_city") || "" : "";
 
   const { data: slides } = useQuery({
     queryKey: ["hero_slides", selectedCity],

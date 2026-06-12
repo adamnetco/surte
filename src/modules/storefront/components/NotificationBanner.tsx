@@ -5,8 +5,8 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-const STORAGE_DISMISSED = "surteya_notif_dismissed";
-const STORAGE_SUBSCRIBED = "surteya_notif_subscribed";
+const STORAGE_DISMISSED = "tenant_notif_dismissed";
+const STORAGE_SUBSCRIBED = "tenant_notif_subscribed";
 
 const NotificationBanner = () => {
   const { user } = useAuth();
@@ -56,7 +56,7 @@ const NotificationBanner = () => {
             action: "send_text",
             to: formatted,
             message:
-              "Bienvenido a SURTÉ YA. Te avisaremos por WhatsApp cuando tengamos ofertas, productos frescos o novedades. Para darte de baja responde STOP.",
+              "Bienvenido. Te avisaremos por WhatsApp cuando tengamos ofertas, productos frescos o novedades. Para darte de baja responde STOP.",
           },
         });
       } catch (waErr) {

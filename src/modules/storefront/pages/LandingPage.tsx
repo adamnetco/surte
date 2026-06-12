@@ -15,7 +15,7 @@ import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 import { Package } from "lucide-react";
 import { motion } from "framer-motion";
 
-const BASE_URL = "https://surteya.com";
+const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
 
 const LandingPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -65,10 +65,10 @@ const LandingPage = () => {
     ? (products?.filter(p => !linkedProductIds.includes(p.id)).slice(0, 20) || [])
     : (products?.slice(0, 50) || []);
 
-  const storeName = settings?.store_name || "SURTÉ YA";
+  const storeName = settings?.store_name || "";
   const pageUrl = `${BASE_URL}/s/${slug}`;
   const metaTitle = page?.meta_title || page?.title || slug || "Página";
-  const metaDesc = page?.meta_description || `${page?.title} en ${storeName}. Envíos a domicilio en Santander.`;
+  const metaDesc = page?.meta_description || `${page?.title} en ${storeName}.`;
 
   const breadcrumbs = [
     { name: "Inicio", url: BASE_URL },
