@@ -54,7 +54,7 @@ const GoogleReviewsSection = () => {
             allowFullScreen
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            title="Google Maps - SURTÉ YA"
+            title="Google Maps"
           />
         </div>
       )}

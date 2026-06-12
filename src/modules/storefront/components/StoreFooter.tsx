@@ -31,7 +31,7 @@ const StoreFooter = () => {
   const { data: settings } = useAppSettings();
   const navigate = useNavigate();
 
-  const storeName = settings?.store_name || "SURTÉ YA";
+  const storeName = settings?.store_name || "";
   const whatsapp = settings?.whatsapp_number || "";
   const email = settings?.footer_email || "";
   const address = settings?.footer_address || "";

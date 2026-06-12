@@ -343,7 +343,7 @@ const Carrito = () => {
         });
         mailService.send({
           to: email,
-          subject: `✅ Pedido #${data.order_number} confirmado — SURTÉ YA`,
+          subject: `Pedido #${data.order_number} confirmado${settings?.store_name ? ` — ${settings.store_name}` : ""}`,
           html: emailHtml,
         }).catch((err) => console.warn("Email confirmation failed:", err));
       }

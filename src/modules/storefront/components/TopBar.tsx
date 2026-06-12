@@ -99,8 +99,8 @@ const TopBar = ({ onSearch }: TopBarProps) => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between px-4 md:px-6 py-1.5">
           <img
-            src={surteLogo}
-            alt="SURTÉ YA"
+            src={settings?.store_logo || surteLogo}
+            alt={settings?.store_name || "Tienda"}
             className="h-14 w-auto object-contain cursor-pointer"
             onClick={() => navigate("/")}
           />

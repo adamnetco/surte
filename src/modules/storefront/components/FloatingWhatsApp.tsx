@@ -7,11 +7,12 @@ import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain
 const FloatingWhatsApp = () => {
   const isStorefront = isStorefrontTenant(detectTenant());
   const { data: settings } = useAppSettings(isStorefront);
-  const phone = settings?.whatsapp_number || "573001234567";
-  const message = encodeURIComponent("Hola SURTÉ YA, necesito ayuda con mi pedido");
+  const phone = settings?.whatsapp_number || "";
+  const greeting = settings?.whatsapp_greeting || `Hola${settings?.store_name ? ` ${settings.store_name}` : ""}, necesito ayuda con mi pedido`;
+  const message = encodeURIComponent(greeting);
   const [dismissed, setDismissed] = useState(false);
 
-  if (!isStorefront || dismissed) return null;
+  if (!isStorefront || dismissed || !phone) return null;
 
   return (
     <motion.div

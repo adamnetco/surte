@@ -56,7 +56,7 @@ const NotificationBanner = () => {
             action: "send_text",
             to: formatted,
             message:
-              "Bienvenido a SURTÉ YA. Te avisaremos por WhatsApp cuando tengamos ofertas, productos frescos o novedades. Para darte de baja responde STOP.",
+              "Bienvenido. Te avisaremos por WhatsApp cuando tengamos ofertas, productos frescos o novedades. Para darte de baja responde STOP.",
           },
         });
       } catch (waErr) {
