@@ -10,7 +10,8 @@ interface ThemeContextValue {
   toggle: () => void;
 }
 
-const STORAGE_KEY = "surteya_theme_pref";
+const STORAGE_KEY = "tenant_theme_pref";
+const LEGACY_KEY = "surteya_theme_pref";
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 

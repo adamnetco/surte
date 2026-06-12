@@ -28,7 +28,8 @@ interface OrganizationContextValue {
   refresh: () => Promise<void>;
 }
 
-const STORAGE_KEY = "surteya:currentOrgId";
+const STORAGE_KEY = "sistecpos:currentOrgId";
+const LEGACY_STORAGE_KEY = "surteya:currentOrgId";
 
 const OrganizationContext = createContext<OrganizationContextValue | undefined>(undefined);
 

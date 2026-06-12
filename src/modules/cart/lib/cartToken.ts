@@ -2,7 +2,8 @@
  * Cart token management — anonymous UUID persisted in localStorage.
  * Shared by web and WhatsApp Flow to keep the cart in sync.
  */
-const TOKEN_KEY = "surteya_cart_token";
+const TOKEN_KEY = "tenant_cart_token";
+const LEGACY_KEY = "surteya_cart_token";
 
 const uuid = (): string => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -18,11 +19,11 @@ const uuid = (): string => {
 
 export const getCartToken = (): string => {
   try {
-    let t = localStorage.getItem(TOKEN_KEY);
+    let t = localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_KEY);
     if (!t) {
       t = uuid();
-      localStorage.setItem(TOKEN_KEY, t);
     }
+    localStorage.setItem(TOKEN_KEY, t);
     return t;
   } catch {
     return uuid();

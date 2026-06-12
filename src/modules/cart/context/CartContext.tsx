@@ -50,7 +50,8 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const STORAGE_KEY = "surteya_cart";
+const STORAGE_KEY = "tenant_cart";
+const LEGACY_STORAGE_KEY = "surteya_cart";
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /** Unique key for a cart line */
