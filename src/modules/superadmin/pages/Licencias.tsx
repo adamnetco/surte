@@ -444,8 +444,11 @@ export default function Licencias() {
                 </Card>
               );
             })}
-            {activations.length === 0 && <p className="text-center text-muted-foreground p-8">Sin activaciones todavía.</p>}
-          </div>
+                  {filteredActs.length === 0 && <p className="text-center text-muted-foreground p-8">Sin activaciones todavía{scopeToCurrent && currentOrg ? ` en ${currentOrg.name}` : ""}.</p>}
+                </div>
+              </>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="releases" className="space-y-3">
