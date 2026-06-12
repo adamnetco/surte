@@ -271,7 +271,7 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
       </div>
 
       <p className="text-xs text-muted-foreground text-center">
-        {zones?.length || 0} zonas en total · Área Metropolitana de Bucaramanga
+        {zones?.length || 0} zonas configuradas
       </p>
     </div>
   );
