@@ -3,10 +3,12 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { toast } from "sonner";
-import { Loader2, ShieldCheck, ToggleLeft, ToggleRight, Trash2, AlertTriangle, Pencil, Save, X } from "lucide-react";
+import { Loader2, ShieldCheck, ToggleLeft, ToggleRight, Trash2, AlertTriangle, Pencil, Save, X, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { auditedMutation } from "@/lib/audit/auditedMutation";
+import { handleAuditError } from "@/lib/audit/handleCosign";
 
 type ModuleRow = {
   module_key: string;
@@ -92,28 +94,47 @@ const TenantEntitlements = () => {
     if (!orgId) return;
     const reason = window.prompt(
       nextEnabled === null
-        ? `Eliminar override de "${mod.module_name}" (volver al plan)?\nEscribe motivo:`
+        ? `Eliminar override de "${mod.module_name}" (volver al plan).\nMotivo (auditoría):`
         : `${nextEnabled ? "Habilitar" : "Deshabilitar"} "${mod.module_name}" para esta tienda.\nMotivo (auditoría):`,
       modOverrides[mod.module_key]?.reason ?? ""
     );
     if (reason === null) return;
-    if (nextEnabled === null) {
-      const id = modOverrides[mod.module_key]?.id;
-      if (!id) return;
-      const { error } = await supabase.from("tenant_module_overrides").delete().eq("id", id);
-      if (error) return toast.error(error.message);
-      toast.success("Override eliminado");
-    } else {
-      const { error } = await supabase
-        .from("tenant_module_overrides")
-        .upsert(
-          { organization_id: orgId, module_key: mod.module_key, enabled: nextEnabled, reason: reason || null },
-          { onConflict: "organization_id,module_key" }
-        );
-      if (error) return toast.error(error.message);
-      toast.success("Override aplicado");
+    if (!reason.trim()) return toast.error("Motivo requerido");
+
+    try {
+      await auditedMutation({
+        action: "single_module_override",
+        targetOrgId: orgId,
+        payload: {
+          module_key: mod.module_key,
+          module_name: mod.module_name,
+          op: nextEnabled === null ? "remove" : "upsert",
+          enabled: nextEnabled,
+        },
+        justification: reason.trim(),
+        run: async () => {
+          if (nextEnabled === null) {
+            const id = modOverrides[mod.module_key]?.id;
+            if (!id) return { skipped: true };
+            const { error } = await supabase.from("tenant_module_overrides").delete().eq("id", id);
+            if (error) throw error;
+            return { removed: id };
+          }
+          const { error } = await supabase
+            .from("tenant_module_overrides")
+            .upsert(
+              { organization_id: orgId, module_key: mod.module_key, enabled: nextEnabled, reason: reason.trim() || null },
+              { onConflict: "organization_id,module_key" }
+            );
+          if (error) throw error;
+          return { upserted: mod.module_key, enabled: nextEnabled };
+        },
+      });
+      toast.success(nextEnabled === null ? "Override eliminado" : "Override aplicado");
+      load();
+    } catch (e) {
+      handleAuditError(e);
     }
-    load();
   };
 
   const startEditLimit = (lim: LimitRow) => {
@@ -126,26 +147,55 @@ const TenantEntitlements = () => {
     if (!orgId) return;
     const value = editValue.trim() === "" ? null : Number(editValue);
     if (value !== null && (Number.isNaN(value) || value < 0)) return toast.error("Valor inválido");
-    const { error } = await supabase
-      .from("tenant_limit_overrides")
-      .upsert(
-        { organization_id: orgId, limit_key: lim.limit_key, value, reason: editReason || null },
-        { onConflict: "organization_id,limit_key" }
-      );
-    if (error) return toast.error(error.message);
-    toast.success("Límite override guardado");
-    setEditingLimit(null);
-    load();
+    if (!editReason.trim()) return toast.error("Motivo requerido para auditoría");
+    try {
+      await auditedMutation({
+        action: "single_limit_override",
+        targetOrgId: orgId,
+        payload: { limit_key: lim.limit_key, value, op: "upsert" },
+        justification: editReason.trim(),
+        run: async () => {
+          const { error } = await supabase
+            .from("tenant_limit_overrides")
+            .upsert(
+              { organization_id: orgId, limit_key: lim.limit_key, value, reason: editReason.trim() || null },
+              { onConflict: "organization_id,limit_key" }
+            );
+          if (error) throw error;
+          return { upserted: lim.limit_key, value };
+        },
+      });
+      toast.success("Límite override guardado");
+      setEditingLimit(null);
+      load();
+    } catch (e) {
+      handleAuditError(e);
+    }
   };
 
   const removeLimitOverride = async (lim: LimitRow) => {
     const id = limOverrides[lim.limit_key]?.id;
-    if (!id) return;
-    if (!window.confirm(`Eliminar override del límite "${lim.limit_key}" y volver al plan?`)) return;
-    const { error } = await supabase.from("tenant_limit_overrides").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Override eliminado");
-    load();
+    if (!id || !orgId) return;
+    const reason = window.prompt(`Eliminar override del límite "${lim.limit_key}" y volver al plan.\nMotivo (auditoría):`, "");
+    if (reason === null) return;
+    if (!reason.trim()) return toast.error("Motivo requerido");
+    try {
+      await auditedMutation({
+        action: "single_limit_override",
+        targetOrgId: orgId,
+        payload: { limit_key: lim.limit_key, op: "remove" },
+        justification: reason.trim(),
+        run: async () => {
+          const { error } = await supabase.from("tenant_limit_overrides").delete().eq("id", id);
+          if (error) throw error;
+          return { removed: id };
+        },
+      });
+      toast.success("Override eliminado");
+      load();
+    } catch (e) {
+      handleAuditError(e);
+    }
   };
 
   if (!currentOrg) {
@@ -165,9 +215,37 @@ const TenantEntitlements = () => {
             queda auditado. Usar con motivo claro: contrato enterprise, promoción, soporte de incidente.
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Recargar"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              const reason = window.prompt(
+                "Solicitar cambio masivo de módulos para esta tienda.\nRequiere co-firma de otro superadmin.\n\nJustificación:",
+                "Prueba del pipeline de co-firma"
+              );
+              if (!reason?.trim()) return;
+              try {
+                await auditedMutation({
+                  action: "bulk_module_override",
+                  targetOrgId: orgId!,
+                  payload: { test: true, scope: "single-tenant" },
+                  justification: reason.trim(),
+                  run: async () => ({ noop: true }),
+                });
+                toast.success("Solicitud creada y aprobada (no requería co-firma).");
+              } catch (e) {
+                handleAuditError(e);
+              }
+            }}
+            title="Crea una solicitud en la cola de acciones críticas"
+          >
+            <ShieldAlert className="h-3.5 w-3.5 mr-1" /> Test co-firma
+          </Button>
+          <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Recargar"}
+          </Button>
+        </div>
       </header>
 
       {/* MODULES */}

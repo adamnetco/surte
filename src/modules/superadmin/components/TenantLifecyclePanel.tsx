@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { toast } from "sonner";
-import { Activity, Loader2, AlertTriangle, History } from "lucide-react";
+import { Activity, Loader2, AlertTriangle, History, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { auditedMutation } from "@/lib/audit/auditedMutation";
+import { handleAuditError } from "@/lib/audit/handleCosign";
 
 export type LifecycleState =
   | "pending" | "trial" | "active" | "past_due" | "suspended" | "archived";
@@ -56,29 +58,61 @@ export default function TenantLifecyclePanel() {
 
   if (!currentOrg) return null;
 
+  // Mapeo de transiciones críticas → action_type en el catálogo audit
+  const CRITICAL_MAP: Partial<Record<LifecycleState, string>> = {
+    archived: "tenant_archive",
+    suspended: "tenant_suspend",
+  };
+
+  const runTransition = async (next: LifecycleState, reason: string) => {
+    const { data, error } = await supabase.rpc("transition_tenant_lifecycle", {
+      _org_id: currentOrg.id,
+      _new_state: next,
+      _reason: reason,
+    });
+    if (error) throw error;
+    return data;
+  };
+
   const transition = async (next: LifecycleState) => {
     const meta = STATE_META[next];
-    const reason = window.prompt(
-      `Cambiar estado a "${meta.label}".\n${meta.desc}\n\nMotivo (obligatorio para auditoría):`,
-      ""
-    );
+    const criticalKey = CRITICAL_MAP[next];
+    const promptLabel = criticalKey
+      ? `Acción CRÍTICA: ${meta.label}.\n${meta.desc}\n\nSe enviará al pipeline auditado${
+          next === "archived" ? " (requiere co-firma de otro superadmin)" : ""
+        }.\n\nJustificación (obligatoria):`
+      : `Cambiar estado a "${meta.label}".\n${meta.desc}\n\nMotivo (obligatorio para auditoría):`;
+    const reason = window.prompt(promptLabel, "");
     if (reason === null) return;
     if (!reason.trim()) return toast.error("Motivo requerido");
 
     setBusy(next);
-    const { data, error } = await supabase.rpc("transition_tenant_lifecycle", {
-      _org_id: currentOrg.id,
-      _new_state: next,
-      _reason: reason.trim(),
-    });
-    setBusy(null);
-    if (error) return toast.error(error.message);
-    const result = data as any;
-    if (result?.changed) {
-      toast.success(`Estado actualizado: ${STATE_META[next].label}`);
-      load();
-    } else {
-      toast.info("Sin cambios");
+    try {
+      if (criticalKey) {
+        const res = await auditedMutation({
+          action: criticalKey,
+          targetOrgId: currentOrg.id,
+          payload: { from: state, to: next },
+          justification: reason.trim(),
+          run: () => runTransition(next, reason.trim()),
+        });
+        if (res.status === "executed") {
+          toast.success(`Estado actualizado: ${meta.label}`);
+          load();
+        }
+      } else {
+        const data = await runTransition(next, reason.trim());
+        if ((data as any)?.changed) {
+          toast.success(`Estado actualizado: ${meta.label}`);
+          load();
+        } else {
+          toast.info("Sin cambios");
+        }
+      }
+    } catch (e) {
+      handleAuditError(e);
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -125,6 +159,7 @@ export default function TenantLifecyclePanel() {
                   {allowed.map((next) => {
                     const m = STATE_META[next];
                     const danger = next === "archived" || next === "suspended";
+                    const critical = !!CRITICAL_MAP[next];
                     return (
                       <Button
                         key={next}
@@ -132,8 +167,9 @@ export default function TenantLifecyclePanel() {
                         variant={danger ? "destructive" : "outline"}
                         disabled={busy !== null}
                         onClick={() => transition(next)}
+                        title={critical ? "Acción crítica auditada" : undefined}
                       >
-                        {busy === next ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+                        {busy === next ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : critical ? <ShieldAlert className="h-3.5 w-3.5 mr-1" /> : null}
                         → {m.label}
                       </Button>
                     );
