@@ -6,8 +6,8 @@ import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const SEO_SETTINGS: { key: string; label: string; placeholder: string; group: string; description?: string }[] = [
-  { key: "seo_site_name", label: "Nombre del Sitio", placeholder: "SURTÉ YA - Soluciones Alimenticias", group: "general" },
-  { key: "seo_default_description", label: "Meta Descripción Global", placeholder: "Salsas, cárnicos y pulpas al mayor...", group: "general" },
+  { key: "seo_site_name", label: "Nombre del Sitio", placeholder: "Mi Negocio", group: "general" },
+  { key: "seo_default_description", label: "Meta Descripción Global", placeholder: "Breve descripción de tu negocio y propuesta de valor...", group: "general" },
   { key: "seo_default_og_image", label: "Imagen OG Predeterminada", placeholder: "https://tu-dominio.com/og-default.jpg", group: "general", description: "Imagen por defecto para Schema.org y Open Graph (1200×630px). Se usa en todas las páginas que no tengan imagen propia." },
   { key: "seo_ga4_measurement_id", label: "Google Analytics 4 (Measurement ID)", placeholder: "G-XXXXXXXXXX", group: "integraciones" },
   { key: "seo_google_merchant_id", label: "Google Merchant Center ID", placeholder: "123456789", group: "integraciones" },
