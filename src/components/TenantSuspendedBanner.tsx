@@ -3,10 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
-
-const SUPPORT_WHATSAPP =
-  "https://wa.me/573001234567?text=" +
-  encodeURIComponent("Hola, mi tienda está bloqueada y necesito reactivarla.");
+import { useSupportContact } from "@/lib/support";
 
 /**
  * Banner global no descartable que se muestra cuando la tienda actual
@@ -18,6 +15,7 @@ const SUPPORT_WHATSAPP =
 export default function TenantSuspendedBanner() {
   const { currentOrg } = useOrganization();
   const { role } = useAuth();
+  const support = useSupportContact();
 
   const { data: state } = useQuery({
     queryKey: ["org-lifecycle", currentOrg?.id],
@@ -57,7 +55,7 @@ export default function TenantSuspendedBanner() {
           </span>
         </p>
         <a
-          href={SUPPORT_WHATSAPP}
+          href={support.waUrl("Hola, mi tienda está bloqueada y necesito reactivarla.")}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center rounded-md bg-white/80 hover:bg-white px-3 py-1.5 text-xs font-medium border border-current/30 transition-colors"

@@ -1376,6 +1376,134 @@ export type Database = {
           },
         ]
       }
+      critical_action_types: {
+        Row: {
+          action_type: string
+          created_at: string
+          description: string | null
+          expires_minutes: number
+          is_active: boolean
+          label: string
+          requires_cosign: boolean
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          description?: string | null
+          expires_minutes?: number
+          is_active?: boolean
+          label: string
+          requires_cosign?: boolean
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          description?: string | null
+          expires_minutes?: number
+          is_active?: boolean
+          label?: string
+          requires_cosign?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      critical_actions: {
+        Row: {
+          action_type: string
+          cancelled_reason: string | null
+          cosign_decision: string | null
+          cosign_reason: string | null
+          cosigned_at: string | null
+          cosigned_by: string | null
+          cosigned_by_email: string | null
+          created_at: string
+          executed_at: string | null
+          execution_result: Json | null
+          expires_at: string
+          id: string
+          justification: string
+          payload: Json
+          requested_by: string
+          requested_by_email: string | null
+          status: string
+          target_org_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          cancelled_reason?: string | null
+          cosign_decision?: string | null
+          cosign_reason?: string | null
+          cosigned_at?: string | null
+          cosigned_by?: string | null
+          cosigned_by_email?: string | null
+          created_at?: string
+          executed_at?: string | null
+          execution_result?: Json | null
+          expires_at: string
+          id?: string
+          justification: string
+          payload?: Json
+          requested_by: string
+          requested_by_email?: string | null
+          status?: string
+          target_org_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          cancelled_reason?: string | null
+          cosign_decision?: string | null
+          cosign_reason?: string | null
+          cosigned_at?: string | null
+          cosigned_by?: string | null
+          cosigned_by_email?: string | null
+          created_at?: string
+          executed_at?: string | null
+          execution_result?: Json | null
+          expires_at?: string
+          id?: string
+          justification?: string
+          payload?: Json
+          requested_by?: string
+          requested_by_email?: string | null
+          status?: string
+          target_org_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "critical_actions_action_type_fkey"
+            columns: ["action_type"]
+            isOneToOne: false
+            referencedRelation: "critical_action_types"
+            referencedColumns: ["action_type"]
+          },
+          {
+            foreignKeyName: "critical_actions_target_org_id_fkey"
+            columns: ["target_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "critical_actions_target_org_id_fkey"
+            columns: ["target_org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "critical_actions_target_org_id_fkey"
+            columns: ["target_org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       crm_leads: {
         Row: {
           assigned_to: string | null
@@ -7955,6 +8083,10 @@ export type Database = {
       }
       can_access_section: { Args: { _section: string }; Returns: boolean }
       can_write_org: { Args: { _org_id: string }; Returns: boolean }
+      cancel_critical_action: {
+        Args: { _action_id: string; _reason?: string }
+        Returns: Json
+      }
       cleanup_sso_tokens: { Args: never; Returns: number }
       close_cash_session_with_counts: {
         Args: { _counts: Json; _session_id: string }
@@ -7963,6 +8095,10 @@ export type Database = {
       complete_persistent_cart: {
         Args: { _cart_token: string }
         Returns: boolean
+      }
+      cosign_critical_action: {
+        Args: { _action_id: string; _decision: string; _reason?: string }
+        Returns: Json
       }
       count_active_terminals: { Args: { _license_id: string }; Returns: number }
       create_license: {
@@ -8201,6 +8337,10 @@ export type Database = {
         }
         Returns: string
       }
+      mark_critical_action_executed: {
+        Args: { _action_id: string; _result?: Json }
+        Returns: Json
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -8256,6 +8396,15 @@ export type Database = {
         Returns: Json
       }
       rematch_invoice_scan: { Args: { _scan_id: string }; Returns: Json }
+      request_critical_action: {
+        Args: {
+          _action_type: string
+          _justification: string
+          _payload: Json
+          _target_org: string
+        }
+        Returns: Json
+      }
       resolve_tenant_by_host: { Args: { _host: string }; Returns: Json }
       restore_tenant: { Args: { _org_id: string }; Returns: Json }
       revoke_activation: {

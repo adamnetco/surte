@@ -25,6 +25,8 @@ const CspViolations = lazy(() => import("@/modules/superadmin/pages/CspViolation
 const TenantLicenseSection = lazy(() => import("@/modules/superadmin/components/TenantLicenseSection"));
 const PlansCatalog = lazy(() => import("@/modules/superadmin/pages/PlansCatalog"));
 const TenantEntitlements = lazy(() => import("@/modules/superadmin/pages/TenantEntitlements"));
+const SoporteConfig = lazy(() => import("@/modules/superadmin/pages/SoporteConfig"));
+const CriticalActionsQueue = lazy(() => import("@/modules/superadmin/pages/CriticalActionsQueue"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -102,6 +104,8 @@ const SuperadminDashboard = () => {
                 <Route path="cloud-tareas" element={<CloudTasksStatus />} />
                 <Route path="seguridad/acceso" element={<SeguridadAcceso />} />
                 <Route path="seguridad/csp" element={<CspViolations />} />
+                <Route path="soporte" element={<SoporteConfig />} />
+                <Route path="acciones-criticas" element={<CriticalActionsQueue />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
