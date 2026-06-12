@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Phone, ShieldCheck, ExternalLink, Loader2, Store } from "lucide-react";
 import { toast } from "sonner";
 import { mailService } from "@/modules/email/mailService";
-import { welcomeTemplate } from "@/modules/email/emailTemplates";
+import { welcomeTemplate, brandFromSettings } from "@/modules/email/emailTemplates";
 import defaultLogo from "@/assets/surte-logo.png";
 import { useTenantBrand } from "@/modules/auth/hooks/useTenantBrand";
 import { verifySignupTenantLinkWithRetry } from "@/modules/auth/lib/verifySignupTenantLink";
