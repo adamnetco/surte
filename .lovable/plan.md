@@ -107,9 +107,17 @@ Remanente: docs/READMEs, `cloudTasks.ts` (tarea funcional superadmin con `surtey
 
 ## Etapa 38 — Tipos de negocio y categorías genéricas
 
-- Quitar referencias hardcodeadas a Cárnicos / Pulpas / Panificados / Mayorista del core (UI + lógica).
-- Migrar a `catalog_templates` + `catalog_template_items` por `business_type`. SurteYa aplica template `food-mayorista` al provisionar.
-- Verificación: `grep -i "cárnicos\|pulpas\|panificados\|mayorista"` en `src/` = 0 fuera de templates/seeds.
+**Hecho:**
+- `OrdersTab.tsx` → `categoryEmojis` ahora `{}`; los íconos se leen de `categories.icon` (lucide-react o SVG) por tenant, fallback `📦`.
+- `SeoTab.tsx` → placeholders neutros ("Mi Negocio", descripción genérica).
+- `SeoContentTab.tsx` → slug placeholder genérico `ej: mi-categoria`.
+- `MunicipalitiesTab.tsx` → meta description placeholder sin "salsas/cárnicos/pulpas".
+- "Mayorista" se mantiene como **tier de precio** (feature global: Detal/Mayorista/Distribuidor en `mem://features/tiered-pricing`) — no es hardcoding de nicho.
+- Verificación: `grep -in "cárnicos\|carnicos\|pulpas\|panificados"` en `src/` = **0 hits**.
+
+**Pendiente (futuro):**
+- Crear `catalog_templates` con presets de categorías por `business_type` (food, retail, services) — opcional para acelerar onboarding.
+
 
 ## Etapa 39 — SurteYa como tenant autónomo (cutover)
 
