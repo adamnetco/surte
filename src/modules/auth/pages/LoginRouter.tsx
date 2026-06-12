@@ -48,6 +48,8 @@ const LoginRouter = () => {
   const [backendDown, setBackendDown] = useState(false);
   const [hasStaleTokens, setHasStaleTokens] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [emailMode, setEmailMode] = useState<"magic_link" | "recovery" | null>(null);
+  const [emailNotice, setEmailNotice] = useState<{ kind: "info" | "error"; text: string } | null>(null);
   const [gate, setGate] = useState<MagicLinkGate>(() => checkMagicLinkGate());
   const redirectedRef = useRef(false);
 
@@ -119,6 +121,7 @@ const LoginRouter = () => {
 
     setEmailLinkLoading(true);
     setBackendDown(false);
+    setEmailNotice(null);
     try {
       if (tenantSlug) {
         try { sessionStorage.setItem("sps_tenant_override", tenantSlug); } catch { /* noop */ }
@@ -137,10 +140,14 @@ const LoginRouter = () => {
       if (otpResult.error) {
         const otpMsg = otpResult.error.message || "";
         // Supabase devuelve "Signups not allowed for otp" cuando el proyecto
-        // tiene OTP deshabilitado o cuando, por configuración, no permite
-        // crear cuentas vía OTP. Para usuarios existentes caemos al flujo de
-        // recovery (reset-password) que SIEMPRE funciona y permite entrar.
+        // tiene OTP deshabilitado o no permite crear cuentas vía OTP. Para
+        // usuarios existentes caemos a recovery (reset-password) que SIEMPRE
+        // funciona y nunca dispara "Signups not allowed for otp".
         if (/signup|otp_disabled|not allowed|disabled/i.test(otpMsg)) {
+          setEmailNotice({
+            kind: "info",
+            text: "El acceso por enlace directo está deshabilitado en este entorno. Te enviaré un enlace para restablecer tu contraseña.",
+          });
           const recoverRedirect = new URL("/reset-password", window.location.origin);
           if (tenantSlug) recoverRedirect.searchParams.set("tienda", tenantSlug);
           const recover = await supabase.auth.resetPasswordForEmail(mail, {
@@ -156,10 +163,11 @@ const LoginRouter = () => {
       recordMagicLinkAttempt();
       setGate(checkMagicLinkGate());
       setMagicLinkSent(true);
+      setEmailMode(usedFallback ? "recovery" : "magic_link");
       logAuth({ level: "success", event: "magic_link_sent", detail: usedFallback ? "recovery_fallback" : "otp", tenant: tenantSlug, email: mail });
       toast.success(
         usedFallback
-          ? "Te envié un enlace para crear/restablecer tu contraseña. Revisa tu correo."
+          ? "Te envié un enlace para restablecer tu contraseña. Revisa tu correo."
           : "Te envié un enlace de acceso. Revisa tu correo y entra sin contraseña.",
       );
     } catch (err: any) {
@@ -167,11 +175,20 @@ const LoginRouter = () => {
       logAuth({ level: "error", event: "magic_link_failed", detail: msg, tenant: tenantSlug, email: mail });
       if (isTransientAuthError(err)) {
         setBackendDown(true);
+        setEmailNotice({ kind: "error", text: "El servidor de autenticación está intermitente. Reintenta en unos segundos." });
         toast.error("El servidor de autenticación está intermitente. Intenta reenviar el acceso en unos segundos.");
-      } else if (/signup disabled|user not found|not found/i.test(msg)) {
-        toast.error("Ese email no está registrado. Verifica el correo o pide al administrador crear el usuario.");
+      } else if (/user not found|not found|no user|invalid email/i.test(msg)) {
+        const text = "Ese email no está registrado. Verifica el correo o pide al administrador crear el usuario.";
+        setEmailNotice({ kind: "error", text });
+        toast.error(text);
+      } else if (/rate limit|too many/i.test(msg)) {
+        const text = "Demasiados intentos. Espera unos minutos antes de reintentar.";
+        setEmailNotice({ kind: "error", text });
+        toast.error(text);
       } else {
-        toast.error(msg || "No pude enviar el acceso por email.");
+        const text = msg || "No pude enviar el acceso por email.";
+        setEmailNotice({ kind: "error", text });
+        toast.error(text);
       }
     } finally {
       setEmailLinkLoading(false);
@@ -419,9 +436,21 @@ const LoginRouter = () => {
                     <span>Intentos: {gate.attemptsUsed}/{gate.attemptsMax}</span>
                     <a href="/auth-status" className="underline decoration-white/30 hover:text-white">Ver estado de autenticación</a>
                   </div>
+                  {emailNotice && (
+                    <p
+                      data-testid="email-notice"
+                      className={`mb-2 text-[11px] px-2 py-1.5 rounded-md ${
+                        emailNotice.kind === "info"
+                          ? "bg-amber-500/10 text-amber-200 border border-amber-500/20"
+                          : "bg-red-500/10 text-red-200 border border-red-500/20"
+                      }`}
+                    >
+                      {emailNotice.text}
+                    </p>
+                  )}
                   {magicLinkSent && !emailLinkLoading && (
-                    <p className="mb-3 text-[11px] text-green-300/90 px-1">
-                      ✓ Enlace enviado a <code>{email.trim().toLowerCase()}</code>. Revisa tu bandeja y spam.
+                    <p className="mb-3 text-[11px] text-green-300/90 px-1" data-testid="email-sent-confirmation">
+                      ✓ {emailMode === "recovery" ? "Enlace de recuperación" : "Enlace de acceso"} enviado a <code>{email.trim().toLowerCase()}</code>. Revisa tu bandeja y spam.
                     </p>
                   )}
                 </>

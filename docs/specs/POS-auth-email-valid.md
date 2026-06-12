@@ -1,6 +1,6 @@
 # POS-AuthEmailValid
 
-**Estado:** IN_BUILD
+**Estado:** IN_REVIEW
 **Owner:** Eduardo Tobacia
 **Última actualización:** 2026-06-12
 
@@ -21,9 +21,12 @@ En `LoginRouter`, el botón "Enviar acceso por email" falla con `Signups not all
 
 ## Estado actual
 - [x] Fallback OTP → recovery implementado en `LoginRouter.handleEmailLink`.
-- [x] Recovery disparado manualmente para `demo@sistecpos.com` (HTTP 200).
-- [x] Templates de auth-email-hook ya activos (notify.surteya.com).
-- [ ] Verificar entrega en bandeja demo (depende de DNS propagation).
+- [x] Aviso inline (`data-testid="email-notice"`) cuando se activa fallback o hay error.
+- [x] Mensajes específicos para: usuario no existe, rate limit, backend intermitente.
+- [x] Confirmación inline (`data-testid="email-sent-confirmation"`) diferencia magic-link vs recovery.
+- [x] Recovery disparado para `demo@sistecpos.com` (HTTP 200).
+- [x] E2E `e2e/auth-email-fallback.spec.ts` cubre validación, fallback mockeado y `/reset-password`.
+- [ ] Verificar entrega real en bandeja demo (depende de DNS propagation).
 
 ## Notas
 - Skill aplicada: `pos-emails`, `pos-spec`, `systematic-debugging`.
