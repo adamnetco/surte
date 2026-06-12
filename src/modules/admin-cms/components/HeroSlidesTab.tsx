@@ -13,7 +13,7 @@ import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
 
-const CITIES = ["", "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
+const CITIES: string[] = [""];
 
 const defaultValues: HeroSlideFormValues = {
   title: "",

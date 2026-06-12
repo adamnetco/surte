@@ -53,11 +53,28 @@ Auditor: **241 → 218 hits** (-23 en Etapa 35). Baseline actualizado a 218.
 
 Pendiente Etapa 35.c (cosmético): renombrar `SurteyaRedirect.tsx` → `LegacyDomainRedirect.tsx` y leer de `tenant_domains.redirect_to` (no bloqueante, postergado a Etapa 39 cutover).
 
-## Etapa 36 — Limpieza [COPY] en admin-cms, POS y auth
+## Etapa 36 — Limpieza [COPY] en admin-cms, POS y auth 🚧 (36.a hecho)
 
-Archivos blanco: `src/modules/admin-cms/components/*Tab.tsx`, `src/modules/pos/pages/*`, `src/modules/auth/pages/Login.tsx`, `LoginRouter.tsx`, `TenantAwareLogin.tsx`, `Onboarding.tsx`, `CustomerQuickDialog.tsx`, `Mesas.tsx`, `KDS.tsx`, `POS.tsx`.
+**Etapa 36.a:** admin-cms + POS + auth neutralizados:
+- `LandingPagesTab.tsx` → plantillas SEO (Ciudad/Categoria/Keyword) sin "SURTE YA" ni "Bucaramanga/Santander"; placeholders, FAQ snippet y vista previa Google con `window.location.host`.
+- `ShippingTab.tsx` → `DEFAULT_CITIES = []`, placeholder bulk genérico, footer "{n} zonas configuradas".
+- `MunicipalitiesTab.tsx` → auto-fill SEO sin "SURTÉ YA"/"Santander", vista previa con host dinámico.
+- `BrandsTab.tsx`, `CategoriesTab.tsx`, `FeaturedSectionsTab.tsx` → `copyUrl` usa `window.location.origin`.
+- `InventoryTab.tsx` → feed GMC con `window.location.origin`, brand/category sin fallback "SURTÉ YA".
+- `DataManagementTab.tsx` → export filename neutral (`export_*`).
+- `PresentationsTab.tsx` → `presentaciones.xlsx`.
+- `NotificationsTab.tsx` → plantillas push sin "SURTÉ YA".
+- `SeoTab.tsx`, `SeoContentTab.tsx`, `HeroSlidesTab.tsx`, `UsersTab.tsx` → placeholders neutros, ciudades dinámicas.
+- `POS.tsx`, `KDS.tsx`, `Mesas.tsx` → `document.title` usa `currentOrg?.name`.
+- `CustomerQuickDialog.tsx` → placeholder "Tu ciudad".
+- **Hallazgo v5 resuelto:** `Login.tsx` ya no chequea `brand.slug === "surteya"`; el logo histórico ahora es un placeholder neutro hasta que el tenant configure `organizations.logo_url`.
+- `TenantAwareLogin.tsx`, `LoginRouter.tsx` → comentarios/placeholders genéricos.
 
-- Resolver hallazgo **v5**: eliminar `const isSurteya = brand.slug === "surteya"` en `Login.tsx:45` → usar `useTenantBranding().isLegacyStorefront` o feature flag por org.
+Auditor: **218 → 180 hits** (-38 en Etapa 36.a). Baseline = 180.
+
+**Etapa 36.b pendiente:** revisar `errors.ts` (no se encontró hardcoding actual), Onboarding flow, edge functions admin.
+
+
 - Resolver hallazgo **v5**: `src/lib/errors.ts:96` → envolver con `scopedFrom` o eliminar la query.
 - Verificación: `npm run audit:tenant-scope` → 0 hallazgos high.
 

@@ -20,7 +20,7 @@ const useCities = (orgId?: string | null) => useQuery({
   },
 });
 
-const DEFAULT_CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
+const DEFAULT_CITIES: string[] = [];
 
 const ShippingTab = ({ queryClient }: { queryClient: any }) => {
   const { currentOrg } = useOrganization();
@@ -45,7 +45,7 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
   const [bulkSaving, setBulkSaving] = useState(false);
 
   const defaultValues: ShippingZoneFormValues = {
-    city: CITIES[0] || "Bucaramanga",
+    city: CITIES[0] || "",
     neighborhood: "",
     delivery_price: 0,
   };
@@ -181,7 +181,7 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             rows={5}
-            placeholder={"Bucaramanga, Cabecera, 5000\nFloridablanca, Cañaveral, 6000"}
+            placeholder={"Ciudad, Barrio, 5000\nCiudad, Otro Barrio, 6000"}
             className="w-full bg-muted rounded-lg px-3 py-2 text-sm font-mono border border-transparent focus:border-accent focus:outline-none transition-colors"
           />
           <div className="flex gap-2">
@@ -271,7 +271,7 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
       </div>
 
       <p className="text-xs text-muted-foreground text-center">
-        {zones?.length || 0} zonas en total · Área Metropolitana de Bucaramanga
+        {zones?.length || 0} zonas configuradas
       </p>
     </div>
   );

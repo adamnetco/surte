@@ -124,7 +124,7 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
   };
 
   const copyUrl = (slug: string) => {
-    navigator.clipboard.writeText(`https://surteya.com/hub/categoria/${slug}`);
+    navigator.clipboard.writeText(`${window.location.origin}/hub/categoria/${slug}`);
     toast.success("URL copiada");
   };
 

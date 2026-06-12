@@ -145,7 +145,7 @@ const FeaturedSectionsTab = ({ queryClient }: { queryClient: QueryClient }) => {
   const copyUrl = (s: FeaturedSection) => {
     const url = getHubUrl(s);
     if (url) {
-      navigator.clipboard.writeText(`https://surteya.com${url}`);
+      navigator.clipboard.writeText(`${window.location.origin}${url}`);
       toast.success("URL copiada");
     }
   };

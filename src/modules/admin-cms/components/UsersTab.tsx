@@ -42,7 +42,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const [editModal, setEditModal] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", business_name: "", address: "", city: "" });
   const [createModal, setCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "Bucaramanga", business_type: "detal" as BusinessType, role: "user" as AppRole });
+  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", business_type: "detal" as BusinessType, role: "user" as AppRole });
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -150,7 +150,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
       toast.success(`Usuario ${createForm.full_name} creado exitosamente`);
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setCreateModal(false);
-      setCreateForm({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "Bucaramanga", business_type: "detal", role: "user" });
+      setCreateForm({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", business_type: "detal", role: "user" });
     } catch (err: any) {
       toast.error(err.message || "Error al crear usuario");
     } finally {

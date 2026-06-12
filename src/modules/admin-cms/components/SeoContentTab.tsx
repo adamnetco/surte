@@ -217,7 +217,7 @@ const SeoContentTab = ({ queryClient }: { queryClient: any }) => {
                 <input
                   value={editing.heading || ""}
                   onChange={(e) => setEditing({ ...editing, heading: e.target.value })}
-                  placeholder="Pulpas de fruta congeladas en Bucaramanga"
+                  placeholder="Encabezado optimizado para SEO"
                   className="w-full px-2 py-1.5 rounded border border-border bg-background"
                 />
               </label>

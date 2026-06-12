@@ -67,8 +67,8 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
     setForm((prev) => ({
       ...prev,
       slug: prev.slug || slug,
-      meta_title: prev.meta_title || `Domicilios en ${cityName} — SURTÉ YA | Alimentos al Mayor y Detal`,
-      meta_description: prev.meta_description || `Pide salsas, cárnicos, pulpas y más con envío a domicilio en ${cityName}, Santander. Precios mayoristas y al detal. Pedido mínimo desde $120.000.`,
+      meta_title: prev.meta_title || `Domicilios en ${cityName} | Pedidos online`,
+      meta_description: prev.meta_description || `Pide productos con envío a domicilio en ${cityName}. Precios al mayor y al detal.`,
     }));
   };
 
@@ -211,7 +211,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
                 setForm({ ...form, city: e.target.value });
               }}
               onBlur={() => { if (form.city && !form.slug) autoFillSeo(form.city); }}
-              placeholder="Ej: Bucaramanga"
+              placeholder="Ej: Tu ciudad"
               className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors"
             />
           </div>
@@ -341,11 +341,11 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
                 <div className="bg-muted/50 rounded-lg p-3 space-y-0.5">
                   <p className="text-[9px] text-muted-foreground font-medium mb-1">Vista previa en Google</p>
                   <p className="text-sm text-[#1a0dab] font-medium leading-tight truncate">
-                    {form.meta_title || `Domicilios en ${form.city} — SURTÉ YA`}
+                    {form.meta_title || `Domicilios en ${form.city}`}
                   </p>
-                  <p className="text-[11px] text-[#006621] truncate">surteya.com › hub › ciudad › {form.slug || genSlug(form.city || "ciudad")}</p>
+                  <p className="text-[11px] text-[#006621] truncate">{(typeof window !== "undefined" ? window.location.host : "tu-dominio.com")} › hub › ciudad › {form.slug || genSlug(form.city || "ciudad")}</p>
                   <p className="text-xs text-[#545454] line-clamp-2 leading-snug">
-                    {form.meta_description || `Pide salsas, cárnicos, pulpas y más con envío a ${form.city}...`}
+                    {form.meta_description || `Pide productos con envío a ${form.city}...`}
                   </p>
                 </div>
               )}

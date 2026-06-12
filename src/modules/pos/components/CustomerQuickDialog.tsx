@@ -221,7 +221,7 @@ export default function CustomerQuickDialog({ open, onOpenChange, initial, requi
                 </Field>
               </div>
               <Field label="Ciudad" error={errors.city?.message}>
-                <Input {...register("city")} placeholder="Bucaramanga" className="h-10" aria-invalid={!!errors.city} />
+                <Input {...register("city")} placeholder="Tu ciudad" className="h-10" aria-invalid={!!errors.city} />
               </Field>
             </div>
           )}

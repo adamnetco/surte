@@ -32,8 +32,8 @@ export default function POS() {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    document.title = "POS · SurteYa";
-  }, []);
+    document.title = `POS · ${currentOrg?.name ?? "Mi Negocio"}`;
+  }, [currentOrg?.name]);
 
   const orgId = currentOrg?.id;
 

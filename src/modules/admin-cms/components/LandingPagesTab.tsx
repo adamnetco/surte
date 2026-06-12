@@ -46,14 +46,14 @@ const PAGE_TEMPLATES = [
     icon: "🏙️",
     template: (city: string) => ({
       slug: `domicilios-${city.toLowerCase().replace(/\s/g, "-")}`,
-      title: `Domicilios de alimentos en ${city}`,
-      meta_title: `Domicilios de alimentos en ${city} | SURTE YA`,
-      meta_description: `Pide alimentos a domicilio en ${city}. Salsas, carnicos, pulpas y mas. Envio rapido, precios mayoristas. Pedidos por WhatsApp.`,
-      heading: `Domicilios de alimentos en ${city}`,
+      title: `Domicilios en ${city}`,
+      meta_title: `Domicilios en ${city} | Pedidos online`,
+      meta_description: `Pide a domicilio en ${city}. Envío rápido, precios competitivos. Pedidos por WhatsApp.`,
+      heading: `Domicilios en ${city}`,
       page_type: "ciudad",
       city,
       is_active: true,
-      body_html: `<section>\n  <h2>Domicilios de alimentos en ${city}</h2>\n  <p>En <strong>SURTE YA</strong> ofrecemos el mejor servicio de domicilios de alimentos en ${city}. Productos frescos, precios mayoristas y entrega rapida.</p>\n</section>\n\n<section>\n  <h2>Por que elegir SURTE YA en ${city}?</h2>\n  <ul>\n    <li><strong>Envios rapidos</strong> - Entrega en 24-48 horas</li>\n    <li><strong>Precios mayoristas</strong> - Los mejores precios del mercado</li>\n    <li><strong>Calidad garantizada</strong> - Productos frescos y certificados</li>\n  </ul>\n</section>\n\n<section>\n  <h2>Preguntas Frecuentes</h2>\n  <details>\n    <summary><strong>Cual es el pedido minimo en ${city}?</strong></summary>\n    <p>El pedido minimo varia segun tu zona. Consulta las condiciones en nuestra pagina de envios.</p>\n  </details>\n  <details>\n    <summary><strong>Que productos entregan en ${city}?</strong></summary>\n    <p>Salsas, carnicos, pulpas de fruta, agua y mas. Consulta nuestro catalogo completo.</p>\n  </details>\n</section>`,
+      body_html: `<section>\n  <h2>Domicilios en ${city}</h2>\n  <p>Ofrecemos servicio de domicilios en ${city}. Productos de calidad con entrega rápida.</p>\n</section>\n\n<section>\n  <h2>¿Por qué elegirnos en ${city}?</h2>\n  <ul>\n    <li><strong>Envíos rápidos</strong> - Entrega en 24-48 horas</li>\n    <li><strong>Precios competitivos</strong> - Los mejores precios del mercado</li>\n    <li><strong>Calidad garantizada</strong> - Productos certificados</li>\n  </ul>\n</section>\n\n<section>\n  <h2>Preguntas Frecuentes</h2>\n  <details>\n    <summary><strong>¿Cuál es el pedido mínimo en ${city}?</strong></summary>\n    <p>El pedido mínimo varía según tu zona. Consulta las condiciones en nuestra página de envíos.</p>\n  </details>\n</section>`,
     }),
   },
   {
@@ -62,12 +62,12 @@ const PAGE_TEMPLATES = [
     template: (cat: string) => ({
       slug: `${cat.toLowerCase().replace(/\s/g, "-")}-al-por-mayor`,
       title: `${cat} al por mayor - Precios mayoristas`,
-      meta_title: `${cat} al por mayor | SURTE YA - Precios mayoristas`,
-      meta_description: `Compra ${cat.toLowerCase()} al por mayor con precios mayoristas. Envio a Bucaramanga y Santander. Calidad garantizada.`,
+      meta_title: `${cat} al por mayor | Precios mayoristas`,
+      meta_description: `Compra ${cat.toLowerCase()} al por mayor con precios competitivos. Envío rápido. Calidad garantizada.`,
       heading: `${cat} al por mayor`,
       page_type: "categoria",
       is_active: true,
-      body_html: `<section>\n  <h2>${cat} al por mayor</h2>\n  <p>Encuentra los mejores <strong>${cat.toLowerCase()}</strong> al por mayor en SURTE YA. Precios competitivos para restaurantes, hoteles y minimercados.</p>\n</section>`,
+      body_html: `<section>\n  <h2>${cat} al por mayor</h2>\n  <p>Encuentra los mejores <strong>${cat.toLowerCase()}</strong> al por mayor. Precios competitivos para restaurantes, hoteles y minimercados.</p>\n</section>`,
     }),
   },
   {
@@ -76,12 +76,12 @@ const PAGE_TEMPLATES = [
     template: (kw: string) => ({
       slug: kw.toLowerCase().replace(/\s/g, "-"),
       title: kw,
-      meta_title: `${kw} | SURTE YA`,
-      meta_description: `${kw}. Los mejores precios y calidad en SURTE YA. Envio rapido a Bucaramanga y Santander.`,
+      meta_title: `${kw}`,
+      meta_description: `${kw}. Los mejores precios y calidad. Envío rápido.`,
       heading: kw,
       page_type: "keyword",
       is_active: true,
-      body_html: `<section>\n  <h2>${kw}</h2>\n  <p>Contenido optimizado para <strong>${kw.toLowerCase()}</strong>. Edita este contenido con informacion relevante.</p>\n</section>`,
+      body_html: `<section>\n  <h2>${kw}</h2>\n  <p>Contenido optimizado para <strong>${kw.toLowerCase()}</strong>. Edita este contenido con información relevante.</p>\n</section>`,
     }),
   },
 ];
@@ -111,7 +111,7 @@ const HTML_SNIPPETS = [
   { label: "CTA con enlace", icon: ExternalLink, html: `<div style="text-align:center;margin:2rem 0">\n  <a href="/catalogo" style="display:inline-block;background:#F37021;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold">Ver Catalogo Completo</a>\n</div>` },
   { label: "Imagen con caption", icon: Image, html: `<figure>\n  <img src="URL_DE_IMAGEN" alt="Descripcion de la imagen" style="width:100%;border-radius:12px" loading="lazy" />\n  <figcaption style="text-align:center;font-size:0.875rem;color:#666;margin-top:0.5rem">Pie de foto descriptivo</figcaption>\n</figure>` },
   { label: "Seccion H2 + texto", icon: LayoutTemplate, html: `<section>\n  <h2>Titulo de Seccion</h2>\n  <p>Contenido descriptivo con <strong>palabras clave</strong> relevantes para posicionamiento local.</p>\n</section>` },
-  { label: "FAQ Schema", icon: Code, html: `<section>\n  <h2>Preguntas Frecuentes</h2>\n  <details>\n    <summary><strong>Cual es el pedido minimo?</strong></summary>\n    <p>El pedido minimo varia segun tu ciudad.</p>\n  </details>\n  <details>\n    <summary><strong>Hacen envios a todo Santander?</strong></summary>\n    <p>Si, realizamos envios a Bucaramanga, Floridablanca, Giron, Piedecuesta y mas municipios.</p>\n  </details>\n</section>` },
+  { label: "FAQ Schema", icon: Code, html: `<section>\n  <h2>Preguntas Frecuentes</h2>\n  <details>\n    <summary><strong>¿Cuál es el pedido mínimo?</strong></summary>\n    <p>El pedido mínimo varía según tu ciudad.</p>\n  </details>\n  <details>\n    <summary><strong>¿Hacen envíos a toda la región?</strong></summary>\n    <p>Sí, realizamos envíos a múltiples municipios. Consulta las zonas disponibles.</p>\n  </details>\n</section>` },
 ];
 
 const calcSeoScore = (page: Partial<LandingPage>): { score: number; tips: string[] } => {
@@ -352,11 +352,11 @@ const LandingPagesTab = () => {
     const templateRow = {
       slug: "ejemplo-slug",
       title: "Titulo de ejemplo",
-      meta_title: "Meta titulo | SURTE YA",
+      meta_title: "Meta titulo",
       meta_description: "Meta descripcion de 120-160 caracteres para SEO",
       heading: "Encabezado H1",
       body_html: "<h2>Seccion</h2><p>Contenido</p>",
-      city: "Bucaramanga",
+      city: "",
       page_type: "custom",
       image_url: "",
       is_active: "SI",
@@ -580,7 +580,7 @@ const LandingPagesTab = () => {
                 <Input
                   value={templateWizard.input}
                   onChange={e => setTemplateWizard({ ...templateWizard, input: e.target.value })}
-                  placeholder={templateWizard.type === 0 ? "Bucaramanga" : templateWizard.type === 1 ? "Pulpas de fruta" : "salsas para restaurantes"}
+                  placeholder={templateWizard.type === 0 ? "Nombre de ciudad" : templateWizard.type === 1 ? "Nombre de categoría" : "palabra clave"}
                   autoFocus
                   onKeyDown={e => e.key === "Enter" && handleCreateFromTemplate()}
                 />
@@ -784,13 +784,13 @@ const LandingPagesTab = () => {
                   <Input
                     value={editing.slug || ""}
                     onChange={e => setEditing({ ...editing, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })}
-                    placeholder="domicilios-bucaramanga"
+                    placeholder="slug-de-la-pagina"
                   />
-                  <p className="text-[10px] text-muted-foreground mt-0.5">surteya.com/s/{editing.slug || "..."}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{(typeof window !== "undefined" ? window.location.host : "tu-dominio.com")}/s/{editing.slug || "..."}</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Titulo *</label>
-                  <Input value={editing.title || ""} onChange={e => setEditing({ ...editing, title: e.target.value })} placeholder="Domicilios en Bucaramanga" />
+                  <Input value={editing.title || ""} onChange={e => setEditing({ ...editing, title: e.target.value })} placeholder="Título de la página" />
                 </div>
               </div>
 
@@ -802,7 +802,7 @@ const LandingPagesTab = () => {
                       {editing.meta_title?.length || 0}/60
                     </span>
                   </div>
-                  <Input value={editing.meta_title || ""} onChange={e => setEditing({ ...editing, meta_title: e.target.value })} placeholder="Domicilios de alimentos en Bucaramanga | SURTE YA" />
+                  <Input value={editing.meta_title || ""} onChange={e => setEditing({ ...editing, meta_title: e.target.value })} placeholder="Meta title optimizado para SEO" />
                 </div>
                 <div>
                   <div className="flex items-center justify-between">
@@ -811,7 +811,7 @@ const LandingPagesTab = () => {
                       {editing.meta_description?.length || 0}/160
                     </span>
                   </div>
-                  <Textarea value={editing.meta_description || ""} onChange={e => setEditing({ ...editing, meta_description: e.target.value })} placeholder="Pide alimentos a domicilio en Bucaramanga..." rows={2} />
+                  <Textarea value={editing.meta_description || ""} onChange={e => setEditing({ ...editing, meta_description: e.target.value })} placeholder="Meta descripción optimizada para SEO..." rows={2} />
                 </div>
               </div>
 
@@ -822,7 +822,7 @@ const LandingPagesTab = () => {
                     {editing.meta_title || editing.title}
                   </p>
                   <p className="text-[11px] text-green-700 dark:text-green-400">
-                    surteya.com/s/{editing.slug || "..."}
+                    {(typeof window !== "undefined" ? window.location.host : "tu-dominio.com")}/s/{editing.slug || "..."}
                   </p>
                   <p className="text-[11px] text-muted-foreground line-clamp-2">
                     {editing.meta_description || "Sin descripcion configurada..."}
@@ -904,7 +904,7 @@ const LandingPagesTab = () => {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Ciudad</label>
-                  <Input value={editing.city || ""} onChange={e => setEditing({ ...editing, city: e.target.value })} placeholder="Bucaramanga" className="h-9" />
+                  <Input value={editing.city || ""} onChange={e => setEditing({ ...editing, city: e.target.value })} placeholder="Tu ciudad" className="h-9" />
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="text-xs font-medium text-muted-foreground">Imagen URL</label>

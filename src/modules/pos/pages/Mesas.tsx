@@ -36,7 +36,7 @@ export default function Mesas() {
   const [openTableId, setOpenTableId] = useState<string | null>(null);
 
   useEffect(() => { if (!authLoading && !user) navigate("/login"); }, [user, authLoading, navigate]);
-  useEffect(() => { document.title = "Mesas · SurteYa"; }, []);
+  useEffect(() => { document.title = `Mesas · ${currentOrg?.name ?? "Mi Negocio"}`; }, [currentOrg?.name]);
 
   const orgId = currentOrg?.id;
 

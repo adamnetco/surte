@@ -7,7 +7,7 @@ const LoginRouter = lazy(() => import("@/modules/auth/pages/LoginRouter"));
 
 /**
  * Punto único de entrada de login. Decide qué pantalla mostrar según el host:
- *  - Storefront (surteya.sistecpos.com, otros tenants) → Login (branded por tenant).
+ *  - Storefront (subdominios de tenant) → Login (branded por tenant).
  *  - Sistema (admin/app/www/sistecpos.com, preview) → LoginRouter (portal SaaS).
  *
  * Las rutas `/login`, `/user/login` y `/admin/login` apuntan todas aquí para
