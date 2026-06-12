@@ -8,7 +8,7 @@
  *
  * El baseline se reduce a medida que avanzan las etapas 33-40. Meta final = 0.
  */
-const BASELINE = 30; // Etapa 36.b — JsonLd/emailTemplates/comments neutralizados; scaffold + migraciones excluidos
+const BASELINE = 19; // Etapa 36.b — JsonLd, emailTemplates, storage keys, comentarios neutralizados
 const TERMS = [
   "surteya",
   "SurteYa",
