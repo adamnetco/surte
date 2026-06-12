@@ -822,7 +822,7 @@ const LandingPagesTab = () => {
                     {editing.meta_title || editing.title}
                   </p>
                   <p className="text-[11px] text-green-700 dark:text-green-400">
-                    surteya.com/s/{editing.slug || "..."}
+                    {(typeof window !== "undefined" ? window.location.host : "tu-dominio.com")}/s/{editing.slug || "..."}
                   </p>
                   <p className="text-[11px] text-muted-foreground line-clamp-2">
                     {editing.meta_description || "Sin descripcion configurada..."}
