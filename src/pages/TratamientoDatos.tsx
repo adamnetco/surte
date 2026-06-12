@@ -22,7 +22,7 @@ const TratamientoDatos = () => {
         <h1 className="text-xl font-heading font-bold text-foreground">Política de Tratamiento de Datos Personales</h1>
 
         {dataTreatmentHtml ? (
-          <div className="text-sm text-muted-foreground leading-relaxed space-y-3" dangerouslySetInnerHTML={{ __html: dataTreatmentHtml }} />
+          <div className="text-sm text-muted-foreground leading-relaxed space-y-3" dangerouslySetInnerHTML={{ __html: sanitizeHtml(dataTreatmentHtml) }} />
         ) : (
           <>
             <section className="space-y-2">
