@@ -1,7 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
 
-  BarChart3, Building2, RefreshCw, Database,
+  BarChart3, Building2, RefreshCw, Database, Package,
   ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 const GLOBAL_ITEMS = [
   { to: "/superadmin", end: true, label: "Resumen SaaS", icon: BarChart3, desc: "Métricas cross-tenant" },
   { to: "/superadmin/tiendas", label: "Tiendas", icon: Building2, desc: "Listado · alta · módulos · estado" },
+  { to: "/superadmin/planes", label: "Catálogo de Planes", icon: Package, desc: "Plan × Módulos × Límites" },
   { to: "/superadmin/seguridad/acceso", label: "Acceso & Seguridad", icon: ShieldCheck, desc: "2FA, passkeys, break-glass" },
   { to: "/superadmin/seguridad/csp", label: "CSP Violaciones", icon: ShieldCheck, desc: "Telemetría CSP report-only" },
   { to: "/superadmin/cloud-tareas", label: "Cloud / Tareas", icon: Zap, desc: "Migraciones, seeds, secrets" },

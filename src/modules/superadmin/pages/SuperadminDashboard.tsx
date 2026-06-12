@@ -23,6 +23,7 @@ const CloudTasksStatus = lazy(() => import("@/modules/superadmin/pages/CloudTask
 const SeguridadAcceso = lazy(() => import("@/modules/superadmin/pages/SeguridadAcceso"));
 const CspViolations = lazy(() => import("@/modules/superadmin/pages/CspViolations"));
 const TenantLicenseSection = lazy(() => import("@/modules/superadmin/components/TenantLicenseSection"));
+const PlansCatalog = lazy(() => import("@/modules/superadmin/pages/PlansCatalog"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -94,6 +95,7 @@ const SuperadminDashboard = () => {
                 <Route index element={<OverviewTab products={[]} orders={[]} />} />
                 <Route path="tiendas" element={<OrganizationsTab />} />
                 <Route path="nueva-tienda" element={<TenantOnboardingWizard onCreated={() => navigate("/superadmin/tiendas")} />} />
+                <Route path="planes" element={<PlansCatalog />} />
                 {/* Datos globales (catálogos base, plantillas) — solo Superadmin master. */}
                 <Route path="datos" element={<DataManagementTab />} />
                 <Route path="cloud-tareas" element={<CloudTasksStatus />} />
