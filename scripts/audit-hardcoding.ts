@@ -8,7 +8,7 @@
  *
  * El baseline se reduce a medida que avanzan las etapas 33-40. Meta final = 0.
  */
-const BASELINE = 19; // Etapa 36.b — JsonLd, emailTemplates, storage keys, comentarios neutralizados
+const BASELINE = 14; // Etapa 37 — edge functions neutralizadas, seed SurteYa aislado
 const TERMS = [
   "surteya",
   "SurteYa",
