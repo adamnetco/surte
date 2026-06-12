@@ -344,7 +344,10 @@ export default function Licencias() {
           </div>
 
           <div className="grid gap-3">
-            {licenses.map(lic => {
+            {(scopeToCurrent && currentOrg
+              ? licenses.filter((l) => l.organization_id === currentOrg.id)
+              : licenses
+            ).map(lic => {
               const used = activations.filter(a => a.license_id === lic.id && !a.revoked_at).length;
               const prog = onboarding[lic.organization_id];
               const pct = onbPct(prog);
