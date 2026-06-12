@@ -352,11 +352,11 @@ const LandingPagesTab = () => {
     const templateRow = {
       slug: "ejemplo-slug",
       title: "Titulo de ejemplo",
-      meta_title: "Meta titulo | SURTE YA",
+      meta_title: "Meta titulo",
       meta_description: "Meta descripcion de 120-160 caracteres para SEO",
       heading: "Encabezado H1",
       body_html: "<h2>Seccion</h2><p>Contenido</p>",
-      city: "Bucaramanga",
+      city: "",
       page_type: "custom",
       image_url: "",
       is_active: "SI",
