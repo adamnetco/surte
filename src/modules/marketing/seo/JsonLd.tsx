@@ -26,50 +26,66 @@ const JsonLd = ({ data, id }: JsonLdProps) => {
 
 export default JsonLd;
 
+/** Origin actual (SSR-safe). Cae a string vacío si no hay window. */
+const safeOrigin = (): string =>
+  typeof window !== "undefined" ? window.location.origin : "";
+
+/** Lee área de cobertura desde settings (CSV) o devuelve []. */
+const parseAreaServed = (settings: Record<string, string>): { "@type": "City"; name: string }[] => {
+  const raw = settings.seo_area_served || settings.business_area_served || "";
+  return raw
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean)
+    .map((name) => ({ "@type": "City" as const, name }));
+};
+
 /**
- * Generate LocalBusiness JSON-LD
+ * Generate LocalBusiness JSON-LD a partir de app_settings tenant-aware.
+ * Claves usadas: seo_site_name, store_name, seo_default_description, whatsapp_number,
+ * footer_email, footer_address, seo_locality, seo_region, seo_country,
+ * seo_latitude, seo_longitude, seo_area_served (CSV), store_logo,
+ * social_facebook, social_instagram, social_tiktok.
  */
-export const buildLocalBusinessSchema = (settings: Record<string, string>) => ({
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "@id": "https://surteya.com/#business",
-  name: settings.seo_site_name || settings.store_name || "SURTÉ YA",
-  description: settings.seo_default_description || "",
-  url: "https://surteya.com",
-  telephone: settings.whatsapp_number ? `+${settings.whatsapp_number}` : undefined,
-  email: settings.footer_email || undefined,
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: settings.footer_address || "",
-    addressLocality: "Bucaramanga",
-    addressRegion: "Santander",
-    addressCountry: "CO",
-  },
-  geo: {
-    "@type": "GeoCoordinates",
-    latitude: 7.1254,
-    longitude: -73.1198,
-  },
-  areaServed: [
-    { "@type": "City", name: "Bucaramanga" },
-    { "@type": "City", name: "Floridablanca" },
-    { "@type": "City", name: "Girón" },
-    { "@type": "City", name: "Piedecuesta" },
-  ],
-  priceRange: "$$",
-  image: settings.store_logo || undefined,
-  sameAs: [
-    settings.social_facebook,
-    settings.social_instagram,
-    settings.social_tiktok,
-  ].filter(Boolean),
-  openingHoursSpecification: {
-    "@type": "OpeningHoursSpecification",
-    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    opens: "07:00",
-    closes: "18:00",
-  },
-});
+export const buildLocalBusinessSchema = (settings: Record<string, string>) => {
+  const origin = settings.site_url || safeOrigin();
+  const lat = settings.seo_latitude ? Number(settings.seo_latitude) : undefined;
+  const lng = settings.seo_longitude ? Number(settings.seo_longitude) : undefined;
+  return {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": `${origin}/#business`,
+    name: settings.seo_site_name || settings.store_name || "",
+    description: settings.seo_default_description || "",
+    url: origin,
+    telephone: settings.whatsapp_number ? `+${settings.whatsapp_number}` : undefined,
+    email: settings.footer_email || undefined,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: settings.footer_address || "",
+      addressLocality: settings.seo_locality || "",
+      addressRegion: settings.seo_region || "",
+      addressCountry: settings.seo_country || "CO",
+    },
+    geo: lat && lng
+      ? { "@type": "GeoCoordinates", latitude: lat, longitude: lng }
+      : undefined,
+    areaServed: parseAreaServed(settings),
+    priceRange: settings.seo_price_range || "$$",
+    image: settings.store_logo || undefined,
+    sameAs: [
+      settings.social_facebook,
+      settings.social_instagram,
+      settings.social_tiktok,
+    ].filter(Boolean),
+    openingHoursSpecification: {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      opens: settings.business_hours_open || "07:00",
+      closes: settings.business_hours_close || "18:00",
+    },
+  };
+};
 
 /**
  * Generate Product JSON-LD with schema.org + Google Merchant compatibility
@@ -78,8 +94,10 @@ export const buildProductSchema = (
   product: any,
   settings: Record<string, string>
 ) => {
-  const url = `https://surteya.com/producto/${product.slug || product.id}`;
+  const origin = settings.site_url || safeOrigin();
+  const url = `${origin}/producto/${product.slug || product.id}`;
   const imageUrl = product.image_url || settings.default_product_image || "";
+  const sellerName = settings.store_name || settings.seo_site_name || "";
 
   return {
     "@context": "https://schema.org",
@@ -93,7 +111,7 @@ export const buildProductSchema = (
     gtin: product.gtin || undefined,
     brand: product.brand
       ? { "@type": "Brand", name: product.brand }
-      : { "@type": "Brand", name: settings.store_name || "SURTÉ YA" },
+      : sellerName ? { "@type": "Brand", name: sellerName } : undefined,
     category: product.categories?.name || undefined,
     weight: product.weight
       ? { "@type": "QuantitativeValue", value: product.weight, unitCode: "KGM" }
@@ -101,16 +119,13 @@ export const buildProductSchema = (
     offers: {
       "@type": "Offer",
       url,
-      priceCurrency: "COP",
+      priceCurrency: settings.currency_code || "COP",
       price: product.price,
       priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
       availability: product.stock > 0
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
-      seller: {
-        "@type": "Organization",
-        name: settings.store_name || "SURTÉ YA",
-      },
+      seller: sellerName ? { "@type": "Organization", name: sellerName } : undefined,
       itemCondition: "https://schema.org/NewCondition",
     },
   };
@@ -135,20 +150,23 @@ export const buildBreadcrumbSchema = (
 /**
  * Generate WebSite JSON-LD with SearchAction
  */
-export const buildWebSiteSchema = (settings: Record<string, string>) => ({
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: settings.seo_site_name || "SURTÉ YA",
-  url: "https://surteya.com",
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: "https://surteya.com/catalogo?search={search_term_string}",
+export const buildWebSiteSchema = (settings: Record<string, string>) => {
+  const origin = settings.site_url || safeOrigin();
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: settings.seo_site_name || settings.store_name || "",
+    url: origin,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${origin}/catalogo?search={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
     },
-    "query-input": "required name=search_term_string",
-  },
-});
+  };
+};
 
 /**
  * Generate ItemList JSON-LD for product collections
@@ -156,20 +174,24 @@ export const buildWebSiteSchema = (settings: Record<string, string>) => ({
 export const buildProductListSchema = (
   products: any[],
   listName: string,
-  listUrl: string
-) => ({
-  "@context": "https://schema.org",
-  "@type": "ItemList",
-  name: listName,
-  url: listUrl,
-  numberOfItems: products.length,
-  itemListElement: products.slice(0, 50).map((p, i) => ({
-    "@type": "ListItem",
-    position: i + 1,
-    url: `https://surteya.com/producto/${p.slug || p.id}`,
-    name: p.name,
-  })),
-});
+  listUrl: string,
+  settings?: Record<string, string>
+) => {
+  const origin = settings?.site_url || safeOrigin();
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: listName,
+    url: listUrl,
+    numberOfItems: products.length,
+    itemListElement: products.slice(0, 50).map((p, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${origin}/producto/${p.slug || p.id}`,
+      name: p.name,
+    })),
+  };
+};
 
 /**
  * Generate FAQPage JSON-LD — boosts SERP rich snippets for local SEO.
