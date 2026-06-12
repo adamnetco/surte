@@ -341,11 +341,11 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
                 <div className="bg-muted/50 rounded-lg p-3 space-y-0.5">
                   <p className="text-[9px] text-muted-foreground font-medium mb-1">Vista previa en Google</p>
                   <p className="text-sm text-[#1a0dab] font-medium leading-tight truncate">
-                    {form.meta_title || `Domicilios en ${form.city} — SURTÉ YA`}
+                    {form.meta_title || `Domicilios en ${form.city}`}
                   </p>
-                  <p className="text-[11px] text-[#006621] truncate">surteya.com › hub › ciudad › {form.slug || genSlug(form.city || "ciudad")}</p>
+                  <p className="text-[11px] text-[#006621] truncate">{(typeof window !== "undefined" ? window.location.host : "tu-dominio.com")} › hub › ciudad › {form.slug || genSlug(form.city || "ciudad")}</p>
                   <p className="text-xs text-[#545454] line-clamp-2 leading-snug">
-                    {form.meta_description || `Pide salsas, cárnicos, pulpas y más con envío a ${form.city}...`}
+                    {form.meta_description || `Pide productos con envío a ${form.city}...`}
                   </p>
                 </div>
               )}
