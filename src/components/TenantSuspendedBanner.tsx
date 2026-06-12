@@ -15,6 +15,7 @@ import { useSupportContact } from "@/lib/support";
 export default function TenantSuspendedBanner() {
   const { currentOrg } = useOrganization();
   const { role } = useAuth();
+  const support = useSupportContact();
 
   const { data: state } = useQuery({
     queryKey: ["org-lifecycle", currentOrg?.id],
