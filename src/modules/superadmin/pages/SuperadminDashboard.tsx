@@ -24,6 +24,7 @@ const SeguridadAcceso = lazy(() => import("@/modules/superadmin/pages/SeguridadA
 const CspViolations = lazy(() => import("@/modules/superadmin/pages/CspViolations"));
 const TenantLicenseSection = lazy(() => import("@/modules/superadmin/components/TenantLicenseSection"));
 const PlansCatalog = lazy(() => import("@/modules/superadmin/pages/PlansCatalog"));
+const TenantEntitlements = lazy(() => import("@/modules/superadmin/pages/TenantEntitlements"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -115,6 +116,7 @@ const SuperadminDashboard = () => {
 
                 <Route path="t/:slug/sync" element={<RequireActiveTenant><SyncSection /></RequireActiveTenant>} />
                 <Route path="t/:slug/licencia" element={<RequireActiveTenant><TenantLicenseSection /></RequireActiveTenant>} />
+                <Route path="t/:slug/entitlements" element={<RequireActiveTenant><TenantEntitlements /></RequireActiveTenant>} />
                 <Route path="t/:slug/admin" element={<RequireActiveTenant><AdminRedirect /></RequireActiveTenant>} />
 
                 <Route path="*" element={<Navigate to="/superadmin" replace />} />

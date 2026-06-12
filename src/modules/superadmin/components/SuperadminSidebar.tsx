@@ -25,6 +25,7 @@ const TENANT_ITEMS = [
   { sub: "datos", label: "Datos (isla)", icon: Database, desc: "Export/import aislado" },
   { sub: "sync", label: "Sincronización", icon: RefreshCw, desc: "WP, WhatsApp, DIAN" },
   { sub: "licencia", label: "Licencia", icon: Key, desc: "Plan y vigencia" },
+  { sub: "entitlements", label: "Anulaciones", icon: ShieldCheck, desc: "Overrides de módulos y límites" },
 ];
 
 
