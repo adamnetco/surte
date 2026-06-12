@@ -400,7 +400,11 @@ const LoginRouter = () => {
             </form>
 
             {(backendDown || hasStaleTokens) && (
-              <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/60">
+              <div
+                role="alert"
+                aria-live="polite"
+                className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/60"
+              >
                 <p>
                   {backendDown
                     ? "La autenticación está tardando más de lo normal. Si el problema continúa, limpia la sesión local e intenta de nuevo."
@@ -409,7 +413,7 @@ const LoginRouter = () => {
                 <button
                   type="button"
                   onClick={clearStaleAuthAndReload}
-                  className="mt-2 text-white underline decoration-white/30 underline-offset-4 hover:text-white/80"
+                  className="mt-2 text-white underline decoration-white/30 underline-offset-4 hover:text-white/80 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none rounded"
                 >
                   Limpiar sesión local
                 </button>
