@@ -15,8 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import surteLogo from "@/assets/surte-logo.png";
-
-const CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"] as const;
+import { useTenantContact } from "@/modules/tenant";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TopBarProps {
   onSearch?: (query: string) => void;
@@ -29,8 +30,24 @@ const TopBar = ({ onSearch }: TopBarProps) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [cityOpen, setCityOpen] = useState(false);
+  const { city: defaultCity } = useTenantContact();
+  const { data: municipalities } = useQuery({
+    queryKey: ["topbar-cities"],
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("municipality_settings")
+        .select("city")
+        .eq("is_active", true)
+        .order("city");
+      return data ?? [];
+    },
+  });
+  const CITIES = (municipalities && municipalities.length > 0)
+    ? municipalities.map((m: any) => m.city)
+    : (defaultCity ? [defaultCity] : []);
   const [selectedCity, setSelectedCity] = useState<string>(() => {
-    return localStorage.getItem("surte_city") || "Bucaramanga";
+    return localStorage.getItem("tenant_city") || "";
   });
   const navigate = useNavigate();
   const cityRef = useRef<HTMLDivElement>(null);

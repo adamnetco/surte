@@ -37,7 +37,7 @@ const CityPickerModal = () => {
       return;
     }
 
-    const saved = localStorage.getItem("surte_city");
+    const saved = localStorage.getItem("tenant_city");
     if (!saved) {
       setOpen(true);
       // Show skip option after 5 seconds so user isn't stuck forever
@@ -47,18 +47,19 @@ const CityPickerModal = () => {
   }, [isStorefront, isAdminRoute]);
 
   const handleSelect = (city: string) => {
-    localStorage.setItem("surte_city", city);
-    window.dispatchEvent(new Event("surte_city_change"));
+    localStorage.setItem("tenant_city", city);
+    window.dispatchEvent(new Event("tenant_city_change"));
     setOpen(false);
   };
 
   const handleSkip = () => {
-    // Default to first city
-    const defaultCity = cities[0] || "Bucaramanga";
-    handleSelect(defaultCity);
+    // Default to first city if any
+    const defaultCity = cities[0];
+    if (defaultCity) handleSelect(defaultCity);
+    else setOpen(false);
   };
 
-  const cities = municipalities?.map((m) => m.city) ?? ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
+  const cities = municipalities?.map((m) => m.city) ?? [];
 
   return (
     <AnimatePresence>
