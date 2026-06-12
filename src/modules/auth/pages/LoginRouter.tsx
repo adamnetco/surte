@@ -434,7 +434,18 @@ const LoginRouter = () => {
                   </button>
                   <div className="mb-3 text-[11px] text-white/50 flex items-center justify-between px-1">
                     <span>Intentos: {gate.attemptsUsed}/{gate.attemptsMax}</span>
-                    <a href="/auth-status" className="underline decoration-white/30 hover:text-white">Ver estado de autenticación</a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tenantSlug = tienda.trim().toLowerCase();
+                        const url = new URL("/reset-password", window.location.origin);
+                        if (tenantSlug) url.searchParams.set("tienda", tenantSlug);
+                        navigate(url.pathname + url.search);
+                      }}
+                      className="underline decoration-white/30 hover:text-white"
+                    >
+                      Recuperar acceso
+                    </button>
                   </div>
                   {emailNotice && (
                     <p
