@@ -8,7 +8,7 @@
  *
  * El baseline se reduce a medida que avanzan las etapas 33-40. Meta final = 0.
  */
-const BASELINE = 218; // hallazgos al cierre de Etapa 32
+const BASELINE = 180; // Etapa 36.a — admin-cms + pos + auth neutralizados
 const TERMS = [
   "surteya",
   "SurteYa",
