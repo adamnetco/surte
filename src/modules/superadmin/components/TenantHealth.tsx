@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import TenantLifecyclePanel from "./TenantLifecyclePanel";
 
 type Check = {
   id: string;
