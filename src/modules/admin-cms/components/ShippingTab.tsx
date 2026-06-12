@@ -20,7 +20,7 @@ const useCities = (orgId?: string | null) => useQuery({
   },
 });
 
-const DEFAULT_CITIES = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"];
+const DEFAULT_CITIES: string[] = [];
 
 const ShippingTab = ({ queryClient }: { queryClient: any }) => {
   const { currentOrg } = useOrganization();
