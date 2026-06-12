@@ -150,7 +150,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
       toast.success(`Usuario ${createForm.full_name} creado exitosamente`);
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setCreateModal(false);
-      setCreateForm({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "Bucaramanga", business_type: "detal", role: "user" });
+      setCreateForm({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", business_type: "detal", role: "user" });
     } catch (err: any) {
       toast.error(err.message || "Error al crear usuario");
     } finally {
