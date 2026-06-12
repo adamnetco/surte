@@ -45,7 +45,35 @@ export default tseslint.config(
           message:
             "softwarepos.online quedó deprecado en la Fase 1. Usa la ruta /pos nativa.",
         },
+        // Etapa 40 — anti-regresión tenant-hardcode. El core no debe contener
+        // literales atados a un tenant específico. Tenants se configuran vía
+        // `organizations`, `tenant_domains` y `app_settings`.
+        {
+          selector:
+            "Literal[value=/\\b(SurteYa|surteya|Bucaramanga|Santander|C[áa]rnicos|Pulpas|Panificados)\\b/]",
+          message:
+            "Etapa 40: no introduzcas literales atados a un tenant. Léelos de `organizations`/`app_settings`.",
+        },
+        {
+          selector:
+            "TemplateElement[value.raw=/\\b(SurteYa|surteya|Bucaramanga|Santander|C[áa]rnicos|Pulpas|Panificados)\\b/]",
+          message:
+            "Etapa 40: no introduzcas literales atados a un tenant en template strings.",
+        },
       ],
+    },
+  },
+  // Excepciones explícitas (legacy adapters, superadmin tasks, tests, scaffolds Lovable):
+  {
+    files: [
+      "src/components/SurteyaRedirect.tsx",
+      "src/modules/tenant/lib/legacyDomains.ts",
+      "src/modules/superadmin/lib/cloudTasks.ts",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": "off",
     },
   },
 );
