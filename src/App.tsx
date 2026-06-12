@@ -268,8 +268,8 @@ const App = () => (
                     <Route path="/t/:slug/admin" element={<HostGuard require="system"><TenantWorkspace /></HostGuard>} />
                     <Route path="/admin/diag" element={<MasterOnlyGuard><AdminDiag /></MasterOnlyGuard>} />
                     <Route path="/admin-diag" element={<MasterOnlyGuard><AdminDiag /></MasterOnlyGuard>} />
-                    <Route path="/auth-status" element={<AuthStatus />} />
-                    <Route path="/admin/auth-status" element={<AuthStatus />} />
+                    <Route path="/auth-status" element={<MasterOnlyGuard><AuthStatus /></MasterOnlyGuard>} />
+                    <Route path="/admin/auth-status" element={<MasterOnlyGuard><AuthStatus /></MasterOnlyGuard>} />
 
                     <Route path="*" element={<NotFound />} />
                   </Routes>
