@@ -3752,55 +3752,88 @@ export type Database = {
       }
       organizations: {
         Row: {
+          accent_color: string | null
           business_type: string
+          city: string | null
           country: string
           created_at: string
           currency: string
+          default_locale: string
+          hero_subtitle: string | null
+          hero_title: string | null
           id: string
           is_active: boolean
+          legal_name: string | null
           logo_url: string | null
           name: string
           pos_default_mode: string
           pos_enabled_modes: string[]
+          primary_color: string | null
+          region: string | null
           settings: Json
           slug: string
+          support_email: string | null
+          tagline: string | null
           tax_id: string | null
           timezone: string
           updated_at: string
+          whatsapp_phone: string | null
         }
         Insert: {
+          accent_color?: string | null
           business_type?: string
+          city?: string | null
           country?: string
           created_at?: string
           currency?: string
+          default_locale?: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
           id?: string
           is_active?: boolean
+          legal_name?: string | null
           logo_url?: string | null
           name: string
           pos_default_mode?: string
           pos_enabled_modes?: string[]
+          primary_color?: string | null
+          region?: string | null
           settings?: Json
           slug: string
+          support_email?: string | null
+          tagline?: string | null
           tax_id?: string | null
           timezone?: string
           updated_at?: string
+          whatsapp_phone?: string | null
         }
         Update: {
+          accent_color?: string | null
           business_type?: string
+          city?: string | null
           country?: string
           created_at?: string
           currency?: string
+          default_locale?: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
           id?: string
           is_active?: boolean
+          legal_name?: string | null
           logo_url?: string | null
           name?: string
           pos_default_mode?: string
           pos_enabled_modes?: string[]
+          primary_color?: string | null
+          region?: string | null
           settings?: Json
           slug?: string
+          support_email?: string | null
+          tagline?: string | null
           tax_id?: string | null
           timezone?: string
           updated_at?: string
+          whatsapp_phone?: string | null
         }
         Relationships: []
       }
