@@ -71,7 +71,7 @@ export async function auditedMutation<T>(
 
   const { error: execErr } = await supabase.rpc("mark_critical_action_executed", {
     _action_id: actionId!,
-    _result: (result ?? {}) as Record<string, unknown>,
+    _result: ((result ?? {}) as unknown) as any,
   });
   if (execErr) {
     // La mutación ya corrió; reportamos pero no la revertimos automáticamente.
