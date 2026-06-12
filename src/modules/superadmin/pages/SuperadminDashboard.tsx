@@ -116,6 +116,7 @@ const SuperadminDashboard = () => {
 
                 <Route path="t/:slug/sync" element={<RequireActiveTenant><SyncSection /></RequireActiveTenant>} />
                 <Route path="t/:slug/licencia" element={<RequireActiveTenant><TenantLicenseSection /></RequireActiveTenant>} />
+                <Route path="t/:slug/entitlements" element={<RequireActiveTenant><TenantEntitlements /></RequireActiveTenant>} />
                 <Route path="t/:slug/admin" element={<RequireActiveTenant><AdminRedirect /></RequireActiveTenant>} />
 
                 <Route path="*" element={<Navigate to="/superadmin" replace />} />
