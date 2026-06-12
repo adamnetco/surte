@@ -133,12 +133,12 @@ const RouteFallback = () => (
  * - admin.* → AdminDashboard
  * - pos.*   → POSWorkspace
  * - mi.*    → ClientPortal
- * - <slug>.sistecpos.com (surteya, futuros tenants) → Storefront (Index)
+ * - <slug>.sistecpos.com (cada tenant) → Storefront (Index)
  * - sistecpos.com / www / app → LoginRouter (portal de acceso al SaaS)
  */
 const TenantHome = () => {
   const tenant = detectTenant();
-  // Los storefronts (surteya.*, futuros tenants) siguen mostrando la tienda.
+  // Los storefronts (cualquier slug de tenant) siguen mostrando la tienda.
   if (isStorefrontTenant(tenant)) return <Index />;
   // Para admin/app/www/pos/mi → portal de login unificado.
   // Tras autenticarse, LoginRouter redirige al panel correspondiente según rol.
@@ -217,7 +217,7 @@ const App = () => (
                     <Route path="/tratamiento-datos" element={<TratamientoDatos />} />
                     <Route path="/planes" element={<Planes />} />
 
-                    {/* === Storefront (solo en hosts de tenant: surteya.sistecpos.com, …) === */}
+                    {/* === Storefront (solo en hosts de tenant: <slug>.sistecpos.com) === */}
                     <Route path="/catalogo" element={<HostGuard require="storefront"><Catalogo /></HostGuard>} />
                     <Route path="/carrito" element={<HostGuard require="storefront"><Carrito /></HostGuard>} />
                     <Route path="/categorias" element={<HostGuard require="storefront"><Categorias /></HostGuard>} />

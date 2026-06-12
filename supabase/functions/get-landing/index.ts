@@ -1,5 +1,5 @@
 // Lectura pública de una landing dinámica (page + sections) por scope/slug.
-// Consumido por sistecpos.com, surteya.com y cualquier tenant Astro.
+// Consumido por sistecpos.com y cualquier tenant (Astro u otro).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const cors = {
