@@ -14,7 +14,7 @@
  */
 import { spawnSync } from "node:child_process";
 
-const BASELINE = 6; // Etapa 40 — fallback keys legacy + READMEs + cloudTasks aceptados como deuda controlada.
+const BASELINE = 5; // Etapa 40 — docstrings tenant + cloudTasks superadmin (deuda controlada).
 const TERMS = [
   "surteya",
   "SurteYa",
