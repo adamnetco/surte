@@ -211,7 +211,7 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
                 setForm({ ...form, city: e.target.value });
               }}
               onBlur={() => { if (form.city && !form.slug) autoFillSeo(form.city); }}
-              placeholder="Ej: Bucaramanga"
+              placeholder="Ej: Tu ciudad"
               className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none transition-colors"
             />
           </div>
