@@ -47,8 +47,8 @@ const IGNORE_GLOBS = [
   "src/modules/platform/context/ThemeContext.tsx",
   "src/modules/platform/context/OrganizationContext.tsx",
   "**/README.md",
-  ".test.ts",
-  ".test.tsx",
+  "**/*.test.ts",
+  "**/*.test.tsx",
 ];
 
 const args = [
