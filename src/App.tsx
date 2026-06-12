@@ -25,6 +25,7 @@ import GlobalCommandPalette from "@/components/GlobalCommandPalette";
 import AuthHealthMonitor from "@/components/AuthHealthMonitor";
 const OnboardingChecklist = lazy(() => import("@/modules/onboarding/components/OnboardingChecklist"));
 import DevBypassBanner from "@/components/DevBypassBanner";
+import TenantSuspendedBanner from "@/components/TenantSuspendedBanner";
 import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
