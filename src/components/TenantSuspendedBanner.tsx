@@ -3,10 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
-
-const SUPPORT_WHATSAPP =
-  "https://wa.me/573001234567?text=" +
-  encodeURIComponent("Hola, mi tienda está bloqueada y necesito reactivarla.");
+import { useSupportContact } from "@/lib/support";
 
 /**
  * Banner global no descartable que se muestra cuando la tienda actual
