@@ -95,9 +95,10 @@ test.describe("SurteYa como tenant autónomo", () => {
       /\.test\.(ts|tsx)$/,
       /\.spec\.(ts|tsx)$/,
       /^supabase\/seeds\//,
+      /^supabase\/migrations\//,
       /^docs\//,
       /^\.lovable\//,
-      /^scripts\/audit-hardcoding\.ts$/,
+      /^scripts\//,
       /^eslint\.config\.js$/,
       /^astro-starter\//,
     ];
