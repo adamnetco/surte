@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     const settings: Record<string, string> = {};
     settingsRows?.forEach((r: any) => { settings[r.key] = r.value; });
 
-    const storeName = settings.store_name || 'SURTÉ YA';
+    const storeName = settings.store_name || Deno.env.get('PUBLIC_SITE_NAME') || 'Mi Negocio';
     const defaultImg = settings.default_product_image || '';
 
     let feed = `<?xml version="1.0" encoding="UTF-8"?>
