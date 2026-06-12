@@ -4,6 +4,7 @@ import StoreFooter from "@/modules/storefront/components/StoreFooter";
 import HeadMeta from "@/modules/marketing/seo/HeadMeta";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { useTenantBranding, useTenantContact, useTenantLegal } from "@/modules/tenant";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 const TratamientoDatos = () => {
   const { legalName, name } = useTenantBranding();
@@ -21,7 +22,7 @@ const TratamientoDatos = () => {
         <h1 className="text-xl font-heading font-bold text-foreground">Política de Tratamiento de Datos Personales</h1>
 
         {dataTreatmentHtml ? (
-          <div className="text-sm text-muted-foreground leading-relaxed space-y-3" dangerouslySetInnerHTML={{ __html: dataTreatmentHtml }} />
+          <div className="text-sm text-muted-foreground leading-relaxed space-y-3" dangerouslySetInnerHTML={{ __html: sanitizeHtml(dataTreatmentHtml) }} />
         ) : (
           <>
             <section className="space-y-2">

@@ -49,22 +49,23 @@ Deno.serve(async (req) => {
     }
     const body = parsed.data;
 
-    // Authz: requiere caller superadmin (validado por RLS del RPC) — usamos service role para crear usuario.
+    // Authz: requiere caller superadmin con JWT de usuario válido (no anon, no vacío).
     const authHeader = req.headers.get("Authorization") ?? "";
-    const callerToken = authHeader.replace(/^Bearer\s+/i, "");
+    const callerToken = authHeader.replace(/^Bearer\s+/i, "").trim();
 
-    // Si viene un JWT de usuario, validar que sea superadmin antes de gastar quota
-    if (callerToken && callerToken !== ANON_KEY) {
-      const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: u } = await userClient.auth.getUser();
-      if (!u?.user) return json({ error: "unauthenticated" }, 401);
-      const { data: isSuper } = await userClient.rpc("is_master_superadmin", { _user_id: u.user.id });
-      if (!isSuper) {
-        const { data: hasRole } = await userClient.rpc("has_role", { _user_id: u.user.id, _role: "superadmin" });
-        if (!hasRole) return json({ error: "forbidden" }, 403);
-      }
+    if (!callerToken || callerToken === ANON_KEY) {
+      return json({ error: "unauthenticated" }, 401);
+    }
+
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${callerToken}` } },
+    });
+    const { data: u, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !u?.user) return json({ error: "unauthenticated" }, 401);
+    const { data: isSuper } = await userClient.rpc("is_master_superadmin", { _user_id: u.user.id });
+    if (!isSuper) {
+      const { data: hasRole } = await userClient.rpc("has_role", { _user_id: u.user.id, _role: "superadmin" });
+      if (!hasRole) return json({ error: "forbidden" }, 403);
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
