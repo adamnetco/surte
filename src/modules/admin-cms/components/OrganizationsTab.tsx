@@ -225,10 +225,10 @@ const OrganizationsTab = () => {
               <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 text-primary">
                 <Building2 className="h-5 w-5" aria-hidden />
               </span>
-              Organizaciones
+              Tiendas
             </h1>
             <p className="text-sm text-muted-foreground">
-              Gestiona las tiendas, sus módulos y su estado operativo.
+              Crea, activa y administra las tiendas (tenants) del SaaS, sus módulos y estado.
             </p>
           </div>
           <Button onClick={() => setCreateOpen(true)} size="default" className="shrink-0">
