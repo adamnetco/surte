@@ -8,7 +8,7 @@
  *
  * El baseline se reduce a medida que avanzan las etapas 33-40. Meta final = 0.
  */
-const BASELINE = 180; // Etapa 36.a — admin-cms + pos + auth neutralizados
+const BASELINE = 30; // Etapa 36.b — JsonLd/emailTemplates/comments neutralizados; scaffold + migraciones excluidos
 const TERMS = [
   "surteya",
   "SurteYa",
@@ -19,9 +19,32 @@ const TERMS = [
   "Panificados",
 ];
 const SCOPES = ["src/", "supabase/"];
+// Excluidos del audit (legítimos o gestionados por scaffolds):
+// - supabase/migrations: seeds históricos (regla POS-primer: no se editan)
+// - supabase/functions/auth-email-hook & send-transactional-email & resend-mail-service & send-web-push: scaffold de email-domain
+// - SurteyaRedirect.tsx, legacyDomains.ts: redirección de dominio legacy
+// - *.test.ts: fixtures con dominios reales
+const IGNORE_GLOBS = [
+  "supabase/migrations",
+  "supabase/functions/auth-email-hook",
+  "supabase/functions/send-transactional-email",
+  "supabase/functions/resend-mail-service",
+  "supabase/functions/send-web-push",
+  "supabase/functions/_shared/transactional-email-templates",
+  "src/components/SurteyaRedirect.tsx",
+  "src/modules/tenant/lib/legacyDomains.ts",
+  ".test.ts",
+  ".test.tsx",
+];
 
 const cmd = new Deno.Command("rg", {
-  args: ["-n", "--no-heading", TERMS.join("|"), ...SCOPES],
+  args: [
+    "-n",
+    "--no-heading",
+    ...IGNORE_GLOBS.flatMap((g) => ["-g", `!${g}`, "-g", `!${g}/**`]),
+    TERMS.join("|"),
+    ...SCOPES,
+  ],
   stdout: "piped",
   stderr: "null",
 });
