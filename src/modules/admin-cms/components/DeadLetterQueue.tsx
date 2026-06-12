@@ -35,6 +35,7 @@ export default function DeadLetterQueue() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [previewRow, setPreviewRow] = useState<OutboxRow | null>(null);
+  const { currentOrg } = useOrganization();
 
   const load = async () => {
     const { data, error } = await (supabase as any)
