@@ -28,7 +28,8 @@ interface OrganizationContextValue {
   refresh: () => Promise<void>;
 }
 
-const STORAGE_KEY = "surteya:currentOrgId";
+const STORAGE_KEY = "sistecpos:currentOrgId";
+const LEGACY_STORAGE_KEY = "surteya:currentOrgId";
 
 const OrganizationContext = createContext<OrganizationContextValue | undefined>(undefined);
 
@@ -37,7 +38,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(
-    () => (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null)
+    () => (typeof window !== "undefined" ? (localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY)) : null)
   );
   const [modules, setModules] = useState<OrganizationModule[]>([]);
 

@@ -9,17 +9,16 @@
  *   sistecpos.com / www → 'www'    (Landing pública de prospección)
  *
  * Hosts de **tenants** (cada negocio cliente):
- *   surteya.sistecpos.com  → tenant slug 'surteya' (storefront del negocio)
- *   <slug>.sistecpos.com   → tenant slug genérico (futuros negocios)
+ *   <slug>.sistecpos.com    → tenant slug (storefront del negocio)
  *
  * Dev (localhost, *.lovable.app preview) → 'app' por defecto.
  *
- * Override manual (solo para inspección puntual): `?tenant=surteya`. Para
+ * Override manual (solo para inspección puntual): `?tenant=<slug>`. Para
  * persistir entre navegaciones, añadir `&persist=1`. Sin `persist`, el override
  * se aplica solo a la URL actual y no contamina futuras sesiones.
  */
 export type SystemTenant = "admin" | "mi" | "pos" | "app" | "www";
-// Storefront tenant = cualquier slug de negocio (surteya, <futuro>, ...)
+// Storefront tenant = cualquier slug de negocio
 export type Tenant = SystemTenant | string;
 
 const SYSTEM: SystemTenant[] = ["admin", "mi", "pos", "app", "www"];

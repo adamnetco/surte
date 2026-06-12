@@ -5,8 +5,8 @@ const corsHeaders = {
   'Content-Type': 'application/xml; charset=utf-8',
 };
 
-const BASE_URL = 'https://surteya.com';
-const CITIES = ['bucaramanga', 'floridablanca', 'giron', 'piedecuesta'];
+const BASE_URL = Deno.env.get('PUBLIC_SITE_URL') || 'https://app.sistecpos.com';
+const CITIES = (Deno.env.get('SITEMAP_CITIES') || '').split(',').map(s => s.trim()).filter(Boolean);
 
 function escapeXml(str: string): string {
   return (str || '')
@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
 
   // ─── Multi-tenant: resuelve organization_id por host ──────
   // Acepta ?host=foo.com o lo deriva del Host header. Si no resuelve, hace
-  // fallback al comportamiento legacy (surteya) para mantener compatibilidad.
+  // fallback al comportamiento legacy para mantener compatibilidad.
   const requestedHost = (url.searchParams.get('host') || req.headers.get('host') || '').toLowerCase();
   let tenantOrgId: string | null = null;
   if (requestedHost) {

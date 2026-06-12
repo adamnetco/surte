@@ -1,7 +1,7 @@
 /**
  * WhatsApp Flow — JSON template for Flow Designer.
  *
- * This schema mirrors the SurteYa `products` table fields so that the
+ * This schema mirrors the tenant `products` table fields so that the
  * Meta WhatsApp Flow Designer can read/write a cart that is identical to
  * the web `persistent_carts` row addressed by `cart_token`.
  *
@@ -30,7 +30,7 @@ export const WHATSAPP_FLOW_TEMPLATE = {
   screens: [
     {
       id: "PRODUCT_LIST",
-      title: "Catálogo SurteYa",
+      title: "Catálogo",
       terminal: false,
       data: {
         cart_token: { type: "string", __example__: "00000000-0000-0000-0000-000000000000" },
@@ -53,7 +53,7 @@ export const WHATSAPP_FLOW_TEMPLATE = {
               product_id: "uuid-aqui",
               name: "Pulpa de mango 500g",
               price: 12000,
-              image_url: "https://surteya.com/img/mango.jpg",
+              image_url: "https://example.com/img/mango.jpg",
               unit: "bolsa",
               stock: 24,
               slug: "pulpa-mango-500g",

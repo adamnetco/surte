@@ -55,7 +55,7 @@ class SurteyaOfflineDB extends Dexie {
   meta!: Table<SyncMeta, string>;
 
   constructor() {
-    super("surteya_offline_v1");
+    super("sistecpos_offline_v1");
     this.version(1).stores({
       products: "id, name, category_id, updated_at",
       categories: "id, slug, sort_order",

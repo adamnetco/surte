@@ -37,6 +37,7 @@ const StoreFooter = () => {
   const address = settings?.footer_address || "";
   const nit = settings?.footer_nit || "";
   const legalText = settings?.footer_text || "";
+  const description = settings?.store_description || settings?.footer_description || "";
   const googleMapsUrl = settings?.google_maps_url || "https://share.google/DK24P9JkD74z2iFaZ";
   const googleMapsEmbed = settings?.google_maps_embed || "";
   const facebook = settings?.social_facebook || "";
@@ -69,7 +70,7 @@ const StoreFooter = () => {
             <h3 className="font-heading font-bold text-lg mb-2">{storeName}</h3>
             {nit && <p className="text-xs opacity-70 mb-3">NIT: {nit}</p>}
             <p className="text-sm opacity-80 leading-relaxed">
-              Soluciones alimenticias para tu negocio. Pulpas, cárnicos, salsas y más.
+              {description || "Tu catálogo siempre disponible."}
             </p>
             {hasSocial && (
               <div className="flex items-center gap-2 mt-4">

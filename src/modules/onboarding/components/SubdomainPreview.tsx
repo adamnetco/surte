@@ -77,7 +77,7 @@ export function SubdomainPreview({ value, onChange, onStatusChange, currentSlug,
           autoFocus={autoFocus}
           value={value}
           onChange={(e) => onChange(slugify(e.target.value))}
-          placeholder="surteya"
+          placeholder="minegocio"
           inputMode="text"
           autoComplete="off"
           spellCheck={false}

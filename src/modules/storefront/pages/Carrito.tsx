@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { trackPurchase } from "@/modules/marketing/seo/Analytics";
 import { mailService } from "@/modules/email/mailService";
-import { orderConfirmationTemplate } from "@/modules/email/emailTemplates";
+import { orderConfirmationTemplate, brandFromSettings } from "@/modules/email/emailTemplates";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -340,6 +340,7 @@ const Carrito = () => {
           timeSlot,
           paymentMethod,
           address: address || undefined,
+          brand: brandFromSettings(settings),
         });
         mailService.send({
           to: email,

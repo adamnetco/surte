@@ -20,7 +20,7 @@ interface SeoBreadcrumbsProps {
   className?: string;
 }
 
-const BASE_URL = "https://surteya.com";
+const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
 
 const SeoBreadcrumbs = ({ items, className }: SeoBreadcrumbsProps) => {
   const allItems: BreadcrumbSegment[] = [{ label: "Inicio", href: "/" }, ...items];

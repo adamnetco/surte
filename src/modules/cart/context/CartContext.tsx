@@ -50,7 +50,8 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const STORAGE_KEY = "surteya_cart";
+const STORAGE_KEY = "tenant_cart";
+const LEGACY_STORAGE_KEY = "surteya_cart";
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /** Unique key for a cart line */
@@ -69,7 +70,7 @@ function saveCart(items: CartItem[]) {
 
 function loadCart(): CartItem[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return [];
     const { items, ts } = JSON.parse(raw) as { items: CartItem[]; ts: number };
     if (Date.now() - ts > TTL_MS) {
