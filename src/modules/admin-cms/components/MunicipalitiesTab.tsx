@@ -67,8 +67,8 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
     setForm((prev) => ({
       ...prev,
       slug: prev.slug || slug,
-      meta_title: prev.meta_title || `Domicilios en ${cityName} — SURTÉ YA | Alimentos al Mayor y Detal`,
-      meta_description: prev.meta_description || `Pide salsas, cárnicos, pulpas y más con envío a domicilio en ${cityName}, Santander. Precios mayoristas y al detal. Pedido mínimo desde $120.000.`,
+      meta_title: prev.meta_title || `Domicilios en ${cityName} | Pedidos online`,
+      meta_description: prev.meta_description || `Pide productos con envío a domicilio en ${cityName}. Precios al mayor y al detal.`,
     }));
   };
 
