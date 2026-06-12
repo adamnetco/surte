@@ -45,7 +45,7 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
   const [bulkSaving, setBulkSaving] = useState(false);
 
   const defaultValues: ShippingZoneFormValues = {
-    city: CITIES[0] || "Bucaramanga",
+    city: CITIES[0] || "",
     neighborhood: "",
     delivery_price: 0,
   };
