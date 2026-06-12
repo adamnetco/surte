@@ -104,8 +104,10 @@ const ResetPassword = () => {
     if (!email) return;
     setLoading(true);
     try {
+      const redirectUrl = new URL("/reset-password", window.location.origin);
+      if (tiendaSlug) redirectUrl.searchParams.set("tienda", tiendaSlug);
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl.toString(),
       });
       if (error) throw error;
 
