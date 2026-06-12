@@ -22,6 +22,7 @@ const TenantDataIsland = lazy(() => import("@/modules/superadmin/components/Tena
 const CloudTasksStatus = lazy(() => import("@/modules/superadmin/pages/CloudTasksStatus"));
 const SeguridadAcceso = lazy(() => import("@/modules/superadmin/pages/SeguridadAcceso"));
 const CspViolations = lazy(() => import("@/modules/superadmin/pages/CspViolations"));
+const TenantLicenseSection = lazy(() => import("@/modules/superadmin/components/TenantLicenseSection"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -31,20 +32,7 @@ const SyncSection = () => (
   </div>
 );
 
-const LicenseSection = () => {
-  const navigate = useNavigate();
-  return (
-    <div className="p-6 rounded-xl border border-border bg-card">
-      <h3 className="font-heading font-bold text-lg mb-1">Gestión de licencias</h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        Administra planes y vigencias en la vista dedicada.
-      </p>
-      <button onClick={() => navigate("/licencias")} className="btn-surte text-sm px-4 py-2">
-        Abrir Licencias →
-      </button>
-    </div>
-  );
-};
+// LicenseSection ahora vive en TenantLicenseSection.tsx (filtrado por tienda activa).
 
 const SuperadminDashboard = () => {
   const { user, role, loading, signOut } = useAuth();
@@ -124,7 +112,7 @@ const SuperadminDashboard = () => {
                 <Route path="t/:slug/datos" element={<RequireActiveTenant><TenantDataIsland /></RequireActiveTenant>} />
 
                 <Route path="t/:slug/sync" element={<RequireActiveTenant><SyncSection /></RequireActiveTenant>} />
-                <Route path="t/:slug/licencia" element={<RequireActiveTenant><LicenseSection /></RequireActiveTenant>} />
+                <Route path="t/:slug/licencia" element={<RequireActiveTenant><TenantLicenseSection /></RequireActiveTenant>} />
                 <Route path="t/:slug/admin" element={<RequireActiveTenant><AdminRedirect /></RequireActiveTenant>} />
 
                 <Route path="*" element={<Navigate to="/superadmin" replace />} />
