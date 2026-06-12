@@ -8,7 +8,7 @@
  *
  * El baseline se reduce a medida que avanzan las etapas 33-40. Meta final = 0.
  */
-const BASELINE = 241; // hallazgos al cierre de Etapa 32
+const BASELINE = 235; // hallazgos al cierre de Etapa 32
 const TERMS = [
   "surteya",
   "SurteYa",
