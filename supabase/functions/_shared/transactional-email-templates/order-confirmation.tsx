@@ -144,7 +144,7 @@ export const template = {
   },
 } satisfies TemplateEntry
 
-// Styles — SURTÉ YA brand palette
+// Styles — neutral brand palette (tenant brand applied via props)
 const main = {
   backgroundColor: '#ffffff',
   fontFamily: "'Inter', 'Montserrat', Arial, sans-serif",
@@ -163,7 +163,7 @@ const brand = {
   margin: '0',
   letterSpacing: '1px',
 }
-const tagline = {
+const taglineStyle = {
   fontSize: '11px',
   color: '#76B833',
   margin: '4px 0 0',
