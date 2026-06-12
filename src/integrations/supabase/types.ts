@@ -7892,6 +7892,10 @@ export type Database = {
       }
     }
     Functions: {
+      _attach_tenant_writable_guard: {
+        Args: { _table: unknown }
+        Returns: undefined
+      }
       _require_superadmin: { Args: never; Returns: undefined }
       _tenant_log: {
         Args: { _action: string; _org: string; _payload: Json }
