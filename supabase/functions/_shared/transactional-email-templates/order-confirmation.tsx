@@ -128,18 +128,19 @@ const OrderConfirmationEmail = ({
 export const template = {
   component: OrderConfirmationEmail,
   subject: (data: Record<string, any>) =>
-    `Pedido #${data.orderNumber || '---'} recibido — ${SITE_NAME}`,
+    `Pedido #${data.orderNumber || '---'} recibido — ${data.siteName || DEFAULT_SITE_NAME}`,
   displayName: 'Confirmación de pedido',
   previewData: {
     customerName: 'María López',
     orderNumber: 1042,
     items: [
-      { name: 'Pulpa de Mango 1kg', quantity: 2, price: 12000 },
-      { name: 'Pechuga de Pollo', quantity: 1, price: 18500 },
-      { name: 'Agua Natural 20L', quantity: 1, price: 9000 },
+      { name: 'Producto A', quantity: 2, price: 12000 },
+      { name: 'Producto B', quantity: 1, price: 18500 },
+      { name: 'Producto C', quantity: 1, price: 9000 },
     ],
     total: 51500,
-    address: 'Cra 27 #36-15, Cabecera, Bucaramanga',
+    address: 'Dirección de ejemplo',
+    siteName: 'Mi Negocio',
   },
 } satisfies TemplateEntry
 
