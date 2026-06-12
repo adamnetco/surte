@@ -46,5 +46,5 @@ export default function RequireActiveTenant({ children }: { children: React.Reac
     );
   }
 
-  return <>{children}</>;
+  return <><TenantScopeBanner />{children}</>;
 }
