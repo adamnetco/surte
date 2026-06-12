@@ -13,7 +13,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, KeyRound, Plus, ShieldCheck, ShieldOff, Cpu, Building2, Settings, Sparkles, Copy, ArrowRight } from "lucide-react";
+import { Download, KeyRound, Plus, ShieldCheck, ShieldOff, Cpu, Building2, Settings, Sparkles, Copy, ArrowRight, Store, Filter, X } from "lucide-react";
+import TenantSwitcher from "@/modules/superadmin/components/TenantSwitcher";
 
 type OnboardingProgress = {
   organization_id: string;
@@ -96,7 +97,13 @@ export default function Licencias() {
   const [relNotes, setRelNotes] = useState("");
 
   const navigate = useNavigate();
-  const { switchOrg, refresh: refreshOrgs } = useOrganization();
+  const { switchOrg, refresh: refreshOrgs, currentOrg } = useOrganization();
+  const [scopeToCurrent, setScopeToCurrent] = useState(true);
+
+  // Pre-rellena la organización al abrir el diálogo con la tienda activa.
+  useEffect(() => {
+    if (issueOpen && currentOrg && !issueOrg) setIssueOrg(currentOrg.id);
+  }, [issueOpen, currentOrg, issueOrg]);
 
   useEffect(() => {
     (async () => {
@@ -227,6 +234,53 @@ export default function Licencias() {
         </div>
       </div>
 
+      {/* Banner de contexto + selector de tienda */}
+      <Card className="p-4 border-primary/20 bg-primary/5">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <div className="w-10 h-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+              <Store size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none mb-1">
+                Tienda en contexto
+              </p>
+              {currentOrg ? (
+                <>
+                  <p className="font-heading font-bold text-base truncate">{currentOrg.name}</p>
+                  <p className="text-[11px] text-muted-foreground font-mono">
+                    {currentOrg.slug} · {currentOrg.id.slice(0, 8)}…
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sin tienda activa — selecciona una para enfocar la gestión.</p>
+              )}
+            </div>
+          </div>
+          <div className="w-full sm:w-72">
+            <TenantSwitcher compact />
+          </div>
+        </div>
+        {currentOrg && (
+          <div className="mt-3 flex items-center gap-3 flex-wrap">
+            <Button
+              size="sm"
+              variant={scopeToCurrent ? "default" : "outline"}
+              onClick={() => setScopeToCurrent((v) => !v)}
+              className="h-8"
+            >
+              {scopeToCurrent ? <Filter className="h-3.5 w-3.5 mr-1" /> : <X className="h-3.5 w-3.5 mr-1" />}
+              {scopeToCurrent ? `Solo ${currentOrg.name}` : "Ver todas las tiendas"}
+            </Button>
+            <span className="text-[11px] text-muted-foreground">
+              {scopeToCurrent
+                ? "Mostrando licencias y terminales únicamente de esta tienda."
+                : "Mostrando licencias y terminales de todas las tiendas."}
+            </span>
+          </div>
+        )}
+      </Card>
+
       <Tabs defaultValue="licenses">
         <TabsList>
           <TabsTrigger value="licenses">Licencias</TabsTrigger>
@@ -235,11 +289,22 @@ export default function Licencias() {
         </TabsList>
 
         <TabsContent value="licenses" className="space-y-3">
+          {(() => null)()}
+          {/* listado filtrado abajo */}
           <div className="flex justify-between items-center">
-            <h2 className="font-semibold">{licenses.length} licencias emitidas</h2>
+            <h2 className="font-semibold">
+              {(scopeToCurrent && currentOrg
+                ? licenses.filter((l) => l.organization_id === currentOrg.id)
+                : licenses
+              ).length}{" "}
+              licencias{scopeToCurrent && currentOrg ? ` en ${currentOrg.name}` : " emitidas"}
+            </h2>
             <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
               <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4 mr-1" /> Emitir nueva</Button>
+                <Button>
+                  <Plus className="h-4 w-4 mr-1" />
+                  {currentOrg ? `Emitir para ${currentOrg.name}` : "Emitir nueva"}
+                </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Emitir licencia</DialogTitle></DialogHeader>
@@ -279,7 +344,10 @@ export default function Licencias() {
           </div>
 
           <div className="grid gap-3">
-            {licenses.map(lic => {
+            {(scopeToCurrent && currentOrg
+              ? licenses.filter((l) => l.organization_id === currentOrg.id)
+              : licenses
+            ).map(lic => {
               const used = activations.filter(a => a.license_id === lic.id && !a.revoked_at).length;
               const prog = onboarding[lic.organization_id];
               const pct = onbPct(prog);
@@ -333,13 +401,30 @@ export default function Licencias() {
               );
             })}
             {licenses.length === 0 && <p className="text-center text-muted-foreground p-8">Sin licencias aún. Emite la primera.</p>}
+            {licenses.length > 0 && scopeToCurrent && currentOrg && licenses.filter((l) => l.organization_id === currentOrg.id).length === 0 && (
+              <p className="text-center text-muted-foreground p-8">
+                {currentOrg.name} aún no tiene licencias. Usa el botón "Emitir para {currentOrg.name}".
+              </p>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="activations" className="space-y-3">
-          <h2 className="font-semibold">{activations.filter(a => !a.revoked_at).length} terminales activos</h2>
-          <div className="grid gap-2">
-            {activations.map(a => {
+          {(() => {
+            const filteredActs = scopeToCurrent && currentOrg
+              ? activations.filter((a) => {
+                  const lic = licenses.find((l) => l.id === a.license_id);
+                  return lic?.organization_id === currentOrg.id;
+                })
+              : activations;
+            return (
+              <>
+                <h2 className="font-semibold">
+                  {filteredActs.filter((a) => !a.revoked_at).length} terminales activos
+                  {scopeToCurrent && currentOrg ? ` en ${currentOrg.name}` : ""}
+                </h2>
+                <div className="grid gap-2">
+                  {filteredActs.map(a => {
               const lic = licenses.find(l => l.id === a.license_id);
               return (
                 <Card key={a.id} className="p-3 flex items-center justify-between flex-wrap gap-2">
@@ -359,8 +444,11 @@ export default function Licencias() {
                 </Card>
               );
             })}
-            {activations.length === 0 && <p className="text-center text-muted-foreground p-8">Sin activaciones todavía.</p>}
-          </div>
+                  {filteredActs.length === 0 && <p className="text-center text-muted-foreground p-8">Sin activaciones todavía{scopeToCurrent && currentOrg ? ` en ${currentOrg.name}` : ""}.</p>}
+                </div>
+              </>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="releases" className="space-y-3">
