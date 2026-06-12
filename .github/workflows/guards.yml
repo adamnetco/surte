@@ -1,0 +1,41 @@
+name: Guards (lint + tenant hardcoding audit)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  guards:
+    name: ESLint + audit:hardcoding
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Etapa 40 — ESLint rule no-restricted-syntax bloquea regresión de
+      # literales tenant-hardcoded (SurteYa, Bucaramanga, Santander, ...).
+      - name: ESLint
+        run: npm run lint
+
+      # Etapa 40 — script bun. Falla con exit 1 si supera baseline (14 hits).
+      - name: Audit tenant hardcoding
+        run: npm run audit:hardcoding
