@@ -802,7 +802,7 @@ const LandingPagesTab = () => {
                       {editing.meta_title?.length || 0}/60
                     </span>
                   </div>
-                  <Input value={editing.meta_title || ""} onChange={e => setEditing({ ...editing, meta_title: e.target.value })} placeholder="Domicilios de alimentos en Bucaramanga | SURTE YA" />
+                  <Input value={editing.meta_title || ""} onChange={e => setEditing({ ...editing, meta_title: e.target.value })} placeholder="Meta title optimizado para SEO" />
                 </div>
                 <div>
                   <div className="flex items-center justify-between">
@@ -811,7 +811,7 @@ const LandingPagesTab = () => {
                       {editing.meta_description?.length || 0}/160
                     </span>
                   </div>
-                  <Textarea value={editing.meta_description || ""} onChange={e => setEditing({ ...editing, meta_description: e.target.value })} placeholder="Pide alimentos a domicilio en Bucaramanga..." rows={2} />
+                  <Textarea value={editing.meta_description || ""} onChange={e => setEditing({ ...editing, meta_description: e.target.value })} placeholder="Meta descripción optimizada para SEO..." rows={2} />
                 </div>
               </div>
 
