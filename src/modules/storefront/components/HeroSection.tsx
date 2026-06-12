@@ -4,9 +4,11 @@ import { ArrowRight, Truck, Shield, Clock, ChevronLeft, ChevronRight } from "luc
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const { data: settings } = useAppSettings();
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
 

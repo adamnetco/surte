@@ -37,6 +37,7 @@ const StoreFooter = () => {
   const address = settings?.footer_address || "";
   const nit = settings?.footer_nit || "";
   const legalText = settings?.footer_text || "";
+  const description = settings?.store_description || settings?.footer_description || "";
   const googleMapsUrl = settings?.google_maps_url || "https://share.google/DK24P9JkD74z2iFaZ";
   const googleMapsEmbed = settings?.google_maps_embed || "";
   const facebook = settings?.social_facebook || "";
