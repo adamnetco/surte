@@ -53,7 +53,7 @@ export async function auditedMutation<T>(
     const { data, error } = await supabase.rpc("request_critical_action", {
       _action_type: opts.action,
       _target_org: opts.targetOrgId ?? null,
-      _payload: opts.payload ?? {},
+      _payload: (opts.payload ?? {}) as any,
       _justification: opts.justification,
     });
     if (error) throw error;
