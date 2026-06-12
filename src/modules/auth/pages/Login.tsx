@@ -39,11 +39,9 @@ const Login = () => {
   const location = useLocation();
   const fromPath = ((location.state as { from?: string } | null)?.from || "") as string;
   const brand = useTenantBrand();
-  // Surteya conserva su logo histórico (asset local) como fallback visual
-  // mientras se carga el logo dinámico del tenant. Otros tenants muestran un
-  // ícono genérico hasta que llega su logo desde DB.
-  const isSurteya = brand.slug === "surteya";
-  const brandLogo = brand.logo_url ?? (isSurteya ? surteLogo : null);
+  // El logo del tenant viene de la DB (organizations.logo_url). Si aún no
+  // se ha configurado, se usa un logo neutro como placeholder visual.
+  const brandLogo = brand.logo_url ?? defaultLogo;
   const brandName = brand.name ?? "Tu tienda";
 
   const redirectedRef = useRef(false);
