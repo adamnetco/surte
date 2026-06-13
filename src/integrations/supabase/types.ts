@@ -8096,6 +8096,15 @@ export type Database = {
         Args: { _cart_token: string }
         Returns: boolean
       }
+      consume_limit: {
+        Args: {
+          _delta?: number
+          _limit_key: string
+          _org_id: string
+          _period?: string
+        }
+        Returns: Json
+      }
       cosign_critical_action: {
         Args: { _action_id: string; _decision: string; _reason?: string }
         Returns: Json
@@ -8351,6 +8360,10 @@ export type Database = {
         Returns: number
       }
       org_role: { Args: { _org_id: string }; Returns: string }
+      peek_limit: {
+        Args: { _limit_key: string; _org_id: string; _period?: string }
+        Returns: Json
+      }
       provision_organization: {
         Args: {
           _business_type?: string
@@ -8404,6 +8417,10 @@ export type Database = {
           _target_org: string
         }
         Returns: Json
+      }
+      resolve_limit: {
+        Args: { _limit_key: string; _org_id: string }
+        Returns: number
       }
       resolve_tenant_by_host: { Args: { _host: string }; Returns: Json }
       restore_tenant: { Args: { _org_id: string }; Returns: Json }
