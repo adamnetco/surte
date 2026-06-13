@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
 import POSStatusBar from "@/modules/pos/components/POSStatusBar";
+import MaxUsersMeter from "@/modules/pos/components/MaxUsersMeter";
 
 type TileColor =
   | "primary" | "secondary" | "accent" | "destructive"
@@ -206,7 +207,11 @@ export default function PosHub() {
           })}
         </div>
 
-        <p className="text-center text-[11px] text-muted-foreground mt-8">
+        <div className="mt-8 max-w-xs mx-auto">
+          <MaxUsersMeter />
+        </div>
+
+        <p className="text-center text-[11px] text-muted-foreground mt-4">
           ¿Necesitas la gestión avanzada? Ve a{" "}
           <Link to="/admin" className="text-primary font-medium hover:underline">Administración</Link>.
         </p>
