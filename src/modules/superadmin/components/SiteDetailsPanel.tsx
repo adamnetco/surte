@@ -331,9 +331,10 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
   const cfT = cfTone(local?.cf_status);
 
   const dnsRows = useMemo(
-    () => local?.hostname ? buildDnsPlan(local.hostname, local.cf_ownership_verification, local.cf_ssl_validation_records, local.cf_status, local.cf_ssl_status) : [],
-    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records],
+    () => local?.hostname ? buildDnsPlan(local.hostname, local.cf_ownership_verification, local.cf_ssl_validation_records, local.cf_status, local.cf_ssl_status, local.dns_mode, local.cname_target) : [],
+    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records, local?.dns_mode, local?.cname_target],
   );
+  const isSaas = (local?.dns_mode ?? "saas") === "saas" && !!local?.cname_target;
   const pendingCount = dnsRows.filter(r => r.required && !r.done).length;
 
   const copyAll = () => {
