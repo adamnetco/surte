@@ -1,4 +1,4 @@
-# Cloudflare Pages config for the SistecPOS Astro storefront.
+# Cloudflare Pages config for the SistecPOS Astro 5 storefront.
 # Deploy: `bun run build && bun run deploy` (or via Pages git integration).
 name = "sistecpos-storefront"
 compatibility_date = "2025-06-01"
@@ -6,7 +6,15 @@ compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./dist"
 
 # Variables públicas: definirlas también en el dashboard de Cloudflare Pages
-# para producción/preview. Aquí solo como referencia para `wrangler pages dev`.
+# (Settings → Environment variables) para producción/preview.
+# Aquí solo como referencia para `wrangler pages dev`.
 [vars]
 # PUBLIC_SUPABASE_URL = "https://xxxx.supabase.co"
 # PUBLIC_SUPABASE_ANON_KEY = "eyJ..."
+# PUBLIC_WA_DEFAULT_PHONE = "573001234567"
+
+# Sessions de Astro 5 (opcional). Si vas a usar `Astro.session`,
+# crea un KV namespace y descomenta:
+# [[kv_namespaces]]
+# binding = "SESSION"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
