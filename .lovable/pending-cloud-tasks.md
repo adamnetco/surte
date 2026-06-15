@@ -1,6 +1,12 @@
-# Tareas pendientes — ejecutar cuando Lovable Cloud vuelva
+# Tareas pendientes — Cloudflare + seed demo
 
-**Estado backend:** caído desde ~2026-06-08 00:30Z. `auth/v1/health` y `read_query` devuelven timeout. No se puede correr migración, insert, ni desplegar edge functions hasta recuperar.
+**Estado backend:** ✅ Cloud operativo. Secciones 1, 3, 4, 5 ya aplicadas en Test y Live (schema). Pendientes reales abajo.
+
+## Pendientes vigentes (2026-06-15)
+
+- **Seed `demo` en Live** — humano: ejecutar `docs/runbooks/live-import-demo-tenant.sql` desde Backend → Run SQL (Live) logueado como `edurdotp77@gmail.com`.
+- **DNS `demo.sistecpos.com`** — cliente: publicar TXT `_acme-challenge` (2) + A `185.158.133.1`. Seguimiento en `/superadmin/cloud-tareas` (`domain-demo-dns-acme`).
+- **`surteya.com`** — cuando el cliente confirme zona CF lista, insertar fila en `tenant_domains` y correr wizard (sección 7).
 
 **Decisiones del usuario (ya confirmadas):**
 - Cloudflare: **Ambos** (SaaS por defecto, multi-cuenta opcional).
