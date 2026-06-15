@@ -1,10 +1,21 @@
 import { defineConfig } from "astro/config";
-import vercel from "@astrojs/vercel/serverless";
+import cloudflare from "@astrojs/cloudflare";
 import tailwind from "@astrojs/tailwind";
 
-// SSR para que cada request resuelva su tenant por Host header.
+// SSR sobre Cloudflare Pages Functions.
+// Cada request resuelve su tenant por Host header.
 export default defineConfig({
   output: "server",
-  adapter: vercel({ webAnalytics: { enabled: true }, isr: { expiration: 60 * 10 } }),
+  adapter: cloudflare({
+    platformProxy: { enabled: true },
+    imageService: "compile",
+  }),
   integrations: [tailwind()],
+  vite: {
+    ssr: {
+      // Supabase y otros paquetes que dependen de APIs Node se externalizan
+      // y usan los polyfills de Cloudflare (nodejs_compat flag en wrangler.toml).
+      external: ["node:buffer", "node:crypto", "node:stream"],
+    },
+  },
 });
