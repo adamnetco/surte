@@ -1,0 +1,12 @@
+# Cloudflare Pages config for the SistecPOS Astro storefront.
+# Deploy: `bun run build && bun run deploy` (or via Pages git integration).
+name = "sistecpos-storefront"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist"
+
+# Variables públicas: definirlas también en el dashboard de Cloudflare Pages
+# para producción/preview. Aquí solo como referencia para `wrangler pages dev`.
+[vars]
+# PUBLIC_SUPABASE_URL = "https://xxxx.supabase.co"
+# PUBLIC_SUPABASE_ANON_KEY = "eyJ..."
