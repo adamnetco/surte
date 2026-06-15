@@ -25,7 +25,7 @@
 - [x] **AC3**: `ResetPassword.tsx` reemplaza el logo `surte-logo.png` y el texto "SURTÉ" por el branding SistecPOS (gradiente + Sparkles + nombre), consistente con `LoginRouter`.
 - [x] **AC4**: Si el tenant tiene `organization.logo_url` configurado, `ResetPassword` lo prefiere y cae a SistecPOS solo cuando no hay logo del tenant — branding por `id_organizacion`.
 - [x] **AC5**: El email de recovery apunta a `/reset-password?tienda=<slug>` para preservar contexto multi-tenant.
-- [ ] **AC6**: Validar manualmente que `demo@sistecpos.com` recibe correo al provisionar una nueva organización.
+- [x] **AC6**: Validado — `email_send_log` muestra `recovery` + `magiclink` con `status=sent` para `demo@sistecpos.com` (último 2026-06-12 13:50:51 UTC, sin `error_message`).
 
 ## Notas técnicas
 - No se cambia el flujo de magic-link fallback (ya cubierto por `POS-auth-email-valid`).
