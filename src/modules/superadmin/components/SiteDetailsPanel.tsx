@@ -29,6 +29,8 @@ interface Site {
     last_checked_at?: string | null;
     cf_ownership_verification?: DcvRecord | null;
     cf_ssl_validation_records?: SslValidationRecord[] | null;
+    dns_mode?: string | null;
+    cname_target?: string | null;
   }>;
   tenant_wp_config?: Array<{ wp_base_url?: string; wp_app_password?: string | null }>;
 }
@@ -84,7 +86,7 @@ function cfTone(s?: string | null): ChipTone {
 
 type DnsRow = {
   key: string;
-  type: "A" | "TXT";
+  type: "A" | "TXT" | "CNAME";
   name: string;
   value: string;
   required: boolean;
@@ -92,13 +94,35 @@ type DnsRow = {
   hint: string;
 };
 
-function buildDnsPlan(hostname: string, dcv: DcvRecord | null | undefined, acme: SslValidationRecord[] | null | undefined, cfStatus?: string | null, sslStatus?: string | null): DnsRow[] {
+function buildDnsPlan(
+  hostname: string,
+  dcv: DcvRecord | null | undefined,
+  acme: SslValidationRecord[] | null | undefined,
+  cfStatus?: string | null,
+  sslStatus?: string | null,
+  dnsMode?: string | null,
+  cnameTarget?: string | null,
+): DnsRow[] {
   const rows: DnsRow[] = [];
-  rows.push({
-    key: "a-root", type: "A", name: hostname, value: CF_EDGE_IP, required: true,
-    done: cfStatus === "active" || sslStatus === "active",
-    hint: "Apunta el subdominio al edge SaaS",
-  });
+  const isSaas = (dnsMode ?? "saas") === "saas";
+  const target = cnameTarget?.trim();
+
+  if (isSaas && target) {
+    // Cloudflare for SaaS: el cliente debe apuntar con CNAME al fallback hostname
+    rows.push({
+      key: "cname-root", type: "CNAME", name: hostname, value: target, required: true,
+      done: cfStatus === "active" || sslStatus === "active",
+      hint: "Apunta el host al edge Cloudflare SaaS (CNAME al fallback hostname).",
+    });
+  } else {
+    // Modo legacy / sin SaaS configurado: A al edge de Lovable
+    rows.push({
+      key: "a-root", type: "A", name: hostname, value: CF_EDGE_IP, required: true,
+      done: cfStatus === "active" || sslStatus === "active",
+      hint: "Apunta el subdominio al edge.",
+    });
+  }
+
   if (dcv?.name && dcv?.value) {
     rows.push({
       key: "txt-cf", type: "TXT", name: dcv.name, value: dcv.value, required: true,
@@ -115,11 +139,20 @@ function buildDnsPlan(hostname: string, dcv: DcvRecord | null | undefined, acme:
       });
     }
   });
-  rows.push({
-    key: "a-www", type: "A", name: `www.${hostname}`, value: CF_EDGE_IP, required: false,
-    done: false,
-    hint: "Opcional. Sólo si quieres servir también www.",
-  });
+
+  if (isSaas && target) {
+    rows.push({
+      key: "cname-www", type: "CNAME", name: `www.${hostname}`, value: target, required: false,
+      done: false,
+      hint: "Opcional. Sólo si quieres servir también www.",
+    });
+  } else {
+    rows.push({
+      key: "a-www", type: "A", name: `www.${hostname}`, value: CF_EDGE_IP, required: false,
+      done: false,
+      hint: "Opcional. Sólo si quieres servir también www.",
+    });
+  }
   return rows;
 }
 
@@ -131,6 +164,7 @@ function toCsv(rows: DnsRow[]): string {
 function toBindZone(rows: DnsRow[]): string {
   const lines = rows.map(r => {
     if (r.type === "A") return `${r.name}.\t300\tIN\tA\t${r.value}`;
+    if (r.type === "CNAME") return `${r.name}.\t300\tIN\tCNAME\t${r.value}.`;
     return `${r.name}.\t300\tIN\tTXT\t"${r.value.replace(/"/g, '\\"')}"`;
   });
   return ["; Zona generada por SistecPOS Core", ...lines, ""].join("\n");
@@ -297,9 +331,10 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
   const cfT = cfTone(local?.cf_status);
 
   const dnsRows = useMemo(
-    () => local?.hostname ? buildDnsPlan(local.hostname, local.cf_ownership_verification, local.cf_ssl_validation_records, local.cf_status, local.cf_ssl_status) : [],
-    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records],
+    () => local?.hostname ? buildDnsPlan(local.hostname, local.cf_ownership_verification, local.cf_ssl_validation_records, local.cf_status, local.cf_ssl_status, local.dns_mode, local.cname_target) : [],
+    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records, local?.dns_mode, local?.cname_target],
   );
+  const isSaas = (local?.dns_mode ?? "saas") === "saas" && !!local?.cname_target;
   const pendingCount = dnsRows.filter(r => r.required && !r.done).length;
 
   const copyAll = () => {
@@ -360,7 +395,7 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
           )}
           {httpsOk === "fail" && sslT === "ok" && (
             <p className="text-[11px] text-destructive">
-              SSL activo pero el host no responde por HTTPS. Revisa que el A apunte a {CF_EDGE_IP}.
+              SSL activo pero el host no responde por HTTPS. Revisa que el {isSaas ? <>CNAME apunte a <code className="font-mono">{local?.cname_target}</code></> : <>A apunte a <code className="font-mono">{CF_EDGE_IP}</code></>}.
             </p>
           )}
           {local.last_checked_at && (
