@@ -38,13 +38,15 @@ Deno.serve(async (req) => {
 
   const status = cfJson.result.status;
   const ssl_status = cfJson.result.ssl?.status;
+  const ssl_validation_records = cfJson.result.ssl?.validation_records ?? null;
   await svc.from("tenant_domains").update({
     cf_status: status,
     cf_ssl_status: ssl_status ?? null,
     cf_ownership_verification: cfJson.result.ownership_verification ?? null,
+    cf_ssl_validation_records: ssl_validation_records,
     last_checked_at: new Date().toISOString(),
     verified_at: status === "active" ? new Date().toISOString() : null,
   }).eq("hostname", hostname);
 
-  return jsonResponse({ ok: true, hostname, status, ssl_status, result: cfJson.result });
+  return jsonResponse({ ok: true, hostname, status, ssl_status, ssl_validation_records, result: cfJson.result });
 });
