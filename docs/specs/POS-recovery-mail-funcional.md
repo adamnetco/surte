@@ -1,9 +1,9 @@
 # POS-RecoveryMailFuncional
 
-**Estado:** IN_BUILD
+**Estado:** IN_REVIEW
 **Módulo:** auth / superadmin
 **Owner:** Eduardo Tobacia
-**Última actualización:** 2026-06-12
+**Última actualización:** 2026-06-15
 
 ## Problema
 1. Al crear una organización (edge function `tenant-create-with-owner`) se crea un usuario **owner** con una contraseña aleatoria generada en servidor. El owner no recibe ningún email para fijar su propia contraseña, por lo que depende de que el superadmin copie/pegue la credencial — frágil y poco profesional.
