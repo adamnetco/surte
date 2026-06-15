@@ -1,6 +1,6 @@
 # POS-RecoveryMailFuncional
 
-**Estado:** IN_REVIEW
+**Estado:** SHIPPED
 **Módulo:** auth / superadmin
 **Owner:** Eduardo Tobacia
 **Última actualización:** 2026-06-15
