@@ -261,13 +261,54 @@ Todos los endpoints:
 
 ## Troubleshooting
 
+### ❌ Error: `Missing entry-point to Worker script or to assets directory` (Wrangler deploy)
+
+**Síntoma (log de build en Cloudflare):**
+
+```
+⛅️ Wrangler 3.114.17
+✘ [ERROR] Missing entry-point to Worker script or to assets directory
+  - Si tu Worker no tiene código... añade [assets] directory = "./dist" a wrangler.toml
+Error: se produjo un error al ejecutar el comando de despliegue.
+```
+
+**Causa:** estás desplegando con el flujo **Workers Builds** (`npx wrangler deploy`), pero este proyecto está configurado para **Cloudflare Pages** (`pages_build_output_dir = "dist"` en `wrangler.toml`). Workers no encuentra `main` ni `assets.directory` porque esos campos no aplican a Pages, y por eso falla con el error de "missing entry point".
+
+**Fix (recomendado — recrear como Pages):**
+
+1. En Cloudflare Dashboard → **borra** el proyecto actual (el que se creó como Workers Builds).
+2. Ve a **Workers & Pages → Create → Pages → Connect to Git** (¡no "Import a repository" del lado de Workers!).
+3. Selecciona el mismo repo y usa la configuración de la sección [Opción A](#opción-a--integración-git-recomendado):
+   - Framework preset: **Astro**
+   - Build command: `bun install && bun run build`
+   - Build output directory: `dist`
+   - Compatibility flags: `nodejs_compat` (Production + Preview)
+   - Compatibility date: `2025-06-01`
+4. Re-agrega las variables `PUBLIC_*` y dispara un nuevo deploy.
+
+Internamente Pages ejecuta `wrangler pages deploy ./dist`, no `wrangler deploy`, por eso sí encuentra el output.
+
+**Fix alterno (CLI, forzar modo Pages sin recrear):**
+
+```bash
+cd ~/sistecpos-storefront
+bun install && bun run build
+bunx wrangler pages deploy ./dist --project-name=sistecpos-storefront
+```
+
+> 🚨 **Cómo evitarlo a futuro:** en el dashboard de Cloudflare, si la pantalla de "Set up builds" te pide un **"Deploy command"** (`npx wrangler deploy`) y habla de "Non-production branch builds", estás en **Workers Builds**. Sal y entra por **Pages → Connect to Git** (esa pantalla pide "Framework preset" y "Build output directory" — esas son las palabras clave).
+
+### Otros errores comunes
+
 | Síntoma | Causa probable | Fix |
 |---------|----------------|-----|
 | `Invalid binding 'SESSION'` en build | Astro 5 sugiere KV para sesiones | Es solo aviso. Si no usas `Astro.session`, ignorar. Para habilitar: crear KV y descomentar el bloque en `wrangler.toml`. |
 | `Cannot find module 'node:xxx'` en runtime | Falta `nodejs_compat` | Activar el flag en **Pages → Settings → Functions** |
+| `Wrangler version is out of date` (warning) | Cloudflare usa Wrangler 3 por defecto | Inofensivo para Pages. Para silenciarlo: agregar `"wrangler": "^4"` a devDependencies. |
 | HTTPS no responde tras DNS OK | Falta Fallback Origin de SaaS | En Cloudflare zona umbrella → SSL/TLS → Custom Hostnames → Fallback Origin → setear al hostname `*.pages.dev` |
 | `TENANT_NOT_FOUND` en `/api/tenant` | El `Host` no está en `tenant_domains` | Insertar el hostname en Superadmin → Sitios → Dominios |
 | Build falla con error de Sharp | Imágenes con servicio incorrecto | Ya está fijo: `imageService: "compile"` en `astro.config.mjs` |
+
 
 ---
 
