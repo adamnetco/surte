@@ -29,6 +29,8 @@ interface Site {
     last_checked_at?: string | null;
     cf_ownership_verification?: DcvRecord | null;
     cf_ssl_validation_records?: SslValidationRecord[] | null;
+    dns_mode?: string | null;
+    cname_target?: string | null;
   }>;
   tenant_wp_config?: Array<{ wp_base_url?: string; wp_app_password?: string | null }>;
 }
