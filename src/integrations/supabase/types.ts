@@ -7292,6 +7292,7 @@ export type Database = {
           cf_hostname_id: string | null
           cf_ownership_verification: Json | null
           cf_ssl_status: string | null
+          cf_ssl_validation_records: Json | null
           cf_status: string | null
           cf_zone_id: string | null
           cname_target: string | null
@@ -7315,6 +7316,7 @@ export type Database = {
           cf_hostname_id?: string | null
           cf_ownership_verification?: Json | null
           cf_ssl_status?: string | null
+          cf_ssl_validation_records?: Json | null
           cf_status?: string | null
           cf_zone_id?: string | null
           cname_target?: string | null
@@ -7338,6 +7340,7 @@ export type Database = {
           cf_hostname_id?: string | null
           cf_ownership_verification?: Json | null
           cf_ssl_status?: string | null
+          cf_ssl_validation_records?: Json | null
           cf_status?: string | null
           cf_zone_id?: string | null
           cname_target?: string | null
