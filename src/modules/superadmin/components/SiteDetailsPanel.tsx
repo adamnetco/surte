@@ -86,7 +86,7 @@ function cfTone(s?: string | null): ChipTone {
 
 type DnsRow = {
   key: string;
-  type: "A" | "TXT";
+  type: "A" | "TXT" | "CNAME";
   name: string;
   value: string;
   required: boolean;
@@ -94,13 +94,35 @@ type DnsRow = {
   hint: string;
 };
 
-function buildDnsPlan(hostname: string, dcv: DcvRecord | null | undefined, acme: SslValidationRecord[] | null | undefined, cfStatus?: string | null, sslStatus?: string | null): DnsRow[] {
+function buildDnsPlan(
+  hostname: string,
+  dcv: DcvRecord | null | undefined,
+  acme: SslValidationRecord[] | null | undefined,
+  cfStatus?: string | null,
+  sslStatus?: string | null,
+  dnsMode?: string | null,
+  cnameTarget?: string | null,
+): DnsRow[] {
   const rows: DnsRow[] = [];
-  rows.push({
-    key: "a-root", type: "A", name: hostname, value: CF_EDGE_IP, required: true,
-    done: cfStatus === "active" || sslStatus === "active",
-    hint: "Apunta el subdominio al edge SaaS",
-  });
+  const isSaas = (dnsMode ?? "saas") === "saas";
+  const target = cnameTarget?.trim();
+
+  if (isSaas && target) {
+    // Cloudflare for SaaS: el cliente debe apuntar con CNAME al fallback hostname
+    rows.push({
+      key: "cname-root", type: "CNAME", name: hostname, value: target, required: true,
+      done: cfStatus === "active" || sslStatus === "active",
+      hint: "Apunta el host al edge Cloudflare SaaS (CNAME al fallback hostname).",
+    });
+  } else {
+    // Modo legacy / sin SaaS configurado: A al edge de Lovable
+    rows.push({
+      key: "a-root", type: "A", name: hostname, value: CF_EDGE_IP, required: true,
+      done: cfStatus === "active" || sslStatus === "active",
+      hint: "Apunta el subdominio al edge.",
+    });
+  }
+
   if (dcv?.name && dcv?.value) {
     rows.push({
       key: "txt-cf", type: "TXT", name: dcv.name, value: dcv.value, required: true,
@@ -117,11 +139,20 @@ function buildDnsPlan(hostname: string, dcv: DcvRecord | null | undefined, acme:
       });
     }
   });
-  rows.push({
-    key: "a-www", type: "A", name: `www.${hostname}`, value: CF_EDGE_IP, required: false,
-    done: false,
-    hint: "Opcional. Sólo si quieres servir también www.",
-  });
+
+  if (isSaas && target) {
+    rows.push({
+      key: "cname-www", type: "CNAME", name: `www.${hostname}`, value: target, required: false,
+      done: false,
+      hint: "Opcional. Sólo si quieres servir también www.",
+    });
+  } else {
+    rows.push({
+      key: "a-www", type: "A", name: `www.${hostname}`, value: CF_EDGE_IP, required: false,
+      done: false,
+      hint: "Opcional. Sólo si quieres servir también www.",
+    });
+  }
   return rows;
 }
 
@@ -133,6 +164,7 @@ function toCsv(rows: DnsRow[]): string {
 function toBindZone(rows: DnsRow[]): string {
   const lines = rows.map(r => {
     if (r.type === "A") return `${r.name}.\t300\tIN\tA\t${r.value}`;
+    if (r.type === "CNAME") return `${r.name}.\t300\tIN\tCNAME\t${r.value}.`;
     return `${r.name}.\t300\tIN\tTXT\t"${r.value.replace(/"/g, '\\"')}"`;
   });
   return ["; Zona generada por SistecPOS Core", ...lines, ""].join("\n");
