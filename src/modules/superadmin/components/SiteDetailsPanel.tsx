@@ -395,7 +395,7 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
           )}
           {httpsOk === "fail" && sslT === "ok" && (
             <p className="text-[11px] text-destructive">
-              SSL activo pero el host no responde por HTTPS. Revisa que el A apunte a {CF_EDGE_IP}.
+              SSL activo pero el host no responde por HTTPS. Revisa que el {isSaas ? <>CNAME apunte a <code className="font-mono">{local?.cname_target}</code></> : <>A apunte a <code className="font-mono">{CF_EDGE_IP}</code></>}.
             </p>
           )}
           {local.last_checked_at && (
