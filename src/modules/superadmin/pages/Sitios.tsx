@@ -14,12 +14,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import AppBreadcrumb from "@/components/AppBreadcrumb";
-import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink, RefreshCw, Send, Webhook, Cloud, Wand2, Settings2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink, RefreshCw, Send, Webhook, Cloud, Wand2, Settings2, CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import CloudflareAccountsTab from "@/modules/superadmin/components/CloudflareAccountsTab";
 import DomainWizard from "@/modules/superadmin/components/DomainWizard";
 import SiteDetailsPanel from "@/modules/superadmin/components/SiteDetailsPanel";
+import DeleteDomainDialog from "@/modules/superadmin/components/DeleteDomainDialog";
 
 const ASTRO_HOST_IP = "185.158.133.1"; // IP anycast de Lovable hosting (storefront servido desde Lovable Cloud)
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
@@ -37,6 +38,19 @@ export default function Sitios() {
     else if (!loading && !["superadmin","admin"].includes(role)) { toast.error("Solo admins"); navigate("/"); }
   }, [user, role, loading, navigate]);
 
+  // AC6: al cambiar scope, invalidar todas las queries de tenant-sites/domains/cloudflare/wp-config
+  // para que no se vean datos del scope anterior en la siguiente render.
+  useEffect(() => {
+    if (!orgId) return;
+    const prefixes = ["tenant-sites", "tenant-sites-list", "tenant-domains", "cloudflare-accounts", "wp-config"];
+    qc.invalidateQueries({
+      predicate: (q) => {
+        const key = q.queryKey?.[0];
+        return typeof key === "string" && prefixes.some((p) => key === p || key.startsWith(`${p}-`) || key.startsWith(`${p}/`));
+      },
+    });
+  }, [orgId, qc]);
+
   if (loading || !orgId) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   return (
@@ -49,6 +63,19 @@ export default function Sitios() {
           <p className="text-sm text-muted-foreground">Cada negocio puede tener su propio sitio público, WordPress headless y dominio propio.</p>
         </div>
 
+        {/* AC5: banner scope — toda acción en esta página opera sobre este tenant */}
+        <Card className="p-3 border-primary/30 bg-primary/5 flex items-center gap-3" data-testid="sitios-scope-banner">
+          <AlertTriangle className="w-4 h-4 text-primary shrink-0" />
+          <div className="text-sm flex-1 min-w-0">
+            <span className="text-muted-foreground">Operando sobre:</span>{" "}
+            <strong className="text-primary">{currentOrg?.name}</strong>{" "}
+            <code className="text-xs font-mono text-muted-foreground">({currentOrg?.slug})</code>
+          </div>
+          <span className="text-[11px] text-muted-foreground hidden sm:inline">
+            Cambia de tenant desde el selector superior.
+          </span>
+        </Card>
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid grid-cols-3 w-full lg:w-auto">
             <TabsTrigger value="sites"><Globe className="w-4 h-4 mr-1" />Sitios</TabsTrigger>
@@ -56,7 +83,7 @@ export default function Sitios() {
             <TabsTrigger value="cloudflare"><Cloud className="w-4 h-4 mr-1" />Cloudflare</TabsTrigger>
           </TabsList>
           <TabsContent value="sites"><SitesTab orgId={orgId} qc={qc} /></TabsContent>
-          <TabsContent value="domains"><DomainsTab orgId={orgId} qc={qc} /></TabsContent>
+          <TabsContent value="domains"><DomainsTab orgId={orgId} currentOrgId={orgId} qc={qc} /></TabsContent>
           <TabsContent value="cloudflare"><CloudflareAccountsTab orgId={orgId} /></TabsContent>
         </Tabs>
       </main>
@@ -305,10 +332,11 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
   );
 }
 
-function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
+function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: string; qc: any }) {
   const [siteId, setSiteId] = useState<string>("");
   const [hostname, setHostname] = useState("");
   const [wizardDomain, setWizardDomain] = useState<{ id: string; hostname: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
 
   const { data: sites } = useQuery({
     queryKey: ["tenant-sites-list", orgId],
@@ -330,10 +358,10 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
     qc.invalidateQueries({ queryKey: ["tenant-domains", orgId] });
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("¿Eliminar este dominio?")) return;
-    await supabase.from("tenant_domains").delete().eq("id", id);
+  const onDeleted = () => {
     qc.invalidateQueries({ queryKey: ["tenant-domains", orgId] });
+    qc.invalidateQueries({ queryKey: ["tenant-sites", orgId] });
+    qc.removeQueries({ queryKey: ["tenant-site"] });
   };
 
   const markVerified = async (d: any) => {
@@ -386,9 +414,20 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
             <TableHead>Primario</TableHead><TableHead></TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {domains?.map((d: any) => (
-              <TableRow key={d.id}>
-                <TableCell className="font-mono text-xs">{d.hostname}</TableCell>
+            {domains?.map((d: any) => {
+              const isForeign = d.organization_id !== currentOrgId;
+              return (
+              <TableRow key={d.id} data-testid={`domain-row-${d.hostname}`}>
+                <TableCell className="font-mono text-xs">
+                  <div className="flex items-center gap-2">
+                    {d.hostname}
+                    {isForeign && (
+                      <Badge variant="destructive" className="text-[10px]" data-testid="badge-foreign">
+                        <AlertTriangle className="w-3 h-3 mr-0.5" />Foráneo
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell className="text-sm">{d.tenant_sites?.name}</TableCell>
                 <TableCell>
                   <button className="text-xs font-mono inline-flex items-center gap-1 hover:text-primary" onClick={() => copy(d.verification_token)}>
@@ -411,10 +450,19 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
                   <a href={`https://${d.hostname}`} target="_blank" rel="noreferrer">
                     <Button size="icon" variant="ghost"><ExternalLink className="w-4 h-4" /></Button>
                   </a>
-                  <Button size="icon" variant="ghost" onClick={() => remove(d.id)}><Trash2 className="w-4 h-4" /></Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setDeleteTarget(d)}
+                    aria-label={`Eliminar dominio ${d.hostname}`}
+                    data-testid={`delete-domain-${d.hostname}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
             {!domains?.length && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Sin dominios.</TableCell></TableRow>}
           </TableBody>
         </Table>
@@ -425,6 +473,14 @@ function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
         onOpenChange={(v) => !v && setWizardDomain(null)}
         orgId={orgId}
         domain={wizardDomain}
+      />
+
+      <DeleteDomainDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        domain={deleteTarget}
+        isForeign={!!deleteTarget && deleteTarget.organization_id !== currentOrgId}
+        onDeleted={onDeleted}
       />
     </div>
   );
