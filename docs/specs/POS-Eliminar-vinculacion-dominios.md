@@ -1,6 +1,6 @@
 # POS-Eliminar-vinculacion-dominios
 
-**Estado:** DRAFT
+**Estado:** IN_SPEC
 **Módulo:** superadmin (Sitios Web) + platform (scope)
 **Owner:** Eduardo Tobacia
 **Creado:** 2026-06-17
@@ -37,20 +37,21 @@ Riesgo: un superadmin puede creer que está operando sobre Tenant A y aplicar ca
    c. `DELETE FROM tenant_domains WHERE id = ?` con RLS de superadmin.
    d. Insert en `tenant_audit_log` con `action='domain.deleted'`, payload `{ hostname, site_id, organization_id, cf_hostname_id, cf_dns_record_id }`.
    e. Invalidate caches: `['tenant-domains', orgId]`, `['tenant-sites', orgId]`, y `queryClient.removeQueries({ queryKey: ['tenant-site'] })` (resolver).
-3. **Scope guard**: si `tenant_domains.organization_id !== currentOrg.id`, la fila se muestra con badge `⚠ Foráneo` y solo el superadmin con confirmación doble puede borrarla.
+3. **Scope guard**: si `tenant_domains.organization_id !== currentOrg.id`, la fila se muestra con badge `⚠ Foráneo`. El borrado usa el mismo `AlertDialog` con confirmación por tipeo exacto del hostname (el audit log ya registra quién/cuándo/qué, sin justificación adicional).
 4. **Banner de scope** persistente en `/sitios` que muestre `Operando sobre: {currentOrg.name} ({currentOrg.slug})` y un botón `Cambiar`.
 5. Al cambiar scope (subscribe a `OrganizationContext`), invalidar **todas** las queries con prefijos `tenant-sites`, `tenant-domains`, `cloudflare-*`, `wp-config`.
+6. **Fallback Cloudflare**: si `DELETE custom_hostnames` o `DELETE dns_records` retorna error (4xx/5xx) y no es 404, NO borrar la fila de `tenant_domains`. Mostrar error con `cf_error_code` y permitir reintentar. Un 404 de CF se trata como éxito idempotente (recurso ya no existe).
 
 ## 5. Criterios de Aceptación
 
-- **AC1** — En `/sitios` tab `Dominios`, cada fila tiene botón `Eliminar` (icono Trash) con `AlertDialog` que pide tipear el hostname para confirmar.
+- **AC1** — En `/sitios` tab `Dominios`, cada fila tiene botón `Eliminar` (icono Trash) con `AlertDialog` que pide tipear el hostname exacto para confirmar.
 - **AC2** — Al confirmar, se invoca edge function `delete-tenant-domain` que purga Cloudflare + borra fila; toast de éxito con detalle de qué se purgó.
-- **AC3** — Inserta registro en `tenant_audit_log` con action `domain.deleted` y payload completo (verificable vía query).
-- **AC4** — Si el dominio tiene `organization_id` distinto al scope activo, aparece badge `Foráneo` y el botón Eliminar pide confirmación doble + justificación de texto libre (mín. 10 chars), persistida en audit log.
-- **AC5** — Banner superior fijo en `/sitios` muestra el tenant activo y desaparece al cambiar de scope (re-renderiza con el nuevo).
-- **AC6** — Al cambiar de scope con `TenantSwitcher`, todas las queries de la página se invalidan en <500ms (sin datos del scope anterior visibles).
-- **AC7** — Bug específico reproducible: superadmin entra a scope `surteya`, ve los 2 dominios, identifica el que apunta a `Freshlove`, lo elimina, y el tenant `Freshlove Heladería` ya no resuelve por ese hostname (verificar `resolve_tenant_by_host` retorna null).
-- **AC8** — Test E2E `e2e/sitios-delete-domain.spec.ts` cubre: listar dominios → eliminar con confirmación → verificar ausencia en lista + entrada en audit log (mockeable).
+- **AC3** — Inserta registro en `tenant_audit_log` con action `domain.deleted` y payload completo `{ hostname, site_id, organization_id, cf_hostname_id, cf_dns_record_id, actor_id }` (verificable vía query).
+- **AC4** — Si `tenant_domains.organization_id !== currentOrg.id`, la fila muestra badge `⚠ Foráneo`. El flujo de borrado es el mismo (confirmación por tipeo), sin justificación extra; el audit log queda con `actor_id` y `organization_id` foráneo para trazabilidad.
+- **AC5** — Banner superior fijo en `/sitios` muestra el tenant activo (`name` + `slug`) y se re-renderiza al cambiar de scope.
+- **AC6** — Al cambiar de scope con `TenantSwitcher`, las queries con prefijos `tenant-sites`, `tenant-domains`, `cloudflare-*`, `wp-config` quedan invalidadas (sin datos del scope anterior visibles en la siguiente render).
+- **AC7** — Si Cloudflare API falla (≠404), la fila de `tenant_domains` permanece y el toast muestra `cf_error_code`. Reintentar la acción completa el borrado cuando CF responde OK. Un 404 de CF se trata como éxito idempotente.
+- **AC8** — Smoke E2E `e2e/sitios-delete-domain.spec.ts`: abrir tab Dominios → click Eliminar → tipear hostname → confirmar → verificar fila ausente + entrada en audit log (Cloudflare API mockeada). Happy path con CF real se valida en nightly.
 
 ## 6. Tablas DB afectadas
 
@@ -71,20 +72,23 @@ Riesgo: un superadmin puede creer que está operando sobre Tenant A y aplicar ca
 
 ## 9. Riesgos
 
-- Si Cloudflare API falla durante delete, dejar `tenant_domains` intacto y mostrar error (no orfandad).
+- Si Cloudflare API falla durante delete, dejar `tenant_domains` intacto y mostrar error (no orfandad) — cubierto por AC7.
 - Cache del resolver (`useTenantSite`, staleTime 10min): documentar que cambio toma efecto en hasta 10 min para visitantes con sesión activa, o forzar bust con `cf_purge` opcional.
 
 ## 10. Plan de implementación
 
 1. Migration: nada nuevo de schema, solo confirmar RLS DELETE en `tenant_domains` para superadmin.
-2. Edge function `delete-tenant-domain` (CORS + verify_jwt + role check superadmin).
+2. Edge function `delete-tenant-domain` (CORS + verify_jwt + role check superadmin + manejo idempotente 404 CF).
 3. UI: AlertDialog + banner scope + listener.
-4. E2E test.
+4. E2E smoke test con CF mockeado.
 5. `/POS-review Eliminar-vinculacion-dominios`.
 
----
+## 11. Verificación post-deploy (manual)
 
-## Preguntas abiertas
+- **Repro Freshlove**: superadmin entra a scope `surteya`, ve los 2 dominios, identifica el que apunta a `Freshlove`, lo elimina, y verifica que `resolve_tenant_by_host(<hostname>)` retorna null y que `Freshlove Heladería` ya no es accesible por ese hostname.
 
-- ¿El dominio "huérfano" de surteya → Freshlove se eliminará **solo desde UI** o también se requiere script de limpieza por DB? (propuesta: UI primero, script solo si hay >3 casos).
-- ¿La justificación de borrado de dominio foráneo debe notificarse por email al owner del tenant afectado? (sugerencia: sí, vía `mailService` con template `domain_removed_by_superadmin`).
+## 12. Fuera de scope
+
+- Notificación email al owner del tenant afectado cuando se borra un dominio foráneo (puede ser spec aparte si se necesita).
+- Script masivo de limpieza de huérfanos: la UI con badge `⚠ Foráneo` permite limpiar uno a uno; solo crear script si aparecen >10 casos.
+
