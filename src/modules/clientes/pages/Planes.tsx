@@ -103,8 +103,8 @@ export default function Planes() {
                   </li>
                 )}
               </ul>
-              <Button asChild className="mt-5 w-full" variant={isPro ? "default" : "outline"}>
-                <Link to={p.key === "enterprise" ? "/ayuda" : `/onboarding?plan=${p.key}`}>
+              <Button asChild className="mt-5 w-full" variant={isHighlighted || isPro ? "default" : "outline"}>
+                <Link to={p.key === "enterprise" ? "/ayuda" : `/onboarding?plan=${p.key}${returnTo ? `&return_to=${encodeURIComponent(returnTo)}` : ""}`}>
                   {p.price_monthly === 0 ? "Empezar gratis" : `Probar ${p.trial_days} días`}
                 </Link>
               </Button>
