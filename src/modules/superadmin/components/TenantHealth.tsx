@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   CheckCircle2, AlertCircle, Clock, RefreshCw, Receipt, Key, ToggleRight,
-  Store, ExternalLink, Activity,
+  Store, ExternalLink, Activity, Globe, Plus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -39,7 +39,7 @@ export default function TenantHealth() {
       const base = `/superadmin/t/${currentOrg.slug}`;
 
       // Paralelo
-      const [modulesRes, fiscalRes, licRes, syncRes, ordersRes] = await Promise.all([
+      const [modulesRes, fiscalRes, licRes, syncRes, ordersRes, sitesRes, domainsRes] = await Promise.all([
         (supabase as any).from("organization_modules").select("module_key,enabled").eq("organization_id", orgId),
         (supabase as any).from("fiscal_settings").select("id").eq("organization_id", orgId).maybeSingle(),
         (supabase as any).from("organization_licenses").select("plan,expires_at,status").eq("organization_id", orgId).maybeSingle(),
@@ -47,6 +47,8 @@ export default function TenantHealth() {
         (supabase as any).from("pos_orders").select("id", { count: "exact", head: true })
           .eq("organization_id", orgId)
           .gte("created_at", new Date(Date.now() - 86400000).toISOString()),
+        (supabase as any).from("tenant_sites").select("id,is_published").eq("organization_id", orgId),
+        (supabase as any).from("tenant_domains").select("id,verified_at,cf_ssl_status").eq("organization_id", orgId),
       ]);
 
       const modulesEnabled = (modulesRes.data ?? []).filter((m: any) => m.enabled).length;
@@ -57,6 +59,11 @@ export default function TenantHealth() {
       const syncRows = (syncRes.data ?? []) as any[];
       const pending = syncRows.filter((r) => r.status === "pending" || r.status === "running").length;
       const failed = syncRows.filter((r) => r.status === "error" || r.status === "failed").length;
+      const sitesAll = (sitesRes.data ?? []) as any[];
+      const sitesPublished = sitesAll.filter((s) => s.is_published).length;
+      const domainsAll = (domainsRes.data ?? []) as any[];
+      const domainsVerified = domainsAll.filter((d) => !!d.verified_at).length;
+      const sslActive = domainsAll.filter((d) => d.cf_ssl_status === "active").length;
 
       if (cancelled) return;
 
@@ -85,6 +92,22 @@ export default function TenantHealth() {
           status: failed > 0 ? "warn" : pending > 0 ? "pending" : "ok",
           detail: failed > 0 ? `${failed} con error` : pending > 0 ? `${pending} en cola` : "Al día",
           to: `${base}/sync`,
+        },
+        {
+          id: "sites", label: "Sitios web",
+          status: sitesAll.length === 0 ? "pending" : sitesPublished > 0 ? "ok" : "warn",
+          detail: sitesAll.length === 0
+            ? "Sin sitios — crea el primero"
+            : `${sitesPublished}/${sitesAll.length} publicados`,
+          to: `${base}/sitios?tab=sites`,
+        },
+        {
+          id: "domains", label: "Dominios y SSL",
+          status: domainsAll.length === 0 ? "pending" : (domainsVerified === domainsAll.length && sslActive === domainsAll.length) ? "ok" : "warn",
+          detail: domainsAll.length === 0
+            ? "Sin dominios conectados"
+            : `${domainsVerified}/${domainsAll.length} verificados · SSL ${sslActive}/${domainsAll.length} activo`,
+          to: `${base}/sitios?tab=domains`,
         },
       ]);
       setLoading(false);
