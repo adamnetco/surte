@@ -25,13 +25,13 @@ import DeleteDomainDialog from "@/modules/superadmin/components/DeleteDomainDial
 const ASTRO_HOST_IP = "185.158.133.1"; // IP anycast de Lovable hosting (storefront servido desde Lovable Cloud)
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
 
-export default function Sitios() {
+export default function Sitios({ embedded = false, initialTab }: { embedded?: boolean; initialTab?: string } = {}) {
   const { user, role, loading } = useAuth();
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id ?? "";
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [tab, setTab] = useState("sites");
+  const [tab, setTab] = useState(initialTab ?? "sites");
 
   useEffect(() => {
     if (!loading && !user) { toast.error("Acceso denegado"); navigate("/login"); }
@@ -53,39 +53,49 @@ export default function Sitios() {
 
   if (loading || !orgId) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
+  const content = (
+    <>
+      <div>
+        <h1 className="text-2xl font-heading font-bold text-primary">Sitios web (Astro + WP headless)</h1>
+        <p className="text-sm text-muted-foreground">Cada negocio puede tener su propio sitio público, WordPress headless y dominio propio.</p>
+      </div>
+
+      {/* AC5: banner scope — toda acción en esta página opera sobre este tenant */}
+      <Card className="p-3 border-primary/30 bg-primary/5 flex items-center gap-3" data-testid="sitios-scope-banner">
+        <AlertTriangle className="w-4 h-4 text-primary shrink-0" />
+        <div className="text-sm flex-1 min-w-0">
+          <span className="text-muted-foreground">Operando sobre:</span>{" "}
+          <strong className="text-primary">{currentOrg?.name}</strong>{" "}
+          <code className="text-xs font-mono text-muted-foreground">({currentOrg?.slug})</code>
+        </div>
+        <span className="text-[11px] text-muted-foreground hidden sm:inline">
+          Cambia de tenant desde el selector superior.
+        </span>
+      </Card>
+
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="grid grid-cols-3 w-full lg:w-auto">
+          <TabsTrigger value="sites"><Globe className="w-4 h-4 mr-1" />Sitios</TabsTrigger>
+          <TabsTrigger value="domains">Dominios y SSL</TabsTrigger>
+          <TabsTrigger value="cloudflare"><Cloud className="w-4 h-4 mr-1" />Cloudflare</TabsTrigger>
+        </TabsList>
+        <TabsContent value="sites"><SitesTab orgId={orgId} qc={qc} /></TabsContent>
+        <TabsContent value="domains"><DomainsTab orgId={orgId} currentOrgId={orgId} qc={qc} /></TabsContent>
+        <TabsContent value="cloudflare"><CloudflareAccountsTab orgId={orgId} /></TabsContent>
+      </Tabs>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-4">{content}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <AdminHeader />
       <main className="max-w-7xl mx-auto p-4 lg:p-6 space-y-4">
         <AppBreadcrumb currentLabel="Sitios web" />
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-primary">Sitios web (Astro + WP headless)</h1>
-          <p className="text-sm text-muted-foreground">Cada negocio puede tener su propio sitio público, WordPress headless y dominio propio.</p>
-        </div>
-
-        {/* AC5: banner scope — toda acción en esta página opera sobre este tenant */}
-        <Card className="p-3 border-primary/30 bg-primary/5 flex items-center gap-3" data-testid="sitios-scope-banner">
-          <AlertTriangle className="w-4 h-4 text-primary shrink-0" />
-          <div className="text-sm flex-1 min-w-0">
-            <span className="text-muted-foreground">Operando sobre:</span>{" "}
-            <strong className="text-primary">{currentOrg?.name}</strong>{" "}
-            <code className="text-xs font-mono text-muted-foreground">({currentOrg?.slug})</code>
-          </div>
-          <span className="text-[11px] text-muted-foreground hidden sm:inline">
-            Cambia de tenant desde el selector superior.
-          </span>
-        </Card>
-
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid grid-cols-3 w-full lg:w-auto">
-            <TabsTrigger value="sites"><Globe className="w-4 h-4 mr-1" />Sitios</TabsTrigger>
-            <TabsTrigger value="domains">Dominios</TabsTrigger>
-            <TabsTrigger value="cloudflare"><Cloud className="w-4 h-4 mr-1" />Cloudflare</TabsTrigger>
-          </TabsList>
-          <TabsContent value="sites"><SitesTab orgId={orgId} qc={qc} /></TabsContent>
-          <TabsContent value="domains"><DomainsTab orgId={orgId} currentOrgId={orgId} qc={qc} /></TabsContent>
-          <TabsContent value="cloudflare"><CloudflareAccountsTab orgId={orgId} /></TabsContent>
-        </Tabs>
+        {content}
       </main>
     </div>
   );
