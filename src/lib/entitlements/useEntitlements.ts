@@ -33,10 +33,8 @@ export function useEntitlements(organizationId: string | null | undefined) {
     staleTime: 60_000,
     queryFn: async (): Promise<ResolvedEntitlements> => {
       const { data, error } = await supabase.functions.invoke('resolve-entitlements', {
-        method: 'GET',
-        // edge function reads organization_id from the URL — pass via query string
-        // supabase-js doesn't support GET query params on invoke directly, so use a direct fetch fallback
-      } as any);
+        body: { organization_id: organizationId },
+      });
 
       if (error || !data) {
         // Fallback: query the views directly through PostgREST (RLS protected)
