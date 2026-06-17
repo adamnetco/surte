@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { WizardShell } from "@/modules/onboarding/components/WizardShell";
 import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "@/modules/onboarding/lib/businessTemplates";
+import { EntitlementsWizardStep } from "@/modules/platform/components/EntitlementsWizardStep";
 import { cn } from "@/lib/utils";
 
 const TOTAL = 5;
@@ -90,15 +91,22 @@ export default function Onboarding() {
       } else if (step === 3) {
         setModules(template.modules);
       } else if (step === 4) {
-        const finalMods = enableEinvoice && !modules.includes("einvoice_innapsis") ? [...modules, "einvoice_innapsis"] : modules;
-        for (const m of finalMods) {
-          await supabase.from("organization_modules").upsert(
-            { organization_id: currentOrg.id, module_key: m, enabled: true },
+        // Módulos: el toggling escribe a tenant_module_overrides desde EntitlementsWizardStep.
+        // Aquí solo registramos el progreso. NUNCA escribir a organization_modules (DEPRECADA).
+        progressPatch.modules_done = true;
+        if (enableEinvoice) {
+          // einvoice_innapsis se activa como override (si el plan no lo incluye, el wizard lo bloqueará y redirige a /clientes/planes)
+          await supabase.from("tenant_module_overrides" as any).upsert(
+            {
+              organization_id: currentOrg.id,
+              module_key: "einvoice_innapsis",
+              enabled: true,
+              reason: "cliente_onboarding_einvoice",
+            },
             { onConflict: "organization_id,module_key" },
           );
+          progressPatch.einvoice_done = true;
         }
-        progressPatch.modules_done = true;
-        if (enableEinvoice) progressPatch.einvoice_done = true;
       } else if (step === 5) {
         await supabase.from("onboarding_progress").upsert(
           { organization_id: currentOrg.id, catalog_done: true, completed_at: new Date().toISOString() },
