@@ -1,6 +1,6 @@
 # POS-Eliminar-vinculacion-dominios
 
-**Estado:** DRAFT
+**Estado:** IN_SPEC
 **Módulo:** superadmin (Sitios Web) + platform (scope)
 **Owner:** Eduardo Tobacia
 **Creado:** 2026-06-17
