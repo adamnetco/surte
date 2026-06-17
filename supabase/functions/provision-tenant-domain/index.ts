@@ -15,9 +15,9 @@ const CNAME_TARGET = `${PAGES_PROJECT}.pages.dev`;
 const ROOT_DOMAIN = "sistecpos.com";
 
 const CF_API = "https://api.cloudflare.com/client/v4";
-const CF_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN")!;
-const CF_ACCOUNT = Deno.env.get("CLOUDFLARE_ACCOUNT_ID")!;
-const CF_ZONE = Deno.env.get("CLOUDFLARE_ZONE_ID")!;
+const CF_TOKEN = (Deno.env.get("CLOUDFLARE_API_TOKEN") ?? "").trim();
+const CF_ACCOUNT = (Deno.env.get("CLOUDFLARE_ACCOUNT_ID") ?? "").trim();
+const CF_ZONE = (Deno.env.get("CLOUDFLARE_ZONE_ID") ?? "").trim();
 
 const cfHeaders = {
   Authorization: `Bearer ${CF_TOKEN}`,
