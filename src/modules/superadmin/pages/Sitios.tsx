@@ -14,12 +14,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import AppBreadcrumb from "@/components/AppBreadcrumb";
-import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink, RefreshCw, Send, Webhook, Cloud, Wand2, Settings2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Globe, Plus, Copy, Check, X, Trash2, ExternalLink, RefreshCw, Send, Webhook, Cloud, Wand2, Settings2, CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import CloudflareAccountsTab from "@/modules/superadmin/components/CloudflareAccountsTab";
 import DomainWizard from "@/modules/superadmin/components/DomainWizard";
 import SiteDetailsPanel from "@/modules/superadmin/components/SiteDetailsPanel";
+import DeleteDomainDialog from "@/modules/superadmin/components/DeleteDomainDialog";
 
 const ASTRO_HOST_IP = "185.158.133.1"; // IP anycast de Lovable hosting (storefront servido desde Lovable Cloud)
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
