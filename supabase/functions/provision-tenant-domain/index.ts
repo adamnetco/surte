@@ -15,8 +15,13 @@ const CNAME_TARGET = `${PAGES_PROJECT}.pages.dev`;
 const ROOT_DOMAIN = "sistecpos.com";
 
 const CF_API = "https://api.cloudflare.com/client/v4";
-const CF_TOKEN = (Deno.env.get("CLOUDFLARE_API_TOKEN") ?? "").trim();
-const CF_ACCOUNT = (Deno.env.get("CLOUDFLARE_ACCOUNT_ID") ?? "").trim();
+// Auto-detect swapped secrets: a CF API Token starts with "cfut_" or is >35 chars; an Account ID is 32 hex.
+const RAW_TOKEN = (Deno.env.get("CLOUDFLARE_API_TOKEN") ?? "").trim();
+const RAW_ACCOUNT = (Deno.env.get("CLOUDFLARE_ACCOUNT_ID") ?? "").trim();
+const looksLikeToken = (s: string) => s.startsWith("cfut_") || s.length > 35;
+const SWAPPED = !looksLikeToken(RAW_TOKEN) && looksLikeToken(RAW_ACCOUNT);
+const CF_TOKEN = SWAPPED ? RAW_ACCOUNT : RAW_TOKEN;
+const CF_ACCOUNT = SWAPPED ? RAW_TOKEN : RAW_ACCOUNT;
 const CF_ZONE = (Deno.env.get("CLOUDFLARE_ZONE_ID") ?? "").trim();
 
 const cfHeaders = {
