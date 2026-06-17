@@ -42,13 +42,14 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   if (req.method === "GET" && url.searchParams.get("debug") === "1") {
+    const mask = (s: string | undefined) => s ? `${s.slice(0,4)}...${s.slice(-4)} (len ${s.length})` : "MISSING";
     const tokenVerify = await cfFetch("/user/tokens/verify");
     const zoneCheck = await cfFetch(`/zones/${CF_ZONE}`);
     const accountCheck = await cfFetch(`/accounts/${CF_ACCOUNT}`);
     return json(200, {
-      token_len: CF_TOKEN?.length ?? 0,
-      zone_id_len: CF_ZONE?.length ?? 0,
-      account_id_len: CF_ACCOUNT?.length ?? 0,
+      CLOUDFLARE_API_TOKEN: mask(CF_TOKEN),
+      CLOUDFLARE_ACCOUNT_ID: mask(CF_ACCOUNT),
+      CLOUDFLARE_ZONE_ID: mask(CF_ZONE),
       token_verify: tokenVerify,
       zone: zoneCheck,
       account: accountCheck,
