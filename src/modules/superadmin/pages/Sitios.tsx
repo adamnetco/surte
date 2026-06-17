@@ -38,6 +38,19 @@ export default function Sitios() {
     else if (!loading && !["superadmin","admin"].includes(role)) { toast.error("Solo admins"); navigate("/"); }
   }, [user, role, loading, navigate]);
 
+  // AC6: al cambiar scope, invalidar todas las queries de tenant-sites/domains/cloudflare/wp-config
+  // para que no se vean datos del scope anterior en la siguiente render.
+  useEffect(() => {
+    if (!orgId) return;
+    const prefixes = ["tenant-sites", "tenant-sites-list", "tenant-domains", "cloudflare-accounts", "wp-config"];
+    qc.invalidateQueries({
+      predicate: (q) => {
+        const key = q.queryKey?.[0];
+        return typeof key === "string" && prefixes.some((p) => key === p || key.startsWith(`${p}-`) || key.startsWith(`${p}/`));
+      },
+    });
+  }, [orgId, qc]);
+
   if (loading || !orgId) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   return (
@@ -50,6 +63,19 @@ export default function Sitios() {
           <p className="text-sm text-muted-foreground">Cada negocio puede tener su propio sitio público, WordPress headless y dominio propio.</p>
         </div>
 
+        {/* AC5: banner scope — toda acción en esta página opera sobre este tenant */}
+        <Card className="p-3 border-primary/30 bg-primary/5 flex items-center gap-3" data-testid="sitios-scope-banner">
+          <AlertTriangle className="w-4 h-4 text-primary shrink-0" />
+          <div className="text-sm flex-1 min-w-0">
+            <span className="text-muted-foreground">Operando sobre:</span>{" "}
+            <strong className="text-primary">{currentOrg?.name}</strong>{" "}
+            <code className="text-xs font-mono text-muted-foreground">({currentOrg?.slug})</code>
+          </div>
+          <span className="text-[11px] text-muted-foreground hidden sm:inline">
+            Cambia de tenant desde el selector superior.
+          </span>
+        </Card>
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid grid-cols-3 w-full lg:w-auto">
             <TabsTrigger value="sites"><Globe className="w-4 h-4 mr-1" />Sitios</TabsTrigger>
@@ -57,7 +83,7 @@ export default function Sitios() {
             <TabsTrigger value="cloudflare"><Cloud className="w-4 h-4 mr-1" />Cloudflare</TabsTrigger>
           </TabsList>
           <TabsContent value="sites"><SitesTab orgId={orgId} qc={qc} /></TabsContent>
-          <TabsContent value="domains"><DomainsTab orgId={orgId} qc={qc} /></TabsContent>
+          <TabsContent value="domains"><DomainsTab orgId={orgId} currentOrgId={orgId} qc={qc} /></TabsContent>
           <TabsContent value="cloudflare"><CloudflareAccountsTab orgId={orgId} /></TabsContent>
         </Tabs>
       </main>
