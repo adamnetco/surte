@@ -1,6 +1,6 @@
 # POS-entitlements-wizard-unification
 
-**Estado:** IN_BUILD (ACs reformulados 2026-06-17 v2 — ver §Reporte de Revisión v2)
+**Estado:** SHIPPED (2026-06-17 v3 — todos los ACs v2 ✅, ver §Reporte de Revisión v3)
 **Módulo:** superadmin / clientes / platform (entitlements)
 **Owner:** Eduardo
 **Fecha:** 2026-06-17
