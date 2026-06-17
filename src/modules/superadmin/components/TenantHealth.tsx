@@ -167,6 +167,45 @@ export default function TenantHealth() {
       {/* Lifecycle */}
       <TenantLifecyclePanel />
 
+      {/* Sitios y dominios — panel destacado con CTAs directos */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-3 flex items-center justify-between border-b border-border">
+          <div className="flex items-center gap-2">
+            <Globe size={15} className="text-primary" />
+            <h3 className="font-heading font-bold text-sm">Sitios web, dominios y SSL</h3>
+          </div>
+          <Link
+            to={`/superadmin/t/${currentOrg.slug}/sitios`}
+            className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+          >
+            Abrir gestor <ExternalLink size={11} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
+          <Link
+            to={`/superadmin/t/${currentOrg.slug}/sitios?tab=sites`}
+            className="px-5 py-3 hover:bg-muted/40 transition-colors flex items-center gap-2"
+          >
+            <Plus size={14} className="text-primary" />
+            <span className="text-sm">Nuevo sitio</span>
+          </Link>
+          <Link
+            to={`/superadmin/t/${currentOrg.slug}/sitios?tab=domains`}
+            className="px-5 py-3 hover:bg-muted/40 transition-colors flex items-center gap-2"
+          >
+            <Plus size={14} className="text-primary" />
+            <span className="text-sm">Conectar dominio</span>
+          </Link>
+          <Link
+            to={`/superadmin/t/${currentOrg.slug}/sitios?tab=domains`}
+            className="px-5 py-3 hover:bg-muted/40 transition-colors flex items-center gap-2"
+          >
+            <CheckCircle2 size={14} className="text-primary" />
+            <span className="text-sm">Activar SSL</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Checklist */}
       <div className="rounded-xl border border-border bg-card divide-y divide-border">
         <div className="px-5 py-3 flex items-center justify-between">
@@ -189,11 +228,12 @@ export default function TenantHealth() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <QuickLink to={`/superadmin/t/${currentOrg.slug}/modulos`} icon={ToggleRight} label="Módulos" />
         <QuickLink to={`/superadmin/t/${currentOrg.slug}/fiscal`} icon={Receipt} label="Fiscal" />
         <QuickLink to={`/superadmin/t/${currentOrg.slug}/sync`} icon={RefreshCw} label="Sincronización" />
         <QuickLink to={`/superadmin/t/${currentOrg.slug}/licencia`} icon={Key} label="Licencia" />
+        <QuickLink to={`/superadmin/t/${currentOrg.slug}/sitios`} icon={Globe} label="Sitios y SSL" />
       </div>
     </div>
   );
