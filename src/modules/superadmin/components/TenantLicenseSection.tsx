@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { KeyRound, Copy, ShieldOff, ShieldCheck, Plus, Cpu } from "lucide-react";
+import { KeyRound, Copy, ShieldOff, ShieldCheck, Plus, Cpu, Eraser } from "lucide-react";
 
 type License = {
   id: string;
@@ -95,6 +95,23 @@ export default function TenantLicenseSection() {
     load();
   }
 
+  async function purgeObsoleteOverrides() {
+    if (!currentOrg) return;
+    if (!window.confirm(
+      `Purgar overrides de módulos obsoletos para "${currentOrg.name}"?\n\n` +
+      `Esto elimina las excepciones que ya no aplican al plan actual ` +
+      `(módulos habilitados manualmente que el plan no incluye, o desactivaciones redundantes). ` +
+      `Acción irreversible.`
+    )) return;
+    const { data, error } = await supabase.rpc(
+      "superadmin_purge_obsolete_overrides" as any,
+      { _organization_id: currentOrg.id },
+    );
+    if (error) return toast.error(error.message);
+    const count = Array.isArray(data) ? data.length : 0;
+    toast.success(count === 0 ? "No había overrides obsoletos" : `${count} override(s) purgados`);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -106,9 +123,14 @@ export default function TenantLicenseSection() {
             Plan, vigencia y terminales activos para esta tienda.
           </p>
         </div>
-        <Button onClick={() => navigate("/licencias")} variant="outline" size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Emitir nueva (vista global)
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={purgeObsoleteOverrides} variant="ghost" size="sm" title="Limpia overrides de módulos que ya no aplican al plan actual">
+            <Eraser className="h-4 w-4 mr-1" /> Purgar overrides
+          </Button>
+          <Button onClick={() => navigate("/licencias")} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Emitir nueva (vista global)
+          </Button>
+        </div>
       </div>
 
       {loading ? (
