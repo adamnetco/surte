@@ -1,6 +1,6 @@
 # POS-entitlements-wizard-unification
 
-**Estado:** DRAFT
+**Estado:** IN_SPEC
 **Módulo:** superadmin / clientes / platform (entitlements)
 **Owner:** Eduardo
 **Fecha:** 2026-06-17
@@ -135,8 +135,19 @@ Solo se agrega:
 - Edge function: `supabase/functions/resolve-entitlements/index.ts`.
 - Hook cliente: `src/lib/entitlements/useEntitlements.ts`.
 
-## Open Questions
+## Decisiones (resueltas 2026-06-17)
 
-1. ¿`organization_modules` debe eventualmente deprecarse del todo, o se conserva como cache materializado?
-2. ¿Permitimos override de **límites** por cliente (vía portal) o solo por superadmin? (asumido: solo superadmin).
-3. ¿El modal "Mejora tu plan" enlaza a Polar checkout directamente o pasa por `Planes.tsx`?
+1. **`organization_modules` muere.** Se deprecia completamente. Plan de retiro:
+   - Fase A (esta spec): marcar `DEPRECATED` en comentario, dejar trigger `trg_sync_organization_modules_from_entitlements` solo como puente temporal de lectura.
+   - Fase B: migrar todos los `useQuery(['organization_modules', ...])` y lecturas directas a `useEntitlements()` / `v_tenant_entitlements_modules`.
+   - Fase C: `DROP TABLE public.organization_modules` (migración separada cuando grep no encuentre referencias).
+   - **AC adicional:** ninguna lectura nueva debe apuntar a `organization_modules`.
+
+2. **Override de límites = solo superadmin.** El portal cliente (`Onboarding.tsx`, `clientes/*`) NO expone toggles de límites. `<EntitlementsWizardStep mode="override-only">` para cliente solo afecta módulos; para límites se usa `mode="readonly"` con CTA "Solicitar aumento" → abre `Planes.tsx`.
+   - `tenant_limit_overrides` solo escribible por `superadmin` (RLS ya lo enforce).
+
+3. **Modal "Mejora tu plan" → pasa por `Planes.tsx`.** No link directo a Polar checkout.
+   - URL: `/clientes/planes?highlight=<plan_code>&reason=<feature_code>&return_to=<current_path>`.
+   - `Planes.tsx` lee query params, resalta el plan sugerido y muestra banner contextual ("Necesitas el plan X para activar Y").
+   - Botón "Contratar" dentro de `Planes.tsx` es el que dispara Polar checkout.
+   - **Beneficio:** punto único de comparación de planes, evita checkout impulsivo sin ver alternativas.
