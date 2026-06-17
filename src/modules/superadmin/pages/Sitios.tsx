@@ -337,16 +337,25 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
   const [hostname, setHostname] = useState("");
   const [wizardDomain, setWizardDomain] = useState<{ id: string; hostname: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const { data: sites } = useQuery({
     queryKey: ["tenant-sites-list", orgId],
     queryFn: async () => (await supabase.from("tenant_sites").select("id,name,slug").eq("organization_id", orgId).order("name")).data ?? [],
   });
   const { data: domains } = useQuery({
-    queryKey: ["tenant-domains", orgId],
-    queryFn: async () => (await supabase.from("tenant_domains").select("*, tenant_sites(name,slug)")
-      .eq("organization_id", orgId).order("created_at", { ascending: false })).data ?? [],
+    queryKey: ["tenant-domains", orgId, showAll],
+    queryFn: async () => {
+      // Cuando showAll = true (solo superadmin), traemos TODOS los dominios sin filtrar
+      // por organization_id para detectar huérfanos cargados en otras orgs (caso Freshlove).
+      let q = supabase.from("tenant_domains")
+        .select("*, tenant_sites(name,slug,organization_id)")
+        .order("created_at", { ascending: false });
+      if (!showAll) q = q.eq("organization_id", orgId);
+      return (await q).data ?? [];
+    },
   });
+
 
   const add = async () => {
     if (!siteId || !hostname.trim()) return toast.error("Sitio y dominio requeridos");
@@ -406,7 +415,17 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
         </div>
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="text-sm text-muted-foreground">
+            {domains?.length ?? 0} {(domains?.length ?? 0) === 1 ? "dominio" : "dominios"}
+            {showAll && <Badge variant="outline" className="ml-2 text-[10px]">Vista global</Badge>}
+          </div>
+          <label className="flex items-center gap-2 text-xs cursor-pointer" title="Ver todos los dominios sin filtrar por org (detectar huérfanos)">
+            <Switch checked={showAll} onCheckedChange={setShowAll} aria-label="Ver todos los dominios" />
+            <span className="text-muted-foreground">Ver todos los dominios (superadmin)</span>
+          </label>
+        </div>
         <Table>
           <TableHeader><TableRow>
             <TableHead>Dominio</TableHead><TableHead>Sitio</TableHead>
@@ -415,7 +434,13 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
           </TableRow></TableHeader>
           <TableBody>
             {domains?.map((d: any) => {
-              const isForeign = d.organization_id !== currentOrgId;
+              // Foráneo = el dominio pertenece a una org distinta del sitio al que apunta
+              // (caso Freshlove: tenant_domains.org=surteya pero tenant_sites.org=freshlove).
+              // O bien el dominio aparece en "ver todos" y no es del scope actual.
+              const siteOrg = d.tenant_sites?.organization_id;
+              const isOrphan = siteOrg && siteOrg !== d.organization_id;
+              const isOutOfScope = showAll && d.organization_id !== currentOrgId;
+              const isForeign = isOrphan || isOutOfScope;
               return (
               <TableRow key={d.id} data-testid={`domain-row-${d.hostname}`}>
                 <TableCell className="font-mono text-xs">
@@ -479,7 +504,12 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
         open={!!deleteTarget}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
         domain={deleteTarget}
-        isForeign={!!deleteTarget && deleteTarget.organization_id !== currentOrgId}
+        isForeign={
+          !!deleteTarget &&
+          ((deleteTarget.tenant_sites?.organization_id &&
+            deleteTarget.tenant_sites.organization_id !== deleteTarget.organization_id) ||
+            (showAll && deleteTarget.organization_id !== currentOrgId))
+        }
         onDeleted={onDeleted}
       />
     </div>
