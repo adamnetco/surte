@@ -39,6 +39,22 @@ async function cfFetch(path: string, init: RequestInit = {}) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const url = new URL(req.url);
+  if (req.method === "GET" && url.searchParams.get("debug") === "1") {
+    const tokenVerify = await cfFetch("/user/tokens/verify");
+    const zoneCheck = await cfFetch(`/zones/${CF_ZONE}`);
+    const accountCheck = await cfFetch(`/accounts/${CF_ACCOUNT}`);
+    return json(200, {
+      token_len: CF_TOKEN?.length ?? 0,
+      zone_id_len: CF_ZONE?.length ?? 0,
+      account_id_len: CF_ACCOUNT?.length ?? 0,
+      token_verify: tokenVerify,
+      zone: zoneCheck,
+      account: accountCheck,
+    });
+  }
+
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
   try {
