@@ -45,27 +45,6 @@ async function cfFetch(path: string, init: RequestInit = {}) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const url = new URL(req.url);
-  if (req.method === "GET" && url.searchParams.get("debug") === "1") {
-    const mask = (s: string | undefined) => s ? `${s.slice(0,4)}...${s.slice(-4)} (len ${s.length})` : "MISSING";
-    // Try as-is
-    const tokenVerify = await cfFetch("/user/tokens/verify");
-    const zoneCheck = await cfFetch(`/zones/${CF_ZONE}`);
-    const accountCheck = await cfFetch(`/accounts/${CF_ACCOUNT}`);
-    // Try with TOKEN <-> ACCOUNT swapped (in case user mixed them up)
-    const swappedAuth = { Authorization: `Bearer ${CF_ACCOUNT}`, "Content-Type": "application/json" };
-    const swappedVerify = await fetch(`${CF_API}/user/tokens/verify`, { headers: swappedAuth }).then(r => r.json()).catch(e => ({err: String(e)}));
-    return json(200, {
-      CLOUDFLARE_API_TOKEN: mask(CF_TOKEN),
-      CLOUDFLARE_ACCOUNT_ID: mask(CF_ACCOUNT),
-      CLOUDFLARE_ZONE_ID: mask(CF_ZONE),
-      asis_token_verify: tokenVerify,
-      asis_zone: zoneCheck,
-      asis_account: accountCheck,
-      swapped_token_verify: swappedVerify,
-    });
-  }
-
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
   try {
