@@ -255,3 +255,30 @@ Solo se agrega:
 
 - Fase B de migración legacy (`organization_modules` reads → `useEntitlements`) sigue pendiente. Listar callsites en ticket separado.
 - `get_upgrade_target_plan` aún puede sugerir un plan gratuito con módulos premium si los datos de `plan_modules.included` no están saneados — recomendado añadir constraint o sanity-check.
+
+---
+
+## Reporte de Revisión v3 — 2026-06-17 (post-gaps)
+
+**Resultado general:** ✅ APROBADO — todos los ACs v2 cumplen.
+
+### Criterios de Aceptación (v2)
+
+| AC | Estado | Evidencia |
+|---|---|---|
+| AC1 — Componente único en ambos wizards | ✅ | `TenantOnboardingWizard.tsx:29,234` importa y renderiza `<EntitlementsWizardStep mode="plan-baseline" />`; `Onboarding.tsx:18,235` lo usa en modo `override-only`. |
+| AC2 — Onboarding NO escribe `organization_modules` | ✅ | `rg "from\('organization_modules'\)" src/modules/clientes` → 0 matches. Solo escribe `tenant_module_overrides`. |
+| AC3 — Free → Premium redirige a `/clientes/planes` | ✅ | `EntitlementsWizardStep.toggle()` navega con `highlight`, `reason`, `return_to`; `Planes.tsx` muestra banner contextual. |
+| AC4 — Botón manual "Purgar overrides" | ✅ | `TenantLicenseSection.tsx` expone `purgeObsoleteOverrides()` con `window.confirm` → RPC `superadmin_purge_obsolete_overrides`. |
+| AC7 — Invalidate query + audit log trigger | ✅ | (a) `invalidateQueries(['entitlements', orgId])` en `EntitlementsWizardStep:89`; (b) trigger `trg_audit_tenant_module_overrides` (migración `20260617140313`) registra INSERT/UPDATE/DELETE en `tenant_audit_log` vía `_tenant_log()`. |
+| AC8 — Test E2E | ✅ | `e2e/entitlements-wizard.spec.ts` (52 líneas) cubre redirect con query params + smoke test superadmin. |
+| AC9 — Cero escrituras nuevas a `organization_modules` | ✅ | `rg "from\('organization_modules'\)" src/modules/{clientes,superadmin}` → 0 matches en wizards. |
+
+### Observaciones (no bloquean)
+
+- `get_upgrade_target_plan` puede retornar plan Free si contiene el módulo (poco probable); validar en Fase B.
+- Cast `as any` sobre `tenant_module_overrides` en `EntitlementsWizardStep` por types desactualizados — desaparece tras próximo regen.
+- Checkout Wompi en `Planes.tsx` queda para spec `POS-wompi-checkout` (No-Goal explícito).
+- Fase B (migrar lecturas legacy de `organization_modules`) y Fase C (DROP TABLE) pendientes como specs separados.
+
+**Veredicto:** Spec marcado **SHIPPED**. Próximo paso sugerido: crear spec `POS-wompi-checkout` y spec `POS-organization-modules-readers-migration` (Fase B).
