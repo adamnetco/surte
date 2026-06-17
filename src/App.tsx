@@ -78,7 +78,7 @@ const Licencias = lazy(() => import("./modules/superadmin").then((m) => ({ defau
 const GerenteIA = lazy(() => import("./pages/GerenteIA"));
 const Compras = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.ComprasPage })));
 const HealthLogs = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.HealthLogsPage })));
-const Sitios = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SitiosPage })));
+const SitiosLegacyRedirect = lazy(() => import("./modules/superadmin/pages/SitiosLegacyRedirect"));
 const SuperadminDashboard = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SuperadminDashboardPage })));
 const TenantWorkspace = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.TenantWorkspacePage })));
 const LoginSuperadmin = lazy(() => import("./modules/auth/pages/LoginSuperadmin"));
@@ -291,7 +291,7 @@ const App = () => (
 
                     {/* === Panel SistecPOS (solo en hosts del sistema) === */}
                     <Route path="/superadmin/*" element={<HostGuard require="system"><SuperadminDashboard /></HostGuard>} />
-                    <Route path="/sitios" element={<HostGuard require="system"><Sitios /></HostGuard>} />
+                    <Route path="/sitios" element={<HostGuard require="system"><SitiosLegacyRedirect /></HostGuard>} />
                     <Route path="/licencias" element={<HostGuard require="system"><Licencias /></HostGuard>} />
                     <Route path="/catalogos-base" element={<HostGuard require="system"><CatalogosBase /></HostGuard>} />
                     <Route path="/t/:slug/admin" element={<HostGuard require="system"><TenantWorkspace /></HostGuard>} />
