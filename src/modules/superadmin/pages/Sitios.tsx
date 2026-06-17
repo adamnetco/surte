@@ -358,10 +358,10 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
     qc.invalidateQueries({ queryKey: ["tenant-domains", orgId] });
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("¿Eliminar este dominio?")) return;
-    await supabase.from("tenant_domains").delete().eq("id", id);
+  const onDeleted = () => {
     qc.invalidateQueries({ queryKey: ["tenant-domains", orgId] });
+    qc.invalidateQueries({ queryKey: ["tenant-sites", orgId] });
+    qc.removeQueries({ queryKey: ["tenant-site"] });
   };
 
   const markVerified = async (d: any) => {
