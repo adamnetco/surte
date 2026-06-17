@@ -414,9 +414,20 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
             <TableHead>Primario</TableHead><TableHead></TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {domains?.map((d: any) => (
-              <TableRow key={d.id}>
-                <TableCell className="font-mono text-xs">{d.hostname}</TableCell>
+            {domains?.map((d: any) => {
+              const isForeign = d.organization_id !== currentOrgId;
+              return (
+              <TableRow key={d.id} data-testid={`domain-row-${d.hostname}`}>
+                <TableCell className="font-mono text-xs">
+                  <div className="flex items-center gap-2">
+                    {d.hostname}
+                    {isForeign && (
+                      <Badge variant="destructive" className="text-[10px]" data-testid="badge-foreign">
+                        <AlertTriangle className="w-3 h-3 mr-0.5" />Foráneo
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell className="text-sm">{d.tenant_sites?.name}</TableCell>
                 <TableCell>
                   <button className="text-xs font-mono inline-flex items-center gap-1 hover:text-primary" onClick={() => copy(d.verification_token)}>
@@ -439,10 +450,19 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
                   <a href={`https://${d.hostname}`} target="_blank" rel="noreferrer">
                     <Button size="icon" variant="ghost"><ExternalLink className="w-4 h-4" /></Button>
                   </a>
-                  <Button size="icon" variant="ghost" onClick={() => remove(d.id)}><Trash2 className="w-4 h-4" /></Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setDeleteTarget(d)}
+                    aria-label={`Eliminar dominio ${d.hostname}`}
+                    data-testid={`delete-domain-${d.hostname}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
             {!domains?.length && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Sin dominios.</TableCell></TableRow>}
           </TableBody>
         </Table>
@@ -453,6 +473,14 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
         onOpenChange={(v) => !v && setWizardDomain(null)}
         orgId={orgId}
         domain={wizardDomain}
+      />
+
+      <DeleteDomainDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        domain={deleteTarget}
+        isForeign={!!deleteTarget && deleteTarget.organization_id !== currentOrgId}
+        onDeleted={onDeleted}
       />
     </div>
   );
