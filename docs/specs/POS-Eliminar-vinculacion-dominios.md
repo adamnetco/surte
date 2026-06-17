@@ -1,6 +1,6 @@
 # POS-Eliminar-vinculacion-dominios
 
-**Estado:** IN_REVIEW
+**Estado:** IN_BUILD (rechazado en review 2026-06-17 — ver §13)
 **Módulo:** superadmin (Sitios Web) + platform (scope)
 **Owner:** Eduardo Tobacia
 **Creado:** 2026-06-17
@@ -91,4 +91,14 @@ Riesgo: un superadmin puede creer que está operando sobre Tenant A y aplicar ca
 
 - Notificación email al owner del tenant afectado cuando se borra un dominio foráneo (puede ser spec aparte si se necesita).
 - Script masivo de limpieza de huérfanos: la UI con badge `⚠ Foráneo` permite limpiar uno a uno; solo crear script si aparecen >10 casos.
+
+## 13. Gaps de Review 2026-06-17 (pendientes para volver a IN_REVIEW)
+
+**G1 — AC4 semánticamente roto (CRÍTICO).** `Sitios.tsx:418` calcula `isForeign = d.organization_id !== currentOrgId`, pero la query filtra `WHERE organization_id = orgId`, por lo que el badge nunca se muestra. Esto NO detecta el caso Freshlove (dominio en `surteya` apuntando a sitio de Freshlove vía `site_id`).
+  - Fix: incluir `tenant_sites(organization_id, name, slug)` en el SELECT y comparar `d.tenant_sites?.organization_id !== d.organization_id`.
+  - Recomendado adicional: toggle "Ver todos los dominios (superadmin)" que omite el filtro `eq('organization_id', orgId)` para listar huérfanos hospedados en otras orgs.
+
+**G2 — AC2 incompleto.** `delete-tenant-domain/index.ts` solo borra `custom_hostnames`. Spec §4.2.b también requiere `DELETE dns_records/{cf_dns_record_id}`. Verificar columna en `tenant_domains` y agregar segundo `fetch` idempotente (404 = éxito). Si la columna no existe, ajustar spec o agregar migration.
+
+**G3 (observación).** Confirmar columna `tenant_audit_log.actor_email` (el código la inserta pero no figura en §4.2.d).
 
