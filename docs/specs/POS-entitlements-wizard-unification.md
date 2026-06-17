@@ -1,6 +1,6 @@
 # POS-entitlements-wizard-unification
 
-**Estado:** IN_SPEC
+**Estado:** IN_BUILD (revisión 2026-06-17 detectó gaps — ver §Reporte de Revisión)
 **Módulo:** superadmin / clientes / platform (entitlements)
 **Owner:** Eduardo
 **Fecha:** 2026-06-17
