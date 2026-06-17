@@ -332,10 +332,11 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
   );
 }
 
-function DomainsTab({ orgId, qc }: { orgId: string; qc: any }) {
+function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: string; qc: any }) {
   const [siteId, setSiteId] = useState<string>("");
   const [hostname, setHostname] = useState("");
   const [wizardDomain, setWizardDomain] = useState<{ id: string; hostname: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
 
   const { data: sites } = useQuery({
     queryKey: ["tenant-sites-list", orgId],
