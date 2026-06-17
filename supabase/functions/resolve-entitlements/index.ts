@@ -6,7 +6,11 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const organizationId = url.searchParams.get('organization_id');
+    let organizationId = url.searchParams.get('organization_id');
+    if (!organizationId && req.method !== 'GET') {
+      const body = await req.json().catch(() => ({}));
+      organizationId = body?.organization_id ?? null;
+    }
     if (!organizationId) {
       return new Response(JSON.stringify({ error: 'organization_id required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
