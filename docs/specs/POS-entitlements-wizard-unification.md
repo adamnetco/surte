@@ -146,8 +146,8 @@ Solo se agrega:
 2. **Override de límites = solo superadmin.** El portal cliente (`Onboarding.tsx`, `clientes/*`) NO expone toggles de límites. `<EntitlementsWizardStep mode="override-only">` para cliente solo afecta módulos; para límites se usa `mode="readonly"` con CTA "Solicitar aumento" → abre `Planes.tsx`.
    - `tenant_limit_overrides` solo escribible por `superadmin` (RLS ya lo enforce).
 
-3. **Modal "Mejora tu plan" → pasa por `Planes.tsx`.** No link directo a Polar checkout.
+3. **Modal "Mejora tu plan" → pasa por `Planes.tsx`.** No link directo a checkout.
    - URL: `/clientes/planes?highlight=<plan_code>&reason=<feature_code>&return_to=<current_path>`.
    - `Planes.tsx` lee query params, resalta el plan sugerido y muestra banner contextual ("Necesitas el plan X para activar Y").
-   - Botón "Contratar" dentro de `Planes.tsx` es el que dispara Polar checkout.
+   - Botón "Contratar" dentro de `Planes.tsx` dispara checkout en **Wompi** (pasarela definitiva — Polar descartada).
    - **Beneficio:** punto único de comparación de planes, evita checkout impulsivo sin ver alternativas.
