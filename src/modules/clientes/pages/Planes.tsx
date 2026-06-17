@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, ArrowUpRight } from "lucide-react";
 
 interface Plan {
   id: string; key: string; name: string; description: string;
@@ -24,14 +24,22 @@ const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 export default function Planes() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly");
+  const [params] = useSearchParams();
+
+  // Contexto de upgrade venido del modal "Mejora tu plan"
+  const highlight = params.get("highlight"); // plan_key sugerido
+  const reason = params.get("reason");       // module_key bloqueado
+  const returnTo = params.get("return_to");  // ruta a la que volver tras contratar
 
   useEffect(() => {
-    document.title = "Planes y precios · SURTÉ YA POS";
+    document.title = "Planes y precios · SistecPOS";
     (async () => {
       const { data } = await supabase.from("saas_plans").select("*").eq("is_public", true).order("sort_order");
       setPlans((data as any) ?? []);
     })();
   }, []);
+
+  const reasonLabel = useMemo(() => (reason ? MODULE_LABELS[reason] ?? reason : null), [reason]);
 
   return (
     <div className="min-h-[100dvh] bg-gradient-to-b from-background to-muted/30">
@@ -41,6 +49,15 @@ export default function Planes() {
         <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
           Vende, factura a la DIAN y controla tu inventario desde el celular o el computador. Sin instalación, sin amarres.
         </p>
+        {highlight && reasonLabel && (
+          <div className="mt-6 mx-auto max-w-xl rounded-lg border-2 border-primary/40 bg-primary/5 p-3 flex items-center gap-2 text-sm text-left">
+            <ArrowUpRight className="h-4 w-4 text-primary shrink-0" />
+            <span>
+              Necesitas el plan <strong className="text-primary uppercase">{highlight}</strong> para activar{" "}
+              <strong>{reasonLabel}</strong>.
+            </span>
+          </div>
+        )}
         <div className="inline-flex bg-card border rounded-full p-1 mt-6">
           <button onClick={() => setCycle("monthly")} className={`px-4 py-1.5 rounded-full text-sm ${cycle === "monthly" ? "bg-primary text-primary-foreground" : ""}`}>Mensual</button>
           <button onClick={() => setCycle("yearly")} className={`px-4 py-1.5 rounded-full text-sm ${cycle === "yearly" ? "bg-primary text-primary-foreground" : ""}`}>Anual (-17%)</button>
@@ -51,9 +68,10 @@ export default function Planes() {
         {plans.map((p) => {
           const price = cycle === "monthly" ? p.price_monthly : Math.round(p.price_yearly / 12);
           const isPro = p.key === "pro";
+          const isHighlighted = highlight === p.key;
           return (
-            <Card key={p.id} className={`p-6 flex flex-col ${isPro ? "border-primary border-2 shadow-lg" : ""}`}>
-              {isPro && <Badge className="self-start mb-2">Recomendado</Badge>}
+            <Card key={p.id} className={`p-6 flex flex-col ${isHighlighted ? "border-primary border-2 shadow-xl ring-2 ring-primary/30" : isPro ? "border-primary border-2 shadow-lg" : ""}`}>
+              {isHighlighted ? <Badge className="self-start mb-2 bg-primary">Tu plan recomendado</Badge> : isPro && <Badge className="self-start mb-2">Recomendado</Badge>}
               <h3 className="text-xl font-bold">{p.name}</h3>
               <p className="text-sm text-muted-foreground mt-1 min-h-[40px]">{p.description}</p>
               <div className="mt-4">
@@ -85,8 +103,8 @@ export default function Planes() {
                   </li>
                 )}
               </ul>
-              <Button asChild className="mt-5 w-full" variant={isPro ? "default" : "outline"}>
-                <Link to={p.key === "enterprise" ? "/ayuda" : `/onboarding?plan=${p.key}`}>
+              <Button asChild className="mt-5 w-full" variant={isHighlighted || isPro ? "default" : "outline"}>
+                <Link to={p.key === "enterprise" ? "/ayuda" : `/onboarding?plan=${p.key}${returnTo ? `&return_to=${encodeURIComponent(returnTo)}` : ""}`}>
                   {p.price_monthly === 0 ? "Empezar gratis" : `Probar ${p.trial_days} días`}
                 </Link>
               </Button>

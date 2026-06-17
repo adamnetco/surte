@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { WizardShell } from "@/modules/onboarding/components/WizardShell";
 import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "@/modules/onboarding/lib/businessTemplates";
+import { EntitlementsWizardStep } from "@/modules/platform/components/EntitlementsWizardStep";
 import { cn } from "@/lib/utils";
 
 const TOTAL = 5;
@@ -90,15 +91,22 @@ export default function Onboarding() {
       } else if (step === 3) {
         setModules(template.modules);
       } else if (step === 4) {
-        const finalMods = enableEinvoice && !modules.includes("einvoice_innapsis") ? [...modules, "einvoice_innapsis"] : modules;
-        for (const m of finalMods) {
-          await supabase.from("organization_modules").upsert(
-            { organization_id: currentOrg.id, module_key: m, enabled: true },
+        // Módulos: el toggling escribe a tenant_module_overrides desde EntitlementsWizardStep.
+        // Aquí solo registramos el progreso. NUNCA escribir a organization_modules (DEPRECADA).
+        progressPatch.modules_done = true;
+        if (enableEinvoice) {
+          // einvoice_innapsis se activa como override (si el plan no lo incluye, el wizard lo bloqueará y redirige a /clientes/planes)
+          await supabase.from("tenant_module_overrides" as any).upsert(
+            {
+              organization_id: currentOrg.id,
+              module_key: "einvoice_innapsis",
+              enabled: true,
+              reason: "cliente_onboarding_einvoice",
+            },
             { onConflict: "organization_id,module_key" },
           );
+          progressPatch.einvoice_done = true;
         }
-        progressPatch.modules_done = true;
-        if (enableEinvoice) progressPatch.einvoice_done = true;
       } else if (step === 5) {
         await supabase.from("onboarding_progress").upsert(
           { organization_id: currentOrg.id, catalog_done: true, completed_at: new Date().toISOString() },
@@ -224,26 +232,14 @@ export default function Onboarding() {
         onBack={back} onNext={next} nextDisabled={!canAdvance()} loading={saving}
       >
         <div className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {ALL_MODULES.map((m) => {
-              const active = modules.includes(m.key);
-              return (
-                <button
-                  key={m.key} type="button" onClick={() => toggleModule(m.key)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg border-2 px-3 py-2.5 text-left transition-colors",
-                    active ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/40",
-                  )}
-                >
-                  <div className={cn("h-5 w-5 rounded-md border-2 grid place-items-center shrink-0",
-                    active ? "border-primary bg-primary" : "border-muted-foreground/40")}>
-                    {active && <Check className="h-3 w-3 text-primary-foreground" />}
-                  </div>
-                  <span className="text-sm font-medium">{m.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <EntitlementsWizardStep
+            organizationId={currentOrg.id}
+            mode="override-only"
+            onChange={setModules}
+          />
+          <p className="text-[11px] text-muted-foreground px-1">
+            Los módulos disponibles dependen de tu plan. Los bloqueados te llevarán a comparar planes.
+          </p>
           <label className="flex items-start gap-3 rounded-lg border-2 border-border bg-background p-3 cursor-pointer hover:border-primary/40">
             <input type="checkbox" checked={enableEinvoice} onChange={(e) => setEnableEinvoice(e.target.checked)} className="mt-0.5 h-4 w-4" />
             <div>

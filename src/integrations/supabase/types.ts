@@ -8281,6 +8281,10 @@ export type Database = {
           slot_start: string
         }[]
       }
+      get_upgrade_target_plan: {
+        Args: { _module_key: string }
+        Returns: string
+      }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
@@ -8430,6 +8434,13 @@ export type Database = {
       revoke_activation: {
         Args: { _activation_id: string; _reason?: string }
         Returns: boolean
+      }
+      superadmin_purge_obsolete_overrides: {
+        Args: { _organization_id: string }
+        Returns: {
+          purged_module_key: string
+          reason: string
+        }[]
       }
       transition_tenant_lifecycle: {
         Args: {
