@@ -15,9 +15,14 @@ const CNAME_TARGET = `${PAGES_PROJECT}.pages.dev`;
 const ROOT_DOMAIN = "sistecpos.com";
 
 const CF_API = "https://api.cloudflare.com/client/v4";
-const CF_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN")!;
-const CF_ACCOUNT = Deno.env.get("CLOUDFLARE_ACCOUNT_ID")!;
-const CF_ZONE = Deno.env.get("CLOUDFLARE_ZONE_ID")!;
+// Auto-detect swapped secrets: a CF API Token starts with "cfut_" or is >35 chars; an Account ID is 32 hex.
+const RAW_TOKEN = (Deno.env.get("CLOUDFLARE_API_TOKEN") ?? "").trim();
+const RAW_ACCOUNT = (Deno.env.get("CLOUDFLARE_ACCOUNT_ID") ?? "").trim();
+const looksLikeToken = (s: string) => s.startsWith("cfut_") || s.length > 35;
+const SWAPPED = !looksLikeToken(RAW_TOKEN) && looksLikeToken(RAW_ACCOUNT);
+const CF_TOKEN = SWAPPED ? RAW_ACCOUNT : RAW_TOKEN;
+const CF_ACCOUNT = SWAPPED ? RAW_TOKEN : RAW_ACCOUNT;
+const CF_ZONE = (Deno.env.get("CLOUDFLARE_ZONE_ID") ?? "").trim();
 
 const cfHeaders = {
   Authorization: `Bearer ${CF_TOKEN}`,
@@ -39,22 +44,6 @@ async function cfFetch(path: string, init: RequestInit = {}) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-
-  const url = new URL(req.url);
-  if (req.method === "GET" && url.searchParams.get("debug") === "1") {
-    const mask = (s: string | undefined) => s ? `${s.slice(0,4)}...${s.slice(-4)} (len ${s.length})` : "MISSING";
-    const tokenVerify = await cfFetch("/user/tokens/verify");
-    const zoneCheck = await cfFetch(`/zones/${CF_ZONE}`);
-    const accountCheck = await cfFetch(`/accounts/${CF_ACCOUNT}`);
-    return json(200, {
-      CLOUDFLARE_API_TOKEN: mask(CF_TOKEN),
-      CLOUDFLARE_ACCOUNT_ID: mask(CF_ACCOUNT),
-      CLOUDFLARE_ZONE_ID: mask(CF_ZONE),
-      token_verify: tokenVerify,
-      zone: zoneCheck,
-      account: accountCheck,
-    });
-  }
 
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
