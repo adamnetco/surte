@@ -74,13 +74,13 @@ Solo se agrega:
 
 ## Criterios de Aceptación (v2 — 2026-06-17)
 
-- [ ] **AC1:** Existe un único componente `<EntitlementsWizardStep>` consumido por ambos wizards (`TenantOnboardingWizard` y `Onboarding`).
-- [ ] **AC2:** `Onboarding` cliente NO escribe en `organization_modules` directamente — solo en `tenant_module_overrides`.
-- [ ] **AC3:** Cliente Free intentando activar módulo Premium es redirigido a `/clientes/planes?highlight=…&reason=…` con banner contextual.
-- [ ] **AC4 (manual):** `TenantLicenseSection` ofrece al superadmin un botón "Purgar overrides obsoletos" con `window.confirm` que invoca `superadmin_purge_obsolete_overrides`. Purga automática queda fuera de scope (ver No-Goals).
-- [ ] **AC7:** Toda mutación de `tenant_module_overrides` (a) invalida `queryKey: ['entitlements', orgId]` desde el cliente y (b) registra entrada en `tenant_audit_log` vía trigger DB.
-- [ ] **AC8:** Test E2E `e2e/entitlements-wizard.spec.ts` cubre el flujo: cliente abre Onboarding → módulo fuera del plan redirige a `/clientes/planes` con `highlight` y `reason` en query params.
-- [ ] **AC9 (nuevo):** Ninguna escritura nueva apunta a `organization_modules` desde wizards de usuario. Verificable por `grep -rn "from('organization_modules')" src/modules/{clientes,superadmin}/` → 0 escrituras (solo lecturas legacy toleradas hasta Fase B).
+- [x] **AC1:** Existe un único componente `<EntitlementsWizardStep>` consumido por ambos wizards (`TenantOnboardingWizard` y `Onboarding`).
+- [x] **AC2:** `Onboarding` cliente NO escribe en `organization_modules` directamente — solo en `tenant_module_overrides`.
+- [x] **AC3:** Cliente Free intentando activar módulo Premium es redirigido a `/clientes/planes?highlight=…&reason=…` con banner contextual.
+- [x] **AC4 (manual):** `TenantLicenseSection` ofrece al superadmin un botón "Purgar overrides obsoletos" con `window.confirm` que invoca `superadmin_purge_obsolete_overrides`. Purga automática queda fuera de scope (ver No-Goals).
+- [x] **AC7:** Toda mutación de `tenant_module_overrides` (a) invalida `queryKey: ['entitlements', orgId]` desde el cliente y (b) registra entrada en `tenant_audit_log` vía trigger DB.
+- [x] **AC8:** Test E2E `e2e/entitlements-wizard.spec.ts` cubre el flujo: cliente abre Onboarding → módulo fuera del plan redirige a `/clientes/planes` con `highlight` y `reason` en query params.
+- [x] **AC9 (nuevo):** Ninguna escritura nueva apunta a `organization_modules` desde wizards de usuario. Verificable por `grep -rn "from('organization_modules')" src/modules/{clientes,superadmin}/` → 0 escrituras (solo lecturas legacy toleradas hasta Fase B).
 
 **ACs eliminados (Decisión #1 — `organization_modules` muere):**
 - ~~AC5 (trigger sync)~~ — contradice la deprecación. No se crea sync; las lecturas legacy se migrarán en Fase B.
