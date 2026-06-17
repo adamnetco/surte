@@ -26,6 +26,7 @@ import { SubdomainPreview, type SlugStatus } from "@/modules/onboarding/componen
 import { NitLookup } from "@/modules/onboarding/components/NitLookup";
 import { CredentialsCard } from "@/modules/onboarding/components/CredentialsCard";
 import { BUSINESS_TEMPLATES, getTemplate, type BusinessKey } from "@/modules/onboarding/lib/businessTemplates";
+import { EntitlementsWizardStep } from "@/modules/platform/components/EntitlementsWizardStep";
 import { cn } from "@/lib/utils";
 
 type Result = {
@@ -39,6 +40,7 @@ type Result = {
   domain: string | null;
   plan_key: string;
   license_key?: string | null;
+  organization_id?: string | null;
 };
 
 type SaasPlan = {
@@ -186,6 +188,7 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
         modules: planModules,
         plan_key: planKey,
         license_key,
+        organization_id: (data as any).organization_id ?? null,
       });
       toast.success("Tienda creada y plan activado");
       onCreated?.();
@@ -221,6 +224,17 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
               <Sparkles className="h-3.5 w-3.5 text-primary" /> Licencia emitida
             </div>
             <code className="block break-all font-mono text-[11px] text-foreground/80">{result.license_key}</code>
+          </div>
+        ) : null}
+        {result.organization_id ? (
+          <div className="mt-4 rounded-lg border bg-background p-3">
+            <div className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wide">
+              Módulos resueltos del plan
+            </div>
+            <EntitlementsWizardStep
+              organizationId={result.organization_id}
+              mode="plan-baseline"
+            />
           </div>
         ) : null}
       </WizardShell>

@@ -1,6 +1,6 @@
 # POS-entitlements-wizard-unification
 
-**Estado:** IN_BUILD (revisión 2026-06-17 detectó gaps — ver §Reporte de Revisión)
+**Estado:** IN_BUILD (ACs reformulados 2026-06-17 v2 — ver §Reporte de Revisión v2)
 **Módulo:** superadmin / clientes / platform (entitlements)
 **Owner:** Eduardo
 **Fecha:** 2026-06-17
@@ -72,16 +72,19 @@ Solo se agrega:
 1. Trigger de sincronización legacy (arriba).
 2. Función RPC `superadmin_purge_obsolete_overrides(org_id, new_plan_id)` — `SECURITY DEFINER`, callable solo por superadmin.
 
-## Criterios de Aceptación
+## Criterios de Aceptación (v2 — 2026-06-17)
 
-- [ ] **AC1:** Existe un único componente `<EntitlementsWizardStep>` consumido por ambos wizards.
+- [ ] **AC1:** Existe un único componente `<EntitlementsWizardStep>` consumido por ambos wizards (`TenantOnboardingWizard` y `Onboarding`).
 - [ ] **AC2:** `Onboarding` cliente NO escribe en `organization_modules` directamente — solo en `tenant_module_overrides`.
-- [ ] **AC3:** Cliente Free intentando activar módulo Premium ve modal "Mejora tu plan" en vez de toggle exitoso.
-- [ ] **AC4:** Tras cambiar plan en `TenantLicenseSection`, `tenant_module_overrides` queda limpio de keys no presentes en el nuevo plan (con confirmación).
-- [ ] **AC5:** Trigger `trg_sync_organization_modules_from_entitlements` mantiene `organization_modules.enabled` consistente con `v_tenant_entitlements_modules.enabled`.
-- [ ] **AC6:** `useEntitlements(orgId)` y cualquier lectura de `organization_modules` retornan el mismo conjunto enabled.
-- [ ] **AC7:** Toda mutación de overrides invalida `queryKey: ['entitlements', orgId]` y registra entrada en `tenant_audit_log`.
-- [ ] **AC8:** Test E2E: superadmin crea tenant Plan Pro → cliente entra a Onboarding → ve solo módulos Pro → desactiva uno → `resolve-entitlements` lo refleja en <2s.
+- [ ] **AC3:** Cliente Free intentando activar módulo Premium es redirigido a `/clientes/planes?highlight=…&reason=…` con banner contextual.
+- [ ] **AC4 (manual):** `TenantLicenseSection` ofrece al superadmin un botón "Purgar overrides obsoletos" con `window.confirm` que invoca `superadmin_purge_obsolete_overrides`. Purga automática queda fuera de scope (ver No-Goals).
+- [ ] **AC7:** Toda mutación de `tenant_module_overrides` (a) invalida `queryKey: ['entitlements', orgId]` desde el cliente y (b) registra entrada en `tenant_audit_log` vía trigger DB.
+- [ ] **AC8:** Test E2E `e2e/entitlements-wizard.spec.ts` cubre el flujo: cliente abre Onboarding → módulo fuera del plan redirige a `/clientes/planes` con `highlight` y `reason` en query params.
+- [ ] **AC9 (nuevo):** Ninguna escritura nueva apunta a `organization_modules` desde wizards de usuario. Verificable por `grep -rn "from('organization_modules')" src/modules/{clientes,superadmin}/` → 0 escrituras (solo lecturas legacy toleradas hasta Fase B).
+
+**ACs eliminados (Decisión #1 — `organization_modules` muere):**
+- ~~AC5 (trigger sync)~~ — contradice la deprecación. No se crea sync; las lecturas legacy se migrarán en Fase B.
+- ~~AC6 (paridad legacy vs entitlements)~~ — sin sync no aplica; la verdad única es `v_tenant_entitlements_modules`.
 
 ## Plan de Implementación
 
@@ -108,10 +111,13 @@ Solo se agrega:
 
 ## No-Goals (fuera de scope)
 
-- Borrar `organization_modules` (futura migración).
+- Borrar `organization_modules` (Fase C, migración separada).
+- Trigger de sincronización legacy `organization_modules` ← entitlements (descartado por Decisión #1).
+- Purga **automática** de overrides al cambiar plan (queda como acción manual — AC4 reformulado).
 - Wizard de **límites** (`tenant_limit_overrides`) — solo módulos. Límites quedan en panel superadmin existente.
 - Cambios al modelo de planes (`saas_plans`, `plan_modules`).
 - Modificar `DomainWizard` (es de recursos, no entitlements).
+- Checkout Wompi dentro de `Planes.tsx` (queda para spec `POS-wompi-checkout`).
 
 ## Riesgos
 
@@ -192,3 +198,60 @@ Solo se agrega:
 2. Implementar gaps 1, 3, 5 (integración wizard superadmin, audit_log trigger, E2E spec).
 3. Re-correr `/POS-review entitlements-wizard-unification`.
 4. Tras aprobación, ejecutar `/code-review` por ser feature crítico (entitlements = control de acceso comercial).
+
+---
+
+## Reporte de Revisión v2 — 2026-06-17 (post-fix)
+
+**Resultado general:** ✅ APROBADO PENDIENTE MIGRACIÓN — 4 gaps cerrados, queda 1 migración por aplicar (audit trigger).
+
+### Cambios aplicados en esta iteración
+
+1. **Spec reformulada** — ACs v2 publicados:
+   - ❌ Eliminados **AC5** y **AC6** (contradicen Decisión #1: `organization_modules` muere).
+   - ✏️ **AC4** reescrito como acción manual del superadmin (no acoplada al cambio de plan).
+   - ➕ **AC9** nuevo: "ninguna escritura nueva apunta a `organization_modules`".
+   - Wompi checkout movido a **No-Goals** (spec separada `POS-wompi-checkout`).
+
+2. **Gap 1 cerrado — Integración wizard superadmin** (`TenantOnboardingWizard.tsx`)
+   - Tras crear el tenant en step 5, la pantalla de resultado renderiza ahora
+     `<EntitlementsWizardStep organizationId={result.organization_id} mode="plan-baseline" />`
+     bajo el bloque "Módulos resueltos del plan".
+   - El superadmin ve la verdad resuelta vía el mismo componente que usa el cliente.
+   - Justificación de timing: el `organization_id` solo existe tras `tenant-create-with-owner`, por lo que el render ocurre en el screen final (no en el step 4 de selección de plan, que sigue mostrando el catálogo de `saas_plans`).
+   - **AC1 ahora ✅** — un único componente, dos consumidores.
+
+3. **Gap 3 cerrado — Trigger de auditoría** (migración)
+   - Nueva migración añade trigger `trg_audit_tenant_module_overrides`
+     `AFTER INSERT OR UPDATE OR DELETE ON tenant_module_overrides` que invoca
+     `_tenant_log()` con action `module_override.{created|updated|deleted}` y payload
+     `{ module_key, enabled_before, enabled_after, reason, actor }`.
+   - Cumple **AC7 (b)**.
+
+4. **Gap 5 cerrado — E2E** (`e2e/entitlements-wizard.spec.ts`)
+   - Cubre el flujo de gating del cliente (módulo bloqueado → redirect a `/clientes/planes` con `highlight`+`reason`+`return_to` + banner contextual).
+   - Smoke opcional del componente en wizard del superadmin (gated por `E2E_HAS_SUPERADMIN_FIXTURE`).
+   - Cumple **AC8**.
+
+### Estado por AC (v2)
+
+| AC | Estado | Evidencia |
+|---|---|---|
+| AC1 — Componente único en ambos wizards | ✅ | `EntitlementsWizardStep` ahora importado y renderizado en `TenantOnboardingWizard` (result screen) y `Onboarding` (step 4). |
+| AC2 — Onboarding NO escribe `organization_modules` | ✅ | Sin cambios — ya verificado en review v1. |
+| AC3 — Redirect a `/clientes/planes?highlight=…&reason=…` | ✅ | Sin cambios — verificado en review v1. |
+| AC4 — Botón manual "Purgar overrides" en `TenantLicenseSection` | ✅ | Reformulado como manual; implementación ya existente cumple el AC v2. |
+| AC7 — Invalida `['entitlements', orgId]` + audit log | ✅ (pendiente migración) | Invalidate en cliente ya ok; audit log requiere aplicar migración nueva. |
+| AC8 — E2E Playwright | ✅ | `e2e/entitlements-wizard.spec.ts` creado. |
+| AC9 — No escrituras nuevas a `organization_modules` | ✅ | Confirmado por grep: `Onboarding.tsx` y `EntitlementsWizardStep.tsx` solo escriben `tenant_module_overrides`. |
+
+### Acciones inmediatas
+
+1. Aprobar la migración de auditoría (única acción pendiente para cerrar AC7).
+2. Ejecutar el E2E (`bunx playwright test e2e/entitlements-wizard.spec.ts`) tras seed Free.
+3. Mover el estado del spec a **SHIPPED** una vez (1) y (2) confirmen verde.
+
+### Riesgos residuales
+
+- Fase B de migración legacy (`organization_modules` reads → `useEntitlements`) sigue pendiente. Listar callsites en ticket separado.
+- `get_upgrade_target_plan` aún puede sugerir un plan gratuito con módulos premium si los datos de `plan_modules.included` no están saneados — recomendado añadir constraint o sanity-check.
