@@ -415,7 +415,17 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
         </div>
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="text-sm text-muted-foreground">
+            {domains?.length ?? 0} {(domains?.length ?? 0) === 1 ? "dominio" : "dominios"}
+            {showAll && <Badge variant="outline" className="ml-2 text-[10px]">Vista global</Badge>}
+          </div>
+          <label className="flex items-center gap-2 text-xs cursor-pointer" title="Ver todos los dominios sin filtrar por org (detectar huérfanos)">
+            <Switch checked={showAll} onCheckedChange={setShowAll} aria-label="Ver todos los dominios" />
+            <span className="text-muted-foreground">Ver todos los dominios (superadmin)</span>
+          </label>
+        </div>
         <Table>
           <TableHeader><TableRow>
             <TableHead>Dominio</TableHead><TableHead>Sitio</TableHead>

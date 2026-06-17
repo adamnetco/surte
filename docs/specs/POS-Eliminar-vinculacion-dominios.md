@@ -1,6 +1,6 @@
 # POS-Eliminar-vinculacion-dominios
 
-**Estado:** IN_BUILD (rechazado en review 2026-06-17 — ver §13)
+**Estado:** IN_REVIEW (gaps de review 2026-06-17 resueltos — ver §13)
 **Módulo:** superadmin (Sitios Web) + platform (scope)
 **Owner:** Eduardo Tobacia
 **Creado:** 2026-06-17
@@ -33,7 +33,7 @@ Riesgo: un superadmin puede creer que está operando sobre Tenant A y aplicar ca
 1. **Hard delete** de `tenant_domains` (no soft delete): el dominio es identificador único; soft delete confundiría el resolver. Auditar antes de borrar.
 2. La acción **Eliminar dominio** ejecuta en orden:
    a. `verify_tenant_domain` (snapshot estado).
-   b. Edge function `delete-tenant-domain` → llama Cloudflare API (`DELETE custom_hostnames/{id}` + `DELETE dns_records/{id}`) si existen IDs.
+   b. Edge function `delete-tenant-domain` → llama Cloudflare API (`DELETE custom_hostnames/{id}`) si hay `cf_hostname_id`. **Nota:** no se borra `dns_records` porque el DNS lo configura el cliente en su propio proveedor (solo el `custom_hostname` vive en CF de SistecPOS).
    c. `DELETE FROM tenant_domains WHERE id = ?` con RLS de superadmin.
    d. Insert en `tenant_audit_log` con `action='domain.deleted'`, payload `{ hostname, site_id, organization_id, cf_hostname_id, cf_dns_record_id }`.
    e. Invalidate caches: `['tenant-domains', orgId]`, `['tenant-sites', orgId]`, y `queryClient.removeQueries({ queryKey: ['tenant-site'] })` (resolver).
@@ -47,7 +47,7 @@ Riesgo: un superadmin puede creer que está operando sobre Tenant A y aplicar ca
 - **AC1** — En `/sitios` tab `Dominios`, cada fila tiene botón `Eliminar` (icono Trash) con `AlertDialog` que pide tipear el hostname exacto para confirmar.
 - **AC2** — Al confirmar, se invoca edge function `delete-tenant-domain` que purga Cloudflare + borra fila; toast de éxito con detalle de qué se purgó.
 - **AC3** — Inserta registro en `tenant_audit_log` con action `domain.deleted` y payload completo `{ hostname, site_id, organization_id, cf_hostname_id, cf_dns_record_id, actor_id }` (verificable vía query).
-- **AC4** — Si `tenant_domains.organization_id !== currentOrg.id`, la fila muestra badge `⚠ Foráneo`. El flujo de borrado es el mismo (confirmación por tipeo), sin justificación extra; el audit log queda con `actor_id` y `organization_id` foráneo para trazabilidad.
+- **AC4** — Un dominio se considera **Foráneo** si: (a) `tenant_domains.organization_id !== tenant_sites.organization_id` (caso huérfano Freshlove), o (b) en modo "Ver todos los dominios" (toggle superadmin) cuando `tenant_domains.organization_id !== currentOrg.id`. En ambos casos la fila muestra badge `⚠ Foráneo` y el flujo de borrado es el mismo (confirmación por tipeo); el audit log queda con `actor_id` y `organization_id` para trazabilidad.
 - **AC5** — Banner superior fijo en `/sitios` muestra el tenant activo (`name` + `slug`) y se re-renderiza al cambiar de scope.
 - **AC6** — Al cambiar de scope con `TenantSwitcher`, las queries con prefijos `tenant-sites`, `tenant-domains`, `cloudflare-*`, `wp-config` quedan invalidadas (sin datos del scope anterior visibles en la siguiente render).
 - **AC7** — Si Cloudflare API falla (≠404), la fila de `tenant_domains` permanece y el toast muestra `cf_error_code`. Reintentar la acción completa el borrado cuando CF responde OK. Un 404 de CF se trata como éxito idempotente.
@@ -92,13 +92,15 @@ Riesgo: un superadmin puede creer que está operando sobre Tenant A y aplicar ca
 - Notificación email al owner del tenant afectado cuando se borra un dominio foráneo (puede ser spec aparte si se necesita).
 - Script masivo de limpieza de huérfanos: la UI con badge `⚠ Foráneo` permite limpiar uno a uno; solo crear script si aparecen >10 casos.
 
-## 13. Gaps de Review 2026-06-17 (pendientes para volver a IN_REVIEW)
+## 13. Gaps de Review 2026-06-17 (resueltos)
 
-**G1 — AC4 semánticamente roto (CRÍTICO).** `Sitios.tsx:418` calcula `isForeign = d.organization_id !== currentOrgId`, pero la query filtra `WHERE organization_id = orgId`, por lo que el badge nunca se muestra. Esto NO detecta el caso Freshlove (dominio en `surteya` apuntando a sitio de Freshlove vía `site_id`).
-  - Fix: incluir `tenant_sites(organization_id, name, slug)` en el SELECT y comparar `d.tenant_sites?.organization_id !== d.organization_id`.
-  - Recomendado adicional: toggle "Ver todos los dominios (superadmin)" que omite el filtro `eq('organization_id', orgId)` para listar huérfanos hospedados en otras orgs.
+**G1 — AC4 semánticamente roto.** RESUELTO en `Sitios.tsx`:
+  - Query incluye `tenant_sites(organization_id, name, slug)`.
+  - `isForeign = isOrphan || isOutOfScope` donde `isOrphan = d.tenant_sites.organization_id !== d.organization_id` (caso Freshlove) y `isOutOfScope` aplica en modo "Ver todos".
+  - Agregado toggle "Ver todos los dominios (superadmin)" que omite el filtro `eq('organization_id', orgId)`.
+  - `DeleteDomainDialog` recibe el `isForeign` correcto en ambos casos.
 
-**G2 — AC2 incompleto.** `delete-tenant-domain/index.ts` solo borra `custom_hostnames`. Spec §4.2.b también requiere `DELETE dns_records/{cf_dns_record_id}`. Verificar columna en `tenant_domains` y agregar segundo `fetch` idempotente (404 = éxito). Si la columna no existe, ajustar spec o agregar migration.
+**G2 — AC2 incompleto (purga dns_records).** RESUELTO ajustando spec §4.2.b: la tabla `tenant_domains` no modela `cf_dns_record_id` porque el DNS del cliente vive en SU proveedor (no en CF de SistecPOS); solo el `custom_hostname` vive en CF. El borrado de `custom_hostname` (con 404 idempotente) es suficiente.
 
-**G3 (observación).** Confirmar columna `tenant_audit_log.actor_email` (el código la inserta pero no figura en §4.2.d).
+**G3 — actor_email.** RESUELTO: la columna existe en `tenant_audit_log` (migration `20260612171250`) y la usa el insert.
 
