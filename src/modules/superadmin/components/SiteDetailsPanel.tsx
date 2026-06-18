@@ -258,6 +258,7 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
   const [registering, setRegistering] = useState(false);
   const [httpsOk, setHttpsOk] = useState<"unknown" | "ok" | "fail">("unknown");
   const [local, setLocal] = useState(primary);
+  const [pollPaused, setPollPaused] = useState(false); // I7
   const startedAt = useRef<number>(Date.now());
 
   useEffect(() => { setLocal(primary); }, [primary?.hostname, primary?.cf_ssl_status, primary?.cf_status]);
