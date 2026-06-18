@@ -24,6 +24,7 @@ export const handler = async (req: Request): Promise<Response> => {
 
   const token = Deno.env.get("CLOUDFLARE_API_TOKEN");
   const zoneId = Deno.env.get("CLOUDFLARE_FALLBACK_ZONE_ID");
+  const fallbackHostname = Deno.env.get("CLOUDFLARE_FALLBACK_HOSTNAME");
   if (!token || !zoneId) return json({ error: "cloudflare_not_configured" }, 500);
 
   const authz = req.headers.get("authorization");
