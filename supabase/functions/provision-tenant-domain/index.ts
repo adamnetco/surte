@@ -10,9 +10,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const PAGES_PROJECT = "sistecpos-storefront";
+const PAGES_PROJECT = (Deno.env.get("LOVABLE_STOREFRONT_SLUG") ?? "sistecpos-storefront").trim();
 const CNAME_TARGET = `${PAGES_PROJECT}.pages.dev`;
-const ROOT_DOMAIN = "sistecpos.com";
+const ROOT_DOMAIN = (Deno.env.get("LOVABLE_ROOT_DOMAIN") ?? "sistecpos.com").trim();
 
 const CF_API = "https://api.cloudflare.com/client/v4";
 // Auto-detect swapped secrets: a CF API Token starts with "cfut_" or is >35 chars; an Account ID is 32 hex.

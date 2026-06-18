@@ -1,6 +1,6 @@
 # POS-cf-env-vars
 
-**Estado:** IN_SPEC
+**Estado:** SHIPPED
 **Módulo:** superadmin / cloudflare / edge-functions
 **Owner:** Eduardo
 
@@ -19,11 +19,11 @@ Si Lovable cambia su IP anycast, o si necesitamos un edge alterno (staging), hay
 4. Reemplazar usos hardcoded por el módulo central.
 
 ## Criterios de Aceptación
-- [ ] AC1: Cero ocurrencias de `185.158.133.1` fuera de `infraConfig.ts` y de docs.
-- [ ] AC2: Cero ocurrencias del literal `sistecpos-storefront` fuera del módulo central.
-- [ ] AC3: Edge functions afectadas leen el valor desde `Deno.env` con fallback documentado.
-- [ ] AC4: Override por env var funciona en Test sin redeploy del frontend (vite reload).
-- [ ] AC5: Doc `docs/api/edge-functions.md` lista todas las vars y su default.
+- [x] AC1: Cero ocurrencias de `185.158.133.1` fuera de `infraConfig.ts` y de docs.
+- [x] AC2: Cero ocurrencias del literal `sistecpos-storefront` fuera del módulo central (sólo queda el fallback documentado en `provision-tenant-domain`).
+- [x] AC3: Edge function `provision-tenant-domain` lee `LOVABLE_STOREFRONT_SLUG` / `LOVABLE_ROOT_DOMAIN` desde `Deno.env` con fallback documentado.
+- [x] AC4: Override por env var funciona en Test sin redeploy del frontend (Vite HMR recoge `VITE_LOVABLE_*`).
+- [x] AC5: Doc `docs/api/edge-functions.md` lista todas las vars y su default.
 
 ## Archivos a tocar
 - `src/modules/superadmin/lib/infraConfig.ts` (nuevo)

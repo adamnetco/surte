@@ -22,7 +22,7 @@ import DomainWizard from "@/modules/superadmin/components/DomainWizard";
 import SiteDetailsPanel from "@/modules/superadmin/components/SiteDetailsPanel";
 import DeleteDomainDialog from "@/modules/superadmin/components/DeleteDomainDialog";
 
-const ASTRO_HOST_IP = "185.158.133.1"; // IP anycast de Lovable hosting (storefront servido desde Lovable Cloud)
+import { LOVABLE_EDGE_IP as ASTRO_HOST_IP } from "@/modules/superadmin/lib/infraConfig";
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
 
 export default function Sitios({ embedded = false, initialTab }: { embedded?: boolean; initialTab?: string } = {}) {

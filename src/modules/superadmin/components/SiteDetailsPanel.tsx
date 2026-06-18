@@ -46,7 +46,7 @@ interface Props {
   onConfigWp: () => void;
 }
 
-const CF_EDGE_IP = "185.158.133.1";
+import { LOVABLE_EDGE_IP as CF_EDGE_IP } from "@/modules/superadmin/lib/infraConfig";
 
 function rel(ts?: string | null) {
   if (!ts) return "Nunca";
