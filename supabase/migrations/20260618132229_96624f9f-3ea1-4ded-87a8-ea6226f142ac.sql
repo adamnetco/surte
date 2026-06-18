@@ -1,0 +1,1 @@
+UPDATE public.tenant_domains SET cname_target = 'proxy.sistecpos.com' WHERE hostname IN ('surteya.com','www.surteya.com');
