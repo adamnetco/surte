@@ -440,10 +440,16 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
     <div className="space-y-4">
       {local?.hostname && (
         <section aria-labelledby={`prov-${site.id}`} className="rounded-lg border bg-muted/30 p-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 id={`prov-${site.id}`} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Aprovisionamiento
-            </h4>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <h4 id={`prov-${site.id}`} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Aprovisionamiento
+              </h4>
+              {/* I3 — distinguir dns_mode visiblemente */}
+              <Badge variant="outline" className="text-[9px] py-0 px-1.5 font-normal">
+                {isSaas ? "Cloudflare SaaS (CNAME)" : "Legacy (A directo)"}
+              </Badge>
+            </div>
             <div className="flex gap-1">
               {!local?.cf_hostname_id && local?.site_id && (
                 <Button
@@ -462,6 +468,21 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
                 {verifying ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1" />}
                 Verificar
               </Button>
+              {/* I7 — pausa manual del polling */}
+              {sslT === "pending" && local?.cf_hostname_id && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => { setPollPaused(p => !p); if (pollPaused) startedAt.current = Date.now(); }}
+                  className="h-7 px-2 text-xs"
+                  aria-label={pollPaused ? "Reanudar verificación automática" : "Pausar verificación automática"}
+                  title={pollPaused ? "Polling pausado" : "Polling activo (15–60s)"}
+                >
+                  {pollPaused
+                    ? <><Play className="h-3.5 w-3.5 mr-1" />Reanudar</>
+                    : <><Pause className="h-3.5 w-3.5 mr-1" />Pausar</>}
+                </Button>
+              )}
               <Button size="sm" variant="ghost" onClick={runReprovision} disabled={reprovisioning || !local?.cf_hostname_id} className="h-7 px-2 text-xs" aria-label="Forzar reaprovisionamiento SSL">
                 {reprovisioning ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
                 Reprovisionar
