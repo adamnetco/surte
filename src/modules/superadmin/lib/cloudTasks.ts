@@ -198,7 +198,7 @@ export const CLOUD_TASKS: CloudTask[] = [
     group: "domain",
     title: "DNS pendiente del cliente — demo.sistecpos.com",
     description:
-      "Publicar TXT _acme-challenge.demo.sistecpos.com (2 registros) + A demo → 185.158.133.1. Se marca efectuado cuando cf_ssl_status='active'.",
+      `Publicar TXT _acme-challenge.demo.sistecpos.com (2 registros) + A demo → ${LOVABLE_EDGE_IP}. Se marca efectuado cuando cf_ssl_status='active'.`,
     reference: ".lovable/pending-cloud-tasks.md §7b",
     howToRun:
       "El cliente edita su DNS. Ver TXT exactos en /superadmin/sitios → demo → Reprovisionar.",
