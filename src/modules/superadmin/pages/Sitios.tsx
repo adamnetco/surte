@@ -109,7 +109,7 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
   const { data: sites } = useQuery({
     queryKey: ["tenant-sites", orgId],
     queryFn: async () => (await supabase.from("tenant_sites")
-      .select("*, tenant_wp_config(*), tenant_domains(id,site_id,hostname,is_primary,verified_at,cf_status,cf_ssl_status,cf_hostname_id,cf_ownership_verification,cf_ssl_validation_records,last_checked_at,dns_mode,cname_target)")
+      .select("*, tenant_wp_config(*), tenant_domains(id,site_id,hostname,is_primary,verified_at,verification_token,cf_status,cf_ssl_status,cf_hostname_id,cf_ownership_verification,cf_ssl_validation_records,last_checked_at,dns_mode,cname_target)")
       .eq("organization_id", orgId).order("created_at", { ascending: false })).data ?? [],
   });
 
@@ -402,9 +402,13 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
   };
 
   const setPrimary = async (d: any) => {
-    await supabase.from("tenant_domains").update({ is_primary: false }).eq("site_id", d.site_id);
-    await supabase.from("tenant_domains").update({ is_primary: true }).eq("id", d.id);
+    // I2 — RPC atómico: marca este dominio como primario y desmarca los demás
+    // del mismo sitio en una sola transacción server-side (evita race condition).
+    const { error } = await supabase.rpc("set_primary_tenant_domain", { p_domain_id: d.id });
+    if (error) return toast.error(error.message);
+    toast.success(`${d.hostname} marcado como primario`);
     qc.invalidateQueries({ queryKey: ["tenant-domains", orgId] });
+    qc.invalidateQueries({ queryKey: ["tenant-sites", orgId] });
   };
 
   const copy = (txt: string) => { navigator.clipboard.writeText(txt); toast.success("Copiado"); };

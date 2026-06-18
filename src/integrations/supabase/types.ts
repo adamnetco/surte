@@ -8439,6 +8439,10 @@ export type Database = {
         Args: { _activation_id: string; _reason?: string }
         Returns: boolean
       }
+      set_primary_tenant_domain: {
+        Args: { p_domain_id: string }
+        Returns: undefined
+      }
       superadmin_purge_obsolete_overrides: {
         Args: { _organization_id: string }
         Returns: {

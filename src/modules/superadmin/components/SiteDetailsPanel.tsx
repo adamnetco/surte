@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronDown, ExternalLink, Send, ShieldCheck, ShieldAlert, Shield,
-  Globe, Loader2, CheckCircle2, AlertTriangle, Clock, Copy, RefreshCw, Download, PlugZap,
+  Globe, Loader2, CheckCircle2, AlertTriangle, Clock, Copy, RefreshCw, Download, PlugZap, Pause, Play,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ interface Site {
     cf_ssl_status?: string | null;
     cf_hostname_id?: string | null;
     verified_at?: string | null;
+    verification_token?: string | null;
     last_checked_at?: string | null;
     cf_ownership_verification?: DcvRecord | null;
     cf_ssl_validation_records?: SslValidationRecord[] | null;
@@ -105,6 +106,8 @@ function buildDnsPlan(
   sslStatus?: string | null,
   dnsMode?: string | null,
   cnameTarget?: string | null,
+  sistecposToken?: string | null,
+  sistecposVerified?: boolean,
 ): DnsRow[] {
   const rows: DnsRow[] = [];
   const isSaas = (dnsMode ?? "saas") === "saas";
@@ -115,14 +118,23 @@ function buildDnsPlan(
     rows.push({
       key: "cname-root", type: "CNAME", name: hostname, value: target, required: true,
       done: cfStatus === "active" || sslStatus === "active",
-      hint: "Apunta el host al edge Cloudflare SaaS (CNAME al fallback hostname).",
+      hint: "Cloudflare SaaS — apunta el host al edge (CNAME al fallback hostname).",
     });
   } else {
     // Modo legacy / sin SaaS configurado: A al edge de Lovable
     rows.push({
       key: "a-root", type: "A", name: hostname, value: CF_EDGE_IP, required: true,
       done: cfStatus === "active" || sslStatus === "active",
-      hint: "Apunta el subdominio al edge.",
+      hint: "Modo legacy (sin SaaS) — A directo al edge de Lovable.",
+    });
+  }
+
+  // I4 — TXT de verificación SistecPOS (`_lovable-tenant`) unificado en el mismo checklist
+  if (sistecposToken) {
+    rows.push({
+      key: "txt-sistecpos", type: "TXT", name: `_lovable-tenant.${hostname}`, value: sistecposToken, required: true,
+      done: !!sistecposVerified,
+      hint: "Prueba de propiedad SistecPOS (vincula el dominio a este tenant).",
     });
   }
 
@@ -130,7 +142,7 @@ function buildDnsPlan(
     rows.push({
       key: "txt-cf", type: "TXT", name: dcv.name, value: dcv.value, required: true,
       done: cfStatus === "active",
-      hint: "Pre-validación de propiedad (Cloudflare SaaS)",
+      hint: "Pre-validación de propiedad Cloudflare (SaaS).",
     });
   }
   (acme ?? []).forEach((r, i) => {
@@ -138,7 +150,7 @@ function buildDnsPlan(
       rows.push({
         key: `acme-${i}`, type: "TXT", name: r.txt_name, value: r.txt_value, required: true,
         done: r.status === "active" || sslStatus === "active",
-        hint: "DCV ACME — libera la emisión del certificado SSL",
+        hint: "DCV ACME — libera la emisión del certificado SSL.",
       });
     }
   });
@@ -246,6 +258,7 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
   const [registering, setRegistering] = useState(false);
   const [httpsOk, setHttpsOk] = useState<"unknown" | "ok" | "fail">("unknown");
   const [local, setLocal] = useState(primary);
+  const [pollPaused, setPollPaused] = useState(false); // I7
   const startedAt = useRef<number>(Date.now());
 
   useEffect(() => { setLocal(primary); }, [primary?.hostname, primary?.cf_ssl_status, primary?.cf_status]);
@@ -277,7 +290,13 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
 
   const runReprovision = async () => {
     if (!local?.hostname) return;
-    if (!window.confirm(`Forzar reaprovisionamiento SSL para ${local.hostname}?`)) return;
+    // I6 — Explicar al usuario qué cambia al reprovisionar (método SSL pasa de HTTP a TXT)
+    const msg =
+      `Forzar reaprovisionamiento SSL para ${local.hostname}?\n\n` +
+      `Esto pedirá a Cloudflare emitir un certificado nuevo cambiando el método de validación a TXT (_acme-challenge).\n` +
+      `Tendrás que publicar los TXT generados en tu DNS y esperar 2–10 min.\n\n` +
+      `Si tu dominio ya estaba activo, el SSL actual sigue sirviendo tráfico hasta que el nuevo emita.`;
+    if (!window.confirm(msg)) return;
     setReprovisioning(true);
     try {
       const { data, error } = await supabase.functions.invoke("cloudflare-domain-reprovision", {
@@ -364,15 +383,20 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
     }
   };
 
-  // Polling extendido a 30 min con backoff (15s → 60s tras 5 min)
+  // I7 — Polling con pausa manual + auto-pausa si la pestaña está oculta
+  // (evita seguir consultando CF en segundo plano). 30 min máx con backoff.
   useEffect(() => {
-    if (!local?.hostname) return;
+    if (!local?.hostname || pollPaused) return;
     const tone = sslTone(local.cf_ssl_status);
     if (tone === "ok") { checkHttps(); return; }
     if (tone === "idle") return;
     let cancelled = false;
     const tick = async () => {
       if (cancelled) return;
+      if (document.hidden) {
+        if (!cancelled) setTimeout(tick, 10_000);
+        return;
+      }
       const elapsed = Date.now() - startedAt.current;
       if (elapsed > 30 * 60 * 1000) return;
       await runVerify(true);
@@ -382,14 +406,24 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
     const id = setTimeout(tick, 15_000);
     return () => { cancelled = true; clearTimeout(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [local?.hostname, local?.cf_ssl_status]);
+  }, [local?.hostname, local?.cf_ssl_status, pollPaused]);
 
   const sslT = sslTone(local?.cf_ssl_status);
   const cfT = cfTone(local?.cf_status);
 
   const dnsRows = useMemo(
-    () => local?.hostname ? buildDnsPlan(local.hostname, local.cf_ownership_verification, local.cf_ssl_validation_records, local.cf_status, local.cf_ssl_status, local.dns_mode, local.cname_target) : [],
-    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records, local?.dns_mode, local?.cname_target],
+    () => local?.hostname ? buildDnsPlan(
+      local.hostname,
+      local.cf_ownership_verification,
+      local.cf_ssl_validation_records,
+      local.cf_status,
+      local.cf_ssl_status,
+      local.dns_mode,
+      local.cname_target,
+      local.verification_token,
+      !!local.verified_at,
+    ) : [],
+    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records, local?.dns_mode, local?.cname_target, local?.verification_token, local?.verified_at],
   );
   const isSaas = (local?.dns_mode ?? "saas") === "saas" && !!local?.cname_target;
   const pendingCount = dnsRows.filter(r => r.required && !r.done).length;
@@ -406,10 +440,16 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
     <div className="space-y-4">
       {local?.hostname && (
         <section aria-labelledby={`prov-${site.id}`} className="rounded-lg border bg-muted/30 p-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 id={`prov-${site.id}`} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Aprovisionamiento
-            </h4>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <h4 id={`prov-${site.id}`} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Aprovisionamiento
+              </h4>
+              {/* I3 — distinguir dns_mode visiblemente */}
+              <Badge variant="outline" className="text-[9px] py-0 px-1.5 font-normal">
+                {isSaas ? "Cloudflare SaaS (CNAME)" : "Legacy (A directo)"}
+              </Badge>
+            </div>
             <div className="flex gap-1">
               {!local?.cf_hostname_id && local?.site_id && (
                 <Button
@@ -428,6 +468,21 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
                 {verifying ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1" />}
                 Verificar
               </Button>
+              {/* I7 — pausa manual del polling */}
+              {sslT === "pending" && local?.cf_hostname_id && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => { setPollPaused(p => !p); if (pollPaused) startedAt.current = Date.now(); }}
+                  className="h-7 px-2 text-xs"
+                  aria-label={pollPaused ? "Reanudar verificación automática" : "Pausar verificación automática"}
+                  title={pollPaused ? "Polling pausado" : "Polling activo (15–60s)"}
+                >
+                  {pollPaused
+                    ? <><Play className="h-3.5 w-3.5 mr-1" />Reanudar</>
+                    : <><Pause className="h-3.5 w-3.5 mr-1" />Pausar</>}
+                </Button>
+              )}
               <Button size="sm" variant="ghost" onClick={runReprovision} disabled={reprovisioning || !local?.cf_hostname_id} className="h-7 px-2 text-xs" aria-label="Forzar reaprovisionamiento SSL">
                 {reprovisioning ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
                 Reprovisionar
@@ -455,7 +510,9 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
           )}
           {sslT === "pending" && (
             <p className="text-[11px] text-muted-foreground">
-              Emisión en curso. Verificando cada 15–60s (máx 30 min). Si no propaga, usa Reprovisionar.
+              {pollPaused
+                ? "Polling pausado. Pulsa Reanudar o Verificar manualmente cuando hayas publicado los registros."
+                : "Emisión en curso. Verificando cada 15–60s (máx 30 min, pausa si la pestaña está oculta). Si no propaga, usa Reprovisionar."}
             </p>
           )}
           {sslT === "error" && (
