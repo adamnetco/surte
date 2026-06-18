@@ -129,6 +129,7 @@ Deno.serve(async (req) => {
     const RESERVED = new Set(["admin", "mi", "pos", "app", "www", "api", "staging", "preview", "sistecpos"]);
     let site_row: any = null;
     let auto_subdomain: string | null = null;
+    let cf_kickoff: { ok: boolean; error?: string; cf_hostname_id?: string } | null = null;
     if (!RESERVED.has(slug)) {
       const { data: site, error: siteErr } = await admin
         .from("tenant_sites")
@@ -146,15 +147,23 @@ Deno.serve(async (req) => {
           .insert({ site_id: site.id, organization_id: org.id, hostname, is_primary: true, dns_mode: "saas" });
         if (domErr) console.warn("auto domain insert warning:", domErr.message);
 
-        // Fire-and-forget Cloudflare custom-hostname registration so SSL starts
-        // issuing immediately. The UI can poll cloudflare-domain-status later.
+        // Cloudflare custom-hostname registration so SSL starts issuing immediately.
+        // Capturamos resultado para que el caller sepa si quedó pendiente registrar
+        // manualmente desde SiteDetailsPanel ("Registrar en Cloudflare").
         try {
-          await admin.functions.invoke("cloudflare-domain-connect", {
+          const { data: cfData, error: cfErr } = await admin.functions.invoke("cloudflare-domain-connect", {
             body: { tenant_id: site.id, hostname },
             headers: { Authorization: authHeader },
           });
+          if (cfErr) {
+            cf_kickoff = { ok: false, error: String(cfErr?.message ?? cfErr) };
+            console.warn("cloudflare-domain-connect kickoff error:", cf_kickoff.error);
+          } else {
+            cf_kickoff = { ok: true, cf_hostname_id: cfData?.cf_hostname_id };
+          }
         } catch (e) {
-          console.warn("cloudflare-domain-connect kickoff failed:", String((e as Error)?.message ?? e));
+          cf_kickoff = { ok: false, error: String((e as Error)?.message ?? e) };
+          console.warn("cloudflare-domain-connect kickoff failed:", cf_kickoff.error);
         }
       }
     }
