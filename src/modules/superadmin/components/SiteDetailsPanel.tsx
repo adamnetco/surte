@@ -411,11 +411,24 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
               Aprovisionamiento
             </h4>
             <div className="flex gap-1">
-              <Button size="sm" variant="ghost" onClick={() => runVerify(false)} disabled={verifying} className="h-7 px-2 text-xs" aria-label="Reverificar DNS y SSL">
+              {!local?.cf_hostname_id && local?.site_id && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={runRegister}
+                  disabled={registering}
+                  className="h-7 px-2 text-xs"
+                  aria-label="Registrar dominio en Cloudflare"
+                >
+                  {registering ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <PlugZap className="h-3.5 w-3.5 mr-1" />}
+                  Registrar en Cloudflare
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => runVerify(false)} disabled={verifying || !local?.cf_hostname_id} className="h-7 px-2 text-xs" aria-label="Reverificar DNS y SSL">
                 {verifying ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1" />}
                 Verificar
               </Button>
-              <Button size="sm" variant="ghost" onClick={runReprovision} disabled={reprovisioning} className="h-7 px-2 text-xs" aria-label="Forzar reaprovisionamiento SSL">
+              <Button size="sm" variant="ghost" onClick={runReprovision} disabled={reprovisioning || !local?.cf_hostname_id} className="h-7 px-2 text-xs" aria-label="Forzar reaprovisionamiento SSL">
                 {reprovisioning ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
                 Reprovisionar
               </Button>
