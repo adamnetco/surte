@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronDown, ExternalLink, Send, ShieldCheck, ShieldAlert, Shield,
-  Globe, Loader2, CheckCircle2, AlertTriangle, Clock, Copy, RefreshCw, Download, PlugZap,
+  Globe, Loader2, CheckCircle2, AlertTriangle, Clock, Copy, RefreshCw, Download, PlugZap, Pause, Play,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
