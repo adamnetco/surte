@@ -367,6 +367,20 @@ function DomainsTab({ orgId, currentOrgId, qc, focusDomainId }: { orgId: string;
     },
   });
 
+  // AC1–AC5: deep-link ?focus=<domain_id> desde TenantHealth.
+  // Cuando los dominios cargan, hacemos scroll a la fila y aplicamos un anillo
+  // visible durante 2s. Si el dominio ya no existe, fallback silencioso (no error).
+  useEffect(() => {
+    if (!focusDomainId || !domains?.length) return;
+    const exists = domains.some((d: any) => d.id === focusDomainId);
+    if (!exists) { setFocusActive(null); return; }
+    setFocusActive(focusDomainId);
+    const el = document.querySelector(`[data-focus-id="${focusDomainId}"]`) as HTMLElement | null;
+    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    const t = setTimeout(() => setFocusActive(null), 2200);
+    return () => clearTimeout(t);
+  }, [focusDomainId, domains]);
+
 
   const add = async () => {
     if (!siteId || !hostname.trim()) return toast.error("Sitio y dominio requeridos");
@@ -468,7 +482,12 @@ function DomainsTab({ orgId, currentOrgId, qc, focusDomainId }: { orgId: string;
               const isOutOfScope = showAll && d.organization_id !== currentOrgId;
               const isForeign = isOrphan || isOutOfScope;
               return (
-              <TableRow key={d.id} data-testid={`domain-row-${d.hostname}`}>
+              <TableRow
+                key={d.id}
+                data-testid={`domain-row-${d.hostname}`}
+                data-focus-id={d.id}
+                className={focusActive === d.id ? "ring-2 ring-primary ring-offset-2 bg-primary/5 transition-shadow" : "transition-shadow"}
+              >
                 <TableCell className="font-mono text-xs">
                   <div className="flex items-center gap-2">
                     {d.hostname}
