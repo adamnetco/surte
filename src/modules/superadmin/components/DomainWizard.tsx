@@ -150,7 +150,18 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Globe size={18} className="text-primary" />
-            Conectar dominio {domain ? `· ${domain.hostname}` : ""}
+            <span className="flex-1 truncate">Conectar dominio {domain ? `· ${domain.hostname}` : ""}</span>
+            {draft && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={restart}
+                className="text-xs h-7"
+                title="Reiniciar wizard de este dominio"
+              >
+                <RotateCcw size={12} className="mr-1" /> Reiniciar
+              </Button>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -187,6 +198,16 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
             validar el flujo. Al volver el backend, ejecutará las edge functions reales.
           </span>
         </div>
+
+        {hydrating && (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 size={16} className="animate-spin" /> Recuperando progreso guardado…
+          </div>
+        )}
+
+        {!hydrating && (
+        <>
+
 
         {/* STEP 1 — Modo DNS */}
         {step === 1 && (
