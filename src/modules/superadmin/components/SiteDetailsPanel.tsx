@@ -317,6 +317,43 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
     }
   };
 
+  const runRegister = async () => {
+    if (!local?.hostname || !local?.site_id) return;
+    setRegistering(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("cloudflare-domain-connect", {
+        body: { tenant_id: local.site_id, hostname: local.hostname },
+      });
+      if (error) {
+        let code: string | undefined;
+        try {
+          const ctxRes = (error as any)?.context?.response;
+          if (ctxRes && typeof ctxRes.json === "function") code = (await ctxRes.json())?.error;
+        } catch { /* noop */ }
+        if (code === "cloudflare_not_configured") {
+          toast.error("Falta configurar CLOUDFLARE_API_TOKEN / CLOUDFLARE_FALLBACK_ZONE_ID en secretos.");
+          return;
+        }
+        throw error;
+      }
+      setLocal((prev) => prev && ({
+        ...prev,
+        cf_hostname_id: data?.cf_hostname_id ?? prev.cf_hostname_id,
+        cf_status: data?.status ?? prev.cf_status,
+        cf_ssl_status: data?.ssl_status ?? "initializing",
+        cf_ownership_verification: data?.ownership_verification ?? prev.cf_ownership_verification,
+        cname_target: data?.cname_target ?? prev.cname_target,
+        last_checked_at: new Date().toISOString(),
+      }));
+      startedAt.current = Date.now();
+      toast.success("Dominio registrado en Cloudflare. Publica los registros DNS para emitir SSL.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo registrar en Cloudflare");
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   const checkHttps = async () => {
     if (!local?.hostname) return;
     try {
