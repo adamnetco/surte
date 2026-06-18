@@ -243,6 +243,7 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
   const wp = site.tenant_wp_config?.[0];
   const [verifying, setVerifying] = useState(false);
   const [reprovisioning, setReprovisioning] = useState(false);
+  const [registering, setRegistering] = useState(false);
   const [httpsOk, setHttpsOk] = useState<"unknown" | "ok" | "fail">("unknown");
   const [local, setLocal] = useState(primary);
   const startedAt = useRef<number>(Date.now());
