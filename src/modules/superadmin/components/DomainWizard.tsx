@@ -108,18 +108,64 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
     onOpenChange(v);
   };
 
-  const goConnect = () => {
+  const [connecting, setConnecting] = useState(false);
+
+  const goConnect = async () => {
     if (!domain) return;
     if (mode === "cloudflare_account" && !accountId) {
       return toast.error("Selecciona la cuenta Cloudflare");
     }
-    const existing = loadDomainDraft(domain.id);
-    const next = existing ?? { ...mockConnect(domain.hostname, mode), domain_id: domain.id };
-    next.dns_mode = mode;
-    if (mode === "cloudflare_account") next.cf_account_id = accountId;
-    saveDomainDraft(next);
-    setDraft(next);
-    setStep(2);
+    if (mode === "manual") {
+      // Manual mode: no CF API call, just record the choice and advance.
+      const next: DomainDraft = {
+        domain_id: domain.id,
+        dns_mode: "manual",
+      };
+      saveDomainDraft(next);
+      setDraft(next);
+      setStep(2);
+      return;
+    }
+    setConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("cloudflare-domain-connect", {
+        body: { tenant_id: domain.site_id, hostname: domain.hostname },
+      });
+      if (error) {
+        let code: string | undefined;
+        try {
+          const ctxRes = (error as any)?.context?.response;
+          if (ctxRes && typeof ctxRes.json === "function") code = (await ctxRes.json())?.error;
+        } catch { /* noop */ }
+        if (code === "cloudflare_not_configured") {
+          toast.error("Falta configurar CLOUDFLARE_API_TOKEN / CLOUDFLARE_FALLBACK_ZONE_ID en secretos.");
+          return;
+        }
+        if (code === "forbidden_not_member") {
+          toast.error("No eres miembro de esta organización.");
+          return;
+        }
+        throw error;
+      }
+      const next: DomainDraft = {
+        domain_id: domain.id,
+        dns_mode: mode,
+        cf_account_id: mode === "cloudflare_account" ? accountId : undefined,
+        cname_target: data?.cname_target ?? undefined,
+        cf_ownership_verification: data?.ownership_verification ?? undefined,
+        cf_status: data?.status ?? "pending",
+        cf_ssl_status: data?.ssl_status ?? "pending_validation",
+        last_checked_at: new Date().toISOString(),
+      };
+      saveDomainDraft(next);
+      setDraft(next);
+      setStep(2);
+      toast.success("Dominio registrado en Cloudflare");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo conectar a Cloudflare");
+    } finally {
+      setConnecting(false);
+    }
   };
 
   const copy = (text: string, key: string) => {
@@ -129,17 +175,36 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
   };
 
   const verify = async () => {
-    if (!draft) return;
+    if (!draft || !domain) return;
+    if (draft.dns_mode === "manual") {
+      toast.info("Modo manual: verifica el A record desde el panel de detalles del sitio.");
+      return;
+    }
     setChecking(true);
-    await new Promise((r) => setTimeout(r, 900)); // simulated propagation delay
-    const next = mockAdvanceStatus(draft);
-    saveDomainDraft(next);
-    setDraft(next);
-    setChecking(false);
-    if (next.cf_ssl_status === "active") {
-      toast.success("Dominio activo en Cloudflare");
-    } else {
-      toast.info(`Estado: ${next.cf_ssl_status}. Volveremos a chequear cuando hagas click.`);
+    try {
+      const { data, error } = await supabase.functions.invoke("cloudflare-domain-status", {
+        body: { hostname: domain.hostname },
+      });
+      if (error) throw error;
+      const next: DomainDraft = {
+        ...draft,
+        cf_status: data?.status ?? draft.cf_status,
+        cf_ssl_status: data?.ssl_status ?? draft.cf_ssl_status,
+        cf_ownership_verification:
+          data?.result?.ownership_verification ?? draft.cf_ownership_verification,
+        last_checked_at: new Date().toISOString(),
+      };
+      saveDomainDraft(next);
+      setDraft(next);
+      if (next.cf_ssl_status === "active") {
+        toast.success("Dominio activo en Cloudflare");
+      } else {
+        toast.info(`Estado: ${next.cf_ssl_status ?? "pendiente"}. Vuelve a verificar en unos minutos.`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo verificar");
+    } finally {
+      setChecking(false);
     }
   };
 
