@@ -13,6 +13,22 @@ La mayoría se despliegan con `verify_jwt = false` (validan en código). Algunas
 
 ---
 
+## Variables de entorno de infraestructura
+
+Estas variables aplican a edge functions de dominio/Cloudflare. Si no se definen, se usan los defaults productivos.
+
+| Variable (Deno.env) | Variable Vite equivalente | Default | Usado en |
+|---|---|---|---|
+| `LOVABLE_EDGE_IP` | `VITE_LOVABLE_EDGE_IP` | `185.158.133.1` | UI de DNS (SiteDetailsPanel, Sitios, cloudTasks) |
+| `LOVABLE_STOREFRONT_SLUG` | `VITE_LOVABLE_STOREFRONT_SLUG` | `sistecpos-storefront` | `provision-tenant-domain` (Cloudflare Pages project) |
+| `LOVABLE_ROOT_DOMAIN` | `VITE_LOVABLE_ROOT_DOMAIN` | `sistecpos.com` | Validación de subdominios SaaS |
+| `CLOUDFLARE_FALLBACK_HOSTNAME` | — | `sistecpos-storefront.pages.dev` | `cloudflare-domain-connect` (CNAME target SaaS) |
+| `CLOUDFLARE_FALLBACK_ZONE_ID` | — | (Cloudflare zone del root SaaS) | edge functions Cloudflare |
+
+Override sin redeploy del frontend: editar `.env.local` y reiniciar Vite (HMR recoge el cambio).
+
+---
+
 ## Catálogo / E-commerce
 
 ### `get-landing`
