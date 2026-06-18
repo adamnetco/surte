@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Copy, Check, ChevronRight, ChevronLeft, Loader2, Globe, AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, Check, ChevronRight, ChevronLeft, Loader2, Globe, AlertCircle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -49,20 +49,63 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
   const [draft, setDraft] = useState<DomainDraft | null>(null);
   const [checking, setChecking] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [hydrating, setHydrating] = useState(false);
 
   const accounts = orgId ? loadCfAccounts(orgId) : [];
 
-  const reset = () => {
+  // Hidrata desde localStorage al abrir o al cambiar de dominio:
+  // si el usuario ya había avanzado, recuperamos el paso correspondiente
+  // (registros DNS o status SSL) en lugar de volver al paso 1.
+  useEffect(() => {
+    if (!open || !domain) return;
+    setHydrating(true);
+    const existing = loadDomainDraft(domain.id);
+    if (existing) {
+      setDraft(existing);
+      setMode(existing.dns_mode);
+      if (existing.cf_account_id) setAccountId(existing.cf_account_id);
+      // Si ya hay status SSL → vamos a paso 3; si solo hay registros → paso 2
+      if (existing.cf_ssl_status) setStep(3);
+      else if (existing.cname_target || existing.cf_ownership_verification) setStep(2);
+      else setStep(1);
+    } else {
+      setStep(1);
+      setMode("saas");
+      setAccountId("");
+      setDraft(null);
+    }
+    setCopied(null);
+    setChecking(false);
+    // pequeño delay para que el usuario perciba el restore (evita flash)
+    const t = setTimeout(() => setHydrating(false), 150);
+    return () => clearTimeout(t);
+  }, [open, domain?.id]);
+
+  const restart = () => {
+    if (!domain) return;
+    if (!window.confirm("Vas a reiniciar el wizard de este dominio y perder el progreso guardado. ¿Continuar?")) return;
+    try {
+      const raw = localStorage.getItem("sistecpos:cf_domains:draft");
+      if (raw) {
+        const all = JSON.parse(raw) as DomainDraft[];
+        localStorage.setItem(
+          "sistecpos:cf_domains:draft",
+          JSON.stringify(all.filter((d) => d.domain_id !== domain.id)),
+        );
+      }
+    } catch { /* noop */ }
     setStep(1);
     setMode("saas");
     setAccountId("");
     setDraft(null);
-    setChecking(false);
     setCopied(null);
+    toast.success("Wizard reiniciado");
   };
 
+  // Cerrar NO resetea estado: el progreso queda persistido en localStorage
+  // y la próxima apertura lo rehidratará. Esto evita perder el contexto
+  // cuando el usuario cierra para copiar el CNAME al panel del cliente.
   const handleClose = (v: boolean) => {
-    if (!v) reset();
     onOpenChange(v);
   };
 
@@ -107,7 +150,18 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Globe size={18} className="text-primary" />
-            Conectar dominio {domain ? `· ${domain.hostname}` : ""}
+            <span className="flex-1 truncate">Conectar dominio {domain ? `· ${domain.hostname}` : ""}</span>
+            {draft && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={restart}
+                className="text-xs h-7"
+                title="Reiniciar wizard de este dominio"
+              >
+                <RotateCcw size={12} className="mr-1" /> Reiniciar
+              </Button>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -144,6 +198,16 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
             validar el flujo. Al volver el backend, ejecutará las edge functions reales.
           </span>
         </div>
+
+        {hydrating && (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 size={16} className="animate-spin" /> Recuperando progreso guardado…
+          </div>
+        )}
+
+        {!hydrating && (
+        <>
+
 
         {/* STEP 1 — Modo DNS */}
         {step === 1 && (
@@ -314,6 +378,8 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </DialogContent>
     </Dialog>
