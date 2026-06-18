@@ -1,6 +1,6 @@
 # POS-cf-env-vars
 
-**Estado:** DRAFT
+**Estado:** IN_SPEC
 **Módulo:** superadmin / cloudflare / edge-functions
 **Owner:** Eduardo
 
