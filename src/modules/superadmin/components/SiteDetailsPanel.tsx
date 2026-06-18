@@ -29,6 +29,7 @@ interface Site {
     cf_ssl_status?: string | null;
     cf_hostname_id?: string | null;
     verified_at?: string | null;
+    verification_token?: string | null;
     last_checked_at?: string | null;
     cf_ownership_verification?: DcvRecord | null;
     cf_ssl_validation_records?: SslValidationRecord[] | null;
