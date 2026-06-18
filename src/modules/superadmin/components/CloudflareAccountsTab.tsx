@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Trash2, Star, Cloud, Eye, EyeOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Trash2, Star, Cloud, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,19 +8,23 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  loadCfAccounts,
-  saveCfAccount,
-  deleteCfAccount,
-  maskToken,
-  type CloudflareAccount,
-} from "@/modules/superadmin/lib/cloudflareDrafts";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   orgId: string;
 }
 
-const empty = (orgId: string): Partial<CloudflareAccount> & { api_token?: string } => ({
+interface CFAccountRow {
+  id: string;
+  organization_id: string;
+  label: string;
+  cf_account_id: string;
+  cf_zone_id: string | null;
+  is_default: boolean;
+  created_at: string;
+}
+
+const emptyForm = (orgId: string) => ({
   organization_id: orgId,
   label: "",
   cf_account_id: "",
@@ -30,64 +34,81 @@ const empty = (orgId: string): Partial<CloudflareAccount> & { api_token?: string
 });
 
 /**
- * /superadmin/sitios?tab=cloudflare — CRUD para `tenant_cloudflare_accounts`.
- * Persiste en localStorage hasta que la migración corra. El token completo
- * NO se guarda en LS (solo enmascarado); cuando Cloud responda se cifrará
- * con `AUTH_ENCRYPTION_KEY` y se almacenará en la columna `api_token_encrypted`.
+ * Fase 2 — CRUD para `tenant_cloudflare_accounts` (DB-backed).
+ * El api_token se cifra server-side (AES-GCM, AUTH_ENCRYPTION_KEY) en la edge
+ * function `cf-accounts-manage` y nunca se devuelve al cliente. Solo se
+ * muestra una versión enmascarada del token recién ingresado.
  */
 export default function CloudflareAccountsTab({ orgId }: Props) {
-  const [accounts, setAccounts] = useState<CloudflareAccount[]>(() => loadCfAccounts(orgId));
+  const [accounts, setAccounts] = useState<CFAccountRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(() => empty(orgId));
+  const [form, setForm] = useState(() => emptyForm(orgId));
   const [showToken, setShowToken] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const refresh = () => setAccounts(loadCfAccounts(orgId));
+  const refresh = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke("cf-accounts-manage", {
+      body: { action: "list", organization_id: orgId },
+    });
+    if (error) toast.error(error.message);
+    setAccounts(data?.accounts ?? []);
+    setLoading(false);
+  };
 
-  const submit = () => {
-    if (!form.label?.trim()) return toast.error("Etiqueta requerida");
-    if (!form.cf_account_id?.trim()) return toast.error("Cloudflare Account ID requerido");
-    if (!form.api_token?.trim() || form.api_token.length < 20) {
+  useEffect(() => { if (orgId) refresh(); }, [orgId]);
+
+  const submit = async () => {
+    if (!form.label.trim()) return toast.error("Etiqueta requerida");
+    if (!form.cf_account_id.trim()) return toast.error("Cloudflare Account ID requerido");
+    if (!form.api_token.trim() || form.api_token.length < 20) {
       return toast.error("API token inválido (mínimo 20 caracteres)");
     }
-    const account: CloudflareAccount = {
-      id: crypto.randomUUID(),
-      organization_id: orgId,
-      label: form.label.trim(),
-      cf_account_id: form.cf_account_id.trim(),
-      cf_zone_id: form.cf_zone_id?.trim() || undefined,
-      api_token_masked: maskToken(form.api_token),
-      is_default: !!form.is_default,
-      created_at: new Date().toISOString(),
-    };
-    saveCfAccount(account);
-    toast.success("Cuenta guardada (borrador local)");
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("cf-accounts-manage", {
+      body: {
+        action: "create",
+        organization_id: orgId,
+        label: form.label.trim(),
+        cf_account_id: form.cf_account_id.trim(),
+        cf_zone_id: form.cf_zone_id?.trim() || null,
+        api_token: form.api_token,
+        is_default: form.is_default,
+      },
+    });
+    setBusy(false);
+    if (error || data?.error) {
+      return toast.error(error?.message ?? data?.error ?? "No se pudo guardar");
+    }
+    toast.success("Cuenta guardada (token cifrado)");
     setOpen(false);
-    setForm(empty(orgId));
+    setForm(emptyForm(orgId));
     setShowToken(false);
-    refresh();
+    await refresh();
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (!window.confirm("¿Eliminar esta cuenta Cloudflare?")) return;
-    deleteCfAccount(id);
-    refresh();
+    const { error } = await supabase.functions.invoke("cf-accounts-manage", {
+      body: { action: "delete", id },
+    });
+    if (error) return toast.error(error.message);
     toast.success("Eliminada");
+    await refresh();
   };
 
-  const setDefault = (a: CloudflareAccount) => {
-    saveCfAccount({ ...a, is_default: true });
-    refresh();
+  const setDefault = async (a: CFAccountRow) => {
+    const { error } = await supabase.functions.invoke("cf-accounts-manage", {
+      body: { action: "set_default", id: a.id },
+    });
+    if (error) return toast.error(error.message);
     toast.success(`"${a.label}" ahora es la cuenta por defecto`);
+    await refresh();
   };
 
   return (
     <Card className="p-4 space-y-4">
-      <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 text-sm">
-        <strong>Modo borrador:</strong> los tokens completos se guardarán cifrados en la tabla{" "}
-        <code>tenant_cloudflare_accounts</code> cuando Lovable Cloud vuelva. Por ahora solo se
-        persiste una versión enmascarada localmente.
-      </div>
-
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-heading font-semibold flex items-center gap-2">
@@ -95,7 +116,7 @@ export default function CloudflareAccountsTab({ orgId }: Props) {
           </h3>
           <p className="text-xs text-muted-foreground">
             {accounts.length} cuenta{accounts.length === 1 ? "" : "s"} configurada
-            {accounts.length === 1 ? "" : "s"}
+            {accounts.length === 1 ? "" : "s"} · tokens cifrados con AES-GCM
           </p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setShowToken(false); }}>
@@ -108,7 +129,7 @@ export default function CloudflareAccountsTab({ orgId }: Props) {
               <div>
                 <Label>Etiqueta *</Label>
                 <Input
-                  value={form.label ?? ""}
+                  value={form.label}
                   onChange={(e) => setForm({ ...form, label: e.target.value })}
                   placeholder="Cuenta Surteya"
                 />
@@ -116,7 +137,7 @@ export default function CloudflareAccountsTab({ orgId }: Props) {
               <div>
                 <Label>Cloudflare Account ID *</Label>
                 <Input
-                  value={form.cf_account_id ?? ""}
+                  value={form.cf_account_id}
                   onChange={(e) => setForm({ ...form, cf_account_id: e.target.value })}
                   placeholder="32 caracteres hex"
                 />
@@ -127,7 +148,7 @@ export default function CloudflareAccountsTab({ orgId }: Props) {
               <div>
                 <Label>Zone ID (opcional)</Label>
                 <Input
-                  value={form.cf_zone_id ?? ""}
+                  value={form.cf_zone_id}
                   onChange={(e) => setForm({ ...form, cf_zone_id: e.target.value })}
                   placeholder="Solo si esta cuenta tiene una zona fija"
                 />
@@ -137,7 +158,7 @@ export default function CloudflareAccountsTab({ orgId }: Props) {
                 <div className="relative">
                   <Input
                     type={showToken ? "text" : "password"}
-                    value={form.api_token ?? ""}
+                    value={form.api_token}
                     onChange={(e) => setForm({ ...form, api_token: e.target.value })}
                     placeholder="scope: Zone.SSL + Zone.Hostname + Zone.DNS"
                   />
@@ -150,19 +171,22 @@ export default function CloudflareAccountsTab({ orgId }: Props) {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Solo se guardará enmascarado hasta que el backend vuelva. Asegúrate de poder
-                  pegarlo de nuevo después.
+                  El token se cifrará server-side y solo se podrá usar desde edge functions.
+                  Guarda una copia en tu gestor de contraseñas por si necesitas rotarlo.
                 </p>
               </div>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={!!form.is_default}
+                  checked={form.is_default}
                   onChange={(e) => setForm({ ...form, is_default: e.target.checked })}
                 />
                 Usar como cuenta por defecto para esta organización
               </label>
-              <Button onClick={submit} className="w-full">Guardar cuenta</Button>
+              <Button onClick={submit} disabled={busy} className="w-full">
+                {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Guardar cuenta
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -174,25 +198,30 @@ export default function CloudflareAccountsTab({ orgId }: Props) {
             <TableHead>Etiqueta</TableHead>
             <TableHead>Account ID</TableHead>
             <TableHead>Zone ID</TableHead>
-            <TableHead>Token</TableHead>
             <TableHead>Por defecto</TableHead>
             <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {accounts.length === 0 && (
+          {loading && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> Cargando…
+              </TableCell>
+            </TableRow>
+          )}
+          {!loading && accounts.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                 Aún no hay cuentas Cloudflare. Se usará la cuenta SaaS por defecto.
               </TableCell>
             </TableRow>
           )}
-          {accounts.map((a) => (
+          {!loading && accounts.map((a) => (
             <TableRow key={a.id}>
               <TableCell className="font-medium">{a.label}</TableCell>
               <TableCell className="font-mono text-xs">{a.cf_account_id.slice(0, 12)}…</TableCell>
               <TableCell className="font-mono text-xs">{a.cf_zone_id ?? "—"}</TableCell>
-              <TableCell className="font-mono text-xs">{a.api_token_masked}</TableCell>
               <TableCell>
                 {a.is_default ? (
                   <Badge className="bg-primary text-primary-foreground"><Star size={10} className="mr-1" />Sí</Badge>
