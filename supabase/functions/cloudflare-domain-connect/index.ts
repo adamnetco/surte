@@ -128,6 +128,7 @@ export const handler = async (req: Request): Promise<Response> => {
     ssl_status,
     ownership_verification: ownership,
     dcv_method: dcv ? "http" : null,
+    cname_target: fallbackHostname ?? `${zoneId}.cloudflareondemand.com`,
   });
 };
 
