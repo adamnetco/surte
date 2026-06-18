@@ -263,6 +263,10 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
   const [httpsOk, setHttpsOk] = useState<"unknown" | "ok" | "fail">("unknown");
   const [local, setLocal] = useState(primary);
   const [pollPaused, setPollPaused] = useState(false); // I7
+  // I1 — errores reales devueltos por Cloudflare (verification_errors + ssl validation_errors)
+  const [cfErrors, setCfErrors] = useState<string[]>([]);
+  // I2 — detección de "orange cloud" (proxy de CF en la zona del cliente) que rompe SaaS
+  const [proxyWarning, setProxyWarning] = useState<string | null>(null);
   const startedAt = useRef<number>(Date.now());
 
   useEffect(() => { setLocal(primary); }, [primary?.hostname, primary?.cf_ssl_status, primary?.cf_status]);
@@ -275,15 +279,36 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
         body: { hostname: local.hostname },
       });
       if (error) throw error;
+      const errs: string[] = [
+        ...(Array.isArray(data?.verification_errors) ? data.verification_errors : []),
+        ...(Array.isArray(data?.ssl_validation_errors) ? data.ssl_validation_errors : []),
+      ].filter(Boolean);
+      setCfErrors(errs);
+      setProxyWarning(data?.proxy_detected ? (data?.proxy_reason ?? "Posible proxy de Cloudflare activo en la zona del cliente.") : null);
       setLocal((prev) => prev && ({
         ...prev,
         cf_status: data?.status ?? prev.cf_status,
         cf_ssl_status: data?.ssl_status ?? prev.cf_ssl_status,
         cf_ownership_verification: data?.result?.ownership_verification ?? prev.cf_ownership_verification,
         cf_ssl_validation_records: data?.ssl_validation_records ?? data?.result?.ssl?.validation_records ?? prev.cf_ssl_validation_records,
+        cname_target: data?.cname_target ?? prev.cname_target,
         last_checked_at: new Date().toISOString(),
         verified_at: data?.status === "active" ? new Date().toISOString() : prev.verified_at,
       }));
+
+      // I3 — Disparar también verify-tenant-domain (TXT _lovable-tenant) para que el panel
+      // refleje la prueba de propiedad SistecPOS además del estado Cloudflare.
+      if (local?.id) {
+        try {
+          const { data: vd } = await supabase.functions.invoke("verify-tenant-domain", {
+            body: { domain_id: local.id },
+          });
+          if (vd?.verified) {
+            setLocal((prev) => prev && ({ ...prev, verified_at: prev.verified_at ?? new Date().toISOString() }));
+          }
+        } catch { /* el TXT puede tardar; no bloqueamos UX */ }
+      }
+
       if (!silent) toast.success(`Estado: ${data?.status ?? "—"} · SSL: ${data?.ssl_status ?? "—"}`);
     } catch (e: any) {
       if (!silent) toast.error(e.message ?? "No se pudo verificar");
