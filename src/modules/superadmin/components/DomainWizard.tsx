@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Copy, Check, ChevronRight, ChevronLeft, Loader2, Globe, AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, Check, ChevronRight, ChevronLeft, Loader2, Globe, AlertCircle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
