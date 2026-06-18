@@ -65,6 +65,16 @@ export default function TenantHealth() {
       const domainsAll = (domainsRes.data ?? []) as any[];
       const domainsVerified = domainsAll.filter((d) => !!d.verified_at).length;
       const sslActive = domainsAll.filter((d) => d.cf_ssl_status === "active").length;
+      // AC6: priorizar dominio "más crítico" para el deep-link (?focus=<id>).
+      // Prioridad: SSL failed > sin verificar > SSL no activo > primero de la lista.
+      const criticalDomain =
+        domainsAll.find((d) => d.cf_ssl_status === "failed") ??
+        domainsAll.find((d) => !d.verified_at) ??
+        domainsAll.find((d) => d.cf_ssl_status !== "active") ??
+        null;
+      const domainsHref = criticalDomain
+        ? `${base}/sitios?tab=domains&focus=${criticalDomain.id}`
+        : `${base}/sitios?tab=domains`;
       const signingOk = !!orgRes.data?.signing_public_key;
       const signingDate = orgRes.data?.signing_key_created_at
         ? new Date(orgRes.data.signing_key_created_at).toLocaleDateString()
@@ -112,7 +122,7 @@ export default function TenantHealth() {
           detail: domainsAll.length === 0
             ? "Sin dominios conectados"
             : `${domainsVerified}/${domainsAll.length} verificados · SSL ${sslActive}/${domainsAll.length} activo`,
-          to: `${base}/sitios?tab=domains`,
+          to: domainsHref,
         },
         {
           id: "signing", label: "Firma criptográfica",
