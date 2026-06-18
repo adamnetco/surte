@@ -426,10 +426,11 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
       local.cname_target,
       local.verification_token,
       !!local.verified_at,
+      !!local.cf_hostname_id,
     ) : [],
-    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records, local?.dns_mode, local?.cname_target, local?.verification_token, local?.verified_at],
+    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records, local?.dns_mode, local?.cname_target, local?.verification_token, local?.verified_at, local?.cf_hostname_id],
   );
-  const isRegistered = !!local?.cf_hostname_id && !!local?.cname_target;
+  const isRegistered = !!local?.cf_hostname_id;
   const pendingCount = dnsRows.filter(r => r.required && !r.done).length;
 
   const copyAll = () => {
