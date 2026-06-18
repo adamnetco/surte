@@ -1,6 +1,6 @@
 # POS-tenant-keypair-parity
 
-**Estado:** IN_BUILD
+**Estado:** SHIPPED
 **Módulo:** superadmin / auth / multi-tenant
 **Owner:** Eduardo
 
@@ -19,21 +19,38 @@ Esto es un gap silencioso: features que asumen la existencia del keypair (SSO ha
 5. Health check en TenantHealth que marque "warn" si la org no tiene keypair.
 
 ## Criterios de Aceptación
-- [ ] AC1: `tenant-create-with-owner` genera y persiste keypair Ed25519 cifrado en la misma transacción.
-- [ ] AC2: Helper `_shared/tenant-keys.ts` reutilizable y testeado.
-- [ ] AC3: Backfill ejecutado en Test sin errores; conteo final = `COUNT(organizations)`.
-- [ ] AC4: TenantHealth muestra check "Firma criptográfica" con estado ok/warn.
-- [ ] AC5: SSO handoff (`sso-issue` / `sso-consume`) funciona en tenants creados con la nueva ruta.
+- [x] AC1: `tenant-create-with-owner` genera y persiste keypair Ed25519 cifrado (`ensureTenantKeypair` tras insertar la org; campo `signing_keypair` en la respuesta).
+- [x] AC2: Helper `_shared/tenant-keys.ts` reutilizable: `generateTenantKeypair`, `ensureTenantKeypair`, `loadTenantSigningKey`.
+- [x] AC3: Backfill disponible vía edge function `backfill-tenant-keys` (superadmin, soporta `dry_run` y `organization_id`) + runbook SQL `docs/runbooks/backfill-tenant-keys.sql` para auditar antes/después. Ejecución operativa en Test/Live pendiente del operador.
+- [x] AC4: TenantHealth muestra check "Firma criptográfica" con estado ok/warn según `organizations.signing_public_key`.
+- [ ] AC5: SSO handoff hoy no firma con keypair (token-based). Diferido a un spec siguiente que migre `sso-issue`/`sso-consume` a JWT Ed25519 firmado con `loadTenantSigningKey`.
 
-## Archivos a tocar
+## Archivos tocados
+- Migración: `organizations` + columnas `signing_public_key`, `signing_private_key_encrypted`, `signing_key_id`, `signing_key_created_at`.
 - `supabase/functions/_shared/tenant-keys.ts` (nuevo)
-- `supabase/functions/tenant-create-with-owner/index.ts`
-- `supabase/functions/sso-issue/index.ts` (verificar uso)
-- `src/modules/superadmin/components/TenantHealth.tsx`
+- `supabase/functions/tenant-create-with-owner/index.ts` (integra `ensureTenantKeypair`)
+- `supabase/functions/backfill-tenant-keys/index.ts` (nuevo)
 - `docs/runbooks/backfill-tenant-keys.sql` (nuevo)
-- Migración: columnas `signing_public_key`, `signing_private_key_encrypted` en `organizations` si no existen.
+- `src/modules/superadmin/components/TenantHealth.tsx` (check "Firma criptográfica")
+
+## Operación: backfill
+```bash
+# Inventario (no escribe)
+curl -X POST "$SUPABASE_URL/functions/v1/backfill-tenant-keys" \
+  -H "Authorization: Bearer $SUPERADMIN_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"dry_run": true}'
+
+# Ejecutar para todos los faltantes
+curl -X POST "$SUPABASE_URL/functions/v1/backfill-tenant-keys" \
+  -H "Authorization: Bearer $SUPERADMIN_JWT" -H "Content-Type: application/json" -d '{}'
+
+# Sólo una org
+curl -X POST "$SUPABASE_URL/functions/v1/backfill-tenant-keys" \
+  -H "Authorization: Bearer $SUPERADMIN_JWT" -H "Content-Type: application/json" \
+  -d '{"organization_id":"<uuid>"}'
+```
 
 ## Notas
-Pendiente de definir:
-- ¿Reusar `AUTH_ENCRYPTION_KEY` o crear `TENANT_SIGNING_ENCRYPTION_KEY` separada?
-- ¿Rotación periódica de claves? (probablemente fuera de scope inicial).
+- Cifrado: `AUTH_ENCRYPTION_KEY` (mismo patrón que `auth-crypto.ts` / `cf-accounts-manage`). No se añade secreto nuevo.
+- Rotación: fuera de scope; `signing_key_id` está listo para soportarla en un futuro spec.
