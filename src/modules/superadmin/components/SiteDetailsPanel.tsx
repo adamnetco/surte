@@ -109,6 +109,7 @@ function buildDnsPlan(
   cnameTarget?: string | null,
   sistecposToken?: string | null,
   sistecposVerified?: boolean,
+  hasCfHostname?: boolean,
 ): DnsRow[] {
   // SistecPOS Core opera SIEMPRE en modo Cloudflare for SaaS (CNAME al fallback hostname).
   // El parámetro dnsMode queda solo por compatibilidad de firma; se ignora.
@@ -122,8 +123,14 @@ function buildDnsPlan(
       done: cfStatus === "active" || sslStatus === "active",
       hint: "Apunta tu dominio al edge multi-tenant de SistecPOS (CNAME al fallback hostname de Cloudflare for SaaS).",
     });
+  } else if (hasCfHostname) {
+    rows.push({
+      key: "cname-root-reprov", type: "CNAME", name: hostname,
+      value: "— pulsa «Reprovisionar» para recuperar el destino CNAME —",
+      required: true, done: false,
+      hint: "El dominio ya está registrado en Cloudflare for SaaS, pero falta sincronizar el destino CNAME. Pulsa Reprovisionar.",
+    });
   } else {
-    // Aún no registrado en Cloudflare: fila guía, sin valor copiable.
     rows.push({
       key: "cname-root-pending", type: "CNAME", name: hostname,
       value: "— pendiente: pulsa «Registrar en Cloudflare» para obtener el destino —",
