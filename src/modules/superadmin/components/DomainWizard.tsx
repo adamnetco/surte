@@ -8,12 +8,17 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  loadCfAccounts,
   loadDomainDraft,
   saveDomainDraft,
   type DnsMode,
   type DomainDraft,
 } from "@/modules/superadmin/lib/cloudflareDrafts";
+
+interface CFAccountLite {
+  id: string;
+  label: string;
+  is_default: boolean;
+}
 
 interface Props {
   open: boolean;
@@ -50,7 +55,24 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
   const [copied, setCopied] = useState<string | null>(null);
   const [hydrating, setHydrating] = useState(false);
 
-  const accounts = orgId ? loadCfAccounts(orgId) : [];
+  const [accounts, setAccounts] = useState<CFAccountLite[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+
+  // Carga cuentas Cloudflare desde DB (cifradas server-side) al abrir el modal.
+  useEffect(() => {
+    if (!open || !orgId) return;
+    let cancelled = false;
+    setLoadingAccounts(true);
+    supabase.functions
+      .invoke("cf-accounts-manage", { body: { action: "list", organization_id: orgId } })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) toast.error(error.message);
+        setAccounts(data?.accounts ?? []);
+      })
+      .finally(() => { if (!cancelled) setLoadingAccounts(false); });
+    return () => { cancelled = true; };
+  }, [open, orgId]);
 
   // Hidrata desde localStorage al abrir o al cambiar de dominio:
   // si el usuario ya había avanzado, recuperamos el paso correspondiente
