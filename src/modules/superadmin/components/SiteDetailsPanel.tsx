@@ -290,7 +290,13 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
 
   const runReprovision = async () => {
     if (!local?.hostname) return;
-    if (!window.confirm(`Forzar reaprovisionamiento SSL para ${local.hostname}?`)) return;
+    // I6 — Explicar al usuario qué cambia al reprovisionar (método SSL pasa de HTTP a TXT)
+    const msg =
+      `Forzar reaprovisionamiento SSL para ${local.hostname}?\n\n` +
+      `Esto pedirá a Cloudflare emitir un certificado nuevo cambiando el método de validación a TXT (_acme-challenge).\n` +
+      `Tendrás que publicar los TXT generados en tu DNS y esperar 2–10 min.\n\n` +
+      `Si tu dominio ya estaba activo, el SSL actual sigue sirviendo tráfico hasta que el nuevo emita.`;
+    if (!window.confirm(msg)) return;
     setReprovisioning(true);
     try {
       const { data, error } = await supabase.functions.invoke("cloudflare-domain-reprovision", {
