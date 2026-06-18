@@ -37,9 +37,9 @@ const SSL_PROGRESS: Record<NonNullable<DomainDraft["cf_ssl_status"]>, number> = 
  * 2) Muestra CNAME + TXT DCV (copy-to-clipboard)
  * 3) Polling de status con barra de progreso
  *
- * Mientras Cloud + edge functions no estén disponibles, usa los mocks de
- * `cloudflareDrafts.ts`. Cuando Cloud vuelva, reemplazar `mockConnect` /
- * `mockAdvanceStatus` por `supabase.functions.invoke('cloudflare-domain-*')`.
+ * Invoca las edge functions reales `cloudflare-domain-connect` y
+ * `cloudflare-domain-status`. El draft sigue persistiéndose en localStorage
+ * para que el progreso sobreviva al cierre del modal.
  */
 export default function DomainWizard({ open, onOpenChange, orgId, domain }: Props) {
   const [step, setStep] = useState(1);
