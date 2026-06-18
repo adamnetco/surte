@@ -383,15 +383,20 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
     }
   };
 
-  // Polling extendido a 30 min con backoff (15s → 60s tras 5 min)
+  // I7 — Polling con pausa manual + auto-pausa si la pestaña está oculta
+  // (evita seguir consultando CF en segundo plano). 30 min máx con backoff.
   useEffect(() => {
-    if (!local?.hostname) return;
+    if (!local?.hostname || pollPaused) return;
     const tone = sslTone(local.cf_ssl_status);
     if (tone === "ok") { checkHttps(); return; }
     if (tone === "idle") return;
     let cancelled = false;
     const tick = async () => {
       if (cancelled) return;
+      if (document.hidden) {
+        if (!cancelled) setTimeout(tick, 10_000);
+        return;
+      }
       const elapsed = Date.now() - startedAt.current;
       if (elapsed > 30 * 60 * 1000) return;
       await runVerify(true);
@@ -401,14 +406,24 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
     const id = setTimeout(tick, 15_000);
     return () => { cancelled = true; clearTimeout(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [local?.hostname, local?.cf_ssl_status]);
+  }, [local?.hostname, local?.cf_ssl_status, pollPaused]);
 
   const sslT = sslTone(local?.cf_ssl_status);
   const cfT = cfTone(local?.cf_status);
 
   const dnsRows = useMemo(
-    () => local?.hostname ? buildDnsPlan(local.hostname, local.cf_ownership_verification, local.cf_ssl_validation_records, local.cf_status, local.cf_ssl_status, local.dns_mode, local.cname_target) : [],
-    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records, local?.dns_mode, local?.cname_target],
+    () => local?.hostname ? buildDnsPlan(
+      local.hostname,
+      local.cf_ownership_verification,
+      local.cf_ssl_validation_records,
+      local.cf_status,
+      local.cf_ssl_status,
+      local.dns_mode,
+      local.cname_target,
+      local.verification_token,
+      !!local.verified_at,
+    ) : [],
+    [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records, local?.dns_mode, local?.cname_target, local?.verification_token, local?.verified_at],
   );
   const isSaas = (local?.dns_mode ?? "saas") === "saas" && !!local?.cname_target;
   const pendingCount = dnsRows.filter(r => r.required && !r.done).length;
