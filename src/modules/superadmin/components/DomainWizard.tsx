@@ -379,6 +379,8 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
             </div>
           </div>
         )}
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
