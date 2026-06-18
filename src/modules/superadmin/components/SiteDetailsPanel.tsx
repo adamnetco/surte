@@ -533,6 +533,26 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
 
           <DnsChecklist rows={dnsRows} onCopyAll={copyAll} onExportCsv={exportCsv} onExportBind={exportBind} />
 
+          {/* I2 — Aviso de orange cloud (proxy en zona del cliente) — rompe Cloudflare for SaaS */}
+          {proxyWarning && (
+            <div className="rounded-md border border-orange-500/40 bg-orange-500/5 p-2 text-[11px] text-orange-800 dark:text-orange-300">
+              <strong>Proxy de Cloudflare detectado:</strong> {proxyWarning}
+              <div className="mt-1">
+                En el dashboard del cliente, abre la zona DNS y pon en <strong>gris (DNS only)</strong> los registros CNAME de <code className="font-mono">{local?.hostname}</code> y <code className="font-mono">www.{local?.hostname}</code>.
+              </div>
+            </div>
+          )}
+
+          {/* I1 — Errores reales devueltos por Cloudflare */}
+          {cfErrors.length > 0 && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive space-y-1">
+              <div className="font-semibold">Cloudflare reporta:</div>
+              <ul className="list-disc pl-4 space-y-0.5">
+                {cfErrors.map((m, i) => <li key={i} className="break-words">{m}</li>)}
+              </ul>
+            </div>
+          )}
+
           {pendingCount > 0 && sslT !== "ok" && (!local.cf_ssl_validation_records || local.cf_ssl_validation_records.length === 0) && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-300">
               Faltan los TXT <code className="font-mono">_acme-challenge</code>. Pulsa <strong>Reprovisionar</strong> para que Cloudflare los genere y aparezcan arriba.
