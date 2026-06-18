@@ -402,9 +402,13 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
   };
 
   const setPrimary = async (d: any) => {
-    await supabase.from("tenant_domains").update({ is_primary: false }).eq("site_id", d.site_id);
-    await supabase.from("tenant_domains").update({ is_primary: true }).eq("id", d.id);
+    // I2 — RPC atómico: marca este dominio como primario y desmarca los demás
+    // del mismo sitio en una sola transacción server-side (evita race condition).
+    const { error } = await supabase.rpc("set_primary_tenant_domain", { p_domain_id: d.id });
+    if (error) return toast.error(error.message);
+    toast.success(`${d.hostname} marcado como primario`);
     qc.invalidateQueries({ queryKey: ["tenant-domains", orgId] });
+    qc.invalidateQueries({ queryKey: ["tenant-sites", orgId] });
   };
 
   const copy = (txt: string) => { navigator.clipboard.writeText(txt); toast.success("Copiado"); };
