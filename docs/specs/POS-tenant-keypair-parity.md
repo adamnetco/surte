@@ -1,6 +1,6 @@
 # POS-tenant-keypair-parity
 
-**Estado:** DRAFT
+**Estado:** IN_BUILD
 **Módulo:** superadmin / auth / multi-tenant
 **Owner:** Eduardo
 
