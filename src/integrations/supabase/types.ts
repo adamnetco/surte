@@ -4358,6 +4358,10 @@ export type Database = {
           primary_color: string | null
           region: string | null
           settings: Json
+          signing_key_created_at: string | null
+          signing_key_id: string | null
+          signing_private_key_encrypted: string | null
+          signing_public_key: string | null
           slug: string
           support_email: string | null
           tagline: string | null
@@ -4390,6 +4394,10 @@ export type Database = {
           primary_color?: string | null
           region?: string | null
           settings?: Json
+          signing_key_created_at?: string | null
+          signing_key_id?: string | null
+          signing_private_key_encrypted?: string | null
+          signing_public_key?: string | null
           slug: string
           support_email?: string | null
           tagline?: string | null
@@ -4422,6 +4430,10 @@ export type Database = {
           primary_color?: string | null
           region?: string | null
           settings?: Json
+          signing_key_created_at?: string | null
+          signing_key_id?: string | null
+          signing_private_key_encrypted?: string | null
+          signing_public_key?: string | null
           slug?: string
           support_email?: string | null
           tagline?: string | null

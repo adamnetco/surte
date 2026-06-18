@@ -39,7 +39,7 @@ export default function TenantHealth() {
       const base = `/superadmin/t/${currentOrg.slug}`;
 
       // Paralelo
-      const [modulesRes, fiscalRes, licRes, syncRes, ordersRes, sitesRes, domainsRes] = await Promise.all([
+      const [modulesRes, fiscalRes, licRes, syncRes, ordersRes, sitesRes, domainsRes, orgRes] = await Promise.all([
         (supabase as any).from("organization_modules").select("module_key,enabled").eq("organization_id", orgId),
         (supabase as any).from("fiscal_settings").select("id").eq("organization_id", orgId).maybeSingle(),
         (supabase as any).from("organization_licenses").select("plan,expires_at,status").eq("organization_id", orgId).maybeSingle(),
@@ -49,6 +49,7 @@ export default function TenantHealth() {
           .gte("created_at", new Date(Date.now() - 86400000).toISOString()),
         (supabase as any).from("tenant_sites").select("id,is_published").eq("organization_id", orgId),
         (supabase as any).from("tenant_domains").select("id,verified_at,cf_ssl_status").eq("organization_id", orgId),
+        (supabase as any).from("organizations").select("signing_public_key,signing_key_created_at").eq("id", orgId).maybeSingle(),
       ]);
 
       const modulesEnabled = (modulesRes.data ?? []).filter((m: any) => m.enabled).length;
@@ -64,6 +65,20 @@ export default function TenantHealth() {
       const domainsAll = (domainsRes.data ?? []) as any[];
       const domainsVerified = domainsAll.filter((d) => !!d.verified_at).length;
       const sslActive = domainsAll.filter((d) => d.cf_ssl_status === "active").length;
+      // AC6: priorizar dominio "más crítico" para el deep-link (?focus=<id>).
+      // Prioridad: SSL failed > sin verificar > SSL no activo > primero de la lista.
+      const criticalDomain =
+        domainsAll.find((d) => d.cf_ssl_status === "failed") ??
+        domainsAll.find((d) => !d.verified_at) ??
+        domainsAll.find((d) => d.cf_ssl_status !== "active") ??
+        null;
+      const domainsHref = criticalDomain
+        ? `${base}/sitios?tab=domains&focus=${criticalDomain.id}`
+        : `${base}/sitios?tab=domains`;
+      const signingOk = !!orgRes.data?.signing_public_key;
+      const signingDate = orgRes.data?.signing_key_created_at
+        ? new Date(orgRes.data.signing_key_created_at).toLocaleDateString()
+        : null;
 
       if (cancelled) return;
 
@@ -107,7 +122,14 @@ export default function TenantHealth() {
           detail: domainsAll.length === 0
             ? "Sin dominios conectados"
             : `${domainsVerified}/${domainsAll.length} verificados · SSL ${sslActive}/${domainsAll.length} activo`,
-          to: `${base}/sitios?tab=domains`,
+          to: domainsHref,
+        },
+        {
+          id: "signing", label: "Firma criptográfica",
+          status: signingOk ? "ok" : "warn",
+          detail: signingOk
+            ? `Keypair Ed25519 · creado ${signingDate ?? "—"}`
+            : "Sin keypair — ejecuta backfill-tenant-keys",
         },
       ]);
       setLoading(false);

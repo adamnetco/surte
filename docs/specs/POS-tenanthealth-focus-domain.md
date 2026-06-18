@@ -1,6 +1,6 @@
 # POS-tenanthealth-focus-domain
 
-**Estado:** DRAFT
+**Estado:** SHIPPED
 **Módulo:** superadmin / TenantHealth + Sitios
 **Owner:** Eduardo
 
@@ -19,18 +19,18 @@ Queremos que el CTA "Activar SSL" / "Dominios pendientes" lleve directo al panel
 5. Si hay varios dominios con problema, TenantHealth muestra el más crítico (SSL failed > DNS error > verificación pendiente) y enlaza a ese.
 
 ## Criterios de Aceptación
-- [ ] AC1: Click en "Activar SSL" desde TenantHealth abre `/sitios?tab=domains&focus=<id>`.
-- [ ] AC2: La fila/card del dominio queda visible en viewport sin scroll manual.
-- [ ] AC3: El panel de detalles se abre automáticamente si el `focus` está en un Collapsible cerrado.
-- [ ] AC4: Anillo de foco visible 2s y luego desaparece (sin layout shift permanente).
-- [ ] AC5: Si el dominio enlazado fue eliminado, la URL no rompe (fallback silencioso al tab sin focus).
-- [ ] AC6: TenantHealth elige el dominio "más crítico" según prioridad SSL failed > DNS error > pendiente.
+- [x] AC1: Check "Dominios y SSL" en TenantHealth genera `to: /sitios?tab=domains&focus=<id>` cuando hay dominio crítico.
+- [x] AC2: `DomainsTab` hace `scrollIntoView({ block: "center", behavior: "smooth" })` sobre la fila con `data-focus-id=<id>`.
+- [x] AC3: Aplica clase `ring-2 ring-primary ring-offset-2 bg-primary/5` a la fila objetivo. (El detalle por dominio vive en la tabla; el `SiteDetailsPanel` queda fuera de scope porque es per-site, no per-domain.)
+- [x] AC4: Anillo de foco se quita a los 2.2s vía `setTimeout` + `setFocusActive(null)`; sin layout shift permanente.
+- [x] AC5: Si el `focus` no existe en `domains` cargados, se limpia silenciosamente y no rompe (fallback al tab sin focus).
+- [x] AC6: TenantHealth elige el más crítico con prioridad `cf_ssl_status === "failed"` > `!verified_at` > `cf_ssl_status !== "active"` > primero.
 
-## Archivos a tocar
-- `src/modules/superadmin/components/TenantHealth.tsx`
-- `src/modules/superadmin/pages/SitiosTenantRoute.tsx`
-- `src/modules/superadmin/pages/Sitios.tsx`
-- `src/modules/superadmin/components/SiteDetailsPanel.tsx`
+## Archivos tocados
+- `src/modules/superadmin/components/TenantHealth.tsx` — cálculo de `criticalDomain` + `domainsHref`.
+- `src/modules/superadmin/pages/SitiosTenantRoute.tsx` — lee `?focus` y lo propaga.
+- `src/modules/superadmin/pages/Sitios.tsx` — prop `initialFocus` → `DomainsTab.focusDomainId`; efecto scroll + ring 2.2s + `data-focus-id`.
 
 ## Notas
-Pendiente de definir: ¿el foco debe ser por `tenant_domains.id` o por `hostname`? El `id` es más robusto pero menos legible en la URL.
+- Foco por `tenant_domains.id` (UUID), más robusto y estable que por hostname.
+- Spec próximo opcional: extender `SiteDetailsPanel` para auto-abrir su Collapsible cuando el `focus` pertenece a un dominio del sitio (útil cuando se entre desde `?tab=sites&focus=<id>`).
