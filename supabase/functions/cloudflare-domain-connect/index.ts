@@ -110,7 +110,7 @@ export const handler = async (req: Request): Promise<Response> => {
       cf_ssl_status: ssl_status ?? null,
       cf_ownership_verification: ownership ?? null,
       cf_dcv_method: dcv ? "http" : null,
-      cname_target: `${zoneId}.cloudflareondemand.com`,
+      cname_target: fallbackHostname ?? `${zoneId}.cloudflareondemand.com`,
       last_checked_at: new Date().toISOString(),
     },
     { onConflict: "hostname" },
