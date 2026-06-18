@@ -49,20 +49,63 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
   const [draft, setDraft] = useState<DomainDraft | null>(null);
   const [checking, setChecking] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [hydrating, setHydrating] = useState(false);
 
   const accounts = orgId ? loadCfAccounts(orgId) : [];
 
-  const reset = () => {
+  // Hidrata desde localStorage al abrir o al cambiar de dominio:
+  // si el usuario ya había avanzado, recuperamos el paso correspondiente
+  // (registros DNS o status SSL) en lugar de volver al paso 1.
+  useEffect(() => {
+    if (!open || !domain) return;
+    setHydrating(true);
+    const existing = loadDomainDraft(domain.id);
+    if (existing) {
+      setDraft(existing);
+      setMode(existing.dns_mode);
+      if (existing.cf_account_id) setAccountId(existing.cf_account_id);
+      // Si ya hay status SSL → vamos a paso 3; si solo hay registros → paso 2
+      if (existing.cf_ssl_status) setStep(3);
+      else if (existing.cname_target || existing.cf_ownership_verification) setStep(2);
+      else setStep(1);
+    } else {
+      setStep(1);
+      setMode("saas");
+      setAccountId("");
+      setDraft(null);
+    }
+    setCopied(null);
+    setChecking(false);
+    // pequeño delay para que el usuario perciba el restore (evita flash)
+    const t = setTimeout(() => setHydrating(false), 150);
+    return () => clearTimeout(t);
+  }, [open, domain?.id]);
+
+  const restart = () => {
+    if (!domain) return;
+    if (!window.confirm("Vas a reiniciar el wizard de este dominio y perder el progreso guardado. ¿Continuar?")) return;
+    try {
+      const raw = localStorage.getItem("sistecpos:cf_domains:draft");
+      if (raw) {
+        const all = JSON.parse(raw) as DomainDraft[];
+        localStorage.setItem(
+          "sistecpos:cf_domains:draft",
+          JSON.stringify(all.filter((d) => d.domain_id !== domain.id)),
+        );
+      }
+    } catch { /* noop */ }
     setStep(1);
     setMode("saas");
     setAccountId("");
     setDraft(null);
-    setChecking(false);
     setCopied(null);
+    toast.success("Wizard reiniciado");
   };
 
+  // Cerrar NO resetea estado: el progreso queda persistido en localStorage
+  // y la próxima apertura lo rehidratará. Esto evita perder el contexto
+  // cuando el usuario cierra para copiar el CNAME al panel del cliente.
   const handleClose = (v: boolean) => {
-    if (!v) reset();
     onOpenChange(v);
   };
 
