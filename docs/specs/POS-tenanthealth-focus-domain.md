@@ -1,6 +1,6 @@
 # POS-tenanthealth-focus-domain
 
-**Estado:** DRAFT
+**Estado:** IN_BUILD
 **Módulo:** superadmin / TenantHealth + Sitios
 **Owner:** Eduardo
 
