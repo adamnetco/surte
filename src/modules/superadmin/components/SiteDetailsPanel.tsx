@@ -510,7 +510,9 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
           )}
           {sslT === "pending" && (
             <p className="text-[11px] text-muted-foreground">
-              Emisión en curso. Verificando cada 15–60s (máx 30 min). Si no propaga, usa Reprovisionar.
+              {pollPaused
+                ? "Polling pausado. Pulsa Reanudar o Verificar manualmente cuando hayas publicado los registros."
+                : "Emisión en curso. Verificando cada 15–60s (máx 30 min, pausa si la pestaña está oculta). Si no propaga, usa Reprovisionar."}
             </p>
           )}
           {sslT === "error" && (
