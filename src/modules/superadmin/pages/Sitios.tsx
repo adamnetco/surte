@@ -25,7 +25,7 @@ import DeleteDomainDialog from "@/modules/superadmin/components/DeleteDomainDial
 import { LOVABLE_EDGE_IP as ASTRO_HOST_IP } from "@/modules/superadmin/lib/infraConfig";
 const SUPABASE_FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co`;
 
-export default function Sitios({ embedded = false, initialTab }: { embedded?: boolean; initialTab?: string } = {}) {
+export default function Sitios({ embedded = false, initialTab, initialFocus }: { embedded?: boolean; initialTab?: string; initialFocus?: string | null } = {}) {
   const { user, role, loading } = useAuth();
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id ?? "";
@@ -80,7 +80,7 @@ export default function Sitios({ embedded = false, initialTab }: { embedded?: bo
           <TabsTrigger value="cloudflare"><Cloud className="w-4 h-4 mr-1" />Cloudflare</TabsTrigger>
         </TabsList>
         <TabsContent value="sites"><SitesTab orgId={orgId} qc={qc} /></TabsContent>
-        <TabsContent value="domains"><DomainsTab orgId={orgId} currentOrgId={orgId} qc={qc} /></TabsContent>
+        <TabsContent value="domains"><DomainsTab orgId={orgId} currentOrgId={orgId} qc={qc} focusDomainId={initialFocus ?? null} /></TabsContent>
         <TabsContent value="cloudflare"><CloudflareAccountsTab orgId={orgId} /></TabsContent>
       </Tabs>
     </>
@@ -342,12 +342,13 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
   );
 }
 
-function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: string; qc: any }) {
+function DomainsTab({ orgId, currentOrgId, qc, focusDomainId }: { orgId: string; currentOrgId: string; qc: any; focusDomainId?: string | null }) {
   const [siteId, setSiteId] = useState<string>("");
   const [hostname, setHostname] = useState("");
   const [wizardDomain, setWizardDomain] = useState<{ id: string; site_id: string; hostname: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [focusActive, setFocusActive] = useState<string | null>(focusDomainId ?? null);
 
   const { data: sites } = useQuery({
     queryKey: ["tenant-sites-list", orgId],
