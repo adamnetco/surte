@@ -327,8 +327,10 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
             )}
 
             <div className="flex justify-end">
-              <Button onClick={goConnect} disabled={!domain}>
-                Continuar <ChevronRight size={14} />
+              <Button onClick={goConnect} disabled={!domain || connecting}>
+                {connecting ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+                {connecting ? "Conectando…" : "Continuar"}
+                {!connecting && <ChevronRight size={14} />}
               </Button>
             </div>
           </div>
