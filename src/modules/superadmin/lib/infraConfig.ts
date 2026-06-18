@@ -10,7 +10,7 @@
  * En edge functions usar los nombres equivalentes sin prefijo VITE_ vía Deno.env.
  */
 
-const env = (import.meta as ImportMeta & { env: Record<string, string | undefined> }).env ?? {};
+const env = (import.meta.env ?? {}) as Record<string, string | undefined>;
 
 export const LOVABLE_EDGE_IP: string =
   env.VITE_LOVABLE_EDGE_IP?.trim() || "185.158.133.1";
