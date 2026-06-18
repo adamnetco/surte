@@ -10,6 +10,7 @@ export const handler = async (req: Request): Promise<Response> => {
 
   const token = Deno.env.get("CLOUDFLARE_API_TOKEN");
   const zoneId = Deno.env.get("CLOUDFLARE_FALLBACK_ZONE_ID");
+  const fallbackHostname = Deno.env.get("CLOUDFLARE_FALLBACK_HOSTNAME");
   if (!token || !zoneId) return jsonResponse({ error: "cloudflare_not_configured" }, 500);
 
   const auth = await requireAuth(req);
@@ -52,6 +53,7 @@ export const handler = async (req: Request): Promise<Response> => {
     cf_ssl_status: ssl_status ?? "initializing",
     cf_ownership_verification: patchJson.result.ownership_verification ?? null,
     cf_ssl_validation_records: patchJson.result.ssl?.validation_records ?? null,
+    cname_target: fallbackHostname ?? `${zoneId}.cloudflareondemand.com`,
     last_checked_at: new Date().toISOString(),
     verified_at: status === "active" ? new Date().toISOString() : null,
   }).eq("hostname", hostname);
