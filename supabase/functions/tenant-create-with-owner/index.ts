@@ -1,6 +1,7 @@
 // Atomic onboarding: create organization + owner user + role + modules + optional domain.
 // Caller must be authenticated and superadmin.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { ensureTenantKeypair } from "../_shared/tenant-keys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -106,6 +107,17 @@ Deno.serve(async (req) => {
       .single();
     if (orgErr || !org) {
       return new Response(JSON.stringify({ error: "create_org_failed", detail: orgErr?.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // POS-tenant-keypair-parity: generate Ed25519 signing material for the new org.
+    // Non-blocking on failure; surfaced in the response so the caller can retry / TenantHealth flags it.
+    let signing_keypair: { created: boolean; signing_key_id: string | null; error?: string } | null = null;
+    try {
+      signing_keypair = await ensureTenantKeypair(admin, org.id);
+      if (signing_keypair.error) console.warn("tenant keypair warning:", signing_keypair.error);
+    } catch (e) {
+      signing_keypair = { created: false, signing_key_id: null, error: String((e as Error)?.message ?? e) };
+      console.warn("tenant keypair failed:", signing_keypair.error);
     }
 
     // Membership as owner
@@ -215,6 +227,7 @@ Deno.serve(async (req) => {
         auto_subdomain,
         cf_kickoff,
         domain: domain_row?.hostname ?? null,
+        signing_keypair,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
