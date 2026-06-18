@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
-import { Copy, Check, ChevronRight, ChevronLeft, Loader2, Globe, AlertCircle, RotateCcw } from "lucide-react";
+import { Copy, Check, ChevronRight, ChevronLeft, Loader2, Globe, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import {
   loadCfAccounts,
   loadDomainDraft,
   saveDomainDraft,
-  mockConnect,
-  mockAdvanceStatus,
   type DnsMode,
   type DomainDraft,
 } from "@/modules/superadmin/lib/cloudflareDrafts";
@@ -21,8 +19,9 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   orgId: string;
-  domain: { id: string; hostname: string } | null;
+  domain: { id: string; site_id: string; hostname: string } | null;
 }
+
 
 const SSL_PROGRESS: Record<NonNullable<DomainDraft["cf_ssl_status"]>, number> = {
   initializing: 10,
