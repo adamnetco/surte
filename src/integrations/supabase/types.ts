@@ -8315,6 +8315,10 @@ export type Database = {
         Args: { _overwrite?: boolean; _payload: Json }
         Returns: Json
       }
+      is_feature_enabled: {
+        Args: { _key: string; _tenant_id?: string }
+        Returns: boolean
+      }
       is_master_superadmin: { Args: { _user_id?: string }; Returns: boolean }
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
       is_tenant_readable: { Args: { _org_id: string }; Returns: boolean }
