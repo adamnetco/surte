@@ -213,6 +213,7 @@ Deno.serve(async (req) => {
         modules,
         site_id: site_row?.id ?? null,
         auto_subdomain,
+        cf_kickoff,
         domain: domain_row?.hostname ?? null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
