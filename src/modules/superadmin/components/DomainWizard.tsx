@@ -255,13 +255,8 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
           })}
         </ol>
 
-        <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-xs flex gap-2 items-start">
-          <AlertCircle size={14} className="mt-0.5 shrink-0" />
-          <span>
-            Lovable Cloud no está disponible. El wizard usa valores simulados para que puedas
-            validar el flujo. Al volver el backend, ejecutará las edge functions reales.
-          </span>
-        </div>
+        {/* Banner simulado eliminado: el wizard ahora invoca edge functions reales
+            (cloudflare-domain-connect / cloudflare-domain-status). */}
 
         {hydrating && (
           <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
