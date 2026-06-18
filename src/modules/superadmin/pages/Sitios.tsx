@@ -478,7 +478,7 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
                   <Switch checked={d.is_primary} onCheckedChange={() => setPrimary(d)} />
                 </TableCell>
                 <TableCell className="flex gap-1">
-                  <Button size="sm" variant="outline" onClick={() => setWizardDomain({ id: d.id, hostname: d.hostname })}>
+                  <Button size="sm" variant="outline" onClick={() => setWizardDomain({ id: d.id, site_id: d.site_id, hostname: d.hostname })}>
                     <Wand2 className="w-3 h-3 mr-1" />Wizard CF
                   </Button>
                   {!d.verified_at && <Button size="sm" variant="outline" onClick={() => markVerified(d)}>Verificar</Button>}
