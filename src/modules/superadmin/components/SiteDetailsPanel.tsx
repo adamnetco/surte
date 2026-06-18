@@ -46,7 +46,8 @@ interface Props {
   onConfigWp: () => void;
 }
 
-import { LOVABLE_EDGE_IP as CF_EDGE_IP } from "@/modules/superadmin/lib/infraConfig";
+// NOTA: SistecPOS Core es multi-tenant sobre Cloudflare for SaaS.
+// No existe modo "A directo" válido — siempre se usa CNAME al fallback hostname.
 
 function rel(ts?: string | null) {
   if (!ts) return "Nunca";
@@ -109,27 +110,29 @@ function buildDnsPlan(
   sistecposToken?: string | null,
   sistecposVerified?: boolean,
 ): DnsRow[] {
+  // SistecPOS Core opera SIEMPRE en modo Cloudflare for SaaS (CNAME al fallback hostname).
+  // El parámetro dnsMode queda solo por compatibilidad de firma; se ignora.
+  void dnsMode;
   const rows: DnsRow[] = [];
-  const isSaas = (dnsMode ?? "saas") === "saas";
   const target = cnameTarget?.trim();
 
-  if (isSaas && target) {
-    // Cloudflare for SaaS: el cliente debe apuntar con CNAME al fallback hostname
+  if (target) {
     rows.push({
       key: "cname-root", type: "CNAME", name: hostname, value: target, required: true,
       done: cfStatus === "active" || sslStatus === "active",
-      hint: "Cloudflare SaaS — apunta el host al edge (CNAME al fallback hostname).",
+      hint: "Apunta tu dominio al edge multi-tenant de SistecPOS (CNAME al fallback hostname de Cloudflare for SaaS).",
     });
   } else {
-    // Modo legacy / sin SaaS configurado: A al edge de Lovable
+    // Aún no registrado en Cloudflare: fila guía, sin valor copiable.
     rows.push({
-      key: "a-root", type: "A", name: hostname, value: CF_EDGE_IP, required: true,
-      done: cfStatus === "active" || sslStatus === "active",
-      hint: "Modo legacy (sin SaaS) — A directo al edge de Lovable.",
+      key: "cname-root-pending", type: "CNAME", name: hostname,
+      value: "— pendiente: pulsa «Registrar en Cloudflare» para obtener el destino —",
+      required: true, done: false,
+      hint: "Antes de configurar tu DNS necesitamos registrar el dominio en Cloudflare for SaaS y obtener el CNAME destino.",
     });
   }
 
-  // I4 — TXT de verificación SistecPOS (`_lovable-tenant`) unificado en el mismo checklist
+  // TXT de verificación SistecPOS (`_lovable-tenant`) — vincula el host a este tenant
   if (sistecposToken) {
     rows.push({
       key: "txt-sistecpos", type: "TXT", name: `_lovable-tenant.${hostname}`, value: sistecposToken, required: true,
@@ -155,15 +158,9 @@ function buildDnsPlan(
     }
   });
 
-  if (isSaas && target) {
+  if (target) {
     rows.push({
       key: "cname-www", type: "CNAME", name: `www.${hostname}`, value: target, required: false,
-      done: false,
-      hint: "Opcional. Sólo si quieres servir también www.",
-    });
-  } else {
-    rows.push({
-      key: "a-www", type: "A", name: `www.${hostname}`, value: CF_EDGE_IP, required: false,
       done: false,
       hint: "Opcional. Sólo si quieres servir también www.",
     });
@@ -425,7 +422,7 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
     ) : [],
     [local?.hostname, local?.cf_status, local?.cf_ssl_status, local?.cf_ownership_verification, local?.cf_ssl_validation_records, local?.dns_mode, local?.cname_target, local?.verification_token, local?.verified_at],
   );
-  const isSaas = (local?.dns_mode ?? "saas") === "saas" && !!local?.cname_target;
+  const isRegistered = !!local?.cf_hostname_id && !!local?.cname_target;
   const pendingCount = dnsRows.filter(r => r.required && !r.done).length;
 
   const copyAll = () => {
@@ -445,9 +442,9 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
               <h4 id={`prov-${site.id}`} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Aprovisionamiento
               </h4>
-              {/* I3 — distinguir dns_mode visiblemente */}
+              {/* SistecPOS Core: siempre Cloudflare for SaaS. Si no hay cname_target aún, mostrar "Sin registrar". */}
               <Badge variant="outline" className="text-[9px] py-0 px-1.5 font-normal">
-                {isSaas ? "Cloudflare SaaS (CNAME)" : "Legacy (A directo)"}
+                {isRegistered ? "Cloudflare SaaS (CNAME)" : "Sin registrar"}
               </Badge>
             </div>
             <div className="flex gap-1">
@@ -522,7 +519,7 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
           )}
           {httpsOk === "fail" && sslT === "ok" && (
             <p className="text-[11px] text-destructive">
-              SSL activo pero el host no responde por HTTPS. Revisa que el {isSaas ? <>CNAME apunte a <code className="font-mono">{local?.cname_target}</code></> : <>A apunte a <code className="font-mono">{CF_EDGE_IP}</code></>}.
+              SSL activo pero el host no responde por HTTPS. Revisa que el CNAME de <code className="font-mono">{local?.hostname}</code> apunte a <code className="font-mono">{local?.cname_target ?? "—"}</code> y que no exista un registro <code className="font-mono">A</code> en conflicto.
             </p>
           )}
           {local.last_checked_at && (
