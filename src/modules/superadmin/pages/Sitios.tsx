@@ -109,7 +109,7 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
   const { data: sites } = useQuery({
     queryKey: ["tenant-sites", orgId],
     queryFn: async () => (await supabase.from("tenant_sites")
-      .select("*, tenant_wp_config(*), tenant_domains(id,site_id,hostname,is_primary,verified_at,cf_status,cf_ssl_status,cf_hostname_id,cf_ownership_verification,cf_ssl_validation_records,last_checked_at,dns_mode,cname_target)")
+      .select("*, tenant_wp_config(*), tenant_domains(id,site_id,hostname,is_primary,verified_at,verification_token,cf_status,cf_ssl_status,cf_hostname_id,cf_ownership_verification,cf_ssl_validation_records,last_checked_at,dns_mode,cname_target)")
       .eq("organization_id", orgId).order("created_at", { ascending: false })).data ?? [],
   });
 
