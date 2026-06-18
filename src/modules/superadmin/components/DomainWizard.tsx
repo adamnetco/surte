@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
-import { Copy, Check, ChevronRight, ChevronLeft, Loader2, Globe, AlertCircle, RotateCcw } from "lucide-react";
+import { Copy, Check, ChevronRight, ChevronLeft, Loader2, Globe, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import {
   loadCfAccounts,
   loadDomainDraft,
   saveDomainDraft,
-  mockConnect,
-  mockAdvanceStatus,
   type DnsMode,
   type DomainDraft,
 } from "@/modules/superadmin/lib/cloudflareDrafts";
@@ -21,8 +19,9 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   orgId: string;
-  domain: { id: string; hostname: string } | null;
+  domain: { id: string; site_id: string; hostname: string } | null;
 }
+
 
 const SSL_PROGRESS: Record<NonNullable<DomainDraft["cf_ssl_status"]>, number> = {
   initializing: 10,
@@ -38,9 +37,9 @@ const SSL_PROGRESS: Record<NonNullable<DomainDraft["cf_ssl_status"]>, number> = 
  * 2) Muestra CNAME + TXT DCV (copy-to-clipboard)
  * 3) Polling de status con barra de progreso
  *
- * Mientras Cloud + edge functions no estén disponibles, usa los mocks de
- * `cloudflareDrafts.ts`. Cuando Cloud vuelva, reemplazar `mockConnect` /
- * `mockAdvanceStatus` por `supabase.functions.invoke('cloudflare-domain-*')`.
+ * Invoca las edge functions reales `cloudflare-domain-connect` y
+ * `cloudflare-domain-status`. El draft sigue persistiéndose en localStorage
+ * para que el progreso sobreviva al cierre del modal.
  */
 export default function DomainWizard({ open, onOpenChange, orgId, domain }: Props) {
   const [step, setStep] = useState(1);
@@ -109,18 +108,64 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
     onOpenChange(v);
   };
 
-  const goConnect = () => {
+  const [connecting, setConnecting] = useState(false);
+
+  const goConnect = async () => {
     if (!domain) return;
     if (mode === "cloudflare_account" && !accountId) {
       return toast.error("Selecciona la cuenta Cloudflare");
     }
-    const existing = loadDomainDraft(domain.id);
-    const next = existing ?? { ...mockConnect(domain.hostname, mode), domain_id: domain.id };
-    next.dns_mode = mode;
-    if (mode === "cloudflare_account") next.cf_account_id = accountId;
-    saveDomainDraft(next);
-    setDraft(next);
-    setStep(2);
+    if (mode === "manual") {
+      // Manual mode: no CF API call, just record the choice and advance.
+      const next: DomainDraft = {
+        domain_id: domain.id,
+        dns_mode: "manual",
+      };
+      saveDomainDraft(next);
+      setDraft(next);
+      setStep(2);
+      return;
+    }
+    setConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("cloudflare-domain-connect", {
+        body: { tenant_id: domain.site_id, hostname: domain.hostname },
+      });
+      if (error) {
+        let code: string | undefined;
+        try {
+          const ctxRes = (error as any)?.context?.response;
+          if (ctxRes && typeof ctxRes.json === "function") code = (await ctxRes.json())?.error;
+        } catch { /* noop */ }
+        if (code === "cloudflare_not_configured") {
+          toast.error("Falta configurar CLOUDFLARE_API_TOKEN / CLOUDFLARE_FALLBACK_ZONE_ID en secretos.");
+          return;
+        }
+        if (code === "forbidden_not_member") {
+          toast.error("No eres miembro de esta organización.");
+          return;
+        }
+        throw error;
+      }
+      const next: DomainDraft = {
+        domain_id: domain.id,
+        dns_mode: mode,
+        cf_account_id: mode === "cloudflare_account" ? accountId : undefined,
+        cname_target: data?.cname_target ?? undefined,
+        cf_ownership_verification: data?.ownership_verification ?? undefined,
+        cf_status: data?.status ?? "pending",
+        cf_ssl_status: data?.ssl_status ?? "pending_validation",
+        last_checked_at: new Date().toISOString(),
+      };
+      saveDomainDraft(next);
+      setDraft(next);
+      setStep(2);
+      toast.success("Dominio registrado en Cloudflare");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo conectar a Cloudflare");
+    } finally {
+      setConnecting(false);
+    }
   };
 
   const copy = (text: string, key: string) => {
@@ -130,17 +175,36 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
   };
 
   const verify = async () => {
-    if (!draft) return;
+    if (!draft || !domain) return;
+    if (draft.dns_mode === "manual") {
+      toast.info("Modo manual: verifica el A record desde el panel de detalles del sitio.");
+      return;
+    }
     setChecking(true);
-    await new Promise((r) => setTimeout(r, 900)); // simulated propagation delay
-    const next = mockAdvanceStatus(draft);
-    saveDomainDraft(next);
-    setDraft(next);
-    setChecking(false);
-    if (next.cf_ssl_status === "active") {
-      toast.success("Dominio activo en Cloudflare");
-    } else {
-      toast.info(`Estado: ${next.cf_ssl_status}. Volveremos a chequear cuando hagas click.`);
+    try {
+      const { data, error } = await supabase.functions.invoke("cloudflare-domain-status", {
+        body: { hostname: domain.hostname },
+      });
+      if (error) throw error;
+      const next: DomainDraft = {
+        ...draft,
+        cf_status: data?.status ?? draft.cf_status,
+        cf_ssl_status: data?.ssl_status ?? draft.cf_ssl_status,
+        cf_ownership_verification:
+          data?.result?.ownership_verification ?? draft.cf_ownership_verification,
+        last_checked_at: new Date().toISOString(),
+      };
+      saveDomainDraft(next);
+      setDraft(next);
+      if (next.cf_ssl_status === "active") {
+        toast.success("Dominio activo en Cloudflare");
+      } else {
+        toast.info(`Estado: ${next.cf_ssl_status ?? "pendiente"}. Vuelve a verificar en unos minutos.`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo verificar");
+    } finally {
+      setChecking(false);
     }
   };
 
@@ -191,13 +255,8 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
           })}
         </ol>
 
-        <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-xs flex gap-2 items-start">
-          <AlertCircle size={14} className="mt-0.5 shrink-0" />
-          <span>
-            Lovable Cloud no está disponible. El wizard usa valores simulados para que puedas
-            validar el flujo. Al volver el backend, ejecutará las edge functions reales.
-          </span>
-        </div>
+        {/* Banner simulado eliminado: el wizard ahora invoca edge functions reales
+            (cloudflare-domain-connect / cloudflare-domain-status). */}
 
         {hydrating && (
           <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
@@ -268,8 +327,10 @@ export default function DomainWizard({ open, onOpenChange, orgId, domain }: Prop
             )}
 
             <div className="flex justify-end">
-              <Button onClick={goConnect} disabled={!domain}>
-                Continuar <ChevronRight size={14} />
+              <Button onClick={goConnect} disabled={!domain || connecting}>
+                {connecting ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+                {connecting ? "Conectando…" : "Continuar"}
+                {!connecting && <ChevronRight size={14} />}
               </Button>
             </div>
           </div>

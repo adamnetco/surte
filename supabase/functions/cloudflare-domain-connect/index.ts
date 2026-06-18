@@ -24,6 +24,7 @@ export const handler = async (req: Request): Promise<Response> => {
 
   const token = Deno.env.get("CLOUDFLARE_API_TOKEN");
   const zoneId = Deno.env.get("CLOUDFLARE_FALLBACK_ZONE_ID");
+  const fallbackHostname = Deno.env.get("CLOUDFLARE_FALLBACK_HOSTNAME");
   if (!token || !zoneId) return json({ error: "cloudflare_not_configured" }, 500);
 
   const authz = req.headers.get("authorization");
@@ -109,7 +110,7 @@ export const handler = async (req: Request): Promise<Response> => {
       cf_ssl_status: ssl_status ?? null,
       cf_ownership_verification: ownership ?? null,
       cf_dcv_method: dcv ? "http" : null,
-      cname_target: `${zoneId}.cloudflareondemand.com`,
+      cname_target: fallbackHostname ?? `${zoneId}.cloudflareondemand.com`,
       last_checked_at: new Date().toISOString(),
     },
     { onConflict: "hostname" },
@@ -127,6 +128,7 @@ export const handler = async (req: Request): Promise<Response> => {
     ssl_status,
     ownership_verification: ownership,
     dcv_method: dcv ? "http" : null,
+    cname_target: fallbackHostname ?? `${zoneId}.cloudflareondemand.com`,
   });
 };
 

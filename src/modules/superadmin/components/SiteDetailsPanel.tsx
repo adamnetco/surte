@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronDown, ExternalLink, Send, ShieldCheck, ShieldAlert, Shield,
-  Globe, Loader2, CheckCircle2, AlertTriangle, Clock, Copy, RefreshCw, Download,
+  Globe, Loader2, CheckCircle2, AlertTriangle, Clock, Copy, RefreshCw, Download, PlugZap,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,10 +21,13 @@ interface Site {
   is_published: boolean;
   updated_at?: string;
   tenant_domains?: Array<{
+    id?: string;
+    site_id?: string;
     hostname: string;
     is_primary?: boolean;
     cf_status?: string | null;
     cf_ssl_status?: string | null;
+    cf_hostname_id?: string | null;
     verified_at?: string | null;
     last_checked_at?: string | null;
     cf_ownership_verification?: DcvRecord | null;
@@ -240,6 +243,7 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
   const wp = site.tenant_wp_config?.[0];
   const [verifying, setVerifying] = useState(false);
   const [reprovisioning, setReprovisioning] = useState(false);
+  const [registering, setRegistering] = useState(false);
   const [httpsOk, setHttpsOk] = useState<"unknown" | "ok" | "fail">("unknown");
   const [local, setLocal] = useState(primary);
   const startedAt = useRef<number>(Date.now());
@@ -313,6 +317,43 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
     }
   };
 
+  const runRegister = async () => {
+    if (!local?.hostname || !local?.site_id) return;
+    setRegistering(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("cloudflare-domain-connect", {
+        body: { tenant_id: local.site_id, hostname: local.hostname },
+      });
+      if (error) {
+        let code: string | undefined;
+        try {
+          const ctxRes = (error as any)?.context?.response;
+          if (ctxRes && typeof ctxRes.json === "function") code = (await ctxRes.json())?.error;
+        } catch { /* noop */ }
+        if (code === "cloudflare_not_configured") {
+          toast.error("Falta configurar CLOUDFLARE_API_TOKEN / CLOUDFLARE_FALLBACK_ZONE_ID en secretos.");
+          return;
+        }
+        throw error;
+      }
+      setLocal((prev) => prev && ({
+        ...prev,
+        cf_hostname_id: data?.cf_hostname_id ?? prev.cf_hostname_id,
+        cf_status: data?.status ?? prev.cf_status,
+        cf_ssl_status: data?.ssl_status ?? "initializing",
+        cf_ownership_verification: data?.ownership_verification ?? prev.cf_ownership_verification,
+        cname_target: data?.cname_target ?? prev.cname_target,
+        last_checked_at: new Date().toISOString(),
+      }));
+      startedAt.current = Date.now();
+      toast.success("Dominio registrado en Cloudflare. Publica los registros DNS para emitir SSL.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo registrar en Cloudflare");
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   const checkHttps = async () => {
     if (!local?.hostname) return;
     try {
@@ -370,11 +411,24 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
               Aprovisionamiento
             </h4>
             <div className="flex gap-1">
-              <Button size="sm" variant="ghost" onClick={() => runVerify(false)} disabled={verifying} className="h-7 px-2 text-xs" aria-label="Reverificar DNS y SSL">
+              {!local?.cf_hostname_id && local?.site_id && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={runRegister}
+                  disabled={registering}
+                  className="h-7 px-2 text-xs"
+                  aria-label="Registrar dominio en Cloudflare"
+                >
+                  {registering ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <PlugZap className="h-3.5 w-3.5 mr-1" />}
+                  Registrar en Cloudflare
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => runVerify(false)} disabled={verifying || !local?.cf_hostname_id} className="h-7 px-2 text-xs" aria-label="Reverificar DNS y SSL">
                 {verifying ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1" />}
                 Verificar
               </Button>
-              <Button size="sm" variant="ghost" onClick={runReprovision} disabled={reprovisioning} className="h-7 px-2 text-xs" aria-label="Forzar reaprovisionamiento SSL">
+              <Button size="sm" variant="ghost" onClick={runReprovision} disabled={reprovisioning || !local?.cf_hostname_id} className="h-7 px-2 text-xs" aria-label="Forzar reaprovisionamiento SSL">
                 {reprovisioning ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
                 Reprovisionar
               </Button>

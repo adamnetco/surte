@@ -109,7 +109,7 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
   const { data: sites } = useQuery({
     queryKey: ["tenant-sites", orgId],
     queryFn: async () => (await supabase.from("tenant_sites")
-      .select("*, tenant_wp_config(*), tenant_domains(hostname,is_primary,verified_at,cf_status,cf_ssl_status,cf_ownership_verification,cf_ssl_validation_records,last_checked_at,dns_mode,cname_target)")
+      .select("*, tenant_wp_config(*), tenant_domains(id,site_id,hostname,is_primary,verified_at,cf_status,cf_ssl_status,cf_hostname_id,cf_ownership_verification,cf_ssl_validation_records,last_checked_at,dns_mode,cname_target)")
       .eq("organization_id", orgId).order("created_at", { ascending: false })).data ?? [],
   });
 
@@ -345,7 +345,7 @@ function SitesTab({ orgId, qc }: { orgId: string; qc: any }) {
 function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: string; qc: any }) {
   const [siteId, setSiteId] = useState<string>("");
   const [hostname, setHostname] = useState("");
-  const [wizardDomain, setWizardDomain] = useState<{ id: string; hostname: string } | null>(null);
+  const [wizardDomain, setWizardDomain] = useState<{ id: string; site_id: string; hostname: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -478,7 +478,7 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
                   <Switch checked={d.is_primary} onCheckedChange={() => setPrimary(d)} />
                 </TableCell>
                 <TableCell className="flex gap-1">
-                  <Button size="sm" variant="outline" onClick={() => setWizardDomain({ id: d.id, hostname: d.hostname })}>
+                  <Button size="sm" variant="outline" onClick={() => setWizardDomain({ id: d.id, site_id: d.site_id, hostname: d.hostname })}>
                     <Wand2 className="w-3 h-3 mr-1" />Wizard CF
                   </Button>
                   {!d.verified_at && <Button size="sm" variant="outline" onClick={() => markVerified(d)}>Verificar</Button>}
