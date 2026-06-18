@@ -279,7 +279,23 @@ function DetailsBody({ site, onSync, onTogglePublish, onConfigWp }: Props) {
       const { data, error } = await supabase.functions.invoke("cloudflare-domain-reprovision", {
         body: { hostname: local.hostname },
       });
-      if (error) throw error;
+      // FunctionsHttpError trae context.response con el body real (404 not_registered, etc.)
+      if (error) {
+        let code: string | undefined;
+        try {
+          const ctxRes = (error as any)?.context?.response;
+          if (ctxRes && typeof ctxRes.json === "function") code = (await ctxRes.json())?.error;
+        } catch { /* noop */ }
+        if (code === "not_registered") {
+          toast.error("Este dominio aún no está registrado en Cloudflare. Conéctalo primero con el Wizard CF.");
+          return;
+        }
+        if (code === "cloudflare_not_configured") {
+          toast.error("Falta configurar CLOUDFLARE_API_TOKEN / CLOUDFLARE_FALLBACK_ZONE_ID en secretos.");
+          return;
+        }
+        throw error;
+      }
       setLocal((prev) => prev && ({
         ...prev,
         cf_status: data?.status ?? prev.cf_status,
