@@ -106,6 +106,8 @@ function buildDnsPlan(
   sslStatus?: string | null,
   dnsMode?: string | null,
   cnameTarget?: string | null,
+  sistecposToken?: string | null,
+  sistecposVerified?: boolean,
 ): DnsRow[] {
   const rows: DnsRow[] = [];
   const isSaas = (dnsMode ?? "saas") === "saas";
@@ -116,14 +118,23 @@ function buildDnsPlan(
     rows.push({
       key: "cname-root", type: "CNAME", name: hostname, value: target, required: true,
       done: cfStatus === "active" || sslStatus === "active",
-      hint: "Apunta el host al edge Cloudflare SaaS (CNAME al fallback hostname).",
+      hint: "Cloudflare SaaS — apunta el host al edge (CNAME al fallback hostname).",
     });
   } else {
     // Modo legacy / sin SaaS configurado: A al edge de Lovable
     rows.push({
       key: "a-root", type: "A", name: hostname, value: CF_EDGE_IP, required: true,
       done: cfStatus === "active" || sslStatus === "active",
-      hint: "Apunta el subdominio al edge.",
+      hint: "Modo legacy (sin SaaS) — A directo al edge de Lovable.",
+    });
+  }
+
+  // I4 — TXT de verificación SistecPOS (`_lovable-tenant`) unificado en el mismo checklist
+  if (sistecposToken) {
+    rows.push({
+      key: "txt-sistecpos", type: "TXT", name: `_lovable-tenant.${hostname}`, value: sistecposToken, required: true,
+      done: !!sistecposVerified,
+      hint: "Prueba de propiedad SistecPOS (vincula el dominio a este tenant).",
     });
   }
 
@@ -131,7 +142,7 @@ function buildDnsPlan(
     rows.push({
       key: "txt-cf", type: "TXT", name: dcv.name, value: dcv.value, required: true,
       done: cfStatus === "active",
-      hint: "Pre-validación de propiedad (Cloudflare SaaS)",
+      hint: "Pre-validación de propiedad Cloudflare (SaaS).",
     });
   }
   (acme ?? []).forEach((r, i) => {
@@ -139,7 +150,7 @@ function buildDnsPlan(
       rows.push({
         key: `acme-${i}`, type: "TXT", name: r.txt_name, value: r.txt_value, required: true,
         done: r.status === "active" || sslStatus === "active",
-        hint: "DCV ACME — libera la emisión del certificado SSL",
+        hint: "DCV ACME — libera la emisión del certificado SSL.",
       });
     }
   });
