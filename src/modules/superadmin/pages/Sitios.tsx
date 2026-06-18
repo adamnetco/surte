@@ -370,11 +370,19 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
   const add = async () => {
     if (!siteId || !hostname.trim()) return toast.error("Sitio y dominio requeridos");
     const clean = hostname.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-    const { error } = await supabase.from("tenant_domains").insert([{ site_id: siteId, organization_id: orgId, hostname: clean }]);
+    // I1 (Fase 2) — Flujo unificado: insertamos el dominio en DB y abrimos el
+    // wizard de Cloudflare inmediatamente con esa fila para que el admin no
+    // tenga que buscarla en la tabla y hacer un segundo click en "Wizard CF".
+    const { data: row, error } = await supabase
+      .from("tenant_domains")
+      .insert([{ site_id: siteId, organization_id: orgId, hostname: clean }])
+      .select("id, site_id, hostname")
+      .single();
     if (error) return toast.error(error.message);
-    toast.success("Dominio agregado. Pídele al cliente que configure el DNS.");
+    toast.success("Dominio agregado. Continúa con el wizard de Cloudflare.");
     setHostname("");
     qc.invalidateQueries({ queryKey: ["tenant-domains", orgId] });
+    if (row) setWizardDomain({ id: row.id, site_id: row.site_id, hostname: row.hostname });
   };
 
   const onDeleted = () => {
@@ -405,6 +413,9 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
     <div className="space-y-4">
       <Card className="p-4 space-y-3">
         <div className="font-heading font-semibold text-primary">Conectar un dominio nuevo</div>
+        <p className="text-xs text-muted-foreground -mt-1">
+          Al guardar abrimos automáticamente el wizard de Cloudflare para generar el CNAME, el TXT DCV y arrancar el SSL.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
           <div>
             <Label>Sitio</Label>
@@ -414,7 +425,7 @@ function DomainsTab({ orgId, currentOrgId, qc }: { orgId: string; currentOrgId: 
             </select>
           </div>
           <div><Label>Dominio (ej. www.minegocio.com)</Label><Input value={hostname} onChange={(e) => setHostname(e.target.value)} /></div>
-          <Button onClick={add}><Plus className="w-4 h-4 mr-1" />Conectar</Button>
+          <Button onClick={add}><Plus className="w-4 h-4 mr-1" />Conectar y abrir wizard</Button>
         </div>
         <div className="text-xs text-muted-foreground bg-muted/40 rounded-md p-3 space-y-1">
           <p className="font-medium text-foreground">Configuración DNS que debe hacer el cliente (hosting Lovable):</p>
