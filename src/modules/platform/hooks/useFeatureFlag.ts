@@ -29,27 +29,19 @@ export function useFeatureFlag(
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from("feature_flags")
-        .select("enabled, tenant_ids")
-        .eq("key", key)
-        .maybeSingle();
+      // Uses SECURITY DEFINER RPC so the client never reads the raw
+      // `tenant_ids` array (which would leak other orgs' UUIDs).
+      const { data, error } = await supabase.rpc("is_feature_enabled", {
+        _key: key,
+        _tenant_id: tenantId ?? null,
+      });
 
       if (cancelled) return;
-      if (error || !data) {
+      if (error || typeof data !== "boolean") {
         setValue(defaultValue);
         return;
       }
-      if (!data.enabled) {
-        setValue(false);
-        return;
-      }
-      const scoped = Array.isArray(data.tenant_ids) && data.tenant_ids.length > 0;
-      if (!scoped) {
-        setValue(true);
-        return;
-      }
-      setValue(tenantId ? data.tenant_ids.includes(tenantId) : false);
+      setValue(data);
     })();
     return () => {
       cancelled = true;
