@@ -1,11 +1,14 @@
 /**
- * Cloudflare drafts — local-first storage for CF accounts and per-domain wizard
- * state. While Lovable Cloud is down and the migration for
- * `tenant_cloudflare_accounts` + new `tenant_domains` columns isn't applied,
- * everything lives in localStorage. When Cloud returns, swap the load/save
- * helpers for `supabase.from('tenant_cloudflare_accounts')`.
+ * Cloudflare drafts — local-first storage para el wizard de dominios.
  *
- * See `.lovable/pending-cloud-tasks.md` §1, §4, §5.
+ * Fase 2 (C2): los helpers de **cuentas Cloudflare** (`loadCfAccounts`,
+ * `saveCfAccount`, `deleteCfAccount`, `CloudflareAccount`, `maskToken`) están
+ * DEPRECADOS. Las cuentas ahora viven en la tabla `tenant_cloudflare_accounts`
+ * con token cifrado server-side; la UI usa la edge function
+ * `cf-accounts-manage`. No añadas nuevos consumidores.
+ *
+ * Los helpers de **drafts por dominio** (`loadDomainDraft`, `saveDomainDraft`,
+ * `DomainDraft`) siguen siendo la fuente de verdad para el progreso del wizard.
  */
 
 export type DnsMode = "saas" | "cloudflare_account" | "manual";
