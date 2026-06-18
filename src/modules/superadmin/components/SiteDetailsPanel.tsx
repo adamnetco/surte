@@ -21,10 +21,13 @@ interface Site {
   is_published: boolean;
   updated_at?: string;
   tenant_domains?: Array<{
+    id?: string;
+    site_id?: string;
     hostname: string;
     is_primary?: boolean;
     cf_status?: string | null;
     cf_ssl_status?: string | null;
+    cf_hostname_id?: string | null;
     verified_at?: string | null;
     last_checked_at?: string | null;
     cf_ownership_verification?: DcvRecord | null;
