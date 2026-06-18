@@ -11,6 +11,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { LOVABLE_EDGE_IP } from "@/modules/superadmin/lib/infraConfig";
 
 type PublicTable = keyof Database["public"]["Tables"];
 
