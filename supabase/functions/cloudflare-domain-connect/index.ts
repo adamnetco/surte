@@ -53,26 +53,43 @@ export const handler = async (req: Request): Promise<Response> => {
   if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(hostname)) return json({ error: "invalid_hostname" }, 400);
   if (!body.tenant_id) return json({ error: "tenant_id_required" }, 400);
 
-  const cfRes = await fetch(
+  const cfHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  let cfResult: any = null;
+  const createRes = await fetch(
     `https://api.cloudflare.com/client/v4/zones/${zoneId}/custom_hostnames`,
     {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: cfHeaders,
       body: JSON.stringify({
         hostname,
         ssl: { method: "http", type: "dv", settings: { min_tls_version: "1.2" } },
       }),
     },
   );
-  const cfJson = await cfRes.json();
-  if (!cfRes.ok || !cfJson.success) {
-    return json({ error: "cloudflare_error", cf: cfJson }, 502);
+  const createJson = await createRes.json();
+  if (createRes.ok && createJson.success) {
+    cfResult = createJson.result;
+  } else {
+    const isDuplicate = createJson?.errors?.some((e: any) => e.code === 1406);
+    if (!isDuplicate) {
+      return json({ error: "cloudflare_error", cf: createJson }, 502);
+    }
+    // Duplicate: fetch existing custom hostname and reuse it.
+    const listRes = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${zoneId}/custom_hostnames?hostname=${encodeURIComponent(hostname)}`,
+      { headers: cfHeaders },
+    );
+    const listJson = await listRes.json();
+    if (!listRes.ok || !listJson.success || !listJson.result?.length) {
+      return json({ error: "cloudflare_error", cf: listJson, hint: "duplicate_but_not_found_in_zone" }, 502);
+    }
+    cfResult = listJson.result[0];
   }
-  const cfId = cfJson.result.id as string;
-  const status = cfJson.result.status as string;
-  const ssl_status = cfJson.result.ssl?.status as string | undefined;
-  const ownership = cfJson.result.ownership_verification;
-  const dcv = cfJson.result.ssl?.validation_records?.[0];
+  const cfId = cfResult.id as string;
+  const status = cfResult.status as string;
+  const ssl_status = cfResult.ssl?.status as string | undefined;
+  const ownership = cfResult.ownership_verification;
+  const dcv = cfResult.ssl?.validation_records?.[0];
 
   // Look up organization_id + verificar membership del caller (Etapa 22).
   const { data: siteRow } = await svc
