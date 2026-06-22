@@ -1,6 +1,6 @@
 # POS-tenant-lifecycle
 
-**Estado:** IN_REVIEW
+**Estado:** SHIPPED (2026-06-22 — todos los ACs ✅, RPCs aplicadas, audit log activo)
 **Módulo:** superadmin / multi-tenant
 **Owner:** Eduardo (superadmin maestro)
 

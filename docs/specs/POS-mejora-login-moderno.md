@@ -1,6 +1,6 @@
 # POS-MejoraLoginModerno
 
-**Estado:** IN_REVIEW
+**Estado:** SHIPPED (2026-06-22 — todos los ACs ✅)
 **Módulo:** auth
 **Owner:** —
 

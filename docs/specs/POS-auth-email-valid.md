@@ -1,8 +1,8 @@
 # POS-AuthEmailValid
 
-**Estado:** IN_REVIEW
+**Estado:** SHIPPED (con observación: verificación de bandeja real depende de propagación DNS — no bloquea)
 **Owner:** Eduardo Tobacia
-**Última actualización:** 2026-06-12
+**Última actualización:** 2026-06-22
 
 ## Problema
 En `LoginRouter`, el botón "Enviar acceso por email" falla con `Signups not allowed for otp` en proyectos donde el OTP de Supabase está deshabilitado (configuración por defecto de SistecPOS para evitar self-signup). Resultado: usuarios legítimos (incl. `demo@sistecpos.com`) no pueden entrar si no recuerdan la contraseña.

@@ -1,6 +1,6 @@
 # POS-Eliminar-vinculacion-dominios
 
-**Estado:** IN_REVIEW (gaps de review 2026-06-17 resueltos — ver §13)
+**Estado:** SHIPPED (2026-06-22 — gaps de review 2026-06-17 resueltos, edge function + UI + E2E en producción)
 **Módulo:** superadmin (Sitios Web) + platform (scope)
 **Owner:** Eduardo Tobacia
 **Creado:** 2026-06-17
