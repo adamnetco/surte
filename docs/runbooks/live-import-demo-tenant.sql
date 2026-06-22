@@ -9,6 +9,8 @@
 --      Backend → Authentication → Add user.  Si no existe, el import
 --      saltará organization_members (queda log en tenant_audit_log) y luego
 --      puedes correr el bloque "OWNER FIXUP" al final.
+--   4) Este runbook usa _overwrite=true: si la org demo ya existe en Live,
+--      será REEMPLAZADA con el snapshot de Test (regla de parity Test→Live).
 -- ============================================================================
 
 -- ============================================================================
