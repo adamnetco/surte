@@ -1,6 +1,6 @@
 # POS — Actualizar Panel de Aprovisionamiento de Dominios
 
-**Estado:** IN_REVIEW
+**Estado:** SHIPPED
 **Módulo:** superadmin (Sitios → Detalles → Aprovisionamiento)
 **Componente principal:** `src/modules/superadmin/components/SiteDetailsPanel.tsx`
 **Fecha:** 2026-06-18
