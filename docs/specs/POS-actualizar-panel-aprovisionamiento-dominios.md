@@ -1,6 +1,6 @@
 # POS — Actualizar Panel de Aprovisionamiento de Dominios
 
-**Estado:** IN_SPEC
+**Estado:** IN_REVIEW
 **Módulo:** superadmin (Sitios → Detalles → Aprovisionamiento)
 **Componente principal:** `src/modules/superadmin/components/SiteDetailsPanel.tsx`
 **Fecha:** 2026-06-18
@@ -30,15 +30,15 @@ El panel "Aprovisionamiento" muestra información **falsa/contradictoria** para 
 
 ## 3. Criterios de aceptación
 
-- [ ] El badge `Legacy (A directo)` se elimina. Reemplazado por:
+- [x] El badge `Legacy (A directo)` se elimina. Reemplazado por:
   - `Cloudflare SaaS (CNAME)` cuando hay `cname_target`.
   - `Sin registrar` cuando falta `cf_hostname_id` o `cname_target`.
-- [ ] `buildDnsPlan` **nunca** genera filas de tipo `A` con `185.158.133.1`.
-- [ ] Si `cname_target` está vacío, el checklist muestra una fila guía: *"Pulsa **Registrar en Cloudflare** para obtener el CNAME y los TXT"* (no obligatoria, no copiable).
-- [ ] Cuando el SSL está activo pero HTTPS no responde, el mensaje dice: *"Revisa que el CNAME `host` apunte a `cname_target`"*. Nunca menciona `185.158.133.1`.
-- [ ] Si el verificador detecta un `A` apuntando a `185.158.133.1` o cualquier IP fija, el sub-mensaje aclara: *"Detectamos un registro A directo. Para SistecPOS multi-tenant debes usar CNAME al hostname provisto. Cambia tu DNS."* (futuro — ver §5).
-- [ ] La fila opcional `www` también es CNAME (nunca A).
-- [ ] No quedan referencias a `LOVABLE_EDGE_IP` / `CF_EDGE_IP` en `SiteDetailsPanel.tsx`.
+- [x] `buildDnsPlan` **nunca** genera filas de tipo `A` con `185.158.133.1`.
+- [x] Si `cname_target` está vacío, el checklist muestra una fila guía: *"Pulsa **Registrar en Cloudflare** para obtener el CNAME y los TXT"* (no obligatoria, no copiable).
+- [x] Cuando el SSL está activo pero HTTPS no responde, el mensaje dice: *"Revisa que el CNAME `host` apunte a `cname_target`"*. Nunca menciona `185.158.133.1`.
+- [ ] Si el verificador detecta un `A` apuntando a `185.158.133.1` o cualquier IP fija, el sub-mensaje aclara: *"Detectamos un registro A directo. Para SistecPOS multi-tenant debes usar CNAME al hostname provisto. Cambia tu DNS."* (futuro — ver §5, fuera de alcance).
+- [x] La fila opcional `www` también es CNAME (nunca A).
+- [x] No quedan referencias a `LOVABLE_EDGE_IP` / `CF_EDGE_IP` en `SiteDetailsPanel.tsx`.
 
 ## 4. Cambios técnicos (este spec)
 
