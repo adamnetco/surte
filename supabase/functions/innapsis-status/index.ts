@@ -50,9 +50,9 @@ Deno.serve(async (req) => {
     const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: c, error: ae } = await sb.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (ae || !c?.claims) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const userId = c.claims.sub;
+    const { data: u, error: ae } = await sb.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (ae || !u?.user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const userId = u.user.id;
 
     const body = await req.json().catch(() => ({}));
     const { invoice_id, tipo_archivo = "pdf", ping, environment } = body as {
