@@ -29,6 +29,7 @@ import { setMeta, getMeta } from "@/modules/offline/lib/db";
 import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
 import { useSyncService } from "@/modules/integrations/sync/useSyncService";
 import { enqueue } from "@/modules/offline/lib/outbox";
+import { useEinvoiceAutoEmit } from "@/modules/pos/hooks/useEinvoiceAutoEmit";
 import POSTopBar from "./POSTopBar";
 import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
@@ -94,6 +95,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const navigate = useNavigate();
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
+  const { shouldEmit: shouldEmitEinvoice } = useEinvoiceAutoEmit(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
 
   // === Impresión térmica ===
@@ -400,6 +402,18 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       // 4) Encolar impresión vía Realtime: recibo cliente + comandas cocina.
       //    Se espera a que outbox materialice la orden (max 6s) y se llama RPC.
       schedulePrint(clientUuid).catch((err) => console.warn("[printing]", err));
+
+      // 5) Soporte fiscal: el recibo POS siempre se imprime (paso 4);
+      //    la factura electrónica DIAN (Innapsis) se encola SOLO si la
+      //    organización tiene Facturación activa y el cliente cumple el
+      //    umbral configurado. Ver useEinvoiceAutoEmit.
+      if (shouldEmitEinvoice(snapshotTotal, customer)) {
+        enqueue(
+          "einvoice_emit",
+          { client_uuid: clientUuid, document_type: "invoice" },
+          organizationId
+        ).catch((err) => console.warn("[einvoice] enqueue failed", err));
+      }
 
       toast.success(
         navigator.onLine

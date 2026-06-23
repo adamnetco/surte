@@ -1,19 +1,24 @@
 # POS — Integración Innapsis (Facturación Electrónica DIAN)
 
-**Estado:** IN_BUILD (Slice 1 SHIPPED — base más madura de lo esperado)
+**Estado:** IN_BUILD (Slices 1 y 2 SHIPPED)
 **Módulo:** `admin-cms` + `pos` + `storefront`
 **Tablas:** `einvoice_configs`, `electronic_invoices`, `einvoice_events`
 **Edge functions:** `innapsis-emit`, `innapsis-status`
+**Referencia XML:** `docs/specs/innapsis/xml-emision-v1.9-fields.csv` (especificación oficial Innapsis v1.9 — campos UBL para Factura Electrónica y Documento Soporte)
 
 ## Avance auditado
 
-- ✅ **Slice 1 — UI de configuración**: SHIPPED. `src/modules/admin-cms/pages/Facturacion.tsx` con DEV/PROD toggle, validación de NIT, DV calculado/autofill (algoritmo DIAN en `src/modules/admin-cms/lib/nitDv.ts`), validación de rango de resolución, botón **Probar conexión** (modo `ping` en edge function `innapsis-status`), lista de últimos 50 documentos con estado.
-- ✅ **Edge functions**: `innapsis-emit` (245 líneas, auth + token cache + emisión) y `innapsis-status` (104 líneas) operativas con secret `INNAPSIS_CLIENT_SECRET`.
-- 🚧 Slice 2 — Emisión automática desde POS (encolar vía `sync_outbox` al cerrar venta)
-- 🚧 Slice 3 — Worker robusto con reintentos exponenciales (1m, 5m, 30m, 2h, max 5)
-- 🚧 Slice 4 — UI de gestión avanzada (filtros, exportación CSV, modal detalle con timeline `einvoice_events`)
-- 🚧 Slice 5 — Email automático con PDF+XML adjuntos
-- 🚧 Slice 6 — Modo contingencia DIAN
+- ✅ **Slice 1 — UI de configuración**: SHIPPED. `Facturacion.tsx` con DEV/PROD toggle, validación NIT/DV (algoritmo DIAN), validación rango resolución, botón Probar conexión (`innapsis-status` modo ping).
+- ✅ **Slice 2 — Emisión automática desde POS**: SHIPPED.
+  - `useEinvoiceAutoEmit` lee `einvoice_configs.is_active` + `extra.auto_emit_threshold` + `extra.auto_emit_enabled`.
+  - `POSWorkspace.handlePaid` encola `einvoice_emit` en `sync_outbox` (Dexie) inmediatamente después de `pos_order_create`, solo si el cliente tiene `docNumber` y `total ≥ threshold`.
+  - Dispatcher `executeOp('einvoice_emit')` resuelve `client_uuid → pos_orders.id` antes de invocar `innapsis-emit` (evita race con la materialización de la orden).
+  - El recibo POS se imprime SIEMPRE; la factura electrónica DIAN es opcional según umbral (acordado con el negocio).
+- 🚧 Slice 3 — Mapping completo XML v1.9 (Encabezado, Emisor, Receptor, Totales, TaxTotal, Items) en `innapsis-emit`. Pendiente revisar payload actual contra `xml-emision-v1.9-fields.csv`.
+- 🚧 Slice 4 — Worker robusto con reintentos exponenciales (1m, 5m, 30m, 2h, max 5) y dead-letter visible en `DeadLetterQueue.tsx`.
+- 🚧 Slice 5 — UI de gestión avanzada (filtros, exportación CSV, modal detalle con timeline `einvoice_events`).
+- 🚧 Slice 6 — Email automático con PDF+XML adjuntos.
+- 🚧 Slice 7 — Modo contingencia DIAN.
 
 
 
