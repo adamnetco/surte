@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
 
     // 5) Llama Innapsis
     try {
-      const token = await getToken(cfg.nit, cfg.api_key);
+      const token = await getToken(cfg.nit, cfg.api_key || INNAPSIS_PARTNER_API_KEY || "");
       const baseUrl = cfg.environment === "prod" ? INNAPSIS_DEFAULTS.base_prod : INNAPSIS_DEFAULTS.base_dev;
       const endpoint = `${baseUrl}/api/v1/emision/emision/envieDocumento`;
 
