@@ -2,7 +2,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
 
   BarChart3, Building2, RefreshCw, Database, Package,
-  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert,
+  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -16,6 +16,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/seguridad/acceso", label: "Acceso & Seguridad", icon: ShieldCheck, desc: "2FA, passkeys, break-glass" },
   { to: "/superadmin/seguridad/csp", label: "CSP Violaciones", icon: ShieldCheck, desc: "Telemetría CSP report-only" },
   { to: "/superadmin/acciones-criticas", label: "Acciones críticas", icon: ShieldAlert, desc: "Cola de co-firma · doble aprobación" },
+  { to: "/superadmin/audit", label: "Audit log", icon: ScrollText, desc: "Historial de cambios y overrides" },
   { to: "/superadmin/soporte", label: "WhatsApp soporte", icon: MessageCircle, desc: "Número global de ayuda" },
   { to: "/superadmin/cloud-tareas", label: "Cloud / Tareas", icon: Zap, desc: "Migraciones, seeds, secrets" },
 ];
