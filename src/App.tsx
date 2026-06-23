@@ -73,6 +73,8 @@ const CasasDeCambio = lazy(() => import("./modules/fx").then((m) => ({ default: 
 const PosFx = lazy(() => import("./modules/fx").then((m) => ({ default: m.PosFxPage })));
 const FxReports = lazy(() => import("./modules/fx").then((m) => ({ default: m.FxReportsPage })));
 const FxFraud = lazy(() => import("./modules/fx").then((m) => ({ default: m.FxFraudPage })));
+const FxPricing = lazy(() => import("./modules/fx").then((m) => ({ default: m.FxPricingPage })));
+const FxPublicBoard = lazy(() => import("./modules/fx").then((m) => ({ default: m.FxPublicBoardPage })));
 const Planes = lazy(() => import("./modules/clientes").then((m) => ({ default: m.PlanesPage })));
 const Billing = lazy(() => import("./modules/clientes").then((m) => ({ default: m.BillingPage })));
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
