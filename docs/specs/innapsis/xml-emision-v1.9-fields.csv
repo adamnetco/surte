@@ -1,0 +1,275 @@
+<Fe>,,,,Aplica tambien para ,,,,,
+,<Encabezado>,,,Documento Soporte,1,,,,
+,,<FechaEmision/>,,Documento Soporte,1,Fecha Factura,"Fecha de Emision, Formato ISO",,cbc:IssueDate
+,,<HoraEmision/>,,Documento Soporte,1,Hora Factura,"Hora de Emisión, Formato ISO",,cbc:IssueTime
+,,<TipoDocumento/>,,Documento Soporte,1,"1 es venta para ellos 380
+6 es nota credito para ellos es 381
+5 es nota debito para ellos es 382
+2 es devolucion para ellos es 381",Código Innapsis del tipo de documento,1. Tipos de documento Innapsis,cbc:InvoiceTypeCode | cbc:CreditNoteTypeCode
+,,<Prefijo/>,,Documento Soporte,0..1,campo prefixDocumentType del tipo de documento de la tabla cvapptblrestaurantdocumenttype filtrando por el campo de idDocumentType,Prefijo del documento electrónico,,cbc:ID
+,,<FolioAutorizado/>,,Documento Soporte,1,el campo de idInvoice cuando se guarda la factura en la bd,Numero del documento electrónico,,cbc:ID
+,,<Operacion/>,,Documento Soporte,1,"siempre es 10, igualmente dejalo en una variable declarada por si se debe re utilizar",Código del tipo de Operación de acuerdo con la especificación de la DIAN,Tablas 1.9,cbc:CustomizationID
+,,<FechaEntrega>,,Documento Soporte,0..1,fecha factura,Fecha de entrega del bien y/o prestación del servicio,,cac:Delivery/cbc:ActualDeliveryDate
+,,<HoraEntrega>,,Documento Soporte,0..1,Hora Factura,Hora de entrega del bien y/o prestación del servicio,,cac:Delivery/cbc:ActualDeliveryTime
+,,<FechaPeriodoInicio>,,,1,22,Periodo inicio del mes de emisión de factura (operación 22 - sin Referencia)        ,,
+,,<FechaPeriodoFin>,,,1,22,Periodo fin del mes de emisión de factura (operación 22 - sin Referencia),,
+,</Encabezado>,,,,,,,,
+,<Divisas>,,,,,El campo se contempla cuando el tipo de operacion es 15 o 16 compra o venta de divisas,,,
+,,<Diligencia/>,,,0..1,,Codigo debida diligencia del cliente,Tablas 1.9,
+,,<Codigo/>,,,0..1,,Codigo debida diligencia del cliente,Tablas 1.9,
+,</Divisas>,,,,,,,,
+,<CondicionesDePago>,,,Documento Soporte,,,,,
+,,<FechaVencimiento>,,Documento Soporte,1,fecha factura,Fecha de vencimiento de la factura,,cbc:DueDate
+,,<DescripcionDePago>,,,1,Contado,Información adicional de las condiciones de pago,,cbc:PaymentTerms/cbc:Note
+,,<CondicionPago>,,Documento Soporte,1,1,Código de la forma de Pago,13.3.4.1. Formas de Pago: cbc:PaymentMeans/ID,cbc:PaymentMeans/cbc:ID
+,,<MedioDePago>,,Documento Soporte,1,10,Código del medio de Pago,13.3.4.2. Medios de Pago: cbc:PaymentMeansCode,cbc:PaymentMeansCode
+,,<CanalDePago>,,,0..1,,Información del canal de pago,,cbc:PaymentChannelCode
+,</CondicionesDePago>,,,,,,,,
+,<CondicionesEntrega>,,,,0..1,,Información relacionada con la entrega,,cac:DeliveryTerms
+,,<MetodoPago/>,,,0..1,,<CondicionEntrega>,,cac:DeliveryTerms/cbc:SpecialTerms
+,,<CondicionEntrega>,,,0..1,,Condiciones de Entrega: En caso de que el emisor desee informarlo,13.3.7. Condiciones de entrega (INCOTERMS),cac:DeliveryTerms/cbc:LossRiskResponsibilityCode
+,</CondicionesEntrega>,,,,,,,,
+,<LugarEntrega>,,,,,,Información relacionada con el lugar de entrega,,
+,,<IdMunicipio>,,,1,,Código del municipio,13.4.3. Municipios,cac:DeliveryAddress/cbc:Id
+,,<Ciudad>,,,0..1,,Nombre del municipio,,cac:DeliveryAddress/cbc:CityName
+,,<CodigoPostal>,,,0..1,,Código Postal,,cac:DeliveryAddress/cbc:PostalZone
+,,<IdDepartamento>,,,1..1,,Código del departamento,13.4.2. Departamentos (ISO 3166-2:CO),cac:DeliveryAddress/cbc:CountrySubentityCode
+,,<Departamento>,,,0..1,,Nombre del departamento,,cac:DeliveryAddress/cbc:CountrySubentity
+,,<Direccion>,,,0..1,,Texto libre con la dirección,,cac:AdressLine/cbc:Line
+,,<IdPais>,,,0..1,,Código del Pais,13.4.1. Países (ISO 3166-1),cac:Country/cbc:IdentificationCode
+,,<Pais>,,,0..1,,Nombre del Pais,,cac:Country/cbc:Name
+,</LugarEntrega>,,,,,,,,
+,<Emisor>,,,,1,,Información relacionada con el emisor de la factura,,cac:AccountingSupplierParty
+,,<TipoOrganizacion>,,Documento Soporte,0..1,,Código DIAN para el tipo de organización jurídica,13.2.3. Tipo de organización jurídica (Personas): cbc:AdditionalAccountID,cac:AccountingSupplierParty/cbc:AdditionalAccountID
+,,<TipoIdentificacion>,,Documento Soporte,1.1,,Código Dian para el tipo de documento de identificación,13.2.1. Documento de identificación (Tipo de Identificador Fiscal),cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyId@schemeName
+,,<Identificacion>,,Documento Soporte,1.1,,Identificación,,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyId
+,,<Dv>,,Documento Soporte,1.1,,Dígito de verificación del numero de identificación (cuando aplica),,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyId@schemeID
+,,<RazonSocial>,,Documento Soporte,1.1,,Razon social,,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:RegistrationName
+,,<Procedencia>,,Documento Soporte,0..1,,"Identificador de procedencia del proveedor, Obligatorio para tipo de documento Soporte",11.2.4. Identificador de Procedencia de Organización cbc: AdditionalAccountID.@schemeID,cac:AccountingSupplierParty/cbc:AdditionalAccountID@SchemaID
+,,<Regimen>,,Documento Soporte,1,,Código del tipo de régimen fiscal,6.2.4. Régimen Fiscal,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode@listName
+,,<IdMunicipio>,,Documento Soporte,1.1,,Código del municipio,13.4.3. Municipios ** Buscar link codigos de municipios DANE,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:ID
+,,<Ciudad>,,Documento Soporte,1.1,,Nombre del municipio,,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:CityName
+,,<CodigoPostal>,,Documento Soporte,1.1,,Código Postal,,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:PostalZone
+,,<Departamento>,,Documento Soporte,1.1,,Nombre del departamento,,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:CountrySubentity
+,,<IdDepartamento>,,Documento Soporte,1.1,,Código del departamento,13.4.2. Departamentos (ISO 3166-2:CO),cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:CountrySubentityCode
+,,<Direccion>,,Documento Soporte,1,,Texto libre con la dirección,,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:AddressLine/cbc:Line
+,,<CodigoPais>,,Documento Soporte,1,,Código del Pais,13.4.1. Países (ISO 3166-1): ** Link ISO 3166-1 de Wikipedia,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:Country/cbc:IdentificationCode
+,,<Pais>,,Documento Soporte,1,,Nombre del Pais,,
+,,<IdMunicipioPhysicalLocation>,,Documento Soporte,0..1,,Código del municipio,13.4.3. Municipios ** Buscar link codigos de municipios DANE,cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:ID
+,,<CiudadPhysicalLocation>,,Documento Soporte,0..1,,Nombre del municipio,,cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:CityName
+,,<CodigoPostalPhysicalLocation>,,Documento Soporte,0..1,,Código Postal,,cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:PostalZone
+,,<IdDepartamentoPhysicalLocation>,,Documento Soporte,0..1,,Código del departamento,13.4.2. Departamentos (ISO 3166-2:CO),cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:CountrySubentityCode
+,,<DepartamentoPhysicalLocation>,,Documento Soporte,0..1,,Nombre del departamento,,cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:CountrySubentity
+,,<DireccionPhysicalLocation>,,Documento Soporte,0..1,,Texto libre con la dirección,,cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:AddressLine/cbc:Line
+,,<CodigoPaisPhysicalLocation>,,Documento Soporte,0..1,,Código del Pais,13.4.1. Países (ISO 3166-1): ** Link ISO 3166-1 de Wikipedia,cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:Country/cbc:IdentificationCode
+,,<PaisPhysicalLocation>,,Documento Soporte,0..1,,Nombre del Pais,,cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:Country/cbc:Name
+,,<Email>,,Documento Soporte,0..1,,Correo electrónico de contacto,,cac:AccountingSupplierParty/cac:Party/cac:Party/cac:Contact/cbc:ElectronicMail
+,<Emisor>,,,Documento Soporte,1,,,,
+,<OyREmisor>,,,,0..*,,,,
+,    <CodigoOyR>,,,Documento Soporte,1,,,13.2.6.1 Responsabilidades y Obligaciones,cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode
+,</OyREmisor>,,,,,,,,
+,<Receptor>,,,,1,,Información relacionada con el receptor de la factura,,cac:AccountingCustomerParty
+,,<TipoOrganizacion>,,Documento Soporte,0..1,,Código dian para el tipo de organización jurídica,13.2.3. Tipo de organización jurídica (Personas): cbc:AdditionalAccountID,cac:AccountingCustomerParty/cbc:AdditionalAccountID
+,,<TipoIdentificacion>,,Documento Soporte,1,,Código Dian para el tipo de documento de identificación,13.2.1. Documento de identificación (Tipo de Identificador Fiscal),cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyId@schemeName
+,,<Identificacion>,,Documento Soporte,1,,Identificación,,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyId
+,,<Dv>,,Documento Soporte,1,,Dígito de verificación del numero de identificación (cuando aplica),,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyId@schemeID
+,,<RazonSocial>,,Documento Soporte,1,,Razon social,,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:RegistrationName
+,,<Regimen>,,Documento Soporte,1,,Código del tipo de régimen fiscal,6.2.4. Régimen Fiscal,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode@listName
+,,,,,,,,,
+,,<IdMunicipio>,,,1.1,,Código del municipio,13.4.3. Municipios ** Buscar link codigos de municipios DANE,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:ID
+,,<Ciudad>,,,1.1,,Nombre del municipio,,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:CityName
+,,<CodigoPostal>,,,1.1,,Código Postal,,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:PostalZone
+,,<Departamento>,,,1.1,,Nombre del departamento,,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:CountrySubentity
+,,<IdDepartamento>,,,1.1,,Código del departamento,13.4.2. Departamentos (ISO 3166-2:CO),cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:CountrySubentityCode
+,,<Direccion>,,,0.1,,Texto libre con la dirección,,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:AddressLine/cbc:Line
+,,<CodigoPais>,,,1,,Código del Pais,13.4.1. Países (ISO 3166-1): ** Link ISO 3166-1 de Wikipedia,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:Country/cbc:IdentificationCode
+,,<Pais>,,,1,,Nombre del Pais,,cac:AccountingCustomerParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:ID
+,,<IdMunicipioPhysicalLocation>,,,0..1,,Código del municipio,13.4.3. Municipios ** Buscar link codigos de municipios DANE,cac:AccountingCustomerParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:CityName
+,,<CiudadPhysicalLocation>,,,0..1,,Nombre del municipio,,cac:AccountingCustomerParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:PostalZone
+,,<CodigoPostalPhysicalLocation>,,,0..1,,Código Postal,,cac:AccountingCustomerParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:CountrySubentity
+,,<IdDepartamentoPhysicalLocation>,,,0..1,,Código del departamento,13.4.2. Departamentos (ISO 3166-2:CO),cac:AccountingCustomerParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:CountrySubentityCode
+,,<DepartamentoPhysicalLocation>,,,0..1,,Nombre del departamento,,cac:AccountingCustomerParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:AddressLine/cbc:Line
+,,<DireccionPhysicalLocation>,,,0..1,,Texto libre con la dirección,,cac:AccountingCustomerParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:Country/cbc:IdentificationCode
+,,<CodigoPaisPhysicalLocation>,,,0..1,,Código del Pais,13.4.1. Países (ISO 3166-1): ** Link ISO 3166-1 de Wikipedia,cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:Country/cbc:Name
+,,<PaisPhysicalLocation>,,,0..1,,Nombre del Pais,,cac:AccountingCustomerParty/cac:Party/cac:Party/cac:Contact/cbc:ElectronicMail
+,,<Email>,,,1.1,,Correo electrónico de contacto,,
+,</Receptor>,,,,,,,,
+,<ContactoReceptor>,,,,0.1,,,,
+,,<NombreContacto/>,,,0.1,,,,cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:Name
+,,<TelefonoContacto/>,,,0.1,,,,cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:Telephone
+,,<EmailContacto/>,,,0.1,,,,cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:ElectronicMail
+,,<Nota/>,,,0.1,,,,cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:Note
+,</ContactoReceptor>,,,,,,,,
+,<OyRReceptor>,,,,0..*,,Obligaciones y responsabilidades del receptor,,
+,,<CodigoOyR>,,Documento Soporte,1,,Codigo Dian correspondiente a la obligación o responsabilidad,13.2.6.1. Responsabilidades y Obligaciones,cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode
+,</OyReceptor>,,,,,,,,
+,<Mandatos>,,,,0..1,,Lista de Mandantes que se referencian en los detalle del documento,,cac:InformationContentProviderParty
+,,<NumeroRefMandato/>,,,1,,Numero de referencia para identificar el mandato.,,
+,,<NumeroContrato/>,,,0..1,,Numero de contrato del mandato,,
+,,<TipoIdentificacionMandato/>,,,1..1,,Tipo de Identificación del mandante,13.2.1. Documento de identificación (Tipo de Identificador Fiscal),cac:InformationContentProviderParty/cac:PowerOfAttorney/cac:AgentParty/cac:PartyIdentification/cbc:ID@schemeName
+,,<IdentificacionMandato>,,,1..1,,Numero de identificación del mandante,,cac:InformationContentProviderParty/cac:PowerOfAttorney/cac:AgentParty/cac:PartyIdentification/cbc:ID
+,,<DvMandato>,,,0..1,,Digito de verificación del Mandante,,cac:InformationContentProviderParty/cac:PowerOfAttorney/cac:AgentParty/cac:PartyIdentification/cbc:ID@schemeID
+,</Mandatos>,,,,,,,,
+,<Transportista>,,,,0..1,,Información del transportista,,
+,,<TipoOrganizacion>,,,0..1,,Código dian para el tipo de organización jurídica,13.2.3. Tipo de organización jurídica (Personas): cbc:AdditionalAccountID,cac:/Delivery/cac:DeliveryParty/cbc:AdditionalAccountID
+,,<TipoIdentificacion>,,,1,,Código Dian para el tipo de documento de identificación,13.2.1. Documento de identificación (Tipo de Identificador Fiscal),cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyId@schemeName
+,,<Identificacion>,,,1,,Identificación,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyId
+,,<Dv>,,,0..1,,Dígito de verificación del numero de identificación (cuando aplica),,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyId@schemeID
+,,<RazonSocial>,,,1,,Razon social,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:RegistrationName
+,,<Regimen>,,,0..1,,Código del tipo de régimen fiscal,6.2.4. Régimen Fiscal,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode@listName
+,,<IdMunicipio>,,,1,,Código del municipio,13.4.3. Municipios ** Buscar link codigos de municipios DANE,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:ID
+,,<Ciudad>,,,0..1,,Nombre del municipio,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:CityName
+,,<CodigoPostal>,,,0..1,,Código Postal,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:PostalZone
+,,<Departamento>,,,0..1,,Código del departamento,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:CountrySubentity
+,,<IdDepartamento>,,,1,,Nombre del departamento,13.4.2. Departamentos (ISO 3166-2:CO),cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:CountrySubentityCode
+,,<Direccion>,,,0..1,,Texto libre con la dirección,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:AddressLine/cbc:Line
+,,<CodigoPais>,,,1,,Código del Pais,13.4.1. Países (ISO 3166-1): ** Link ISO 3166-1 de Wikipedia,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PartyTaxScheme/cbc:TaxLevelCode/cac:RegistrationAddress/cbc:Country/cbc:IdentificationCode
+,,<Pais>,,,0..1,,Nombre del Pais,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:ID
+,,<IdMunicipioPhysicalLocation>,,,0..1,,Código del municipio,13.4.3. Municipios ** Buscar link codigos de municipios DANE,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:CityName
+,,<CiudadPhysicalLocation>,,,0..1,,Nombre del municipio,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:PostalZone
+,,<CodigoPostalPhysicalLocation>,,,0..1,,Código Postal,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:CountrySubentity
+,,<IdDepartamentoPhysicalLocation>,,,0..1,,Código del departamento,13.4.2. Departamentos (ISO 3166-2:CO),cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:CountrySubentityCode
+,,<DepartamentoPhysicalLocation>,,,0..1,,Nombre del departamento,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:AddressLine/cbc:Line
+,,<DireccionPhysicalLocation>,,,0..1,,Texto libre con la dirección,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:Country/cbc:IdentificationCode
+,,<CodigoPaisPhysicalLocation>,,,0..1,,Código del Pais,13.4.1. Países (ISO 3166-1): ** Link ISO 3166-1 de Wikipedia,cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cbc:Country/cbc:Name
+,,<PaisPhysicalLocation>,,,0..1,,Nombre del Pais,,cac:/Delivery/cac:DeliveryParty/cac:Party/cac:Party/cac:Contact/cbc:ElectronicMail
+,,<Email>,,,0..1,,Correo electrónico de contacto,,
+,</Transportista>,,,,,,,,
+,<Totales>,,,,,,,,
+,,<BaseAfecta/>,,Documento Soporte,1..1,,Valor básico del documento al cual le afectan impuestos,,cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount
+,,<BaseExcluida/>,,Documento Soporte,1..1,,Valor básico del documento el cual está exento de impuestos,,
+,,<Descuento/>,,Documento Soporte,0..1,,Valor total de descuentos,,cac:LegalMonetaryTotal/cbc:AllowanceTotalAmount
+,,<Recargo/>,,Documento Soporte,0..1,,Valor total de recargos,,cac:LegalMonetaryTotal/cbc:ChargeTotalAmount
+,,<Moneda/>,,Documento Soporte,1,,Acrónimo de la moneda debe ser COP,,cbc:DocumentCurrencyCode
+,,<Redondeo/>,,,0..1,,Redondeo aplicado en los totales,,cac:LegalMonetaryTotal/cbc:PayableRoundingAmount
+,,<TotalIva/>,,Documento Soporte,0..1,,Valor total de IVA,,
+,,<TotalIca/>,,,0..1,,Valor total de ICA,,
+,,<TotalmpoConsumo/>,,Documento Soporte,0..1,,Valor total Impuesto al consumo,,
+,,<TotalOtrosImpuestos>,,Documento Soporte,0..1,,Valor total de otros impuestos,,
+,,<TotalAnticipos>,,Documento Soporte,0..1,,Valor total de anticipos,,cac:LegalMonetaryTotal/cbc:PrepaidAmount
+,,<TotalFactura/>,,Documento Soporte,1..1,,Valor total del documento despues de impuestos,,
+,,<TotalaPagar>,,Documento Soporte,1..1,,Valor total a pagar del documento,,cac:LegalMonetaryTotal/cbc:PayableAmount
+,</Totales>,,,,,,,,
+,<Anticipos>,,,,0..*,,,,cac:PrepaidPayment
+,,<Identificador/>,,,1,,Identificación,,cac:PrepaidPayment/cbc:ID
+,,<MontoAnticipo/>,,,1,,Valor del anticipo,,cac:PrepaidPayment/cbc:PaidAmount
+,,<FechaRecibidoAnticipo/>,,,0..1,,Fecha de recibido del anticipo,,cac:PrepaidPayment/cbc:ReceivedDate
+,,<FechaRealizadoAnticipo/>,,,0..1,,Fecha en la que se realizó el anticipo,,cac:PrepaidPayment/cbc:PaidDate
+,,<HoraRealizadoAnticipo>,,,0..1,,Hora en la que se realizó el anticipo,,cac:PrepaidPayment/cbc:PaidTime
+,,<InstructionID/>,,,0..1,,,,cac:PrepaidPayment/cbc:InstructionID
+,</Anticipos>,,,,,,,,
+,<Descuentos>,,,,0..*,,,,cac:AllowanceCharge
+,,<CodigoDescuento/>,,Documento Soporte,1,,Código de descuento,13.3.8. Códigos de descuento,cac:AllowanceCharge/cbc:AllowanceChargeReasonCode
+,,<RazonDescuento/>,,Documento Soporte,0..1,,Razón por la cual se hace el descuento,,cac:AllowanceCharge/cbc:AllowanceChargeReason
+,,<PorcentajeDescuento/>,,Documento Soporte,0..1,,Porcentaje del descuento,,cac:AllowanceCharge/cbc:MultiplierFactorNumeric
+,,<Descuento/>,,Documento Soporte,1,,Valor del descuento,,cac:AllowanceCharge/cbc:Amount
+,,<ValorBase/>,,Documento Soporte,0..1,,Valor básico del documento,,cac:AllowanceCharge/cbc:BaseAmount
+,</Descuentos>,,,,,,,,
+,<Recargos>,,,,0..*,,,,cac:AllowanceCharge
+,,<CodigoRecargo/>,,,1,,Código de recargo,,cac:AllowanceCharge/cbc:AllowanceChargeReasonCode
+,,<RazonRecargo/>,,,0..1,,Razón por la cual se hace el recargo,,cac:AllowanceCharge/cbc:AllowanceChargeReason
+,,<PorcentajeRecargo/>,,,0..1,,Porcentaje del recargo,,cac:AllowanceCharge/cbc:MultiplierFactorNumeric
+,,<Recargo/>,,,1,,Valor del recargo,,cac:AllowanceCharge/cbc:Amount
+,,<ValorBase/>,,,0..1,,Valor básico del documento,,cac:AllowanceCharge/cbc:BaseAmount
+,</Recargos>,,,,,,,,
+,<TaxTotal>,,,,,,,,
+,,<BaseTaxTotal>,,Documento Soporte,1.1,,Valor al cual se le aplica el tributo,,
+,,<CodigoTax>,,Documento Soporte,1..1,,Código del tributo,,cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID | cac:WithholdingTaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID
+,,<NombreTax>,,Documento Soporte,1..1,,Nombre del tributo,13.2.2. Tributos,cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:Name | cac:WithholdingTaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:Name
+,,<PorcTax>,,Documento Soporte,1..1,,Porcentaje del tributo,,cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent | cac:WithholdingTaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent
+,,<ValorTax>,,Documento Soporte,1..1,,Valor del tributo,,cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount | cac:WithholdingTaxTotal/cac:TaxSubtotal/cbc:TaxAmount
+,,<RedondeoTax>,,,0..1,,Redondeo agregado al total del impuesto,,
+,</TaxTotal>,,,,,,,,
+,<Detalles>,,,,,,,,
+,,<NumeroLinea/>,,Documento Soporte,1.1,,Número del ítem,,
+,,<CodigoItem/>,,Documento Soporte,0.1,,Código alfanumérico del ítem,,
+,,<CodigoAlternativo/>,,,0.1,,Código alfanumérico alternativo del ítem,,cac:InvoiceLine/cbc:ID | cac:CreditNoteLine/cbc:ID | cac:DebitNoteLine/cbc:ID
+,,<IDCodigoEstandar/>,,Documento Soporte,0.1,,,6.3.5 Productos,cac:StandardItemIdentification/cbc:@schemeID
+,,<CodigoEstandar/>,,Documento Soporte,0.1,,,Obligatorio exportación,cac:StandardItemIdentification/cbc:ID
+,,<NumeroContrato/>,,,0.1,,,,
+,,<CantidadItem/>,,Documento Soporte,1.1,,Cantidad del ítem,,cac:InvoiceLine/cbc:InvoicedQuantity | cac:CreditNoteLine/cbc:CreditedQuantity | cac:DebitNoteLine/cbc:DebitedQuantity
+,,<UnidadCantidad/>,,Documento Soporte,1..1,,Unidad de cantidad para el item,13.3.6. Unidades de Cantidad: @unitCode,cac:InvoiceLine/cbc:InvoicedQuantity/@unitCode | cac:CreditNoteLine/cbc:CreditedQuantity/@unitcode | cac:DebitNoteLine/cbc:DebitedQuantity/@unitCode
+,,<UnidadMedida/>,,,1.1,,Unidad de medida del ítem,13.3.6. Unidades de Cantidad: @unitCode,cac:InvoiceLine/cac:Price/cbc:BaseQuantity@unitCode | cac:CreditNoteLine/cac:Price/cbc:BaseQuantity@unitCode | cac:DebitNoteLine/cac:Price/cbc:BaseQuantity@unitCode 
+,,<DescripcionItem/>,,Documento Soporte,1.1,,Descripción del item,,cac:InvoiceLine/cac:Item/cbc:Description | cac:CreditNoteLine/cac:Item/cbc:Description | cac:DebitNoteLine/cac:Item/cbc:Description
+,,</MatriculaInmobiliaria>,,,0..1,Campo contemplado cuando operacion es 14,numero de matricuala inmobiliaria,,
+,,</ValorComercialTransaccion>,,,0..1,Campo contemplado cuando operacion es 14,valor de transacción,,
+,,<CantidadEmpaque/>,,,0.1,,,,
+,,<FormaGeneracion/>,,Documento Soporte,1 . . 1,,Forma de generación y transmisión de conformidad con lo establecido en los Artículo 2 y 10. Resolución 167 Doc Soporte,16.1.6. Forma de generación y transmisión  cbc: DescriptionCode; cbc: Description,cac:InvoiceLine/cac:InvoicePeriod/cbc:Description | cac:CreditNoteLineInvoicePeriod/cbc:Description | cac:DebitNoteLineInvoicePeriod/cbc:Description
+,,<CodigoGeneracion/>,,Documento Soporte,1..1,,,16.1.6. Forma de generación y transmisión  cbc: DescriptionCode; cbc: Description,cac:InvoiceLine/cac:InvoicePeriod/cbc:DescriptionCode | cac:CreditNoteLineInvoicePeriod/cbc:DescriptionCode | cac:DebitNoteLineInvoicePeriod/cbc:DescriptionCode
+,,<FechaGeneracion/>,,Documento Soporte,1..1,,,,"cac:InvoiceLine/cac:InvoicePeriod/cbc:StartDate | cac:CreditNoteLineInvoicePeriod/cbc:StartDate | cac:DebitNoteLineInvoicePeriod/cbc:StartDate"
+,,<Marca/>,,Documento Soporte,0.1,,Marca del ítem,,cac:InvoiceLine/cac:Item/cbc:BrandName | cac:CreditNoteLine/cac:Item/cbc:BrandName | cac:DebitNoteLine/cac:Item/cbc:BrandName
+,,<Modelo/>,,Documento Soporte,0.1,,Modelo del ítem,,cac:InvoiceLine/cac:Item/cbc:ModelName | cac:CreditNoteLine/cac:Item/cbc:ModelName | cac:DebitNoteLine/cac:Item/cbc:ModelName
+,,<TextoItem/>,,Documento Soporte,1.1,,Descripción alternativa del ítem,,cac:InvoiceLine/cac:Item/cbc:Description | cac:CreditNoteLine/cac:Item/cbc:Description | cac:DebitNoteLine/cac:Item/cbc:Description
+,,<TextoLinea/>,,Documento Soporte,0.1,,Descripción alternativa del ítem,,cac:InvoiceLine/cac:Item/cbc:Description | cac:CreditNoteLine/cac:Item/cbc:Description | cac:DebitNoteLine/cac:Item/cbc:Description
+,,<MonedaItem/>,,Documento Soporte,0.1,,Acrónimo de la moneda para el ítem,,
+,,<ValorItem/>,,Documento Soporte,1.1,,Valor del ítem,,cac:InvoiceLine/cac:Price/cbc:PriceAmount | cac:CreditNoteLine/cac:Price/cbc:PriceAmount | cac:DebitNoteLine/cac:Price/cbc:PriceAmount
+,,<ValorReferencia/>,,Documento Soporte,0.1,,,,
+,,<CodPrecioReferencia/>,,Documento Soporte,0.1,,,6.3.9 Referencia,
+,,<ItemAfecto/>,,Documento Soporte,1.1,,"True cuando al ítem le afecta impuestos, False cuando no le afecta",,
+,,<CodImpuesto/>,,Documento Soporte,1.1,,Código del impuesto del ítem,,cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID | cac:CreditNoteLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID  | cac:DebitNoteLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID
+,,<ValorImpuesto/>,,Documento Soporte,1.1,,Valor del impuesto del ítem,,cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount | cac:CreditNoteLine/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount  | cac:DebitNoteLine/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount
+,,<PorcentajeImpuesto/>,,Documento Soporte,1.1,,Porcentaje del impuesto del ítem,,cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent | cac:CreditNoteLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent  | cac:DebitNoteLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent
+,,<CodigoDescuentoItem/>,,Documento Soporte,0.1,,Código de descuento del ítem,13.3.8 Códigos de Descuentos,cac:InvoiceLine/cac:AllowanceCharge/cbc:ID
+,,<RazonDescuentoItem/>,,Documento Soporte,0.1,,Razón de descuento,,cac:InvoiceLine/cac:AllowanceCharge/cbc:AllowanceChargeReason
+,,<DescuentoItem/>,,Documento Soporte,0.1,,Valor de descuento del ítem,,cac:InvoiceLine/cac:AllowanceCharge/cbc:Amount
+,,<PorcentajeDescuentoItem/>,,Documento Soporte,0.1,,Porcentaje del descuento del ítem,,cac:InvoiceLine/cac:AllowanceCharge/cbc:MultiplierFactorNumeric
+,,<ImpuestoRetenido/>,,Documento Soporte,0.1,,Varlor de retencón de impuestos del item,,
+,,<RedondeoImpuesto/>,,Documento Soporte,0.1,,,,
+,,<MonedaImpuestoItem/>,,,0.1,,Acrónimo de la moneda para el impuesto del ítem,,
+,,<TotalItem/>,,Documeto Soporte,1.1,,Valor total del item despues de impuestos y descuentos,,
+,,<NotaEntregaItem/>,,Documeto Soporte,0.1,,,,cac:DocumentReference/cbc:ID
+,,<NumeroRefMandato/>,,,0..1,,"Si el mandato se envio en la sección global de Mandato, aqui va el numero de referencia",,
+,,<TipoIngresoMandato>,,,0..1,,si el Bien o Servicio “B/S” reportado corresponde a un ingreso propio o a un ingreso recibido para terceros.,13.3.12.Tipo Ingreso Mandato,cac:InvoiceLine/@SchemeID
+,,<TipoIdentificacionMandato/>,,,0..1,,El tipo de documento de identificación del mandante cuando no se utiilza la sección global de Mandato,,cac:InformationContentProviderParty/cac:PowerOfAttorney/cac:AgentParty/cac:PartyIdentification/cbc:ID@schemeName
+,,<IdentificacionMandato/>,,,0..1,,"Identificación del mandante, cuando no se utilizo la sección global de Mandato",,cac:InformationContentProviderParty/cac:PowerOfAttorney/cac:AgentParty/cac:PartyIdentification/cbc:ID
+,,<DvIdentificacionMandato/>,,,0..1,,"Digito de verificación del mandante, cuando no se utilizao la sección global de Mandato",,cac:InformationContentProviderParty/cac:PowerOfAttorney/cac:AgentParty/cac:PartyIdentification/cbc:ID/@schemeID
+,,<IdentificacionBeneficiario>,,,0..1,,Identificador del usuario beneficiario del servicio de salud,,cac:InvoiceLine/cbc:UUID
+,,<NumeroAutorizacion>,,,1..1,,Identificador de la autorización asignada por la ARP/EPS,,cac:InvoiceLine/cac:Item/cac:BuyersItemIdentification/cbc:ID
+,,<CodigoPrestador>,,,1..1,,Código del prestador del servicio de Salud,,cac:InvoiceLine/cac:Item/cac:BuyersItemIdentification/cbc:ID/@SchemeAgencyID
+,,<CodigoConcepto>,,,1..*,,"Código del concepto del recaudo, lista pagina 36 en la primera posición",18.4.5* Conceptos de Recaudo,cac:InvoiceLine/cac:Item/cbc:Description
+,,<TransporteCarga/>,,,,,,Solo para empresas de transporte,
+,,,<UnidadCarga/>,,1.1,,Unidad de medida de la correspondiente carga: Kilogramos (KGM) o Galones(GLL),,cac:InvoiceLine/cac:Item/cac:AdittionalItemProperty/cbc:ValueQuantity
+,,,<CantidadCarga/>,,1.1,,Dato numerico sin decimales sobre el tamaño de la carga,,cac:InvoiceLine/cac:Item/cac:AdittionalItemProperty/cbc:ValueQuantity/@unitCode
+,,,<CodigoRemesa/>,,1.1,,"Numero radicado de aceptación de la remesa. Dato numerico de 1 hasta 100,000 millones.",,cac:InvoiceLine/cac:Item/cac:AdittionalItemProperty/cbc:Name
+,,,<ValorRemesa/>,,1.1,,"Numero de la remesa, consecutivo interno en la respectiva empresa de transporte. Dato alfanumerico de hasta 15 caracteres.",,cac:InvoiceLine/cac:Item/cac:AdittionalItemProperty/cbc:Value
+,,</TransporteCarga>,,,,,,,
+,</Detalles>,,,,,,,,
+,<Referencias>,,,,0..*,,,,
+,,<TpoDocRef/>,,,0..1,,Tipo documento al que hace referencia,1. Tipos de documento Innapsis,
+,,<PrefijoRef/>,,Documento Soporte,0..1,,Prefijo del documento al que hace referencia, ,cac:DiscrepancyResponse/cbc:ReferenceID - cac:BillingReference -- cac:InvoiceDocumentReference/cbc:ID
+,,<FolioRef/>,,Documento Soporte,1,,Número de documento al que hace referencia, ,cac:DiscrepancyResponse/cbc:ReferenceID - cac:BillingReference -- cac:InvoiceDocumentReference/cbc:ID
+,,<RznRef>,,Documento Soporte,1,,,13.2.4. Concepto de Corrección para Notas crédito,cac:DiscrepancyResponse/cbc:ResponseCode
+,,,,Documento Soporte,0..1,,Razón de referencia al documento,,cac:DiscrepancyResponse/cbc:Description
+,,<Cufe>,,Documento Soporte,1,,CUFE del documento al que se hace referencia, ,cac:BillingReference/cac:InvoiceDocumentReference/cbc:UUID
+,,<FchRef>,,Documento Soporte,0..1,,Fecha de emision del documento referenciado, ,cac:BillingReference/cac:InvoiceDocumentReference/cbc:IssueDate
+,,<IdentificacionBeneficiario>,,,1..1,,Identificador del usuario beneficiario del servicio de salud,,cac:BillingReference/cac:InvoiceDocumentReference/cbc:ID/@SchemeID
+,,<CodigoPrestador>,,,1..1,,Codigo del prestador del servicio de Salud,,cac:BillingReference/cac:InvoiceDocumentReference/cbc:ID/@SchemeAgencyID
+,,<NumeroAutorizacion>,,,1..1,,Número de Autorización,,cac:BillingReference/cac:InvoiceDocumentReference/cbc:ID/@SchemeVersionID
+,,<Monto>,,,1..1,,Cantidad a Acreditar*,,cac:BillingReference/cac:BillingReferenceLine/cbc:Amount
+,,<CodigoConcepto>,,,0..1,,"Codigo del concepto del Recaudo del aporte que se acreditará a este documento, conceptos pp44",18.4.5* Conceptos de Recaudo,cac:BillingReference/cac:BillingReferenceLine/cbc:Amount/@currencyCodeListVersionID
+,<Referencias>,,,,,,,,
+,<Adicionales>,,,,,,,,
+,,<Nota/>,,,0..*,,Observaciones que hacen en el documento,,cbc:Note
+,,<OrdenDeCompra/>,,,0..*,,Código alfanimérico de la orden de compra, ,cac:OrderReference/cbc:ID | cac:AdditionalDocumentReference/cbc:ID
+,,<OrdenDeCompra/>,,,1.1,,Si se quiere enviar mas de una orden de compra este se debe enviar varias veces.,Obligatorio se la factura es en Dolares,/Invoice/cac:AdditionalDocumentReference/cbc:ID
+,,<TasaDeCambio/>,,Documento Soporte,1.1,,Tasa de cambio al día de emisión del documento (TRM),Obligatorio se la factura es en Dolares para informar a la DIAN,
+,,<FechaTasaDeCambio/>,,Documento Soporte,1.1,,Fecha del TRM al día de emisión del documento,Obligatorio se la factura es en Dolares para informar a la DIAN la fecha en que se hizo la negociacion den dolares,
+,,<TipoDocumento/>,,,,,,,
+,,<MonedaAlterna/>,,,1.1,,Moneda Alterna a los pesos colombianos.,Obligatorio se la factura es en Dolares para informar a la DIAN la Divisa,
+,</Adicionales>,,,,,,,,
+,<Salud>,,,,,,,,
+,,<Usuario>,,,1..*,,Usuario del servicio de Salud,,cac:AccountingCustomerParty/cac:Party/cac:Person
+,,,<CodigoPrestador>,,1..1,,Código del prestador del servicio de salud,,
+,,,<ModalidadPago>,,0..1,,Modalidad de contratación y pago pactada objeto de facturación.,18.4.3. Modalidades de Contratación,
+,,,<Cobertura>,,0..1,,Entidad responsable de financiar la cobertura y de pagar la prestación de los servicios,18.4.4. Cobertura,
+,,,<NumeroContrato>,,0..1,,Número de controto objeto de facturación,,
+,,,<NumeroPoliza>,,0..1,,Número de poliza SOAT o Plan equivalente,Página 26,
+,,,<FechaInicioFacturacion>,,0..1,,Fecha de Inicio de servicio prestado cuando se factura por usuario o periodo de facturación segun modalidad de contratación,,
+,,,<FechaFinFacturacion>,,0..1,,Fecha Final del periodo de factura,,
+,,,<Copago>,,0..1,,Valor pagado y recaudad por concepto de copago,,
+,,,<CuotaModeradora>,,0..1,,Valor pagado y recaudado correspondiente a la cuota moderadora,,
+,,,<CuotaRecuperacion>,,0..1,,Valor pagado y recaudado correspondiente a la cuota de recuperación,,
+,,,<PagosCompartidos>,,0..1,,Valor pagado y recaudado correspondiente a pagos compartidos,,
+,,</Usuario>,,,,,,,
+,</Salud>,,,,,,,,
+</Fe>,,,,,,,,,
