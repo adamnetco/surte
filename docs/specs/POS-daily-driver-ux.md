@@ -1,0 +1,85 @@
+# POS — Daily Driver UX
+
+**Estado:** DRAFT
+**Módulos:** `pos`, `admin-cms`, `clientes`
+
+## Problema
+
+SistecPOS tiene features completas pero el flujo diario del operador todavía tiene fricción:
+- No hay onboarding interactivo para nuevos tenants
+- POS no tiene atajos de teclado
+- Algunos empty states son "no hay datos" sin CTA
+- Faltan skeletons en varias listas
+- Modales bloquean acciones rápidas
+
+## Outcomes
+
+### Onboarding
+- [ ] **AC1:** Wizard de 5 pasos para nuevo tenant: datos empresa → ubicación → primer producto → primer usuario → tour rápido
+- [ ] **AC2:** Checklist persistente en sidebar: "Configura tu cuenta (3/5)"
+- [ ] **AC3:** Tour interactivo con `driver.js` o similar al primer login
+
+### POS día a día
+- [ ] **AC4:** Atajos de teclado: F2 cobrar, F3 cliente, F4 descuento, ESC cancelar, /buscar producto
+- [ ] **AC5:** Búsqueda global Cmd+K en admin
+- [ ] **AC6:** Acciones recientes en sidebar del POS (últimos 5 productos vendidos)
+- [ ] **AC7:** Pantalla de bloqueo rápido (PIN del cajero) sin cerrar sesión
+
+### Estados vacíos y carga
+- [ ] **AC8:** Todo empty state tiene ilustración + 1 CTA principal
+- [ ] **AC9:** Toda lista > 200ms muestra skeleton
+- [ ] **AC10:** Optimistic updates en todas las operaciones de CRUD admin
+
+### Feedback inmediato
+- [ ] **AC11:** Toasts top-center (ya implementado) — auditar consistencia
+- [ ] **AC12:** Animaciones de éxito (check verde) al cobrar venta
+- [ ] **AC13:** Sonido opcional al cobrar (configurable)
+
+### Mobile-first admin
+- [ ] **AC14:** Sidebar colapsable en mobile
+- [ ] **AC15:** Tablas → vertical cards en < 768px
+- [ ] **AC16:** FAB (floating action button) para acción principal de cada pantalla
+
+## Métricas de éxito
+
+- Tiempo login → primera venta < 30s (medido vía analytics)
+- Tasa de finalización del onboarding wizard > 70%
+- Reducción 50% en tickets de soporte tipo "¿cómo hago X?"
+
+## Tareas (vertical slices)
+
+### Slice 1 — Wizard de onboarding
+- 5 pasos guardados en `onboarding_progress`
+- Persistencia (si abandona, retoma donde quedó)
+- Checklist en sidebar
+
+### Slice 2 — Atajos de teclado POS
+- Hook `useKeyboardShortcuts()`
+- Cheatsheet flotante con `?`
+- Configurable por usuario
+
+### Slice 3 — Audit de empty states
+- Inventariar todas las pantallas
+- Crear `<EmptyState />` component reutilizable
+- Reemplazar progresivamente
+
+### Slice 4 — Skeletons + optimistic
+- Audit de listas sin skeleton
+- Aplicar `<Skeleton />` de shadcn
+- Mutations con `onMutate` optimista
+
+### Slice 5 — Cmd+K global
+- Componente `<CommandPalette />`
+- Index de acciones por módulo
+- Búsqueda fuzzy
+
+### Slice 6 — Mobile polish
+- Audit responsive de admin
+- FAB component
+- Sidebar drawer en mobile
+
+## No-objetivos
+
+- ❌ Rediseño visual completo (mantener identidad actual)
+- ❌ Cambiar paleta de colores
+- ❌ App nativa (PWA suficiente)
