@@ -1,6 +1,6 @@
 # POS — Integración Innapsis (Facturación Electrónica DIAN)
 
-**Estado:** IN_BUILD (Slices 1, 2 y 3 SHIPPED)
+**Estado:** IN_BUILD (Slices 1, 2, 3 y 4 SHIPPED)
 **Módulo:** `admin-cms` + `pos` + `storefront`
 **Tablas:** `einvoice_configs`, `electronic_invoices`, `einvoice_events`
 **Edge functions:** `innapsis-emit`, `innapsis-status`
@@ -16,10 +16,15 @@
   - DV calculado con algoritmo DIAN (mod 11). Receptor con tipo de identificación auto-detectado (CC/NIT), defaults a Consumidor Final 222222222222.
   - TaxTotal agregado por porcentaje de IVA a partir de `pos_order_items.tax_rate`/`tax_amount`. Detalles con `ItemAfecto`, `CodImpuesto=01`, `UnidadCantidad=NIU`.
   - Defaults parametrizables vía `einvoice_configs.extra` y `locations.settings` (`municipio_code`, `departamento_code`, `codigo_postal`, `regimen`, `tipo_organizacion`).
-- 🚧 Slice 4 — Worker robusto con reintentos exponenciales (1m, 5m, 30m, 2h, max 5) y dead-letter visible en `DeadLetterQueue.tsx`.
+- ✅ **Slice 4 — Worker robusto con reintentos exponenciales**: SHIPPED.
+  - `innapsis-emit` ahora encola un row `sync_outbox` (`target=einvoice_emit_retry`) cuando Innapsis responde 5xx o falla la red, en lugar de dejar la factura en `error`. La factura queda en `status=retrying` con `next_retry_at` y `outbox_id` enlazado.
+  - `sync-outbox-flush` agrega el handler `einvoice_emit_retry`: reusa `request_payload`, vuelve a pedir token Innapsis, repostea y actualiza la factura. Backoff 1m → 5m → 30m → 2h → 12h con jitter ±20% (max 5 intentos). 4xx marca como `permanent` para no gastar reintentos.
+  - Tras agotar reintentos (o respuesta permanente), `sync_outbox` queda `dead` y la factura pasa a `dead_letter` con evento `dead_letter` en `einvoice_events`. Visible en `DeadLetterQueue.tsx` (mismo panel que las demás dead letters del outbox).
+  - Cada intento escribe un evento (`emit_retry_scheduled`, `emit_retry_failed`, `emit_retry_permanent`, `emit_retry_success`, `dead_letter`) para reconstruir timeline.
 - 🚧 Slice 5 — UI de gestión avanzada (filtros, exportación CSV, modal detalle con timeline `einvoice_events`).
 - 🚧 Slice 6 — Email automático con PDF+XML adjuntos.
 - 🚧 Slice 7 — Modo contingencia DIAN.
+
 
 
 

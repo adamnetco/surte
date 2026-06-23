@@ -81,11 +81,136 @@ async function processOne(row: any): Promise<{ ok: boolean; error?: string }> {
       return { ok: true };
     }
 
+    if (row.target === "einvoice_emit_retry") {
+      const res = await retryEinvoice(p);
+      return res;
+    }
+
     return { ok: false, error: `unknown_target: ${row.target}` };
   } catch (e) {
     return { ok: false, error: String(e) };
   }
 }
+
+// ===== Innapsis DIAN retry worker (Slice 4) =====
+const INNAPSIS_CLIENT_ID = Deno.env.get("INNAPSIS_CLIENT_ID") ?? "b899c906-fe51-4eba-a054-62ca2220452f";
+const INNAPSIS_CLIENT_SECRET = Deno.env.get("INNAPSIS_CLIENT_SECRET");
+const INNAPSIS_PARTNER_API_KEY = Deno.env.get("INNAPSIS_PARTNER_API_KEY");
+const INNAPSIS_TOKEN_URL = "https://facturaeb2c.b2clogin.com/facturaeb2c.onmicrosoft.com/oauth2/v2.0/token";
+const INNAPSIS_POLICY = "B2C_1A_FE_CLIENT_CREDENTIALS_V30";
+const INNAPSIS_SCOPE = "https://facturaeb2c.onmicrosoft.com/client-api/.default";
+const INNAPSIS_BASE_DEV = "https://rt9g83x6z0.execute-api.us-east-1.amazonaws.com";
+const INNAPSIS_BASE_PROD = "https://nc8sa9bmte.execute-api.us-east-1.amazonaws.com";
+
+async function getInnapsisToken(nit: string, apiKey: string): Promise<string> {
+  if (!INNAPSIS_CLIENT_SECRET) throw new Error("INNAPSIS_CLIENT_SECRET not configured");
+  const url = `${INNAPSIS_TOKEN_URL}?p=${INNAPSIS_POLICY}&saasTenantId=${encodeURIComponent(nit)}&apiKey=${encodeURIComponent(apiKey)}`;
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    client_id: INNAPSIS_CLIENT_ID,
+    client_secret: INNAPSIS_CLIENT_SECRET,
+    scope: INNAPSIS_SCOPE,
+  });
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
+  const j = await r.json();
+  if (!r.ok || !j.access_token) throw new Error(`innapsis auth ${r.status}: ${JSON.stringify(j).slice(0, 200)}`);
+  return j.access_token;
+}
+
+async function retryEinvoice(payload: any): Promise<{ ok: boolean; error?: string; permanent?: boolean }> {
+  const invoiceId: string | undefined = payload?.invoice_id;
+  const orgId: string | undefined = payload?.organization_id;
+  if (!invoiceId || !orgId) return { ok: false, error: "missing invoice_id/organization_id", permanent: true };
+
+  const { data: inv, error: invErr } = await supabase
+    .from("electronic_invoices")
+    .select("id, organization_id, status, request_payload, retry_count")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (invErr || !inv) return { ok: false, error: invErr?.message ?? "invoice_not_found", permanent: true };
+  if (["sent", "accepted"].includes(String(inv.status))) {
+    return { ok: true }; // ya quedó OK por otra vía
+  }
+  if (!inv.request_payload) return { ok: false, error: "missing request_payload", permanent: true };
+
+  const { data: cfg } = await supabase
+    .from("einvoice_configs")
+    .select("nit, api_key, environment, id, resolution_current")
+    .eq("organization_id", orgId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!cfg) return { ok: false, error: "config_inactive", permanent: true };
+
+  try {
+    const token = await getInnapsisToken(cfg.nit as string, (cfg.api_key as string) || INNAPSIS_PARTNER_API_KEY || "");
+    const baseUrl = cfg.environment === "prod" ? INNAPSIS_BASE_PROD : INNAPSIS_BASE_DEV;
+    const endpoint = `${baseUrl}/api/v1/emision/emision/envieDocumento`;
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(inv.request_payload),
+    });
+    const j = await r.json().catch(() => ({}));
+    const newRetryCount = (inv.retry_count ?? 0) + 1;
+
+    if (r.ok) {
+      await supabase.from("electronic_invoices").update({
+        status: "sent",
+        dian_response: j,
+        last_error: null,
+        retry_count: newRetryCount,
+        next_retry_at: null,
+        cufe: j?.cufe ?? j?.Cufe ?? null,
+        qr_url: j?.qr_url ?? j?.QrUrl ?? null,
+        xml_url: j?.xml_url ?? j?.XmlUrl ?? null,
+        pdf_url: j?.pdf_url ?? j?.PdfUrl ?? null,
+      }).eq("id", invoiceId);
+
+      await supabase.from("einvoice_events").insert({
+        organization_id: orgId,
+        invoice_id: invoiceId,
+        event_type: "emit_retry_success",
+        status: "sent",
+        message: `Reintento exitoso (intento ${newRetryCount})`,
+        response: j,
+      });
+      return { ok: true };
+    }
+
+    const permanent = r.status >= 400 && r.status < 500;
+    await supabase.from("electronic_invoices").update({
+      status: permanent ? "error" : "retrying",
+      last_error: `HTTP ${r.status}`,
+      retry_count: newRetryCount,
+      dian_response: j,
+    }).eq("id", invoiceId);
+
+    await supabase.from("einvoice_events").insert({
+      organization_id: orgId,
+      invoice_id: invoiceId,
+      event_type: permanent ? "emit_retry_permanent" : "emit_retry_failed",
+      status: permanent ? "error" : "retrying",
+      message: `Innapsis HTTP ${r.status} (intento ${newRetryCount})`,
+      response: j,
+    });
+    return { ok: false, error: `HTTP ${r.status}: ${JSON.stringify(j).slice(0, 200)}`, permanent };
+  } catch (e: any) {
+    const newRetryCount = (inv.retry_count ?? 0) + 1;
+    await supabase.from("electronic_invoices").update({
+      last_error: String(e?.message ?? e),
+      retry_count: newRetryCount,
+    }).eq("id", invoiceId);
+    await supabase.from("einvoice_events").insert({
+      organization_id: orgId,
+      invoice_id: invoiceId,
+      event_type: "emit_retry_failed",
+      status: "retrying",
+      message: `Error red intento ${newRetryCount}: ${String(e?.message ?? e)}`,
+    });
+    return { ok: false, error: String(e?.message ?? e) };
+  }
+}
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -120,11 +245,31 @@ Deno.serve(async (req) => {
           .from("sync_outbox")
           .update({ status: "succeeded", succeeded_at: new Date().toISOString(), attempts: nextAttempts, last_error: null })
           .eq("id", row.id);
-      } else if (nextAttempts >= (row.max_attempts ?? 5)) {
+      } else if (nextAttempts >= (row.max_attempts ?? 5) || (res as any).permanent) {
         await supabase
           .from("sync_outbox")
           .update({ status: "dead", attempts: nextAttempts, last_error: res.error ?? "unknown" })
           .eq("id", row.id);
+
+        // Hook: si era reintento DIAN, marca factura como dead_letter y registra evento
+        if (row.target === "einvoice_emit_retry") {
+          const invId = row.payload?.invoice_id;
+          const orgId = row.payload?.organization_id ?? row.organization_id;
+          if (invId) {
+            await supabase.from("electronic_invoices").update({
+              status: "dead_letter",
+              last_error: res.error ?? "max retries exceeded",
+              next_retry_at: null,
+            }).eq("id", invId);
+            await supabase.from("einvoice_events").insert({
+              organization_id: orgId,
+              invoice_id: invId,
+              event_type: "dead_letter",
+              status: "dead_letter",
+              message: `Reintentos agotados (${nextAttempts}/${row.max_attempts ?? 5}): ${res.error ?? "unknown"}`,
+            });
+          }
+        }
       } else {
         const delayMin = BACKOFF_MIN[Math.min(nextAttempts - 1, BACKOFF_MIN.length - 1)];
         // Jitter ±20% para evitar thundering herd en reintentos paralelos.
@@ -134,7 +279,16 @@ Deno.serve(async (req) => {
           .from("sync_outbox")
           .update({ attempts: nextAttempts, last_error: res.error ?? "unknown", next_attempt_at: next })
           .eq("id", row.id);
+
+        // Espeja next_retry_at en la factura para que la UI pueda mostrarlo
+        if (row.target === "einvoice_emit_retry" && row.payload?.invoice_id) {
+          await supabase.from("electronic_invoices").update({
+            next_retry_at: next,
+            last_error: res.error ?? "unknown",
+          }).eq("id", row.payload.invoice_id);
+        }
       }
+
       results.push({ id: row.id, target: row.target, ok: res.ok, error: res.error });
     }
 

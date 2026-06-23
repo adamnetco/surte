@@ -2221,14 +2221,17 @@ export type Database = {
           issue_date: string
           last_error: string | null
           location_id: string | null
+          next_retry_at: string | null
           number: number | null
           order_id: string | null
           organization_id: string
+          outbox_id: string | null
           pdf_url: string | null
           pos_order_id: string | null
           prefix: string | null
           qr_url: string | null
           request_payload: Json | null
+          retry_count: number
           status: string
           subtotal: number
           tax_total: number
@@ -2253,14 +2256,17 @@ export type Database = {
           issue_date?: string
           last_error?: string | null
           location_id?: string | null
+          next_retry_at?: string | null
           number?: number | null
           order_id?: string | null
           organization_id: string
+          outbox_id?: string | null
           pdf_url?: string | null
           pos_order_id?: string | null
           prefix?: string | null
           qr_url?: string | null
           request_payload?: Json | null
+          retry_count?: number
           status?: string
           subtotal?: number
           tax_total?: number
@@ -2285,14 +2291,17 @@ export type Database = {
           issue_date?: string
           last_error?: string | null
           location_id?: string | null
+          next_retry_at?: string | null
           number?: number | null
           order_id?: string | null
           organization_id?: string
+          outbox_id?: string | null
           pdf_url?: string | null
           pos_order_id?: string | null
           prefix?: string | null
           qr_url?: string | null
           request_payload?: Json | null
+          retry_count?: number
           status?: string
           subtotal?: number
           tax_total?: number
