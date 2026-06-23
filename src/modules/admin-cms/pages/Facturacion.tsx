@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { FileText, RefreshCw, Send } from "lucide-react";
+import { FileText, RefreshCw, Send, Plug, Wand2 } from "lucide-react";
+import { calculateNitDv, isValidNitDv } from "../lib/nitDv";
 
 interface Config {
   id?: string;
@@ -87,6 +88,50 @@ export default function Facturacion() {
     const { data, error } = await supabase.functions.invoke("innapsis-status", { body: { invoice_id } });
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else toast({ title: "Consulta enviada", description: JSON.stringify(data).slice(0, 120) });
+  };
+
+  const computedDv = cfg.nit ? calculateNitDv(cfg.nit) : null;
+  const dvMismatch = !!cfg.dv && computedDv !== null && String(computedDv) !== String(cfg.dv).trim();
+
+  const validateBeforeSave = (): string | null => {
+    if (!/^\d{6,15}$/.test(cfg.nit ?? "")) return "NIT inválido: solo dígitos (6-15).";
+    if (cfg.dv && !isValidNitDv(cfg.nit, cfg.dv)) return `DV no coincide con el NIT. Esperado: ${computedDv}`;
+    if (!cfg.api_key || cfg.api_key.length < 8) return "API Key Innapsis requerida.";
+    if (cfg.resolution_from && cfg.resolution_to && cfg.resolution_from > cfg.resolution_to) {
+      return "Rango de resolución inválido: 'desde' debe ser menor o igual que 'hasta'.";
+    }
+    if (
+      cfg.resolution_current &&
+      cfg.resolution_from &&
+      cfg.resolution_to &&
+      (cfg.resolution_current < cfg.resolution_from || cfg.resolution_current > cfg.resolution_to)
+    ) {
+      return "Consecutivo actual está fuera del rango autorizado.";
+    }
+    return null;
+  };
+
+  const testConnection = async () => {
+    if (!cfg.id) {
+      toast({ title: "Guarda primero", description: "Guarda la configuración antes de probar la conexión.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke("innapsis-status", {
+      body: { ping: true, environment: cfg.environment },
+    });
+    setLoading(false);
+    if (error) toast({ title: "Conexión fallida", description: error.message, variant: "destructive" });
+    else toast({ title: "Conexión Innapsis OK", description: (data as any)?.message ?? "Token obtenido correctamente." });
+  };
+
+  const autofillDv = () => {
+    const dv = calculateNitDv(cfg.nit);
+    if (dv === null) {
+      toast({ title: "NIT inválido", description: "Verifica los dígitos del NIT.", variant: "destructive" });
+      return;
+    }
+    setCfg({ ...cfg, dv: String(dv) });
   };
 
   if (!currentOrg) return <div className="p-6">Selecciona una organización</div>;
