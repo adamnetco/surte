@@ -170,7 +170,20 @@ export default function Facturacion() {
 
             <div className="grid md:grid-cols-2 gap-3">
               <div><Label>NIT (saas_tenant_id)</Label><Input value={cfg.nit} onChange={(e) => setCfg({ ...cfg, nit: e.target.value })} placeholder="900738794" /></div>
-              <div><Label>DV</Label><Input value={cfg.dv ?? ""} onChange={(e) => setCfg({ ...cfg, dv: e.target.value })} /></div>
+              <div>
+                <Label>DV {computedDv !== null && <span className="text-xs text-muted-foreground">(calculado: {computedDv})</span>}</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={cfg.dv ?? ""}
+                    onChange={(e) => setCfg({ ...cfg, dv: e.target.value })}
+                    className={dvMismatch ? "border-destructive" : ""}
+                  />
+                  <Button type="button" variant="outline" size="icon" onClick={autofillDv} title="Calcular DV desde NIT">
+                    <Wand2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                {dvMismatch && <p className="text-xs text-destructive mt-1">El DV no coincide con el NIT (esperado {computedDv}).</p>}
+              </div>
               <div className="md:col-span-2"><Label>Razón social</Label><Input value={cfg.razon_social ?? ""} onChange={(e) => setCfg({ ...cfg, razon_social: e.target.value })} /></div>
               <div className="md:col-span-2"><Label>API Key Innapsis</Label><Input type="password" value={cfg.api_key} onChange={(e) => setCfg({ ...cfg, api_key: e.target.value })} placeholder="entregada por Innapsis" /></div>
               <div><Label>Resolución DIAN</Label><Input value={cfg.resolution_number ?? ""} onChange={(e) => setCfg({ ...cfg, resolution_number: e.target.value })} /></div>
@@ -184,7 +197,13 @@ export default function Facturacion() {
               </div>
             </div>
 
-            <Button onClick={save} disabled={loading}>Guardar configuración</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={save} disabled={loading}>Guardar configuración</Button>
+              <Button variant="outline" onClick={testConnection} disabled={loading || !cfg.id}>
+                <Plug className="h-4 w-4 mr-1" /> Probar conexión
+              </Button>
+              {!cfg.id && <p className="text-xs text-muted-foreground self-center">Guarda primero para habilitar el test.</p>}
+            </div>
           </Card>
         </TabsContent>
 
