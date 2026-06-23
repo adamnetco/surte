@@ -11,7 +11,7 @@
 - ✅ **Slice 2 — Configuración admin** (`/casas-de-cambio`): CRUD divisas con seed COP/USD/EUR/VES, creación de pares con auto-spread, registro de cotizaciones con histórico inmutable
 - 🚧 Slice 3 — POS FX (pantalla de transacción + captura cliente + umbral UIAF)
 - ✅ **Slice 4 — Caja multi-divisa**: `cash_sessions.balances` JSONB por divisa, `cash_session_counts.currency`, trigger `fx_transactions_update_session_balances` ajusta saldos automáticamente, RPC `close_cash_session_multi_currency` con conteo por divisa y diff calculado, `CloseFxSessionDialog` con tabs por divisa + arqueo por denominación
-- 🚧 Slice 5 — Reportería + UIAF
+- ✅ **Slice 5 — Reportería + UIAF** (`/casas-de-cambio/reportes`): dashboard mensual con totales por divisa, conteo de operaciones, marcas UIAF/ROS; exportación CSV (BOM UTF-8) compatible con plantilla UIAF mensual de Casas de Cambio incluyendo datos de cliente, montos, tasas y motivo ROS
 - 🚧 Slice 6 — Reglas anti-fraude automáticas
 
 
