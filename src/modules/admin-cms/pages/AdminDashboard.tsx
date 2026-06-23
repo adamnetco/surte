@@ -4,7 +4,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import type { AppRole } from "@/modules/auth/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2, Printer } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2, Printer, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
@@ -102,16 +102,17 @@ class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string 
 
 // Solo enlaces operativos del negocio. Sitios, Licencias, Catálogos Base viven en /superadmin.
 const operationsLinks = [
-  { path: "/pos", label: "POS", icon: Monitor, roles: ["superadmin", "admin", "editor"] as AppRole[] },
-  { path: "/mesas", label: "Mesas", icon: Utensils, roles: ["superadmin", "admin", "editor"] as AppRole[] },
-  { path: "/kds", label: "KDS (Cocina)", icon: ChefHat, roles: ["superadmin", "admin", "editor"] as AppRole[] },
-  { path: "/facturacion", label: "Facturación", icon: Receipt, roles: ["superadmin", "admin"] as AppRole[] },
-  { path: "/compras", label: "Compras", icon: ShoppingBag, roles: ["superadmin", "admin"] as AppRole[] },
-  { path: "/inventario", label: "Inventario Avanzado", icon: Warehouse, roles: ["superadmin", "admin"] as AppRole[] },
-  { path: "/planes", label: "Planes", icon: CreditCard, roles: ["superadmin", "admin"] as AppRole[] },
-  { path: "/billing", label: "Billing", icon: Wallet, roles: ["superadmin", "admin"] as AppRole[] },
-  { path: "/gerente-ia", label: "Gerente IA", icon: Sparkles, roles: ["superadmin", "admin"] as AppRole[] },
-  { path: "/onboarding", label: "Onboarding", icon: Rocket, roles: ["superadmin", "admin"] as AppRole[] },
+  { path: "/pos", label: "POS", icon: Monitor, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null as string | null },
+  { path: "/mesas", label: "Mesas", icon: Utensils, roles: ["superadmin", "admin", "editor"] as AppRole[], module: "mesas" },
+  { path: "/kds", label: "KDS (Cocina)", icon: ChefHat, roles: ["superadmin", "admin", "editor"] as AppRole[], module: "kds" },
+  { path: "/facturacion", label: "Facturación", icon: Receipt, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { path: "/casas-de-cambio", label: "Casas de Cambio", icon: ArrowRightLeft, roles: ["superadmin", "admin"] as AppRole[], module: "casas-de-cambio" },
+  { path: "/compras", label: "Compras", icon: ShoppingBag, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { path: "/inventario", label: "Inventario Avanzado", icon: Warehouse, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { path: "/planes", label: "Planes", icon: CreditCard, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { path: "/billing", label: "Billing", icon: Wallet, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { path: "/gerente-ia", label: "Gerente IA", icon: Sparkles, roles: ["superadmin", "admin"] as AppRole[], module: null },
+  { path: "/onboarding", label: "Onboarding", icon: Rocket, roles: ["superadmin", "admin"] as AppRole[], module: null },
 ];
 
 const AdminDashboard = () => {
@@ -125,7 +126,7 @@ const AdminDashboard = () => {
 
   const { hasModule, currentOrg } = useOrganization();
   const tabs = allTabs.filter((t) => t.roles.includes(role) && (!t.module || hasModule(t.module)));
-  const opsLinks = operationsLinks.filter((l) => l.roles.includes(role));
+  const opsLinks = operationsLinks.filter((l) => l.roles.includes(role) && (!l.module || hasModule(l.module)));
 
   useEffect(() => {
     if (!loading && role === "editor") setActiveTab("orders");
