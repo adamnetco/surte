@@ -384,11 +384,37 @@ Deno.serve(async (req) => {
       });
       const responseJson = await res.json().catch(() => ({}));
 
-      const status = res.ok ? "sent" : "error";
+      // 5xx => retry-eligible. 4xx => permanent error (no retry). 2xx => sent.
+      const retryable = !res.ok && res.status >= 500;
+      const status = res.ok ? "sent" : (retryable ? "retrying" : "error");
+
+      let outboxId: string | null = null;
+      if (retryable) {
+        // Encolar retry server-side con backoff exponencial vía sync-outbox-flush.
+        const { data: outbox } = await admin.from("sync_outbox").insert({
+          organization_id,
+          target: "einvoice_emit_retry",
+          payload: { invoice_id: inv.id, organization_id },
+          status: "pending",
+          attempts: 0,
+          max_attempts: 5,
+          next_attempt_at: new Date(Date.now() + 60_000).toISOString(),
+          last_error: `HTTP ${res.status}`,
+        }).select("id").maybeSingle();
+        outboxId = outbox?.id ?? null;
+      }
+
       await admin.from("electronic_invoices").update({
         status,
         dian_response: responseJson,
         last_error: res.ok ? null : `HTTP ${res.status}`,
+        retry_count: retryable ? 0 : undefined,
+        next_retry_at: retryable ? new Date(Date.now() + 60_000).toISOString() : null,
+        outbox_id: outboxId,
+        cufe: responseJson?.cufe ?? responseJson?.Cufe ?? null,
+        qr_url: responseJson?.qr_url ?? responseJson?.QrUrl ?? null,
+        xml_url: responseJson?.xml_url ?? responseJson?.XmlUrl ?? null,
+        pdf_url: responseJson?.pdf_url ?? responseJson?.PdfUrl ?? null,
       }).eq("id", inv.id);
 
       if (res.ok) {
@@ -400,34 +426,70 @@ Deno.serve(async (req) => {
       await admin.from("einvoice_events").insert({
         organization_id,
         invoice_id: inv.id,
-        event_type: "emit",
+        event_type: retryable ? "emit_retry_scheduled" : "emit",
         status,
-        message: res.ok ? "Documento enviado a Innapsis" : `Error HTTP ${res.status}`,
+        message: res.ok
+          ? "Documento enviado a Innapsis"
+          : retryable
+            ? `Innapsis HTTP ${res.status} — reintento encolado (1m, 5m, 30m, 2h, 12h)`
+            : `Error HTTP ${res.status}`,
         payload,
         response: responseJson,
         performed_by: userId,
       });
 
-      return new Response(JSON.stringify({ success: res.ok, invoice_id: inv.id, track_id: trackId, response: responseJson }), {
-        status: res.ok ? 200 : 502,
+      return new Response(JSON.stringify({
+        success: res.ok,
+        invoice_id: inv.id,
+        track_id: trackId,
+        retrying: retryable,
+        response: responseJson,
+      }), {
+        status: res.ok ? 200 : (retryable ? 202 : 502),
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch (e: any) {
-      await admin.from("electronic_invoices").update({
-        status: "error",
+      // Error de red → tratamos como retryable
+      const { data: outbox } = await admin.from("sync_outbox").insert({
+        organization_id,
+        target: "einvoice_emit_retry",
+        payload: { invoice_id: inv.id, organization_id },
+        status: "pending",
+        attempts: 0,
+        max_attempts: 5,
+        next_attempt_at: new Date(Date.now() + 60_000).toISOString(),
         last_error: e.message,
+      }).select("id").maybeSingle();
+
+      await admin.from("electronic_invoices").update({
+        status: "retrying",
+        last_error: e.message,
+        next_retry_at: new Date(Date.now() + 60_000).toISOString(),
+        outbox_id: outbox?.id ?? null,
       }).eq("id", inv.id);
+
       await admin.from("einvoice_events").insert({
         organization_id,
         invoice_id: inv.id,
-        event_type: "emit",
-        status: "error",
-        message: e.message,
+        event_type: "emit_retry_scheduled",
+        status: "retrying",
+        message: `Error de red — reintento encolado: ${e.message}`,
         payload,
         performed_by: userId,
       });
-      throw e;
+
+      return new Response(JSON.stringify({
+        success: false,
+        invoice_id: inv.id,
+        track_id: trackId,
+        retrying: true,
+        error: e.message,
+      }), {
+        status: 202,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
   } catch (err: any) {
     console.error("innapsis-emit error", err);
     return new Response(JSON.stringify({ error: err.message ?? "unknown" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
