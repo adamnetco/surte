@@ -237,6 +237,7 @@ const App = () => (
                 <AuthHealthMonitor />
                 <Suspense fallback={null}><OnboardingChecklist /></Suspense>
                 <SwipeProvider>
+                  <PageBreadcrumbs />
                   <Suspense fallback={<RouteFallback />}>
                   <Routes>
                     <Route path="/" element={<TenantHome />} />
