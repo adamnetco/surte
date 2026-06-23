@@ -53,7 +53,38 @@ Deno.serve(async (req) => {
     if (ae || !c?.claims) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const userId = c.claims.sub;
 
-    const { invoice_id, tipo_archivo = "pdf" } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { invoice_id, tipo_archivo = "pdf", ping, environment } = body as {
+      invoice_id?: string; tipo_archivo?: string; ping?: boolean; environment?: "dev" | "prod";
+    };
+
+    // Modo PING: prueba autenticación contra Innapsis usando la config activa del usuario.
+    if (ping) {
+      const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: memberships } = await admin
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", userId)
+        .eq("is_active", true);
+      const orgIds = (memberships ?? []).map((m: any) => m.organization_id);
+      if (orgIds.length === 0) {
+        return new Response(JSON.stringify({ error: "Sin organización" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      let query = admin.from("einvoice_configs").select("*").in("organization_id", orgIds);
+      if (environment) query = query.eq("environment", environment);
+      const { data: cfgs } = await query.limit(1);
+      const cfg = cfgs?.[0];
+      if (!cfg) return new Response(JSON.stringify({ error: "Sin configuración Innapsis" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      try {
+        const token = await getToken(cfg.nit, cfg.api_key);
+        return new Response(JSON.stringify({ success: true, message: `Token obtenido (${cfg.environment.toUpperCase()})`, token_preview: token.slice(0, 12) + "…" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     if (!invoice_id) return new Response(JSON.stringify({ error: "invoice_id requerido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
