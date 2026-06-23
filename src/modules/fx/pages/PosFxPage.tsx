@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, ShieldAlert, Receipt, Loader2 } from "lucide-react";
+import { ArrowLeftRight, ShieldAlert, Receipt, Loader2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,8 @@ import {
   useFxTransactionsRecent,
   useUiafThreshold,
 } from "../hooks/useFxTransactions";
+import { useActiveFxCashSession } from "../hooks/useFxCashSession";
+import CloseFxSessionDialog from "../components/CloseFxSessionDialog";
 
 const fmt = (n: number, decimals = 2) =>
   Number.isFinite(n) ? n.toLocaleString("es-CO", { maximumFractionDigits: decimals, minimumFractionDigits: decimals }) : "—";
@@ -28,6 +30,8 @@ export default function PosFxPage() {
   const { data: threshold } = useUiafThreshold();
   const { data: recent = [] } = useFxTransactionsRecent(10);
   const createTx = useCreateFxTransaction();
+  const { data: activeSession } = useActiveFxCashSession();
+  const [closeOpen, setCloseOpen] = useState(false);
 
   const [pairId, setPairId] = useState<string>("");
   const [operation, setOperation] = useState<"buy" | "sell">("buy");
@@ -135,10 +139,23 @@ export default function PosFxPage() {
     <div className="min-h-[100dvh] bg-muted/20">
       <div className="max-w-7xl mx-auto p-4 md:p-6 grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <ArrowLeftRight className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold">POS · Casa de Cambio</h1>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ArrowLeftRight className="h-5 w-5 text-primary" />
+              <h1 className="text-xl font-bold">POS · Casa de Cambio</h1>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCloseOpen(true)}
+              disabled={!activeSession}
+              title={activeSession ? "Arqueo multi-divisa" : "Sin sesión de caja abierta"}
+            >
+              <Wallet className="h-4 w-4 mr-1.5" />
+              Cerrar caja FX
+            </Button>
           </div>
+          <CloseFxSessionDialog open={closeOpen} onOpenChange={setCloseOpen} />
 
           <Card>
             <CardHeader className="pb-2">

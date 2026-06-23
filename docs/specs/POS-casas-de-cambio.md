@@ -1,6 +1,6 @@
 # POS — Módulo Casas de Cambio (FX)
 
-**Estado:** IN_BUILD (Slice 1 + 2 SHIPPED)
+**Estado:** IN_BUILD (Slice 1 + 2 + 4 SHIPPED)
 **Módulo nuevo:** `fx` (Foreign Exchange)
 **`business_type` nuevo:** `casa_cambio` ✅ aplicado
 **Módulo registry name:** `casas-de-cambio` ✅ aplicado
@@ -10,7 +10,7 @@
 - ✅ **Slice 1 — Schema + módulo registry** (migración aplicada): 5 tablas (fx_currencies, fx_pairs, fx_rates, fx_transactions, fx_audit_log) + RLS por organización + triggers de auditoría inmutable + business_type `casa_cambio` + columnas UIAF configurables en organizations + activación automática del módulo
 - ✅ **Slice 2 — Configuración admin** (`/casas-de-cambio`): CRUD divisas con seed COP/USD/EUR/VES, creación de pares con auto-spread, registro de cotizaciones con histórico inmutable
 - 🚧 Slice 3 — POS FX (pantalla de transacción + captura cliente + umbral UIAF)
-- 🚧 Slice 4 — Caja multi-divisa
+- ✅ **Slice 4 — Caja multi-divisa**: `cash_sessions.balances` JSONB por divisa, `cash_session_counts.currency`, trigger `fx_transactions_update_session_balances` ajusta saldos automáticamente, RPC `close_cash_session_multi_currency` con conteo por divisa y diff calculado, `CloseFxSessionDialog` con tabs por divisa + arqueo por denominación
 - 🚧 Slice 5 — Reportería + UIAF
 - 🚧 Slice 6 — Reglas anti-fraude automáticas
 
