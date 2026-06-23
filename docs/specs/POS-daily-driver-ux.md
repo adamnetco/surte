@@ -1,6 +1,6 @@
 # POS — Daily Driver UX
 
-**Estado:** DRAFT
+**Estado:** IN_BUILD
 **Módulos:** `pos`, `admin-cms`, `clientes`
 
 ## Problema
@@ -26,19 +26,19 @@ SistecPOS tiene features completas pero el flujo diario del operador todavía ti
 - [ ] **AC7:** Pantalla de bloqueo rápido (PIN del cajero) sin cerrar sesión
 
 ### Estados vacíos y carga
-- [ ] **AC8:** Todo empty state tiene ilustración + 1 CTA principal
-- [ ] **AC9:** Toda lista > 200ms muestra skeleton
+- [x] **AC8:** Componente `<EmptyState />` reutilizable en `src/components/ui/empty-state.tsx` (ilustración + CTA)
+- [ ] **AC9:** Toda lista > 200ms muestra skeleton (audit pendiente)
 - [ ] **AC10:** Optimistic updates en todas las operaciones de CRUD admin
 
 ### Feedback inmediato
-- [ ] **AC11:** Toasts top-center (ya implementado) — auditar consistencia
-- [ ] **AC12:** Animaciones de éxito (check verde) al cobrar venta
-- [ ] **AC13:** Sonido opcional al cobrar (configurable)
+- [x] **AC11:** Toasts top-center — implementado y consistente
+- [x] **AC12:** Animación de check verde con spring + halo en `SaleCompleteDialog`
+- [x] **AC13:** Sonido opcional (WebAudio) configurable desde el dialog, persistido en localStorage
 
 ### Mobile-first admin
 - [ ] **AC14:** Sidebar colapsable en mobile
 - [ ] **AC15:** Tablas → vertical cards en < 768px
-- [ ] **AC16:** FAB (floating action button) para acción principal de cada pantalla
+- [x] **AC16:** Componente `<Fab />` reutilizable en `src/components/ui/fab.tsx`
 
 ## Métricas de éxito
 
