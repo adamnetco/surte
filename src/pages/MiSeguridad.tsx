@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ShieldCheck, KeyRound, RefreshCw, Loader2, Copy, LogIn } from "lucide-react";
+import { ShieldCheck, KeyRound, RefreshCw, Loader2, Copy, LogIn, Fingerprint } from "lucide-react";
+import { startRegistration } from "@simplewebauthn/browser";
 
 interface EnrollResp { otpauth_uri: string; secret: string; }
 interface CodesResp { codes: string[]; }
@@ -45,15 +46,35 @@ const MiSeguridad = () => {
     queryKey: ["auth-security-status"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return { totp: false, recovery: 0 };
-      const [t, r] = await Promise.all([
+      if (!u.user) return { totp: false, recovery: 0, passkeys: 0 };
+      const [t, r, p] = await Promise.all([
         (supabase as any).from("auth_factors").select("id")
           .eq("user_id", u.user.id).eq("factor_type", "totp").not("verified_at", "is", null),
         (supabase as any).from("auth_recovery_codes").select("id")
           .eq("user_id", u.user.id).is("used_at", null),
+        (supabase as any).from("auth_webauthn_credentials").select("id")
+          .eq("user_id", u.user.id),
       ]);
-      return { totp: (t.data?.length ?? 0) > 0, recovery: r.data?.length ?? 0 };
+      return { totp: (t.data?.length ?? 0) > 0, recovery: r.data?.length ?? 0, passkeys: p.data?.length ?? 0 };
     },
+  });
+
+  const enrollPasskey = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke<{ options: any; challenge_token: string }>(
+        "auth-webauthn-register-options", { body: {} },
+      );
+      if (error || !data) throw error ?? new Error("options_failed");
+      const cred = await startRegistration({ optionsJSON: data.options });
+      const { data: v, error: vErr } = await supabase.functions.invoke(
+        "auth-webauthn-register-verify",
+        { body: { credential: cred, challenge_token: data.challenge_token, device_label: navigator.userAgent.slice(0, 80) } },
+      );
+      if (vErr) throw vErr;
+      return v;
+    },
+    onSuccess: () => { toast.success("Passkey registrada"); status.refetch(); },
+    onError: (e: any) => toast.error(e?.message ?? "No pudimos registrar la passkey"),
   });
 
   const startEnroll = useMutation({
@@ -97,6 +118,24 @@ const MiSeguridad = () => {
         <h1 className="text-2xl font-bold flex items-center gap-2"><ShieldCheck className="text-primary" />Mi seguridad</h1>
         <p className="text-sm text-muted-foreground">Gestiona segundo factor y códigos de recuperación.</p>
       </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2"><Fingerprint size={20}/> Passkey / FIDO2</span>
+            <Badge variant={status.data?.passkeys ? "default" : "secondary"}>
+              {status.data?.passkeys ?? 0} registradas
+            </Badge>
+          </CardTitle>
+          <CardDescription>Login sin contraseña con tu llave biométrica o de hardware.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={() => enrollPasskey.mutate()} disabled={enrollPasskey.isPending}>
+            {enrollPasskey.isPending && <Loader2 className="animate-spin mr-2" size={16} />}
+            Registrar nueva passkey
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
