@@ -72,6 +72,7 @@ const Facturacion = lazy(() => import("./modules/admin-cms").then((m) => ({ defa
 const CasasDeCambio = lazy(() => import("./modules/fx").then((m) => ({ default: m.CasasDeCambioPage })));
 const PosFx = lazy(() => import("./modules/fx").then((m) => ({ default: m.PosFxPage })));
 const FxReports = lazy(() => import("./modules/fx").then((m) => ({ default: m.FxReportsPage })));
+const FxFraud = lazy(() => import("./modules/fx").then((m) => ({ default: m.FxFraudPage })));
 const Planes = lazy(() => import("./modules/clientes").then((m) => ({ default: m.PlanesPage })));
 const Billing = lazy(() => import("./modules/clientes").then((m) => ({ default: m.BillingPage })));
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
@@ -288,6 +289,7 @@ const App = () => (
                     <Route path="/facturacion" element={<Facturacion />} />
                     <Route path="/casas-de-cambio" element={<RoleGuard section="admin"><CasasDeCambio /></RoleGuard>} />
                     <Route path="/casas-de-cambio/reportes" element={<RoleGuard section="admin"><FxReports /></RoleGuard>} />
+                    <Route path="/casas-de-cambio/anti-fraude" element={<RoleGuard section="admin"><FxFraud /></RoleGuard>} />
                     <Route path="/compras" element={<Compras />} />
                     <Route path="/admin/health-logs" element={<RoleGuard section="admin"><HealthLogs /></RoleGuard>} />
                     <Route path="/gerente-ia" element={<GerenteIA />} />
