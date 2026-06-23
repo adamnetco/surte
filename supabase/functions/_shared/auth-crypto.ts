@@ -145,3 +145,34 @@ export async function hashRecovery(code: string): Promise<string> {
   const h = await crypto.subtle.digest("SHA-256", enc.encode(norm));
   return bytesToB64(new Uint8Array(h));
 }
+
+// ----- Signed challenge tokens (stateless, HMAC-SHA256) -----
+async function hmacKey(): Promise<CryptoKey> {
+  const raw = Deno.env.get("AUTH_ENCRYPTION_KEY") ?? "fallback-key";
+  const bytes = await crypto.subtle.digest("SHA-256", enc.encode(raw + "|hmac"));
+  return crypto.subtle.importKey("raw", bytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+}
+
+function b64urlFromBytes(b: Uint8Array): string {
+  return bytesToB64(b).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export async function signChallenge(payload: { challenge: string; email: string; type: "register" | "login"; ttlSec?: number }): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + (payload.ttlSec ?? 300);
+  const body = `${payload.challenge}.${payload.email.toLowerCase()}.${payload.type}.${exp}`;
+  const key = await hmacKey();
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(body)));
+  return body + "." + b64urlFromBytes(sig);
+}
+
+export async function verifyChallenge(token: string, email: string, type: "register" | "login"): Promise<string | null> {
+  const parts = token.split(".");
+  if (parts.length !== 5) return null;
+  const [challenge, em, ty, expStr, sig] = parts;
+  if (em !== email.toLowerCase() || ty !== type) return null;
+  if (Number(expStr) * 1000 < Date.now()) return null;
+  const body = `${challenge}.${em}.${ty}.${expStr}`;
+  const key = await hmacKey();
+  const ok = await crypto.subtle.verify("HMAC", key, b64ToBytes(sig.replace(/-/g, "+").replace(/_/g, "/") + "==="), enc.encode(body));
+  return ok ? challenge : null;
+}
