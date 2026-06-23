@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -223,5 +224,64 @@ export function useRemoveWatchlistEntry() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fx-fraud-watchlist"] }),
+  });
+}
+
+/**
+ * Suscripción Realtime a fx_fraud_alerts: invalida caches al detectar cambios.
+ */
+export function useFxFraudAlertsRealtime() {
+  const { currentOrg } = useOrganization();
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!currentOrg?.id) return;
+    const channel = supabase
+      .channel(`fx-fraud-alerts-${currentOrg.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "fx_fraud_alerts",
+          filter: `organization_id=eq.${currentOrg.id}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["fx-fraud-alerts"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentOrg?.id, qc]);
+}
+
+/**
+ * Agregados del día por documento de cliente, para alimentar el simulador anti-fraude.
+ */
+export function useFraudDailyAggregate(docNumber: string | undefined, windowMinutes = 60) {
+  const { currentOrg } = useOrganization();
+  return useQuery({
+    queryKey: ["fx-fraud-daily-agg", currentOrg?.id, docNumber, windowMinutes],
+    enabled: !!currentOrg?.id && !!docNumber,
+    queryFn: async () => {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const windowStart = new Date(Date.now() - windowMinutes * 60_000);
+      const { data, error } = await (supabase as any)
+        .from("fx_transactions")
+        .select("from_amount,to_amount,from_currency_id,to_currency_id,operation,created_at")
+        .eq("organization_id", currentOrg!.id)
+        .eq("customer_doc_number", docNumber)
+        .gte("created_at", startOfDay.toISOString());
+      if (error) throw error;
+      const rows = (data ?? []) as Array<{ from_amount: number; created_at: string }>;
+      // Aproximación: monto COP = from_amount cuando la operación es venta de divisa al cliente.
+      // El simulador acepta cop_amount explícito, así que devolvemos solo conteos + suma cruda.
+      const ops_today = rows.length;
+      const amount_today_raw = rows.reduce((s, r) => s + Number(r.from_amount ?? 0), 0);
+      const ops_last_window = rows.filter((r) => new Date(r.created_at) >= windowStart).length;
+      return { ops_today, amount_today_raw, ops_last_window, window_minutes: windowMinutes };
+    },
   });
 }
