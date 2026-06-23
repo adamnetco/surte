@@ -3376,6 +3376,7 @@ export type Database = {
           signing_key_id: string
           start_date: string | null
           status: string
+          subscription_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3398,6 +3399,7 @@ export type Database = {
           signing_key_id: string
           start_date?: string | null
           status?: string
+          subscription_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3420,6 +3422,7 @@ export type Database = {
           signing_key_id?: string
           start_date?: string | null
           status?: string
+          subscription_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3443,6 +3446,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_tenant_entitlements_modules"
             referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "licenses_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -8097,6 +8107,14 @@ export type Database = {
         Returns: Json
       }
       assert_org_writable: { Args: { _org_id: string }; Returns: undefined }
+      auto_renew_subscriptions: {
+        Args: never
+        Returns: {
+          new_period_end: string
+          organization_id: string
+          subscription_id: string
+        }[]
+      }
       can_access_section: { Args: { _section: string }; Returns: boolean }
       can_write_org: { Args: { _org_id: string }; Returns: boolean }
       cancel_critical_action: {
@@ -8151,6 +8169,13 @@ export type Database = {
       enqueue_print_job: {
         Args: { _kind?: string; _order_id: string }
         Returns: string[]
+      }
+      expire_overdue_subscriptions: {
+        Args: never
+        Returns: {
+          organization_id: string
+          subscription_id: string
+        }[]
       }
       export_tenant_snapshot: { Args: { _org_id: string }; Returns: Json }
       get_admin_products_secure:
