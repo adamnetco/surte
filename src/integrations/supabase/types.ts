@@ -773,6 +773,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          currency: string
           denomination_id: string
           id: string
           kind: string
@@ -783,6 +784,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          currency?: string
           denomination_id: string
           id?: string
           kind?: string
@@ -793,6 +795,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          currency?: string
           denomination_id?: string
           id?: string
           kind?: string
@@ -819,6 +822,7 @@ export type Database = {
       }
       cash_sessions: {
         Row: {
+          balances: Json
           cash_register_id: string
           closed_at: string | null
           closed_by: string | null
@@ -843,6 +847,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          balances?: Json
           cash_register_id: string
           closed_at?: string | null
           closed_by?: string | null
@@ -867,6 +872,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          balances?: Json
           cash_register_id?: string
           closed_at?: string | null
           closed_by?: string | null
@@ -8524,6 +8530,10 @@ export type Database = {
         Returns: Json
       }
       cleanup_sso_tokens: { Args: never; Returns: number }
+      close_cash_session_multi_currency: {
+        Args: { _counts: Json; _notes?: string; _session_id: string }
+        Returns: Json
+      }
       close_cash_session_with_counts: {
         Args: { _counts: Json; _session_id: string }
         Returns: Json
@@ -8580,6 +8590,10 @@ export type Database = {
         }[]
       }
       export_tenant_snapshot: { Args: { _org_id: string }; Returns: Json }
+      fx_apply_session_balance: {
+        Args: { _currency_code: string; _delta: number; _session_id: string }
+        Returns: undefined
+      }
       get_admin_products_secure:
         | {
             Args: never
