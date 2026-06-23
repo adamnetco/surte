@@ -27,6 +27,7 @@ const PlansCatalog = lazy(() => import("@/modules/superadmin/pages/PlansCatalog"
 const TenantEntitlements = lazy(() => import("@/modules/superadmin/pages/TenantEntitlements"));
 const SoporteConfig = lazy(() => import("@/modules/superadmin/pages/SoporteConfig"));
 const CriticalActionsQueue = lazy(() => import("@/modules/superadmin/pages/CriticalActionsQueue"));
+const AuditLogViewer = lazy(() => import("@/modules/superadmin/pages/AuditLogViewer"));
 const SitiosTenantRoute = lazy(() => import("@/modules/superadmin/pages/SitiosTenantRoute"));
 
 const SyncSection = () => (
