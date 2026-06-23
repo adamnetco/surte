@@ -8096,6 +8096,7 @@ export type Database = {
         Args: { _org_id: string; _reason?: string }
         Returns: Json
       }
+      assert_org_writable: { Args: { _org_id: string }; Returns: undefined }
       can_access_section: { Args: { _section: string }; Returns: boolean }
       can_write_org: { Args: { _org_id: string }; Returns: boolean }
       cancel_critical_action: {
