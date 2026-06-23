@@ -101,7 +101,11 @@ export function useOpenFxSession() {
   const qc = useQueryClient();
   const { currentOrg } = useOrganization();
   return useMutation({
-    mutationFn: async (input: { locationId?: string | null; openingBalances: Record<string, number> }) => {
+    mutationFn: async (input: {
+      locationId: string;
+      cashRegisterId: string;
+      openingBalances: Record<string, number>;
+    }) => {
       if (!currentOrg?.id) throw new Error("Sin organización");
       const userResp = await supabase.auth.getUser();
       const userId = userResp.data.user?.id;
@@ -114,10 +118,12 @@ export function useOpenFxSession() {
         .from("cash_sessions")
         .insert({
           organization_id: currentOrg.id,
-          location_id: input.locationId ?? null,
+          location_id: input.locationId,
+          cash_register_id: input.cashRegisterId,
           opened_by: userId ?? null,
           opening_amount: copOpening,
-          balances,
+          expected_amount: copOpening,
+          balances: balances as any,
           status: "open",
         })
         .select("id")
