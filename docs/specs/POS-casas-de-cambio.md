@@ -1,18 +1,19 @@
 # POS — Módulo Casas de Cambio (FX)
 
-**Estado:** IN_BUILD (Slice 1 + 2 + 4 + 5 + 6 SHIPPED)
+**Estado:** SHIPPED (Slices 1–6 completos)
 **Módulo nuevo:** `fx` (Foreign Exchange)
 **`business_type` nuevo:** `casa_cambio` ✅ aplicado
 **Módulo registry name:** `casas-de-cambio` ✅ aplicado
 
 ## Avance
 
-- ✅ **Slice 1 — Schema + módulo registry** (migración aplicada): 5 tablas (fx_currencies, fx_pairs, fx_rates, fx_transactions, fx_audit_log) + RLS por organización + triggers de auditoría inmutable + business_type `casa_cambio` + columnas UIAF configurables en organizations + activación automática del módulo
+- ✅ **Slice 1 — Schema + módulo registry**: 5 tablas (fx_currencies, fx_pairs, fx_rates, fx_transactions, fx_audit_log) + RLS + triggers de auditoría inmutable + business_type `casa_cambio` + columnas UIAF configurables en organizations + activación automática del módulo
 - ✅ **Slice 2 — Configuración admin** (`/casas-de-cambio`): CRUD divisas con seed COP/USD/EUR/VES, creación de pares con auto-spread, registro de cotizaciones con histórico inmutable
-- 🚧 Slice 3 — POS FX (pantalla de transacción + captura cliente + umbral UIAF)
-- ✅ **Slice 4 — Caja multi-divisa**: `cash_sessions.balances` JSONB por divisa, `cash_session_counts.currency`, trigger `fx_transactions_update_session_balances` ajusta saldos automáticamente, RPC `close_cash_session_multi_currency` con conteo por divisa y diff calculado, `CloseFxSessionDialog` con tabs por divisa + arqueo por denominación
-- ✅ **Slice 5 — Reportería + UIAF** (`/casas-de-cambio/reportes`): dashboard mensual con totales por divisa, conteo de operaciones, marcas UIAF/ROS; exportación CSV (BOM UTF-8) compatible con plantilla UIAF mensual de Casas de Cambio incluyendo datos de cliente, montos, tasas y motivo ROS
-- ✅ **Slice 6 — Reglas anti-fraude automáticas** (`/casas-de-cambio/anti-fraude`): 3 tablas (`fx_fraud_rules`, `fx_fraud_watchlist`, `fx_fraud_alerts`) + trigger `fx_evaluate_fraud_rules` que evalúa cada INSERT contra reglas activas (estructuración por frecuencia/monto, operaciones rápidas, operación individual grande, datos cliente incompletos, watchlist) y marca `is_suspicious=true` automáticamente para severidades high/critical. Admin UI con 3 tabs: Alertas (revisar/descartar/escalar a ROS), Reglas (activar/desactivar + auto-flag) y Vigilancia (CRUD lista negra por documento)
+- ✅ **Slice 3 — Motor de precios y publicación** (`/casas-de-cambio/pricing` + `/casas-de-cambio/tablero`): tabla `fx_pricing_rules` (spread compra/venta %, mín/máx, auto-publicar), columnas `is_published`/`published_at`/`base_rate` en `fx_rates`, RPC `fx_publish_rate` con validaciones de pertenencia, edge function `fx-import-trm` que consume datos.gov.co Banrep y publica con spread, tabla pública estilo "board" para clientes (`/casas-de-cambio/tablero`)
+- ✅ **Slice 4 — Caja multi-divisa**: `cash_sessions.balances` JSONB por divisa, `cash_session_counts.currency`, trigger `fx_transactions_update_session_balances` ajusta saldos automáticamente, RPC `close_cash_session_multi_currency`, `CloseFxSessionDialog` con tabs por divisa + arqueo por denominación
+- ✅ **Slice 5 — Reportería + UIAF** (`/casas-de-cambio/reportes`): dashboard mensual, exportación CSV plantilla UIAF
+- ✅ **Slice 6 — Anti-fraude automático + simulador + Realtime** (`/casas-de-cambio/anti-fraude`): reglas, watchlist, alertas, simulador what-if, exportación CSV auditoría, panel de razón del disparo, Realtime para refresh sin recarga
+
 
 
 
