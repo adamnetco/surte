@@ -292,6 +292,8 @@ const App = () => (
                     <Route path="/casas-de-cambio" element={<RoleGuard section="admin"><CasasDeCambio /></RoleGuard>} />
                     <Route path="/casas-de-cambio/reportes" element={<RoleGuard section="admin"><FxReports /></RoleGuard>} />
                     <Route path="/casas-de-cambio/anti-fraude" element={<RoleGuard section="admin"><FxFraud /></RoleGuard>} />
+                    <Route path="/casas-de-cambio/pricing" element={<RoleGuard section="admin"><FxPricing /></RoleGuard>} />
+                    <Route path="/casas-de-cambio/tablero" element={<FxPublicBoard />} />
                     <Route path="/compras" element={<Compras />} />
                     <Route path="/admin/health-logs" element={<RoleGuard section="admin"><HealthLogs /></RoleGuard>} />
                     <Route path="/gerente-ia" element={<GerenteIA />} />
