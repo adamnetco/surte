@@ -70,6 +70,7 @@ const KDS = lazy(() => import("./modules/pos").then((m) => ({ default: m.KDSPage
 const Inventario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InventarioPage })));
 const Facturacion = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.FacturacionPage })));
 const CasasDeCambio = lazy(() => import("./modules/fx").then((m) => ({ default: m.CasasDeCambioPage })));
+const PosFx = lazy(() => import("./modules/fx").then((m) => ({ default: m.PosFxPage })));
 const Planes = lazy(() => import("./modules/clientes").then((m) => ({ default: m.PlanesPage })));
 const Billing = lazy(() => import("./modules/clientes").then((m) => ({ default: m.BillingPage })));
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
@@ -279,6 +280,7 @@ const App = () => (
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
                     <Route path="/pos" element={<PosHub />} />
                     <Route path="/pos/vender" element={<POS />} />
+                    <Route path="/pos/fx" element={<PosFx />} />
                     <Route path="/mesas" element={<Mesas />} />
                     <Route path="/kds" element={<KDS />} />
                     <Route path="/inventario" element={<Inventario />} />
