@@ -73,6 +73,11 @@ export default function Facturacion() {
 
   const save = async () => {
     if (!currentOrg) return;
+    const err = validateBeforeSave();
+    if (err) {
+      toast({ title: "Configuración inválida", description: err, variant: "destructive" });
+      return;
+    }
     setLoading(true);
     const payload = { ...cfg, organization_id: currentOrg.id };
     const { error } = await supabase.from("einvoice_configs").upsert(payload, {
