@@ -1,6 +1,6 @@
 # POS — Integración Innapsis (Facturación Electrónica DIAN)
 
-**Estado:** IN_BUILD (Slices 1, 2 y 3 SHIPPED)
+**Estado:** IN_BUILD (Slices 1, 2, 3 y 4 SHIPPED)
 **Módulo:** `admin-cms` + `pos` + `storefront`
 **Tablas:** `einvoice_configs`, `electronic_invoices`, `einvoice_events`
 **Edge functions:** `innapsis-emit`, `innapsis-status`
