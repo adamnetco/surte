@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { FileText, RefreshCw, Send } from "lucide-react";
+import { FileText, RefreshCw, Send, Plug, Wand2 } from "lucide-react";
+import { calculateNitDv, isValidNitDv } from "../lib/nitDv";
 
 interface Config {
   id?: string;
@@ -72,6 +73,11 @@ export default function Facturacion() {
 
   const save = async () => {
     if (!currentOrg) return;
+    const err = validateBeforeSave();
+    if (err) {
+      toast({ title: "Configuración inválida", description: err, variant: "destructive" });
+      return;
+    }
     setLoading(true);
     const payload = { ...cfg, organization_id: currentOrg.id };
     const { error } = await supabase.from("einvoice_configs").upsert(payload, {
@@ -87,6 +93,50 @@ export default function Facturacion() {
     const { data, error } = await supabase.functions.invoke("innapsis-status", { body: { invoice_id } });
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else toast({ title: "Consulta enviada", description: JSON.stringify(data).slice(0, 120) });
+  };
+
+  const computedDv = cfg.nit ? calculateNitDv(cfg.nit) : null;
+  const dvMismatch = !!cfg.dv && computedDv !== null && String(computedDv) !== String(cfg.dv).trim();
+
+  const validateBeforeSave = (): string | null => {
+    if (!/^\d{6,15}$/.test(cfg.nit ?? "")) return "NIT inválido: solo dígitos (6-15).";
+    if (cfg.dv && !isValidNitDv(cfg.nit, cfg.dv)) return `DV no coincide con el NIT. Esperado: ${computedDv}`;
+    if (!cfg.api_key || cfg.api_key.length < 8) return "API Key Innapsis requerida.";
+    if (cfg.resolution_from && cfg.resolution_to && cfg.resolution_from > cfg.resolution_to) {
+      return "Rango de resolución inválido: 'desde' debe ser menor o igual que 'hasta'.";
+    }
+    if (
+      cfg.resolution_current &&
+      cfg.resolution_from &&
+      cfg.resolution_to &&
+      (cfg.resolution_current < cfg.resolution_from || cfg.resolution_current > cfg.resolution_to)
+    ) {
+      return "Consecutivo actual está fuera del rango autorizado.";
+    }
+    return null;
+  };
+
+  const testConnection = async () => {
+    if (!cfg.id) {
+      toast({ title: "Guarda primero", description: "Guarda la configuración antes de probar la conexión.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke("innapsis-status", {
+      body: { ping: true, environment: cfg.environment },
+    });
+    setLoading(false);
+    if (error) toast({ title: "Conexión fallida", description: error.message, variant: "destructive" });
+    else toast({ title: "Conexión Innapsis OK", description: (data as any)?.message ?? "Token obtenido correctamente." });
+  };
+
+  const autofillDv = () => {
+    const dv = calculateNitDv(cfg.nit);
+    if (dv === null) {
+      toast({ title: "NIT inválido", description: "Verifica los dígitos del NIT.", variant: "destructive" });
+      return;
+    }
+    setCfg({ ...cfg, dv: String(dv) });
   };
 
   if (!currentOrg) return <div className="p-6">Selecciona una organización</div>;
@@ -120,7 +170,20 @@ export default function Facturacion() {
 
             <div className="grid md:grid-cols-2 gap-3">
               <div><Label>NIT (saas_tenant_id)</Label><Input value={cfg.nit} onChange={(e) => setCfg({ ...cfg, nit: e.target.value })} placeholder="900738794" /></div>
-              <div><Label>DV</Label><Input value={cfg.dv ?? ""} onChange={(e) => setCfg({ ...cfg, dv: e.target.value })} /></div>
+              <div>
+                <Label>DV {computedDv !== null && <span className="text-xs text-muted-foreground">(calculado: {computedDv})</span>}</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={cfg.dv ?? ""}
+                    onChange={(e) => setCfg({ ...cfg, dv: e.target.value })}
+                    className={dvMismatch ? "border-destructive" : ""}
+                  />
+                  <Button type="button" variant="outline" size="icon" onClick={autofillDv} title="Calcular DV desde NIT">
+                    <Wand2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                {dvMismatch && <p className="text-xs text-destructive mt-1">El DV no coincide con el NIT (esperado {computedDv}).</p>}
+              </div>
               <div className="md:col-span-2"><Label>Razón social</Label><Input value={cfg.razon_social ?? ""} onChange={(e) => setCfg({ ...cfg, razon_social: e.target.value })} /></div>
               <div className="md:col-span-2"><Label>API Key Innapsis</Label><Input type="password" value={cfg.api_key} onChange={(e) => setCfg({ ...cfg, api_key: e.target.value })} placeholder="entregada por Innapsis" /></div>
               <div><Label>Resolución DIAN</Label><Input value={cfg.resolution_number ?? ""} onChange={(e) => setCfg({ ...cfg, resolution_number: e.target.value })} /></div>
@@ -134,7 +197,13 @@ export default function Facturacion() {
               </div>
             </div>
 
-            <Button onClick={save} disabled={loading}>Guardar configuración</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={save} disabled={loading}>Guardar configuración</Button>
+              <Button variant="outline" onClick={testConnection} disabled={loading || !cfg.id}>
+                <Plug className="h-4 w-4 mr-1" /> Probar conexión
+              </Button>
+              {!cfg.id && <p className="text-xs text-muted-foreground self-center">Guarda primero para habilitar el test.</p>}
+            </div>
           </Card>
         </TabsContent>
 

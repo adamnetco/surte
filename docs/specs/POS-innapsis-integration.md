@@ -7,7 +7,7 @@
 
 ## Avance auditado
 
-- ✅ **Slice 1 — UI de configuración**: ya existe en `src/modules/admin-cms/pages/Facturacion.tsx` con DEV/PROD toggle, NIT/DV/razón social/API key/resolución/prefijo, lista de últimos 50 documentos con estado y botón "consultar estado". Pendiente solo: validación Zod del DV calculado + botón explícito "Probar conexión".
+- ✅ **Slice 1 — UI de configuración**: SHIPPED. `src/modules/admin-cms/pages/Facturacion.tsx` con DEV/PROD toggle, validación de NIT, DV calculado/autofill (algoritmo DIAN en `src/modules/admin-cms/lib/nitDv.ts`), validación de rango de resolución, botón **Probar conexión** (modo `ping` en edge function `innapsis-status`), lista de últimos 50 documentos con estado.
 - ✅ **Edge functions**: `innapsis-emit` (245 líneas, auth + token cache + emisión) y `innapsis-status` (104 líneas) operativas con secret `INNAPSIS_CLIENT_SECRET`.
 - 🚧 Slice 2 — Emisión automática desde POS (encolar vía `sync_outbox` al cerrar venta)
 - 🚧 Slice 3 — Worker robusto con reintentos exponenciales (1m, 5m, 30m, 2h, max 5)
