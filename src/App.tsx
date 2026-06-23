@@ -280,6 +280,7 @@ const App = () => (
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
                     <Route path="/pos" element={<PosHub />} />
                     <Route path="/pos/vender" element={<POS />} />
+                    <Route path="/pos/fx" element={<PosFx />} />
                     <Route path="/mesas" element={<Mesas />} />
                     <Route path="/kds" element={<KDS />} />
                     <Route path="/inventario" element={<Inventario />} />
