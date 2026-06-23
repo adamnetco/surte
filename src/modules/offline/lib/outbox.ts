@@ -151,8 +151,27 @@ async function executeOp(item: OutboxItem) {
       return;
     }
     case "einvoice_emit": {
+      // Si solo tenemos client_uuid (sale recién encolada), resolvemos
+      // al pos_order_id materializado. Esto permite encadenar la emisión
+      // inmediatamente después de pos_order_create sin esperar manualmente.
+      let posOrderId = payload.pos_order_id as string | undefined;
+      if (!posOrderId && payload.client_uuid) {
+        const { data: row } = await (supabase as any)
+          .from("pos_orders")
+          .select("id")
+          .eq("client_uuid", payload.client_uuid)
+          .eq("organization_id", orgId)
+          .maybeSingle();
+        if (!row?.id) throw new Error(`einvoice_emit: pos_order ${payload.client_uuid} aún no materializado`);
+        posOrderId = row.id;
+      }
       const { error } = await supabase.functions.invoke("innapsis-emit", {
-        body: { ...payload, organization_id: orgId },
+        body: {
+          organization_id: orgId,
+          pos_order_id: posOrderId ?? payload.pos_order_id,
+          order_id: payload.order_id,
+          document_type: payload.document_type ?? "invoice",
+        },
       });
       if (error) throw error;
       return;
