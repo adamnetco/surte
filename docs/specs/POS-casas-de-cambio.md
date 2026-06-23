@@ -1,6 +1,6 @@
 # POS — Módulo Casas de Cambio (FX)
 
-**Estado:** IN_BUILD (Slice 1 + 2 + 4 SHIPPED)
+**Estado:** IN_BUILD (Slice 1 + 2 + 4 + 5 + 6 SHIPPED)
 **Módulo nuevo:** `fx` (Foreign Exchange)
 **`business_type` nuevo:** `casa_cambio` ✅ aplicado
 **Módulo registry name:** `casas-de-cambio` ✅ aplicado
@@ -12,7 +12,7 @@
 - 🚧 Slice 3 — POS FX (pantalla de transacción + captura cliente + umbral UIAF)
 - ✅ **Slice 4 — Caja multi-divisa**: `cash_sessions.balances` JSONB por divisa, `cash_session_counts.currency`, trigger `fx_transactions_update_session_balances` ajusta saldos automáticamente, RPC `close_cash_session_multi_currency` con conteo por divisa y diff calculado, `CloseFxSessionDialog` con tabs por divisa + arqueo por denominación
 - ✅ **Slice 5 — Reportería + UIAF** (`/casas-de-cambio/reportes`): dashboard mensual con totales por divisa, conteo de operaciones, marcas UIAF/ROS; exportación CSV (BOM UTF-8) compatible con plantilla UIAF mensual de Casas de Cambio incluyendo datos de cliente, montos, tasas y motivo ROS
-- 🚧 Slice 6 — Reglas anti-fraude automáticas
+- ✅ **Slice 6 — Reglas anti-fraude automáticas** (`/casas-de-cambio/anti-fraude`): 3 tablas (`fx_fraud_rules`, `fx_fraud_watchlist`, `fx_fraud_alerts`) + trigger `fx_evaluate_fraud_rules` que evalúa cada INSERT contra reglas activas (estructuración por frecuencia/monto, operaciones rápidas, operación individual grande, datos cliente incompletos, watchlist) y marca `is_suspicious=true` automáticamente para severidades high/critical. Admin UI con 3 tabs: Alertas (revisar/descartar/escalar a ROS), Reglas (activar/desactivar + auto-flag) y Vigilancia (CRUD lista negra por documento)
 
 
 
