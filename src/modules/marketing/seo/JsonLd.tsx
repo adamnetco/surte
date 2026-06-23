@@ -99,6 +99,25 @@ export const buildProductSchema = (
   const imageUrl = product.image_url || settings.default_product_image || "";
   const sellerName = settings.store_name || settings.seo_site_name || "";
 
+  // aggregateRating: usa el del producto si existe; si no, fallback global desde settings.
+  // Sólo se emite cuando hay rating + reviewCount > 0 (requisito Google).
+  const ratingValue = Number(
+    product.rating_value ?? product.aggregate_rating ?? settings.seo_default_rating ?? 0
+  );
+  const reviewCount = Number(
+    product.review_count ?? product.rating_count ?? settings.seo_default_review_count ?? 0
+  );
+  const aggregateRating =
+    ratingValue > 0 && reviewCount > 0
+      ? {
+          "@type": "AggregateRating",
+          ratingValue: ratingValue.toFixed(1),
+          reviewCount,
+          bestRating: "5",
+          worstRating: "1",
+        }
+      : undefined;
+
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -116,6 +135,7 @@ export const buildProductSchema = (
     weight: product.weight
       ? { "@type": "QuantitativeValue", value: product.weight, unitCode: "KGM" }
       : undefined,
+    aggregateRating,
     offers: {
       "@type": "Offer",
       url,
