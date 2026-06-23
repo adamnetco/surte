@@ -1,6 +1,10 @@
+import { useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Printer, FileSignature, Plus } from "lucide-react";
+import { CheckCircle2, Printer, FileSignature, Plus, Volume2, VolumeX } from "lucide-react";
+import { getPosSoundEnabled, setPosSoundEnabled, playSaleSuccessSound } from "@/lib/posSoundPrefs";
+import { useState } from "react";
 
 interface Props {
   open: boolean;
@@ -20,14 +24,44 @@ export default function SaleCompleteDialog({
   open, onOpenChange, total, amountPaid, change, canEmitInvoice,
   onNewSale, onPrint, onEmitInvoice,
 }: Props) {
+  const [soundOn, setSoundOn] = useState<boolean>(() => getPosSoundEnabled());
+
+  // Dispara animación + sonido al abrir
+  useEffect(() => {
+    if (open) playSaleSuccessSound();
+  }, [open]);
+
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setPosSoundEnabled(next);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <div className="mx-auto w-14 h-14 rounded-full bg-emerald-500/10 grid place-items-center mb-2">
-            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-          </div>
-          <DialogTitle className="text-center text-xl">Venta completada</DialogTitle>
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                key="check"
+                initial={{ scale: 0, rotate: -45, opacity: 0 }}
+                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                className="mx-auto w-16 h-16 rounded-full bg-emerald-500/15 grid place-items-center mb-2 relative"
+              >
+                <motion.span
+                  initial={{ scale: 0.6, opacity: 0.6 }}
+                  animate={{ scale: 1.8, opacity: 0 }}
+                  transition={{ duration: 0.9, ease: "easeOut" }}
+                  className="absolute inset-0 rounded-full bg-emerald-500/30"
+                />
+                <CheckCircle2 className="w-9 h-9 text-emerald-600 relative" strokeWidth={2.2} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <DialogTitle className="text-center text-xl">¡Venta completada!</DialogTitle>
           <DialogDescription className="text-center">
             El ticket se registró correctamente.
           </DialogDescription>
@@ -75,6 +109,15 @@ export default function SaleCompleteDialog({
               <FileSignature className="w-4 h-4 mr-1.5" /> Facturar
             </Button>
           </div>
+          <button
+            type="button"
+            onClick={toggleSound}
+            className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5 pt-1"
+            aria-label={soundOn ? "Silenciar sonido de venta" : "Activar sonido de venta"}
+          >
+            {soundOn ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            Sonido {soundOn ? "activado" : "silenciado"}
+          </button>
         </div>
       </DialogContent>
     </Dialog>
