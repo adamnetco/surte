@@ -1,6 +1,6 @@
 # POS — Integración Innapsis (Facturación Electrónica DIAN)
 
-**Estado:** IN_BUILD (Slices 1 y 2 SHIPPED)
+**Estado:** IN_BUILD (Slices 1, 2 y 3 SHIPPED)
 **Módulo:** `admin-cms` + `pos` + `storefront`
 **Tablas:** `einvoice_configs`, `electronic_invoices`, `einvoice_events`
 **Edge functions:** `innapsis-emit`, `innapsis-status`
@@ -8,13 +8,14 @@
 
 ## Avance auditado
 
-- ✅ **Slice 1 — UI de configuración**: SHIPPED. `Facturacion.tsx` con DEV/PROD toggle, validación NIT/DV (algoritmo DIAN), validación rango resolución, botón Probar conexión (`innapsis-status` modo ping).
-- ✅ **Slice 2 — Emisión automática desde POS**: SHIPPED.
-  - `useEinvoiceAutoEmit` lee `einvoice_configs.is_active` + `extra.auto_emit_threshold` + `extra.auto_emit_enabled`.
-  - `POSWorkspace.handlePaid` encola `einvoice_emit` en `sync_outbox` (Dexie) inmediatamente después de `pos_order_create`, solo si el cliente tiene `docNumber` y `total ≥ threshold`.
-  - Dispatcher `executeOp('einvoice_emit')` resuelve `client_uuid → pos_orders.id` antes de invocar `innapsis-emit` (evita race con la materialización de la orden).
-  - El recibo POS se imprime SIEMPRE; la factura electrónica DIAN es opcional según umbral (acordado con el negocio).
-- 🚧 Slice 3 — Mapping completo XML v1.9 (Encabezado, Emisor, Receptor, Totales, TaxTotal, Items) en `innapsis-emit`. Pendiente revisar payload actual contra `xml-emision-v1.9-fields.csv`.
+- ✅ **Slice 1 — UI de configuración**: SHIPPED.
+- ✅ **Slice 2 — Emisión automática desde POS**: SHIPPED. Encolado vía `sync_outbox` (`einvoice_emit`).
+- ✅ **Slice 3 — Mapping completo XML v1.9**: SHIPPED.
+  - `innapsis-emit` arma payload `{ trackId, Fe: { Encabezado, CondicionesDePago, Emisor, Receptor, Totales, TaxTotal, Detalles } }` conforme a `xml-emision-v1.9-fields.csv`.
+  - Carga `organizations` + `locations` + `pos_payments` para llenar Emisor (NIT/DV/Régimen/Municipio/Departamento/Dirección) y MedioDePago (mapeo `pos_payments.method` → DIAN 13.3.4.2).
+  - DV calculado con algoritmo DIAN (mod 11). Receptor con tipo de identificación auto-detectado (CC/NIT), defaults a Consumidor Final 222222222222.
+  - TaxTotal agregado por porcentaje de IVA a partir de `pos_order_items.tax_rate`/`tax_amount`. Detalles con `ItemAfecto`, `CodImpuesto=01`, `UnidadCantidad=NIU`.
+  - Defaults parametrizables vía `einvoice_configs.extra` y `locations.settings` (`municipio_code`, `departamento_code`, `codigo_postal`, `regimen`, `tipo_organizacion`).
 - 🚧 Slice 4 — Worker robusto con reintentos exponenciales (1m, 5m, 30m, 2h, max 5) y dead-letter visible en `DeadLetterQueue.tsx`.
 - 🚧 Slice 5 — UI de gestión avanzada (filtros, exportación CSV, modal detalle con timeline `einvoice_events`).
 - 🚧 Slice 6 — Email automático con PDF+XML adjuntos.
