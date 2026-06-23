@@ -70,6 +70,7 @@ const KDS = lazy(() => import("./modules/pos").then((m) => ({ default: m.KDSPage
 const Inventario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InventarioPage })));
 const Facturacion = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.FacturacionPage })));
 const CasasDeCambio = lazy(() => import("./modules/fx").then((m) => ({ default: m.CasasDeCambioPage })));
+const PosFx = lazy(() => import("./modules/fx").then((m) => ({ default: m.PosFxPage })));
 const Planes = lazy(() => import("./modules/clientes").then((m) => ({ default: m.PlanesPage })));
 const Billing = lazy(() => import("./modules/clientes").then((m) => ({ default: m.BillingPage })));
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
