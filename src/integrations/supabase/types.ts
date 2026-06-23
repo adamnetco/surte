@@ -2515,6 +2515,402 @@ export type Database = {
           },
         ]
       }
+      fx_audit_log: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          organization_id: string
+          payload: Json
+          transaction_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          organization_id: string
+          payload?: Json
+          transaction_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          organization_id?: string
+          payload?: Json
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fx_audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_audit_log_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "fx_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fx_currencies: {
+        Row: {
+          code: string
+          created_at: string
+          decimals: number
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          symbol: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          decimals?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          symbol?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          decimals?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          symbol?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fx_currencies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_currencies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_currencies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
+      fx_pairs: {
+        Row: {
+          base_currency_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          organization_id: string
+          quote_currency_id: string
+          updated_at: string
+        }
+        Insert: {
+          base_currency_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          quote_currency_id: string
+          updated_at?: string
+        }
+        Update: {
+          base_currency_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          quote_currency_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fx_pairs_base_currency_id_fkey"
+            columns: ["base_currency_id"]
+            isOneToOne: false
+            referencedRelation: "fx_currencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_pairs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_pairs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_pairs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_pairs_quote_currency_id_fkey"
+            columns: ["quote_currency_id"]
+            isOneToOne: false
+            referencedRelation: "fx_currencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fx_rates: {
+        Row: {
+          buy_rate: number
+          created_at: string
+          created_by: string | null
+          effective_at: string
+          id: string
+          organization_id: string
+          pair_id: string
+          sell_rate: number
+          source: string
+        }
+        Insert: {
+          buy_rate: number
+          created_at?: string
+          created_by?: string | null
+          effective_at?: string
+          id?: string
+          organization_id: string
+          pair_id: string
+          sell_rate: number
+          source?: string
+        }
+        Update: {
+          buy_rate?: number
+          created_at?: string
+          created_by?: string | null
+          effective_at?: string
+          id?: string
+          organization_id?: string
+          pair_id?: string
+          sell_rate?: number
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fx_rates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_rates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_rates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_rates_pair_id_fkey"
+            columns: ["pair_id"]
+            isOneToOne: false
+            referencedRelation: "fx_pairs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fx_transactions: {
+        Row: {
+          cash_session_id: string | null
+          cashier_id: string | null
+          created_at: string
+          customer_address: string | null
+          customer_doc_number: string | null
+          customer_doc_type: string | null
+          customer_name: string | null
+          customer_occupation: string | null
+          electronic_invoice_id: string | null
+          from_amount: number
+          from_currency_id: string
+          funds_origin: string | null
+          id: string
+          is_above_threshold: boolean
+          is_suspicious: boolean
+          location_id: string | null
+          notes: string | null
+          operation: string
+          organization_id: string
+          pair_id: string
+          rate_applied: number
+          receipt_number: string | null
+          ros_reason: string | null
+          to_amount: number
+          to_currency_id: string
+        }
+        Insert: {
+          cash_session_id?: string | null
+          cashier_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_doc_number?: string | null
+          customer_doc_type?: string | null
+          customer_name?: string | null
+          customer_occupation?: string | null
+          electronic_invoice_id?: string | null
+          from_amount: number
+          from_currency_id: string
+          funds_origin?: string | null
+          id?: string
+          is_above_threshold?: boolean
+          is_suspicious?: boolean
+          location_id?: string | null
+          notes?: string | null
+          operation: string
+          organization_id: string
+          pair_id: string
+          rate_applied: number
+          receipt_number?: string | null
+          ros_reason?: string | null
+          to_amount: number
+          to_currency_id: string
+        }
+        Update: {
+          cash_session_id?: string | null
+          cashier_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_doc_number?: string | null
+          customer_doc_type?: string | null
+          customer_name?: string | null
+          customer_occupation?: string | null
+          electronic_invoice_id?: string | null
+          from_amount?: number
+          from_currency_id?: string
+          funds_origin?: string | null
+          id?: string
+          is_above_threshold?: boolean
+          is_suspicious?: boolean
+          location_id?: string | null
+          notes?: string | null
+          operation?: string
+          organization_id?: string
+          pair_id?: string
+          rate_applied?: number
+          receipt_number?: string | null
+          ros_reason?: string | null
+          to_amount?: number
+          to_currency_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fx_transactions_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_transactions_electronic_invoice_id_fkey"
+            columns: ["electronic_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "electronic_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_transactions_from_currency_id_fkey"
+            columns: ["from_currency_id"]
+            isOneToOne: false
+            referencedRelation: "fx_currencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_transactions_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_transactions_pair_id_fkey"
+            columns: ["pair_id"]
+            isOneToOne: false
+            referencedRelation: "fx_pairs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_transactions_to_currency_id_fkey"
+            columns: ["to_currency_id"]
+            isOneToOne: false
+            referencedRelation: "fx_currencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gallery: {
         Row: {
           caption: string | null
@@ -4377,6 +4773,8 @@ export type Database = {
           tagline: string | null
           tax_id: string | null
           timezone: string
+          uiaf_threshold_amount: number | null
+          uiaf_threshold_currency: string | null
           updated_at: string
           whatsapp_phone: string | null
         }
@@ -4413,6 +4811,8 @@ export type Database = {
           tagline?: string | null
           tax_id?: string | null
           timezone?: string
+          uiaf_threshold_amount?: number | null
+          uiaf_threshold_currency?: string | null
           updated_at?: string
           whatsapp_phone?: string | null
         }
@@ -4449,6 +4849,8 @@ export type Database = {
           tagline?: string | null
           tax_id?: string | null
           timezone?: string
+          uiaf_threshold_amount?: number | null
+          uiaf_threshold_currency?: string | null
           updated_at?: string
           whatsapp_phone?: string | null
         }
@@ -8544,6 +8946,7 @@ export type Database = {
         | "minimercado"
         | "distribuidor"
         | "casa"
+        | "casa_cambio"
       tenant_lifecycle_state:
         | "pending"
         | "trial"
@@ -8679,7 +9082,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "superadmin", "editor", "agente", "cashier"],
-      business_type: ["detal", "horeca", "minimercado", "distribuidor", "casa"],
+      business_type: [
+        "detal",
+        "horeca",
+        "minimercado",
+        "distribuidor",
+        "casa",
+        "casa_cambio",
+      ],
       tenant_lifecycle_state: [
         "pending",
         "trial",

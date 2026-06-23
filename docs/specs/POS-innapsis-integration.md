@@ -1,9 +1,21 @@
 # POS — Integración Innapsis (Facturación Electrónica DIAN)
 
-**Estado:** DRAFT
+**Estado:** IN_BUILD (Slice 1 SHIPPED — base más madura de lo esperado)
 **Módulo:** `admin-cms` + `pos` + `storefront`
 **Tablas:** `einvoice_configs`, `electronic_invoices`, `einvoice_events`
 **Edge functions:** `innapsis-emit`, `innapsis-status`
+
+## Avance auditado
+
+- ✅ **Slice 1 — UI de configuración**: ya existe en `src/modules/admin-cms/pages/Facturacion.tsx` con DEV/PROD toggle, NIT/DV/razón social/API key/resolución/prefijo, lista de últimos 50 documentos con estado y botón "consultar estado". Pendiente solo: validación Zod del DV calculado + botón explícito "Probar conexión".
+- ✅ **Edge functions**: `innapsis-emit` (245 líneas, auth + token cache + emisión) y `innapsis-status` (104 líneas) operativas con secret `INNAPSIS_CLIENT_SECRET`.
+- 🚧 Slice 2 — Emisión automática desde POS (encolar vía `sync_outbox` al cerrar venta)
+- 🚧 Slice 3 — Worker robusto con reintentos exponenciales (1m, 5m, 30m, 2h, max 5)
+- 🚧 Slice 4 — UI de gestión avanzada (filtros, exportación CSV, modal detalle con timeline `einvoice_events`)
+- 🚧 Slice 5 — Email automático con PDF+XML adjuntos
+- 🚧 Slice 6 — Modo contingencia DIAN
+
+
 
 ## Problema
 
