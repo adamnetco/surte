@@ -245,11 +245,31 @@ Deno.serve(async (req) => {
           .from("sync_outbox")
           .update({ status: "succeeded", succeeded_at: new Date().toISOString(), attempts: nextAttempts, last_error: null })
           .eq("id", row.id);
-      } else if (nextAttempts >= (row.max_attempts ?? 5)) {
+      } else if (nextAttempts >= (row.max_attempts ?? 5) || (res as any).permanent) {
         await supabase
           .from("sync_outbox")
           .update({ status: "dead", attempts: nextAttempts, last_error: res.error ?? "unknown" })
           .eq("id", row.id);
+
+        // Hook: si era reintento DIAN, marca factura como dead_letter y registra evento
+        if (row.target === "einvoice_emit_retry") {
+          const invId = row.payload?.invoice_id;
+          const orgId = row.payload?.organization_id ?? row.organization_id;
+          if (invId) {
+            await supabase.from("electronic_invoices").update({
+              status: "dead_letter",
+              last_error: res.error ?? "max retries exceeded",
+              next_retry_at: null,
+            }).eq("id", invId);
+            await supabase.from("einvoice_events").insert({
+              organization_id: orgId,
+              invoice_id: invId,
+              event_type: "dead_letter",
+              status: "dead_letter",
+              message: `Reintentos agotados (${nextAttempts}/${row.max_attempts ?? 5}): ${res.error ?? "unknown"}`,
+            });
+          }
+        }
       } else {
         const delayMin = BACKOFF_MIN[Math.min(nextAttempts - 1, BACKOFF_MIN.length - 1)];
         // Jitter ±20% para evitar thundering herd en reintentos paralelos.
@@ -259,7 +279,16 @@ Deno.serve(async (req) => {
           .from("sync_outbox")
           .update({ attempts: nextAttempts, last_error: res.error ?? "unknown", next_attempt_at: next })
           .eq("id", row.id);
+
+        // Espeja next_retry_at en la factura para que la UI pueda mostrarlo
+        if (row.target === "einvoice_emit_retry" && row.payload?.invoice_id) {
+          await supabase.from("electronic_invoices").update({
+            next_retry_at: next,
+            last_error: res.error ?? "unknown",
+          }).eq("id", row.payload.invoice_id);
+        }
       }
+
       results.push({ id: row.id, target: row.target, ok: res.ok, error: res.error });
     }
 
