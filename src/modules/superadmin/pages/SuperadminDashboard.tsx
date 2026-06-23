@@ -108,6 +108,7 @@ const SuperadminDashboard = () => {
                 <Route path="seguridad/csp" element={<CspViolations />} />
                 <Route path="soporte" element={<SoporteConfig />} />
                 <Route path="acciones-criticas" element={<CriticalActionsQueue />} />
+                <Route path="audit" element={<AuditLogViewer />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
