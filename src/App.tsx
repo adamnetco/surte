@@ -35,6 +35,7 @@ import RoleGuard from "./modules/auth/components/RoleGuard";
 import MasterOnlyGuard from "./modules/auth/components/MasterOnlyGuard";
 import HostGuard from "./components/HostGuard";
 import { detectTenant, isStorefrontTenant } from "@/modules/tenant/lib/subdomain";
+import PageBreadcrumbs from "@/components/nav/PageBreadcrumbs";
 
 const AdminDiag = lazy(() => import("./pages/AdminDiag"));
 const AuthStatus = lazy(() => import("./pages/AuthStatus"));
