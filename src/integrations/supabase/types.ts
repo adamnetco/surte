@@ -2916,37 +2916,129 @@ export type Database = {
           },
         ]
       }
+      fx_pricing_rules: {
+        Row: {
+          auto_publish: boolean
+          base_source: string
+          created_at: string
+          id: string
+          is_active: boolean
+          max_buy: number | null
+          max_sell: number | null
+          min_buy: number | null
+          min_sell: number | null
+          organization_id: string
+          pair_id: string
+          spread_buy_pct: number
+          spread_sell_pct: number
+          updated_at: string
+        }
+        Insert: {
+          auto_publish?: boolean
+          base_source?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_buy?: number | null
+          max_sell?: number | null
+          min_buy?: number | null
+          min_sell?: number | null
+          organization_id: string
+          pair_id: string
+          spread_buy_pct?: number
+          spread_sell_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_publish?: boolean
+          base_source?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_buy?: number | null
+          max_sell?: number | null
+          min_buy?: number | null
+          min_sell?: number | null
+          organization_id?: string
+          pair_id?: string
+          spread_buy_pct?: number
+          spread_sell_pct?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fx_pricing_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_pricing_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_pricing_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fx_pricing_rules_pair_id_fkey"
+            columns: ["pair_id"]
+            isOneToOne: false
+            referencedRelation: "fx_pairs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fx_rates: {
         Row: {
+          base_rate: number | null
           buy_rate: number
           created_at: string
           created_by: string | null
           effective_at: string
           id: string
+          is_published: boolean
           organization_id: string
           pair_id: string
+          published_at: string | null
+          published_by: string | null
           sell_rate: number
           source: string
         }
         Insert: {
+          base_rate?: number | null
           buy_rate: number
           created_at?: string
           created_by?: string | null
           effective_at?: string
           id?: string
+          is_published?: boolean
           organization_id: string
           pair_id: string
+          published_at?: string | null
+          published_by?: string | null
           sell_rate: number
           source?: string
         }
         Update: {
+          base_rate?: number | null
           buy_rate?: number
           created_at?: string
           created_by?: string | null
           effective_at?: string
           id?: string
+          is_published?: boolean
           organization_id?: string
           pair_id?: string
+          published_at?: string | null
+          published_by?: string | null
           sell_rate?: number
           source?: string
         }
@@ -8802,9 +8894,29 @@ export type Database = {
         }[]
       }
       export_tenant_snapshot: { Args: { _org_id: string }; Returns: Json }
+      fx_apply_pricing_rule: {
+        Args: {
+          _base: number
+          _rule: Database["public"]["Tables"]["fx_pricing_rules"]["Row"]
+        }
+        Returns: {
+          buy_rate: number
+          sell_rate: number
+        }[]
+      }
       fx_apply_session_balance: {
         Args: { _currency_code: string; _delta: number; _session_id: string }
         Returns: undefined
+      }
+      fx_publish_rate: {
+        Args: {
+          _base_rate?: number
+          _buy_rate: number
+          _pair_id: string
+          _sell_rate: number
+          _source?: string
+        }
+        Returns: string
       }
       get_admin_products_secure:
         | {
