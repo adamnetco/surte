@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, ShieldAlert, Receipt, Loader2 } from "lucide-react";
+import { ArrowLeftRight, ShieldAlert, Receipt, Loader2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,8 @@ import {
   useFxTransactionsRecent,
   useUiafThreshold,
 } from "../hooks/useFxTransactions";
+import { useActiveFxCashSession } from "../hooks/useFxCashSession";
+import CloseFxSessionDialog from "../components/CloseFxSessionDialog";
 
 const fmt = (n: number, decimals = 2) =>
   Number.isFinite(n) ? n.toLocaleString("es-CO", { maximumFractionDigits: decimals, minimumFractionDigits: decimals }) : "—";
