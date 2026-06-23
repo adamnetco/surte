@@ -8,6 +8,7 @@ const corsHeaders = {
 
 const INNAPSIS_CLIENT_ID = Deno.env.get("INNAPSIS_CLIENT_ID") ?? "b899c906-fe51-4eba-a054-62ca2220452f";
 const INNAPSIS_CLIENT_SECRET = Deno.env.get("INNAPSIS_CLIENT_SECRET");
+const INNAPSIS_PARTNER_API_KEY = Deno.env.get("INNAPSIS_PARTNER_API_KEY");
 const INNAPSIS = {
   client_id: INNAPSIS_CLIENT_ID,
   policy: "B2C_1A_FE_CLIENT_CREDENTIALS_V30",
@@ -76,7 +77,7 @@ Deno.serve(async (req) => {
       const cfg = cfgs?.[0];
       if (!cfg) return new Response(JSON.stringify({ error: "Sin configuración Innapsis" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       try {
-        const token = await getToken(cfg.nit, cfg.api_key);
+        const token = await getToken(cfg.nit, cfg.api_key || INNAPSIS_PARTNER_API_KEY || "");
         return new Response(JSON.stringify({ success: true, message: `Token obtenido (${cfg.environment.toUpperCase()})`, token_preview: token.slice(0, 12) + "…" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -106,7 +107,7 @@ Deno.serve(async (req) => {
     const { data: cfg } = await admin.from("einvoice_configs").select("*").eq("organization_id", inv.organization_id).eq("is_active", true).maybeSingle();
     if (!cfg) return new Response(JSON.stringify({ error: "Config inactiva" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const token = await getToken(cfg.nit, cfg.api_key);
+    const token = await getToken(cfg.nit, cfg.api_key || INNAPSIS_PARTNER_API_KEY || "");
     const baseUrl = cfg.environment === "prod" ? INNAPSIS.base_prod : INNAPSIS.base_dev;
     const endpoint = `${baseUrl}/api/v1/emision/emision/consulteArchivo`;
     const res = await fetch(endpoint, {

@@ -10,6 +10,8 @@ const corsHeaders = {
 // de secretos — si falta, la función se cae con 500 (sin fallback hardcoded).
 const INNAPSIS_CLIENT_ID = Deno.env.get("INNAPSIS_CLIENT_ID") ?? "b899c906-fe51-4eba-a054-62ca2220452f";
 const INNAPSIS_CLIENT_SECRET = Deno.env.get("INNAPSIS_CLIENT_SECRET");
+// API key global de partner Innapsis (fallback si el tenant no tiene una propia).
+const INNAPSIS_PARTNER_API_KEY = Deno.env.get("INNAPSIS_PARTNER_API_KEY");
 const INNAPSIS_DEFAULTS = {
   client_id: INNAPSIS_CLIENT_ID,
   policy: "B2C_1A_FE_CLIENT_CREDENTIALS_V30",
@@ -179,7 +181,7 @@ Deno.serve(async (req) => {
 
     // 5) Llama Innapsis
     try {
-      const token = await getToken(cfg.nit, cfg.api_key);
+      const token = await getToken(cfg.nit, cfg.api_key || INNAPSIS_PARTNER_API_KEY || "");
       const baseUrl = cfg.environment === "prod" ? INNAPSIS_DEFAULTS.base_prod : INNAPSIS_DEFAULTS.base_dev;
       const endpoint = `${baseUrl}/api/v1/emision/emision/envieDocumento`;
 
