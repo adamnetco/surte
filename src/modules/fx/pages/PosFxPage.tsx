@@ -30,6 +30,8 @@ export default function PosFxPage() {
   const { data: threshold } = useUiafThreshold();
   const { data: recent = [] } = useFxTransactionsRecent(10);
   const createTx = useCreateFxTransaction();
+  const { data: activeSession } = useActiveFxCashSession();
+  const [closeOpen, setCloseOpen] = useState(false);
 
   const [pairId, setPairId] = useState<string>("");
   const [operation, setOperation] = useState<"buy" | "sell">("buy");
