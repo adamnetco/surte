@@ -110,6 +110,7 @@ const SuperadminDashboard = () => {
                 <Route path="soporte" element={<SoporteConfig />} />
                 <Route path="acciones-criticas" element={<CriticalActionsQueue />} />
                 <Route path="audit" element={<AuditLogViewer />} />
+                <Route path="einvoice-bulk-retry" element={<EinvoiceBulkRetry />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
