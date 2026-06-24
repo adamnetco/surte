@@ -2269,6 +2269,7 @@ export type Database = {
       }
       electronic_invoices: {
         Row: {
+          contingency_emitted_at: string | null
           created_at: string
           created_by: string | null
           cufe: string | null
@@ -2281,6 +2282,7 @@ export type Database = {
           environment: string
           full_number: string | null
           id: string
+          is_contingency: boolean
           issue_date: string
           last_error: string | null
           location_id: string | null
@@ -2300,10 +2302,12 @@ export type Database = {
           tax_total: number
           total: number
           track_id: string | null
+          transmitted_at: string | null
           updated_at: string
           xml_url: string | null
         }
         Insert: {
+          contingency_emitted_at?: string | null
           created_at?: string
           created_by?: string | null
           cufe?: string | null
@@ -2316,6 +2320,7 @@ export type Database = {
           environment?: string
           full_number?: string | null
           id?: string
+          is_contingency?: boolean
           issue_date?: string
           last_error?: string | null
           location_id?: string | null
@@ -2335,10 +2340,12 @@ export type Database = {
           tax_total?: number
           total?: number
           track_id?: string | null
+          transmitted_at?: string | null
           updated_at?: string
           xml_url?: string | null
         }
         Update: {
+          contingency_emitted_at?: string | null
           created_at?: string
           created_by?: string | null
           cufe?: string | null
@@ -2351,6 +2358,7 @@ export type Database = {
           environment?: string
           full_number?: string | null
           id?: string
+          is_contingency?: boolean
           issue_date?: string
           last_error?: string | null
           location_id?: string | null
@@ -2370,6 +2378,7 @@ export type Database = {
           tax_total?: number
           total?: number
           track_id?: string | null
+          transmitted_at?: string | null
           updated_at?: string
           xml_url?: string | null
         }
