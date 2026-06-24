@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Printer, FileSignature, Plus, Volume2, VolumeX } from "lucide-react";
 import { getPosSoundEnabled, setPosSoundEnabled, playSaleSuccessSound } from "@/lib/posSoundPrefs";
 import { useState } from "react";
+import { useEinvoiceLiveStatus } from "../hooks/useEinvoiceLiveStatus";
+import EinvoiceStatusBadge from "./EinvoiceStatusBadge";
 
 interface Props {
   open: boolean;
@@ -16,14 +18,17 @@ interface Props {
   onNewSale: () => void;
   onPrint: () => void;
   onEmitInvoice: () => void;
+  /** Si se pasa, muestra badge Realtime con el estado DIAN de la factura emitida. */
+  posOrderId?: string | null;
 }
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 
 export default function SaleCompleteDialog({
   open, onOpenChange, total, amountPaid, change, canEmitInvoice,
-  onNewSale, onPrint, onEmitInvoice,
+  onNewSale, onPrint, onEmitInvoice, posOrderId,
 }: Props) {
+  const einvoice = useEinvoiceLiveStatus(open ? posOrderId ?? null : null);
   const [soundOn, setSoundOn] = useState<boolean>(() => getPosSoundEnabled());
 
   // Dispara animación + sonido al abrir
@@ -83,6 +88,10 @@ export default function SaleCompleteDialog({
             </div>
           )}
         </div>
+
+        {einvoice.status !== "idle" && (
+          <EinvoiceStatusBadge snap={einvoice} className="w-full justify-center" />
+        )}
 
         <div className="space-y-2">
           <Button
