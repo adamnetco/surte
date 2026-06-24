@@ -69,9 +69,9 @@ vi.mock("@/modules/storefront/components/BottomNav", () => ({ default: () => <di
 vi.mock("@/modules/marketing/seo/SeoBreadcrumbs", () => ({ default: () => null }));
 vi.mock("@/modules/storefront/hooks/useStore", () => ({ useAppSettings: () => ({ data: { whatsapp_number: "300" } }) }));
 vi.mock("sonner", () => {
-  const fn: any = vi.fn();
-  fn.success = vi.fn(); fn.error = vi.fn(); fn.info = vi.fn();
-  return { toast: fn };
+  const fn: any = (..._args: any[]) => {};
+  fn.success = () => {}; fn.error = () => {}; fn.info = () => {};
+  return { toast: fn, Toaster: () => null };
 });
 
 import Pedido from "../Pedido";
