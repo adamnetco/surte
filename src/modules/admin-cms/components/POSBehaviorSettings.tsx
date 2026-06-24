@@ -34,6 +34,11 @@ interface Props { organizationId: string; }
 export default function POSBehaviorSettings({ organizationId }: Props) {
   const [behavior, setBehavior] = useState<PosBehavior>(DEFAULTS);
   const [hardBlock, setHardBlock] = useState<boolean>(false);
+  const [defaultsByClient, setDefaultsByClient] = useState({
+    consumer_final: "pos_electronico",
+    with_nit: "factura_electronica",
+    fx_operation: "documento_soporte",
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [configId, setConfigId] = useState<string | null>(null);
@@ -44,7 +49,7 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
       setLoading(true);
       const { data } = await supabase
         .from("einvoice_configs")
-        .select("id, pos_behavior, hard_block_when_dian_down")
+        .select("id, pos_behavior, hard_block_when_dian_down, default_doc_type_consumer_final, default_doc_type_with_nit, default_doc_type_fx_operation")
         .eq("organization_id", organizationId)
         .eq("environment", "prod")
         .maybeSingle();
@@ -52,6 +57,11 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
         setConfigId(data.id);
         setBehavior({ ...DEFAULTS, ...((data.pos_behavior as any) ?? {}) });
         setHardBlock(!!(data as any).hard_block_when_dian_down);
+        setDefaultsByClient({
+          consumer_final: (data as any).default_doc_type_consumer_final ?? "pos_electronico",
+          with_nit: (data as any).default_doc_type_with_nit ?? "factura_electronica",
+          fx_operation: (data as any).default_doc_type_fx_operation ?? "documento_soporte",
+        });
       }
       setLoading(false);
     })();
@@ -64,6 +74,9 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
       environment: "prod",
       pos_behavior: behavior as any,
       hard_block_when_dian_down: hardBlock,
+      default_doc_type_consumer_final: defaultsByClient.consumer_final,
+      default_doc_type_with_nit: defaultsByClient.with_nit,
+      default_doc_type_fx_operation: defaultsByClient.fx_operation,
     };
     if (configId) payload.id = configId;
     const { error } = await supabase
