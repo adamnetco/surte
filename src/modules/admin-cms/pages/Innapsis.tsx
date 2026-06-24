@@ -80,6 +80,9 @@ const Innapsis = () => {
   const queryClient = useQueryClient();
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id;
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkReport, setBulkReport] = useState<{ ok: string[]; fail: { id: string; err: string }[] } | null>(null);
 
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]["key"]>("all");
