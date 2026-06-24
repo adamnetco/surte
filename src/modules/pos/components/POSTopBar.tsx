@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Settings, Clock, User, LogOut, Keyboard } from "lucide-react";
+import { Settings, Clock, User, LogOut, Keyboard, CloudUpload, CloudOff, Loader2 } from "lucide-react";
 import POSModeBar from "./POSModeBar";
 import POSWorkspaceNav from "./POSWorkspaceNav";
 import type { PosMode } from "@/modules/pos/lib/posModes";
+
+/** Estado de sincronización mostrado de forma compacta y de ancho fijo
+ *  para evitar reflow del cluster derecho (mantiene el ícono Settings anclado). */
+export interface POSTopBarSyncState {
+  pending: number;
+  syncing: boolean;
+  online: boolean;
+  lastError?: string | null;
+  onFlush?: () => void;
+}
 
 interface Props {
   shiftLabel: string;          // e.g. "Turno #12"
@@ -15,7 +25,8 @@ interface Props {
   onChangeMode: (m: PosMode) => void;
   onCloseShift: () => void;
   onOpenShortcuts: () => void;
-  rightExtras?: React.ReactNode; // offline / sync indicators
+  rightExtras?: React.ReactNode; // offline / status indicators (NO sync)
+  sync?: POSTopBarSyncState;     // sync interno con slot de ancho fijo
 }
 
 function fmtElapsed(ms: number) {
