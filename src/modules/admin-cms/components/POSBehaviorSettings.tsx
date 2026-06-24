@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Save, Settings2, Mail, MessageCircle, HelpCircle } from "lucide-react";
+import { Save, Settings2, Mail, MessageCircle, HelpCircle, ShieldAlert } from "lucide-react";
 import { useOrgDocumentTypes } from "@/modules/pos/hooks/useOrgDocumentTypes";
 
 interface PosBehavior {
