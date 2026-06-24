@@ -115,7 +115,7 @@ function buildInnapsisPayload(input: BuildInput) {
   // ----- Emisor -----
   const emisorNit = String(cfg.nit ?? org.tax_id ?? "").replace(/\D/g, "");
   const emisorDv = cfg.dv ?? calcDv(emisorNit);
-  const emisor = {
+  const emisor: Record<string, unknown> = {
     TipoOrganizacion: String(extra.tipo_organizacion ?? "1"), // 1=Jurídica, 2=Natural
     TipoIdentificacion: "31", // NIT
     Identificacion: emisorNit,
@@ -132,6 +132,8 @@ function buildInnapsisPayload(input: BuildInput) {
     Pais: "Colombia",
     Email: cfg.contact_email ?? org.support_email ?? "",
   };
+  // Procedencia: requerido por Innapsis para Documento Soporte (extra.procedencia).
+  if (extra.procedencia) emisor.Procedencia = String(extra.procedencia);
 
   // ----- Receptor -----
   const customerDoc = String(order.customer_document ?? "222222222222").replace(/\D/g, "");
@@ -211,17 +213,26 @@ function buildInnapsisPayload(input: BuildInput) {
   // ----- Pago -----
   const medioPago = mapMedioPago(payments[0]?.method);
 
+  const encabezado: Record<string, unknown> = {
+    FechaEmision: fecha,
+    HoraEmision: hora,
+    TipoDocumento: tipoDoc,
+    Prefijo: cfg.resolution_prefix ?? "",
+    FolioAutorizado: number,
+    Operacion: String(extra.operacion ?? "10"),
+    FechaEntrega: fecha,
+    HoraEntrega: hora,
+  };
+  // FechaPeriodo* solo aplica para operación 22 (factura sin referencia, periodo mensual).
+  if (String(encabezado.Operacion) === "22") {
+    const periodIni = extra.periodo_inicio ?? fecha.slice(0, 8) + "01";
+    const periodFin = extra.periodo_fin ?? fecha;
+    encabezado.FechaPeriodoInicio = periodIni;
+    encabezado.FechaPeriodoFin = periodFin;
+  }
+
   const fe = {
-    Encabezado: {
-      FechaEmision: fecha,
-      HoraEmision: hora,
-      TipoDocumento: tipoDoc,
-      Prefijo: cfg.resolution_prefix ?? "",
-      FolioAutorizado: number,
-      Operacion: "10",
-      FechaEntrega: fecha,
-      HoraEntrega: hora,
-    },
+    Encabezado: encabezado,
     CondicionesDePago: {
       FechaVencimiento: fecha,
       DescripcionDePago: "Contado",
