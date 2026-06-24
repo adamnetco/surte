@@ -377,6 +377,7 @@ const Diario = () => {
     useDailyChecklist(CHECKLIST_DEFS);
 
   const hasData = !!data;
+  const [sevFilter, setSevFilter] = useState<Severity | "all">("all");
 
   // Acciones ordenadas por severidad (danger primero, luego warn) con datos reales
   const actions = useMemo<ActionEntry[]>(() => {
@@ -440,6 +441,18 @@ const Diario = () => {
     );
   }, [data, navigate]);
 
+  const counts = useMemo(
+    () => ({
+      danger: actions.filter((a) => a.severity === "danger").length,
+      warn: actions.filter((a) => a.severity === "warn").length,
+      info: actions.filter((a) => a.severity === "info").length,
+    }),
+    [actions],
+  );
+  const visibleActions = useMemo(
+    () => (sevFilter === "all" ? actions : actions.filter((a) => a.severity === sevFilter)),
+    [actions, sevFilter],
+  );
   const totalAlerts = actions.length;
   const noActionsNeeded = hasData && totalAlerts === 0;
 
@@ -493,16 +506,75 @@ const Diario = () => {
           />
         </section>
 
+        {/* Panel resumen — métricas accionables */}
+        {hasData && (
+          <section className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => setSevFilter("danger")}
+              className={cn(
+                "rounded-xl border p-3 text-left transition",
+                sevFilter === "danger" ? "border-red-500 bg-red-500/5" : "border-border bg-card hover:border-foreground/20",
+              )}
+            >
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Errores</p>
+              <p className="text-xl font-heading font-bold text-red-700 tabular-nums">
+                {data.einvoiceErrors + data.syncErrors}
+              </p>
+              <p className="text-[10px] text-muted-foreground">DIAN + sync 24h</p>
+            </button>
+            <button
+              onClick={() => setSevFilter("warn")}
+              className={cn(
+                "rounded-xl border p-3 text-left transition",
+                sevFilter === "warn" ? "border-amber-500 bg-amber-500/5" : "border-border bg-card hover:border-foreground/20",
+              )}
+            >
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Bajo stock</p>
+              <p className="text-xl font-heading font-bold text-amber-700 tabular-nums">{data.lowStockCount}</p>
+              <p className="text-[10px] text-muted-foreground">≤ 5 unidades</p>
+            </button>
+            <button
+              onClick={() => setSevFilter("all")}
+              className={cn(
+                "rounded-xl border p-3 text-left transition",
+                sevFilter === "all" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-foreground/20",
+              )}
+            >
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Total</p>
+              <p className="text-xl font-heading font-bold text-foreground tabular-nums">{totalAlerts}</p>
+              <p className="text-[10px] text-muted-foreground">acciones</p>
+            </button>
+          </section>
+        )}
+
         {/* Acciones del día */}
         <section className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Acciones de hoy
             </h2>
-            {hasData && (
-              <span className="text-[11px] text-muted-foreground tabular-nums">
-                {totalAlerts} pendiente(s)
-              </span>
+            {hasData && totalAlerts > 0 && (
+              <div className="flex items-center gap-1">
+                {(["all", "danger", "warn", "info"] as const).map((s) => {
+                  const label = s === "all" ? "Todo" : s === "danger" ? "Crítico" : s === "warn" ? "Alerta" : "Info";
+                  const c = s === "all" ? totalAlerts : counts[s];
+                  if (s !== "all" && c === 0) return null;
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setSevFilter(s)}
+                      className={cn(
+                        "text-[10px] font-semibold px-2 py-1 rounded-full border tabular-nums",
+                        sevFilter === s
+                          ? "bg-foreground text-background border-foreground"
+                          : "bg-card text-muted-foreground border-border hover:text-foreground",
+                      )}
+                    >
+                      {label} {c}
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
 
@@ -545,17 +617,23 @@ const Diario = () => {
 
           {hasData && !noActionsNeeded && (
             <div className="space-y-2">
-              {actions.map((a) => (
-                <ActionCard
-                  key={a.key}
-                  icon={a.icon}
-                  title={a.title}
-                  description={a.description}
-                  badge={a.badge}
-                  severity={a.severity}
-                  onClick={a.onClick}
-                />
-              ))}
+              {visibleActions.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic px-1">
+                  Sin acciones en este filtro.
+                </p>
+              ) : (
+                visibleActions.map((a) => (
+                  <ActionCard
+                    key={a.key}
+                    icon={a.icon}
+                    title={a.title}
+                    description={a.description}
+                    badge={a.badge}
+                    severity={a.severity}
+                    onClick={a.onClick}
+                  />
+                ))
+              )}
             </div>
           )}
         </section>

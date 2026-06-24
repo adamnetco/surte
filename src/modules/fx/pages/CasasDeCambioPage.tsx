@@ -7,11 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Coins, ArrowRightLeft, TrendingUp, Plus } from "lucide-react";
+import { Coins, ArrowRightLeft, TrendingUp, Plus, Search, RefreshCw, Loader2 } from "lucide-react";
 import {
   useFxCurrencies, useFxPairs, useFxLatestRates,
   useUpsertCurrency, useCreatePair, useSetRate,
 } from "../hooks/useFx";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const SEED_CURRENCIES = [
   { code: "COP", name: "Peso Colombiano", symbol: "$", decimals: 0 },
@@ -27,13 +30,52 @@ export default function CasasDeCambioPage() {
   const upsertCurrency = useUpsertCurrency();
   const createPair = useCreatePair();
   const setRate = useSetRate();
+  const qc = useQueryClient();
 
+  const [search, setSearch] = useState("");
   const [newCurr, setNewCurr] = useState({ code: "", name: "", symbol: "", decimals: 2 });
   const [newPair, setNewPair] = useState({ base: "", quote: "" });
   const [rateInputs, setRateInputs] = useState<Record<string, { buy: string; sell: string }>>({});
 
   const currMap = useMemo(() => Object.fromEntries(currencies.map(c => [c.id, c])), [currencies]);
   const activeCurrencies = currencies.filter(c => c.is_active);
+
+  const importTrm = useMutation({
+    mutationFn: async (pair_id: string) => {
+      const { data, error } = await supabase.functions.invoke("fx-import-trm", {
+        body: { pair_id, publish: true },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fx_latest_rates"] });
+      toast.success("Tasa actualizada desde TRM (Banrep)");
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo importar TRM"),
+  });
+
+  const filteredCurrencies = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return currencies;
+    return currencies.filter(
+      (c) =>
+        c.code.toLowerCase().includes(q) ||
+        c.name.toLowerCase().includes(q) ||
+        (c.symbol ?? "").toLowerCase().includes(q),
+    );
+  }, [currencies, search]);
+
+  const filteredPairs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return pairs;
+    return pairs.filter((p) => {
+      const b = currMap[p.base_currency_id];
+      const qc = currMap[p.quote_currency_id];
+      const label = `${b?.code ?? ""}/${qc?.code ?? ""} ${b?.name ?? ""} ${qc?.name ?? ""}`.toLowerCase();
+      return label.includes(q);
+    });
+  }, [pairs, currMap, search]);
 
   const seedDefaults = async () => {
     for (const c of SEED_CURRENCIES) {
@@ -53,12 +95,26 @@ export default function CasasDeCambioPage() {
             <p className="text-sm text-muted-foreground">Configuración de divisas, pares y cotizaciones</p>
           </div>
         </div>
-        {currencies.length === 0 && (
-          <Button onClick={seedDefaults} variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-1" /> Cargar divisas comunes (COP, USD, EUR, VES)
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {currencies.length === 0 && (
+            <Button onClick={seedDefaults} variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-1" /> Cargar comunes
+            </Button>
+          )}
+        </div>
       </header>
+
+      {/* Buscador global por código/nombre */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por divisa, par o nombre…"
+          className="pl-9"
+          aria-label="Buscar"
+        />
+      </div>
 
       <Tabs defaultValue="divisas">
         <TabsList>
@@ -88,13 +144,16 @@ export default function CasasDeCambioPage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Divisas registradas ({currencies.length})</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Divisas registradas ({filteredCurrencies.length}/{currencies.length})</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {loadingCur && <p className="text-sm text-muted-foreground">Cargando…</p>}
               {!loadingCur && currencies.length === 0 && (
                 <p className="text-sm text-muted-foreground">Aún no hay divisas. Usa el botón superior para cargar las comunes o agrega manualmente.</p>
               )}
-              {currencies.map(c => (
+              {!loadingCur && currencies.length > 0 && filteredCurrencies.length === 0 && (
+                <p className="text-sm text-muted-foreground">Sin resultados para “{search}”.</p>
+              )}
+              {filteredCurrencies.map(c => (
                 <div key={c.id} className="flex items-center justify-between border rounded-md p-3">
                   <div className="flex items-center gap-3">
                     <Badge variant="outline" className="font-mono">{c.code}</Badge>
@@ -152,27 +211,49 @@ export default function CasasDeCambioPage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Pares activos ({pairs.length})</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Pares activos ({filteredPairs.length}/{pairs.length})</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {pairs.length === 0 && <p className="text-sm text-muted-foreground">Sin pares todavía.</p>}
-              {pairs.map(p => {
+              {pairs.length > 0 && filteredPairs.length === 0 && (
+                <p className="text-sm text-muted-foreground">Sin resultados para “{search}”.</p>
+              )}
+              {filteredPairs.map(p => {
                 const base = currMap[p.base_currency_id];
                 const quote = currMap[p.quote_currency_id];
                 const r = latestRates[p.id];
+                const canTrm = base?.code === "USD" && quote?.code === "COP";
                 return (
-                  <div key={p.id} className="flex items-center justify-between border rounded-md p-3">
-                    <div className="flex items-center gap-3">
+                  <div key={p.id} className="flex items-center justify-between border rounded-md p-3 gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Badge variant="default" className="font-mono">{base?.code}/{quote?.code}</Badge>
-                      <span className="text-sm text-muted-foreground">{base?.name} → {quote?.name}</span>
+                      <span className="text-sm text-muted-foreground truncate">{base?.name} → {quote?.name}</span>
                     </div>
-                    <div className="text-right text-sm">
-                      {r ? (
-                        <>
-                          <div>Compra <span className="font-mono font-semibold">{r.buy_rate}</span> · Venta <span className="font-mono font-semibold">{r.sell_rate}</span></div>
-                          <div className="text-xs text-muted-foreground">Spread: {((r.sell_rate - r.buy_rate) / r.buy_rate * 100).toFixed(2)}%</div>
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Sin cotización</span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right text-sm">
+                        {r ? (
+                          <>
+                            <div>Compra <span className="font-mono font-semibold">{r.buy_rate}</span> · Venta <span className="font-mono font-semibold">{r.sell_rate}</span></div>
+                            <div className="text-xs text-muted-foreground">Spread: {((r.sell_rate - r.buy_rate) / r.buy_rate * 100).toFixed(2)}% · src: {r.source}</div>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Sin cotización</span>
+                        )}
+                      </div>
+                      {canTrm && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={importTrm.isPending}
+                          onClick={() => importTrm.mutate(p.id)}
+                          title="Importar tasa oficial TRM (Banco de la República)"
+                        >
+                          {importTrm.isPending && importTrm.variables === p.id ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          TRM Banrep
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -191,16 +272,34 @@ export default function CasasDeCambioPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {pairs.length === 0 && <p className="text-sm text-muted-foreground">Crea pares primero.</p>}
-              {pairs.map(p => {
+              {pairs.length > 0 && filteredPairs.length === 0 && (
+                <p className="text-sm text-muted-foreground">Sin resultados para “{search}”.</p>
+              )}
+              {filteredPairs.map(p => {
                 const base = currMap[p.base_currency_id];
                 const quote = currMap[p.quote_currency_id];
                 const r = latestRates[p.id];
                 const inputs = rateInputs[p.id] ?? { buy: "", sell: "" };
                 return (
                   <div key={p.id} className="border rounded-md p-3 space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <Badge variant="default" className="font-mono">{base?.code}/{quote?.code}</Badge>
-                      {r && <span className="text-xs text-muted-foreground">Actual: {r.buy_rate} / {r.sell_rate} · {new Date(r.effective_at).toLocaleString("es-CO")}</span>}
+                      {r && <span className="text-xs text-muted-foreground">Actual: {r.buy_rate} / {r.sell_rate} · {new Date(r.effective_at).toLocaleString("es-CO")} · src: {r.source}</span>}
+                      {base?.code === "USD" && quote?.code === "COP" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={importTrm.isPending}
+                          onClick={() => importTrm.mutate(p.id)}
+                        >
+                          {importTrm.isPending && importTrm.variables === p.id ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          Importar TRM oficial
+                        </Button>
+                      )}
                     </div>
                     <div className="grid md:grid-cols-3 gap-2 items-end">
                       <div>

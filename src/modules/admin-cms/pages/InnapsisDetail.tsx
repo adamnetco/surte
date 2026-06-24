@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -72,20 +72,24 @@ const InnapsisDetail = () => {
     },
   });
 
+  const [eventsLimit, setEventsLimit] = useState(25);
+
   const eventsQ = useQuery({
-    queryKey: ["admin", "innapsis", "events", id],
+    queryKey: ["admin", "innapsis", "events", id, eventsLimit],
     enabled: !!id && !!orgId,
     refetchInterval: 15_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from("einvoice_events")
-        .select("id,event_type,status,message,payload,response,created_at,performed_by")
+        .select("id,event_type,status,message,payload,response,created_at,performed_by", {
+          count: "exact",
+        })
         .eq("invoice_id", id!)
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(eventsLimit);
       if (error) throw error;
-      return data ?? [];
+      return { rows: data ?? [], total: count ?? 0 };
     },
   });
 
@@ -105,7 +109,8 @@ const InnapsisDetail = () => {
   });
 
   const inv = invoiceQ.data as any;
-  const events = eventsQ.data ?? [];
+  const events = (eventsQ.data as any)?.rows ?? [];
+  const totalEvents = (eventsQ.data as any)?.total ?? events.length;
 
   const lastError = useMemo(() => {
     if (inv?.last_error) return inv.last_error;
@@ -256,7 +261,7 @@ const InnapsisDetail = () => {
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Timeline DIAN ({events.length})
+              Timeline DIAN ({events.length}{totalEvents > events.length ? ` de ${totalEvents}` : ""})
             </h2>
             <button
               onClick={() => eventsQ.refetch()}
@@ -335,6 +340,18 @@ const InnapsisDetail = () => {
                 );
               })}
             </ol>
+          )}
+
+          {totalEvents > events.length && !eventsQ.isLoading && (
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setEventsLimit((n) => n + 25)}
+                disabled={eventsQ.isFetching}
+                className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+              >
+                {eventsQ.isFetching ? "Cargando…" : `Cargar 25 más (${totalEvents - events.length} restantes)`}
+              </button>
+            </div>
           )}
         </section>
       </main>
