@@ -418,9 +418,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       //    organización tiene Facturación activa y el cliente cumple el
       //    umbral configurado. Ver useEinvoiceAutoEmit.
       if (shouldEmitEinvoice(snapshotTotal, customer)) {
+        // AC11: si DIAN está offline y la org tiene rango de contingencia, pedimos
+        // explícitamente modo contingencia. El backend igual auto-detecta (defensa en profundidad).
+        const contingencyMode = dianSnap.health === "offline" && dianSnap.hasContingencyRange;
         enqueue(
           "einvoice_emit",
-          { client_uuid: clientUuid, document_type: "invoice" },
+          { client_uuid: clientUuid, document_type: "invoice", contingency_mode: contingencyMode },
           organizationId
         ).catch((err) => console.warn("[einvoice] enqueue failed", err));
       }
