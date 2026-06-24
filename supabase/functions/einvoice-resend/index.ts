@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
         organization_id: invoice.organization_id,
         invoice_id,
         event_type: "manual_retry",
-        actor_user_id: userId,
+        performed_by: userId,
         payload: { forced: true },
       });
 
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
         organization_id: invoice.organization_id,
         invoice_id,
         event_type: "resent_email",
-        actor_user_id: userId,
+        performed_by: userId,
         payload: { to: destEmail },
       });
 
@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
         organization_id: invoice.organization_id,
         invoice_id,
         event_type: "resent_whatsapp",
-        actor_user_id: userId,
+        performed_by: userId,
         payload: { to: destPhone },
       });
 
