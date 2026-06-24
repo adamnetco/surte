@@ -9222,6 +9222,16 @@ export type Database = {
         Args: { _currency_code: string; _delta: number; _session_id: string }
         Returns: undefined
       }
+      fx_convert_to_currency: {
+        Args: {
+          p_amount: number
+          p_at?: string
+          p_from_currency_id: string
+          p_organization_id: string
+          p_to_currency_code: string
+        }
+        Returns: number
+      }
       fx_customer_monthly_accumulated: {
         Args: {
           p_doc_number: string
@@ -9230,8 +9240,10 @@ export type Database = {
         }
         Returns: {
           accumulated: number
+          cross_count: number
           currency: string
           exceeds: boolean
+          missing_rate_count: number
           tx_count: number
         }[]
       }
