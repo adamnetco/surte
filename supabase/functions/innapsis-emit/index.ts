@@ -585,6 +585,12 @@ Deno.serve(async (req) => {
         request_payload: payload,
         environment: cfg.environment,
         created_by: userId,
+        reference_invoice_id: referenceData?.invoice_id ?? null,
+        reference_cufe: referenceData?.cufe ?? null,
+        reference_full_number: referenceData?.full_number ?? null,
+        reference_issue_date: referenceData?.issueDate ?? null,
+        note_concept_code: referenceData?.conceptCode ?? null,
+        note_concept_text: referenceData?.conceptText ?? null,
       }).select().single();
       if (invErr) throw invErr;
       inv = ins;
