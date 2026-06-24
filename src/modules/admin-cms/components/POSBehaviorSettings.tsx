@@ -242,3 +242,34 @@ function BehaviorRow({
     </div>
   );
 }
+
+function DefaultDocRow({
+  label, value, onChange, options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { id: string; code: string; label: string; dian_code?: string | null }[];
+}) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-9 w-[220px] text-xs">
+          <SelectValue placeholder="Seleccionar" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.length === 0 && (
+            <SelectItem value={value} disabled>Sin opciones</SelectItem>
+          )}
+          {options.map((dt) => (
+            <SelectItem key={dt.id} value={dt.code}>
+              {dt.label}
+              {dt.dian_code && <span className="text-muted-foreground ml-2">· DIAN {dt.dian_code}</span>}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
