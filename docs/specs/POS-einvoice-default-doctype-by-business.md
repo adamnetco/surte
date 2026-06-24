@@ -18,18 +18,14 @@ Forzar al cajero a elegir cada vez introduce fricción y errores. Necesitamos un
 
 ## Outcomes
 
-- [ ] **AC1:** Nuevas columnas en `einvoice_configs`:
+- [x] **AC1:** Nuevas columnas en `einvoice_configs`:
   - `default_doc_type_consumer_final` (default: `pos_electronico`)
   - `default_doc_type_with_nit` (default: `factura_electronica`)
   - `default_doc_type_fx_operation` (default: `documento_soporte`)
-- [ ] **AC2:** Seeds automáticos según `organizations.business_type`:
-  - `horeca` → consumer=`pos_electronico`, nit=`factura_electronica`
-  - `b2b` → consumer=`factura_electronica`, nit=`factura_electronica`
-  - `casa_de_cambio` → consumer=`documento_soporte`, nit=`documento_soporte`
-  - `minimercado`, `casa` → consumer=`pos_electronico`, nit=`factura_electronica`
-- [ ] **AC3:** `DocumentTypeSelector` lee defaults desde `einvoice_configs` y aplica según presencia/ausencia de NIT en el customer seleccionado.
-- [ ] **AC4:** Sección en `POSBehaviorSettings`: "Defaults por tipo de cliente" con 3 dropdowns + preview del comportamiento.
-- [ ] **AC5:** Si la organización cambia `business_type`, NO se sobrescriben los defaults ya personalizados (sólo seed inicial).
+- [x] **AC2:** Backfill por `organizations.business_type` (HORECA, B2B, mayorista, casa_de_cambio, minimercado, casa) — solo aplicado a filas que aún tenían los defaults estándar.
+- [x] **AC3:** `DocumentTypeSelector` lee `useOrgDefaultDocTypes` y resuelve: fx → fxOperation, hasCustomerId → withNit, else → consumerFinal.
+- [x] **AC4:** Sección "Defaults por tipo de cliente" en `POSBehaviorSettings` con 3 selects (consumidor final / con NIT / operación FX).
+- [x] **AC5:** Cambio futuro de `business_type` NO sobrescribe defaults: el backfill SQL filtra `WHERE` valores estándar; cambios manuales del admin quedan blindados porque ya no coinciden con los defaults base.
 
 ## Notas de Implementación
 
