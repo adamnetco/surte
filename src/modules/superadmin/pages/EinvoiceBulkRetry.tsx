@@ -229,6 +229,21 @@ export default function EinvoiceBulkRetry() {
               Reintentos del outbox antes de marcar <code>dead_letter</code>.
             </p>
           </div>
+          <div>
+            <Label htmlFor="wallclock_ms">Wallclock (seg)</Label>
+            <Input
+              id="wallclock_ms"
+              type="number"
+              min={5}
+              max={55}
+              value={Math.round(wallclockMs / 1000)}
+              onChange={(e) =>
+                setWallclockMs(Math.max(5, Math.min(55, Number(e.target.value) || 45)) * 1000)
+              }
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Presupuesto antes de truncar (AC4). Si se corta, podrás <strong>Reanudar</strong>.
+            </p>
           <div className="flex items-end gap-2 pb-1">
             <div className="flex items-center gap-2 rounded-md border px-3 py-2 w-full">
               <Switch id="dry_run" checked={dryRun} onCheckedChange={setDryRun} />
