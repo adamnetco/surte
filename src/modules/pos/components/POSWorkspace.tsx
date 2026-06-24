@@ -101,6 +101,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
   const { shouldEmit: shouldEmitEinvoice } = useEinvoiceAutoEmit(organizationId);
+  const dianSnap = useDianHealth(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
 
   // === Impresión térmica ===
