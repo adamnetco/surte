@@ -767,6 +767,16 @@ const Diario = () => {
         organizationId={currentOrg?.id}
         onAfterAction={() => refetch()}
       />
+
+      <DiarioShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        data={data ?? null}
+        orgName={currentOrg?.name ?? "Mi negocio"}
+        userName={firstName}
+        checklistDone={doneCount}
+        checklistTotal={CHECKLIST_DEFS.length}
+      />
     </div>
 
   );
