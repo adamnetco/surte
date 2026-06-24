@@ -376,17 +376,15 @@ Deno.test("AC4: wallclock guard truncates between batches and returns next_curso
   }));
   const { client, ops } = makeFake({ pendingsByOrg: { [orgA]: pendings } });
 
-  // Reloj: arranca en 0, avanza 20s en cada lectura. Budget = 30s → corte tras 1er lote.
-  let t = 0;
-  const now = () => {
-    const v = t;
-    t += 20_000;
-    return v;
-  };
+  // Reloj determinista: deja correr el primer lote y excede deadline antes del 2º.
+  // budget=50s; ticks consumidos: startedAt, outer-check orgA, pre-batch 0, pre-batch 1.
+  const ticks = [0, 1_000, 2_000, 60_000, 60_000, 60_000];
+  let i = 0;
+  const now = () => ticks[Math.min(i++, ticks.length - 1)];
 
   const out = await processBulkRetry(
     client,
-    { organization_ids: [orgA], batch_size: 100, wallclock_ms: 30_000 },
+    { organization_ids: [orgA], batch_size: 100, wallclock_ms: 50_000 },
     "user-1",
     now,
   );
