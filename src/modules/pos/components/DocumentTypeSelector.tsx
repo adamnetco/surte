@@ -1,6 +1,7 @@
 import { FileText, Receipt, FileCheck2, FileMinus, FileQuestion } from "lucide-react";
 import { useMemo } from "react";
 import { useOrgDocumentTypes, type DocumentTypeOption } from "../hooks/useOrgDocumentTypes";
+import { useOrgDefaultDocTypes } from "../hooks/useOrgDefaultDocTypes";
 
 interface Props {
   organizationId: string;
