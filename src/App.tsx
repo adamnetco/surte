@@ -290,6 +290,7 @@ const App = () => (
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
                     <Route path="/admin/diario" element={<RoleGuard section="admin"><Diario /></RoleGuard>} />
                     <Route path="/admin/innapsis" element={<RoleGuard section="admin"><Innapsis /></RoleGuard>} />
+                    <Route path="/admin/innapsis/:id" element={<RoleGuard section="admin"><InnapsisDetail /></RoleGuard>} />
 
                     <Route path="/pos" element={<PosHub />} />
                     <Route path="/pos/vender" element={<POS />} />
