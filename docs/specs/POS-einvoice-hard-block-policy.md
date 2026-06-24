@@ -1,6 +1,6 @@
 # POS — Hard-Block de Cobro cuando DIAN está offline sin contingencia
 
-**Estado:** DRAFT
+**Estado:** IN_SPEC
 **Módulo:** `pos` + `admin-cms` (config) + `einvoice_configs`
 **Wave:** Follow-up de [POS-innapsis-emision-pos](./POS-innapsis-emision-pos.md) (Observación #1 del review)
 **Tablas:** `einvoice_configs` (nueva columna `hard_block_when_dian_down`), `einvoice_contingency_ranges`
