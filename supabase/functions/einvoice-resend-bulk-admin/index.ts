@@ -147,7 +147,15 @@ Deno.serve(async (req) => {
       const outboxRows = rows.map((r: any) => ({
         organization_id: r.organization_id,
         operation: "einvoice_emit",
-        payload: { invoice_id: r.id, forced_retry: true, forced_by: userId, bulk: true, admin: true },
+        payload: {
+          invoice_id: r.id,
+          forced_retry: true,
+          forced_by: userId,
+          bulk: true,
+          admin: true,
+          ...(batch_size ? { batch_size } : {}),
+          ...(typeof max_retries === "number" ? { max_retries } : {}),
+        },
         status: "pending",
       }));
       const { error: outErr } = await supabase.from("sync_outbox").insert(outboxRows);
