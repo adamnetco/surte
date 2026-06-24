@@ -22,6 +22,8 @@ import { AlertTriangle, Loader2, RefreshCw, Search, Send } from "lucide-react";
 const MAX_ORGS_PER_REQUEST = 20;
 const DEFAULT_BATCH_SIZE = 50;
 const DEFAULT_MAX_RETRIES = 3;
+const DEFAULT_WALLCLOCK_MS = 45_000;
+
 
 interface Org {
   id: string;
