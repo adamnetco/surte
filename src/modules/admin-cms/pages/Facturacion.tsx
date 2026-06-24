@@ -313,6 +313,9 @@ export default function Facturacion() {
                     <Button size="icon" variant="ghost" onClick={() => checkStatus(i.id)} title="Consultar estado">
                       <Send className="h-4 w-4" />
                     </Button>
+                    <Button size="icon" variant="ghost" onClick={() => openPreview(i.id)} title="Previsualizar payload">
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     {i.document_type === "invoice" && (i.status === "sent" || i.status === "accepted") && (
                       <Button size="icon" variant="ghost" onClick={() => setNoteInvoice(i)} title="Emitir Nota Crédito/Débito">
                         <FileMinus className="h-4 w-4" />
