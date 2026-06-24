@@ -22,6 +22,8 @@ import { AlertTriangle, Loader2, RefreshCw, Search, Send } from "lucide-react";
 const MAX_ORGS_PER_REQUEST = 20;
 const DEFAULT_BATCH_SIZE = 50;
 const DEFAULT_MAX_RETRIES = 3;
+const DEFAULT_WALLCLOCK_MS = 45_000;
+
 
 interface Org {
   id: string;
@@ -47,6 +49,13 @@ interface PerOrgResult {
   // POS-optimizar-bulk-retry-timeouts
   batches?: BatchResult[];
   partial?: boolean;
+  truncated?: boolean;
+  last_processed_id?: string | null;
+}
+
+interface NextCursor {
+  organization_id: string;
+  last_processed_id: string | null;
 }
 
 interface BulkResponse {
@@ -56,6 +65,9 @@ interface BulkResponse {
   total_requeued: number;
   partial?: boolean;
   results: PerOrgResult[];
+  truncated?: boolean;
+  next_cursor?: NextCursor;
+  elapsed_ms?: number;
 }
 
 export default function EinvoiceBulkRetry() {
@@ -64,6 +76,7 @@ export default function EinvoiceBulkRetry() {
   const [dryRun, setDryRun] = useState(true);
   const [batchSize, setBatchSize] = useState(DEFAULT_BATCH_SIZE);
   const [maxRetries, setMaxRetries] = useState(DEFAULT_MAX_RETRIES);
+  const [wallclockMs, setWallclockMs] = useState(DEFAULT_WALLCLOCK_MS);
   const [running, setRunning] = useState(false);
   const [lastResponse, setLastResponse] = useState<BulkResponse | null>(null);
 
@@ -105,7 +118,7 @@ export default function EinvoiceBulkRetry() {
 
   const clearSelection = () => setSelected({});
 
-  const run = async (asDryRun: boolean) => {
+  const run = async (asDryRun: boolean, cursor?: NextCursor) => {
     if (selectedIds.length === 0) {
       toast.error("Selecciona al menos una organización.");
       return;
@@ -114,10 +127,10 @@ export default function EinvoiceBulkRetry() {
       toast.error(`Máximo ${MAX_ORGS_PER_REQUEST} organizaciones por ejecución.`);
       return;
     }
-    if (!asDryRun) {
+    if (!asDryRun && !cursor) {
       const ok = window.confirm(
         `Reencolar facturas pendientes en ${selectedIds.length} organización(es)?\n\n` +
-        `batch_size=${batchSize} · max_retries=${maxRetries}\n` +
+        `batch_size=${batchSize} · max_retries=${maxRetries} · wallclock=${Math.round(wallclockMs / 1000)}s\n` +
         `Esta acción afecta múltiples tenants. Procede solo si el dry-run fue revisado.`,
       );
       if (!ok) return;
@@ -133,6 +146,8 @@ export default function EinvoiceBulkRetry() {
             dry_run: asDryRun,
             batch_size: batchSize,
             max_retries: maxRetries,
+            wallclock_ms: wallclockMs,
+            ...(cursor ? { cursor } : {}),
           },
         },
       );
@@ -150,6 +165,10 @@ export default function EinvoiceBulkRetry() {
       setLastResponse(resp);
       if (asDryRun) {
         toast.success(`Preview: ${resp.total_requeued === 0 ? resp.results.reduce((s, r) => s + r.candidates, 0) : resp.total_requeued} candidatas en ${resp.total_orgs} org(s).`);
+      } else if (resp.truncated) {
+        toast.warning(
+          `Truncado por wallclock: ${resp.total_requeued} reencoladas. Usa "Reanudar" para continuar.`,
+        );
       } else {
         toast.success(`Reencoladas ${resp.total_requeued} facturas en ${resp.total_orgs} org(s).`);
       }
@@ -181,7 +200,7 @@ export default function EinvoiceBulkRetry() {
       </header>
 
       <Card className="p-4 space-y-4">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           <div>
             <Label htmlFor="batch_size">Batch size</Label>
             <Input
@@ -208,6 +227,22 @@ export default function EinvoiceBulkRetry() {
             />
             <p className="text-[11px] text-muted-foreground mt-1">
               Reintentos del outbox antes de marcar <code>dead_letter</code>.
+            </p>
+          </div>
+          <div>
+            <Label htmlFor="wallclock_ms">Wallclock (seg)</Label>
+            <Input
+              id="wallclock_ms"
+              type="number"
+              min={5}
+              max={55}
+              value={Math.round(wallclockMs / 1000)}
+              onChange={(e) =>
+                setWallclockMs(Math.max(5, Math.min(55, Number(e.target.value) || 45)) * 1000)
+              }
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Presupuesto antes de truncar (AC4). Si se corta, podrás <strong>Reanudar</strong>.
             </p>
           </div>
           <div className="flex items-end gap-2 pb-1">
@@ -316,10 +351,31 @@ export default function EinvoiceBulkRetry() {
               {lastResponse.dry_run ? "dry_run" : "ejecutado"}
             </Badge>
           </div>
-          {lastResponse.partial && !lastResponse.dry_run && (
+          {lastResponse.partial && !lastResponse.dry_run && !lastResponse.truncated && (
             <p className="text-xs text-amber-600">
               ⚠ Ejecución parcial: algunos lotes fallaron — revisa <code>sync_logs</code> con <code>phase=batch_N</code>.
             </p>
+          )}
+          {lastResponse.truncated && !lastResponse.dry_run && lastResponse.next_cursor && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="flex-1">
+                Truncado por wallclock ({Math.round((lastResponse.elapsed_ms ?? 0) / 100) / 10}s).
+                Reanuda desde org <code className="font-mono">{(nameById[lastResponse.next_cursor.organization_id] ?? lastResponse.next_cursor.organization_id).slice(0, 24)}</code>
+                {lastResponse.next_cursor.last_processed_id
+                  ? <> · último id <code className="font-mono">{lastResponse.next_cursor.last_processed_id.slice(0, 12)}…</code></>
+                  : null}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={running}
+                onClick={() => run(false, lastResponse.next_cursor!)}
+              >
+                {running ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                Reanudar
+              </Button>
+            </div>
           )}
           <div className="divide-y rounded-md border">
             {lastResponse.results.map((r) => (

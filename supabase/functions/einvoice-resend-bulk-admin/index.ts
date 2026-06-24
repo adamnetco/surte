@@ -2,7 +2,15 @@
 // POS-einvoice-bulk-retry-admin (follow-up de POS-einvoice-retry-scoping AC5).
 // Bulk retry multi-org RESTRINGIDO a superadmins.
 //
-// Body: { organization_ids: uuid[], dry_run?: boolean, batch_size?: number, max_retries?: number }
+// Body: {
+//   organization_ids: uuid[],
+//   dry_run?: boolean,
+//   batch_size?: number,
+//   max_retries?: number,
+//   // POS-optimizar-bulk-retry-timeouts AC4 — wallclock guard + cursor
+//   wallclock_ms?: number,
+//   cursor?: { organization_id: string, last_processed_id?: string | null }
+// }
 // Reusa la misma lógica batch (UPDATE in + INSERT outbox) que einvoice-resend,
 // pero itera por organización y aísla el blast radius con validación de visibilidad.
 
@@ -23,6 +31,14 @@ export const BodySchema = z.object({
   // Se persisten en el payload del outbox; no afectan el flujo actual.
   batch_size: z.number().int().min(1).max(500).optional(),
   max_retries: z.number().int().min(0).max(10).optional(),
+  // AC4: presupuesto wallclock (ms) y cursor de reanudación.
+  wallclock_ms: z.number().int().min(1000).max(55_000).optional(),
+  cursor: z
+    .object({
+      organization_id: z.string().uuid(),
+      last_processed_id: z.string().nullable().optional(),
+    })
+    .optional(),
 });
 
 export type BulkBody = z.infer<typeof BodySchema>;
@@ -44,6 +60,14 @@ export type OrgResult = {
   // POS-optimizar-bulk-retry-timeouts AC2/AC3 — per-batch breakdown
   batches?: BatchResult[];
   partial?: boolean;
+  // AC4: si la org se cortó por wallclock, último id procesado con éxito.
+  truncated?: boolean;
+  last_processed_id?: string | null;
+};
+
+export type NextCursor = {
+  organization_id: string;
+  last_processed_id: string | null;
 };
 
 export type BulkResponse = {
@@ -54,9 +78,14 @@ export type BulkResponse = {
   // AC3: true si al menos un org/lote terminó en error parcial
   partial: boolean;
   results: OrgResult[];
+  // AC4: si se cortó por wallclock, cursor para reanudar.
+  truncated: boolean;
+  next_cursor?: NextCursor;
+  elapsed_ms: number;
 };
 
 const DEFAULT_BATCH_SIZE = 100;
+const DEFAULT_WALLCLOCK_MS = 45_000;
 
 function chunk<T>(arr: T[], size: number): T[][] {
   if (size <= 0) return [arr];
@@ -73,26 +102,59 @@ function json(status: number, body: unknown) {
 }
 
 // Lógica pura testeable. `supabase` puede ser un fake con la misma forma.
+// `nowFn` permite inyectar reloj determinista en tests (AC4).
 export async function processBulkRetry(
   supabase: any,
   body: BulkBody,
   userId: string,
+  nowFn: () => number = () => Date.now(),
 ): Promise<BulkResponse> {
-  const { organization_ids, dry_run, batch_size, max_retries } = body;
+  const { organization_ids, dry_run, batch_size, max_retries, wallclock_ms, cursor } = body;
   const effectiveBatch = batch_size && batch_size > 0 ? batch_size : DEFAULT_BATCH_SIZE;
+  const budgetMs = wallclock_ms && wallclock_ms > 0 ? wallclock_ms : DEFAULT_WALLCLOCK_MS;
+  const startedAt = nowFn();
+  const deadlineAt = startedAt + budgetMs;
 
   const since = new Date();
   since.setHours(0, 0, 0, 0);
 
-  const results: OrgResult[] = [];
+  // AC4: si llega cursor, saltamos orgs anteriores en el array de entrada.
+  const cursorOrgIdx = cursor
+    ? organization_ids.indexOf(cursor.organization_id)
+    : -1;
+  const startIdx = cursorOrgIdx >= 0 ? cursorOrgIdx : 0;
 
-  for (const orgId of organization_ids) {
-    const { data: pendings, error: queryErr } = await supabase
+  const results: OrgResult[] = [];
+  let truncated = false;
+  let nextCursor: NextCursor | undefined;
+
+  outer: for (let oi = startIdx; oi < organization_ids.length; oi++) {
+    const orgId = organization_ids[oi];
+
+    // Si nos quedamos sin presupuesto antes de tocar la org, cortamos.
+    if (nowFn() >= deadlineAt) {
+      truncated = true;
+      nextCursor = { organization_id: orgId, last_processed_id: null };
+      break;
+    }
+
+    let query = supabase
       .from("electronic_invoices")
       .select("id, organization_id")
       .eq("organization_id", orgId)
-      .gte("created_at", since.toISOString())
-      .in("status", ["retrying", "rejected", "error", "dead_letter", "queued", "pending"]);
+      .gte("created_at", since.toISOString());
+
+    // AC4: reanudación dentro de la org del cursor.
+    if (cursor && oi === cursorOrgIdx && cursor.last_processed_id) {
+      query = query.gt("id", cursor.last_processed_id);
+    }
+    // Orden estable para que el cursor (last id) sea reanudable.
+    query = query.order("id", { ascending: true });
+
+    const { data: pendings, error: queryErr } = await query.in(
+      "status",
+      ["retrying", "rejected", "error", "dead_letter", "queued", "pending"],
+    );
 
     if (queryErr) {
       await supabase.from("sync_logs").insert({
@@ -129,8 +191,21 @@ export async function processBulkRetry(
     const batches = chunk(rows, effectiveBatch);
     const batchResults: BatchResult[] = [];
     let orgRequeued = 0;
+    let lastProcessedId: string | null = null;
+    let orgTruncated = false;
 
     for (let i = 0; i < batches.length; i++) {
+      // AC4: chequeo wallclock antes de cada lote.
+      if (nowFn() >= deadlineAt) {
+        orgTruncated = true;
+        truncated = true;
+        nextCursor = {
+          organization_id: orgId,
+          last_processed_id: lastProcessedId,
+        };
+        break;
+      }
+
       const lote = batches[i];
       const loteIds = lote.map((r) => r.id);
 
@@ -202,6 +277,7 @@ export async function processBulkRetry(
       }
 
       orgRequeued += loteIds.length;
+      lastProcessedId = loteIds[loteIds.length - 1];
       batchResults.push({
         index: i,
         candidates: loteIds.length,
@@ -211,24 +287,31 @@ export async function processBulkRetry(
     }
 
     const failedBatches = batchResults.filter((b) => b.status === "error").length;
-    const orgPartial = failedBatches > 0 && orgRequeued > 0;
+    const orgPartial = (failedBatches > 0 && orgRequeued > 0) || orgTruncated;
     const orgStatus: OrgResult["status"] =
-      orgRequeued === 0 ? "error" : "success"; // partial se expresa con `partial:true`
+      orgRequeued === 0 && batchResults.length > 0 ? "error" : "success";
 
     // sync_logs agregado por organización (AC5: un solo row resumen).
     await supabase.from("sync_logs").insert({
       organization_id: orgId,
       service_name: "einvoice_bulk_retry_admin",
       status: orgStatus,
-      error_message: orgPartial ? `partial: ${failedBatches} batch(es) failed` : null,
+      error_message: orgTruncated
+        ? `truncated: wallclock budget exhausted after batch ${batchResults.length}/${batches.length}`
+        : orgPartial
+          ? `partial: ${failedBatches} batch(es) failed`
+          : null,
       payload: {
         action: "bulk_admin",
         requeued_count: orgRequeued,
         requested_by: userId,
         since: since.toISOString(),
         batches: batchResults.length,
+        total_batches: batches.length,
         failed_batches: failedBatches,
         batch_size: effectiveBatch,
+        truncated: orgTruncated,
+        last_processed_id: lastProcessedId,
         ...(typeof max_retries === "number" ? { max_retries } : {}),
       },
     });
@@ -241,10 +324,15 @@ export async function processBulkRetry(
       error: orgStatus === "error" ? batchResults.find((b) => b.error)?.error : undefined,
       batches: batchResults,
       partial: orgPartial,
+      ...(orgTruncated
+        ? { truncated: true, last_processed_id: lastProcessedId }
+        : {}),
     });
+
+    if (orgTruncated) break outer;
   }
 
-  const anyPartial = results.some((r) => r.partial || r.status === "error");
+  const anyPartial = truncated || results.some((r) => r.partial || r.status === "error");
 
   return {
     success: true,
@@ -253,6 +341,9 @@ export async function processBulkRetry(
     total_requeued: results.reduce((s, r) => s + r.requeued, 0),
     partial: anyPartial,
     results,
+    truncated,
+    ...(nextCursor ? { next_cursor: nextCursor } : {}),
+    elapsed_ms: nowFn() - startedAt,
   };
 }
 

@@ -34,6 +34,8 @@ function makeFake(cfg: FakeConfig = {}) {
         return selectBuilder;
       },
       gte() { return selectBuilder; },
+      gt() { return selectBuilder; },
+      order() { return selectBuilder; },
       async in(_col: string, _vals: string[]) {
         const org = currentOrg!;
         ops.push({ table, type: "select", payload: { org } });
@@ -363,4 +365,120 @@ Deno.test("AC1: default batch_size=100 when not provided", async () => {
     (o) => o.table === "sync_logs" && o.payload?.status === "success",
   );
   assertEquals(okLog?.payload?.payload?.batch_size, 100);
+});
+
+// ---------- POS-optimizar-bulk-retry-timeouts AC4 (wallclock + cursor) ----------
+Deno.test("AC4: wallclock guard truncates between batches and returns next_cursor", async () => {
+  const orgA = crypto.randomUUID();
+  const pendings = Array.from({ length: 300 }, (_, i) => ({
+    id: `inv-${String(i).padStart(4, "0")}`,
+    organization_id: orgA,
+  }));
+  const { client, ops } = makeFake({ pendingsByOrg: { [orgA]: pendings } });
+
+  // Reloj determinista: deja correr el primer lote y excede deadline antes del 2º.
+  // budget=50s; ticks consumidos: startedAt, outer-check orgA, pre-batch 0, pre-batch 1.
+  const ticks = [0, 1_000, 2_000, 60_000, 60_000, 60_000];
+  let i = 0;
+  const now = () => ticks[Math.min(i++, ticks.length - 1)];
+
+  const out = await processBulkRetry(
+    client,
+    { organization_ids: [orgA], batch_size: 100, wallclock_ms: 50_000 },
+    "user-1",
+    now,
+  );
+
+  assertEquals(out.truncated, true);
+  assertEquals(out.partial, true);
+  assertEquals(out.next_cursor?.organization_id, orgA);
+  // Solo el primer lote debió procesarse (los siguientes se cortaron por wallclock).
+  assertEquals(out.results[0].requeued, 100);
+  assertEquals(out.results[0].truncated, true);
+  assertEquals(out.next_cursor?.last_processed_id, "inv-0099");
+
+  const outboxInserts = ops.filter((o) => o.table === "sync_outbox" && o.type === "insert");
+  assertEquals(outboxInserts.length, 1);
+
+  const aggLog = ops.find(
+    (o) =>
+      o.table === "sync_logs" &&
+      o.payload?.payload?.action === "bulk_admin" &&
+      o.payload?.payload?.truncated === true,
+  );
+  assertEquals(!!aggLog, true);
+  assertEquals(aggLog?.payload?.payload?.last_processed_id, "inv-0099");
+});
+
+Deno.test("AC4: cursor resumes from last_processed_id and skips earlier orgs", async () => {
+  const orgA = crypto.randomUUID();
+  const orgB = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    // Si la lógica respeta el cursor, NO debe leer orgA (saltado).
+    pendingsByOrg: {
+      [orgB]: [
+        { id: "inv-b1", organization_id: orgB },
+        { id: "inv-b2", organization_id: orgB },
+      ],
+    },
+  });
+
+  const out = await processBulkRetry(
+    client,
+    {
+      organization_ids: [orgA, orgB],
+      cursor: { organization_id: orgB, last_processed_id: "inv-b0" },
+    },
+    "user-1",
+  );
+
+  // Resultados solo contienen orgB.
+  assertEquals(out.results.length, 1);
+  assertEquals(out.results[0].organization_id, orgB);
+  assertEquals(out.results[0].requeued, 2);
+  assertEquals(out.truncated, false);
+
+  // No debió consultar orgA.
+  const orgASelect = ops.find(
+    (o) => o.table === "electronic_invoices" && o.type === "select" && o.payload?.org === orgA,
+  );
+  assertEquals(!!orgASelect, false);
+});
+
+Deno.test("AC4: budget agotado antes de tocar la siguiente org devuelve next_cursor a esa org", async () => {
+  const orgA = crypto.randomUUID();
+  const orgB = crypto.randomUUID();
+  const { client } = makeFake({
+    pendingsByOrg: {
+      [orgA]: [{ id: "inv-a1", organization_id: orgA }],
+      [orgB]: [{ id: "inv-b1", organization_id: orgB }],
+    },
+  });
+
+  // Reloj: orgA procesa (startedAt, outer orgA, pre-batch 0); luego outer orgB excede.
+  const ticks = [0, 5_000, 10_000, 60_000, 60_000];
+  let i = 0;
+  const now = () => ticks[Math.min(i++, ticks.length - 1)];
+
+  const out = await processBulkRetry(
+    client,
+    { organization_ids: [orgA, orgB], batch_size: 100, wallclock_ms: 30_000 },
+    "user-1",
+    now,
+  );
+
+  assertEquals(out.truncated, true);
+  assertEquals(out.next_cursor?.organization_id, orgB);
+  assertEquals(out.next_cursor?.last_processed_id, null);
+  assertEquals(out.results.length, 1);
+  assertEquals(out.results[0].organization_id, orgA);
+});
+
+Deno.test("AC4: BodySchema acepta wallclock_ms y cursor", () => {
+  const r = BodySchema.safeParse({
+    organization_ids: [crypto.randomUUID()],
+    wallclock_ms: 30_000,
+    cursor: { organization_id: crypto.randomUUID(), last_processed_id: "inv-1" },
+  });
+  assertEquals(r.success, true);
 });
