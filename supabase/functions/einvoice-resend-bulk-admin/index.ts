@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     if (!parsed.success) {
       return json(400, { error: "invalid_payload", details: parsed.error.flatten() });
     }
-    const { organization_ids, dry_run } = parsed.data;
+    const { organization_ids, dry_run, batch_size, max_retries } = parsed.data;
 
     // AC2: solo superadmin global.
     const { data: isSuper, error: roleErr } = await supabase.rpc("has_role", {
