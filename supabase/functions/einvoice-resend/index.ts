@@ -19,7 +19,10 @@ const BodySchema = z.object({
   invoice_id: z.string().uuid().optional(),
   action: z.enum(["send_email", "send_whatsapp", "retry_now", "retry_all_today"]),
   to: z.string().max(200).optional(), // email o teléfono override
+  // POS-einvoice-retry-scoping AC1: requerido para retry_all_today (validado abajo)
+  organization_id: z.string().uuid().optional(),
 });
+
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -50,29 +53,35 @@ Deno.serve(async (req) => {
     const raw = await req.json().catch(() => null);
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) return json(400, { error: "invalid_payload", details: parsed.error.flatten() });
-    const { invoice_id, action, to } = parsed.data;
+    const { invoice_id, action, to, organization_id } = parsed.data;
 
     // ============================================================
-    // RETRY ALL TODAY (AC15) — bulk requeue de docs pendientes del turno
+    // RETRY ALL TODAY — bulk requeue de docs pendientes del turno
+    // POS-einvoice-retry-scoping: scoping estricto por organization_id
     // ============================================================
     if (action === "retry_all_today") {
-      // Tomar org del primer membership del caller (admin) — flexible para 1 org
-      const { data: memberships } = await supabase
-        .from("organization_members")
-        .select("organization_id, role")
-        .eq("user_id", userId);
-      const adminOrgs = (memberships ?? []).filter((m: any) =>
-        ["owner", "admin", "superadmin"].includes(String(m.role)),
-      );
-      if (adminOrgs.length === 0) return json(403, { error: "admin_required" });
+      // AC1: organization_id es obligatorio para esta acción
+      if (!organization_id) {
+        return json(400, { error: "organization_id_required", action });
+      }
 
-      const orgIds = adminOrgs.map((m: any) => m.organization_id);
+      // AC2: validar que el caller tiene rol admin/owner/superadmin en ESA org específica
+      const { data: member } = await supabase
+        .from("organization_members")
+        .select("role")
+        .eq("organization_id", organization_id)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!member || !["owner", "admin", "superadmin"].includes(String(member.role))) {
+        return json(403, { error: "admin_required_for_org", organization_id });
+      }
+
       const since = new Date(); since.setHours(0, 0, 0, 0);
 
       const { data: pendings } = await supabase
         .from("electronic_invoices")
         .select("id, organization_id")
-        .in("organization_id", orgIds)
+        .eq("organization_id", organization_id) // scoped a la org solicitada
         .gte("created_at", since.toISOString())
         .in("status", ["retrying", "rejected", "error", "dead_letter", "queued", "pending"]);
 
@@ -90,8 +99,23 @@ Deno.serve(async (req) => {
         });
         requeued += 1;
       }
-      return json(200, { success: true, requeued });
+
+      // AC4: auditoría a sync_logs con metadata completa
+      await supabase.from("sync_logs").insert({
+        organization_id,
+        service_name: "einvoice_bulk_retry",
+        status: "success",
+        payload: {
+          action: "retry_all_today",
+          requeued_count: requeued,
+          requested_by: userId,
+          since: since.toISOString(),
+        },
+      });
+
+      return json(200, { success: true, requeued, organization_id });
     }
+
 
     if (!invoice_id) return json(400, { error: "missing_invoice_id" });
 
