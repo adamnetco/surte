@@ -278,9 +278,27 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                 </Link>
               </Button>
               {isSuperadmin && (
-                <p className="text-[10px] text-muted-foreground text-center">
-                  Superadmin: <kbd className="px-1 py-0.5 bg-muted rounded font-mono">Ctrl+Shift+B</kbd> para forzar override (auditado)
-                </p>
+                <>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full h-8 text-xs"
+                    onClick={async () => {
+                      await gate.activateOverride();
+                      toast({
+                        title: "Override hard-block activado",
+                        description: "TTL 30 min · acción registrada en auditoría",
+                        variant: "destructive",
+                      });
+                    }}
+                  >
+                    <ShieldOff className="h-3 w-3 mr-1" />
+                    Forzar cobro (override superadmin)
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Atajo: <kbd className="px-1 py-0.5 bg-muted rounded font-mono">Ctrl+Shift+B</kbd>
+                  </p>
+                </>
               )}
             </div>
           )}
