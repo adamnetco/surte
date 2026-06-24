@@ -55,13 +55,19 @@ function makeFake(cfg: FakeConfig = {}) {
       },
     };
 
+    let outboxCallIdx = -1;
     return {
       select() { return selectBuilder; },
       update(_patch: any) { return updateBuilder; },
       async insert(rows: any) {
         ops.push({ table, type: "insert", payload: rows });
-        if (table === "sync_outbox" && cfg.outboxErr) {
-          return { error: { message: cfg.outboxErr } };
+        if (table === "sync_outbox") {
+          outboxCallIdx++;
+          const outboxCalls = ops.filter((o) => o.table === "sync_outbox" && o.type === "insert").length - 1;
+          if (cfg.outboxErr) return { error: { message: cfg.outboxErr } };
+          if (cfg.outboxErrAtCall?.includes(outboxCalls)) {
+            return { error: { message: `outbox_batch_${outboxCalls}_failed` } };
+          }
         }
         return { error: null };
       },
