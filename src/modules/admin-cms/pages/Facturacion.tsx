@@ -337,6 +337,24 @@ export default function Facturacion() {
         onEmitted={loadAll}
         organizationId={currentOrg.id}
       />
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCode2 className="h-5 w-5" /> Payload Innapsis ({previewKind.toUpperCase()})
+            </DialogTitle>
+          </DialogHeader>
+          <pre className="bg-muted/40 border rounded-md p-3 text-xs overflow-auto max-h-[60vh] whitespace-pre-wrap break-words">
+            {previewText || "—"}
+          </pre>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(previewText)}>
+              Copiar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
