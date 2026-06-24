@@ -266,6 +266,14 @@ export default function Facturacion() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EmitNoteDialog
+        invoice={noteInvoice}
+        open={!!noteInvoice}
+        onClose={() => setNoteInvoice(null)}
+        onEmitted={loadAll}
+        organizationId={currentOrg.id}
+      />
     </div>
   );
 }
