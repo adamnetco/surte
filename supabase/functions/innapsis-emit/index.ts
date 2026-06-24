@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { buildFeXml } from "./buildXml.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -527,17 +528,24 @@ Deno.serve(async (req) => {
     try {
       const token = await getToken(cfg.nit, cfg.api_key || INNAPSIS_PARTNER_API_KEY || "");
       const baseUrl = cfg.environment === "prod" ? INNAPSIS_DEFAULTS.base_prod : INNAPSIS_DEFAULTS.base_dev;
-      const endpoint = `${baseUrl}/api/v1/emision/emision/envieDocumento`;
+      // Formato payload: JSON (default, prod-proven) o XML opt-in vía cfg.extra.payload_format = "xml".
+      const useXml = ((cfg.extra ?? {}) as any).payload_format === "xml";
+      const endpoint = useXml
+        ? `${baseUrl}/api/v1/emision/envieDocumento?nit=${encodeURIComponent(cfg.nit)}&configuracion=string`
+        : `${baseUrl}/api/v1/emision/emision/envieDocumento`;
+      const body = useXml ? buildFeXml(payload) : JSON.stringify(payload);
 
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
+          "Content-Type": useXml ? "application/xml" : "application/json",
+          "Accept": "application/json",
         },
-        body: JSON.stringify(payload),
+        body,
       });
       const responseJson = await res.json().catch(() => ({}));
+
 
       // 5xx => retry-eligible. 4xx => permanent error (no retry). 2xx => sent.
       const retryable = !res.ok && res.status >= 500;
