@@ -278,7 +278,7 @@ Deno.serve(async (req) => {
 
     const reqBody = await req.json();
     const {
-      organization_id,
+      organization_id: effectiveOrgId,
       pos_order_id,
       order_id,
       document_type = "invoice",
@@ -525,9 +525,9 @@ Deno.serve(async (req) => {
       if (retryable) {
         // Encolar retry server-side con backoff exponencial vía sync-outbox-flush.
         const { data: outbox } = await admin.from("sync_outbox").insert({
-          organization_id,
+          organization_id: effectiveOrgId,
           target: "einvoice_emit_retry",
-          payload: { invoice_id: inv.id, organization_id },
+          payload: { invoice_id: inv.id, organization_id: effectiveOrgId },
           status: "pending",
           attempts: 0,
           max_attempts: 5,
@@ -557,7 +557,7 @@ Deno.serve(async (req) => {
       }
 
       await admin.from("einvoice_events").insert({
-        organization_id,
+        organization_id: effectiveOrgId,
         invoice_id: inv.id,
         event_type: retryable ? "emit_retry_scheduled" : "emit",
         status,
@@ -584,9 +584,9 @@ Deno.serve(async (req) => {
     } catch (e: any) {
       // Error de red → tratamos como retryable
       const { data: outbox } = await admin.from("sync_outbox").insert({
-        organization_id,
+        organization_id: effectiveOrgId,
         target: "einvoice_emit_retry",
-        payload: { invoice_id: inv.id, organization_id },
+        payload: { invoice_id: inv.id, organization_id: effectiveOrgId },
         status: "pending",
         attempts: 0,
         max_attempts: 5,
@@ -602,7 +602,7 @@ Deno.serve(async (req) => {
       }).eq("id", inv.id);
 
       await admin.from("einvoice_events").insert({
-        organization_id,
+        organization_id: effectiveOrgId,
         invoice_id: inv.id,
         event_type: "emit_retry_scheduled",
         status: "retrying",
