@@ -2,7 +2,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
 
   BarChart3, Building2, RefreshCw, Database, Package,
-  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText,
+  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -19,6 +19,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/audit", label: "Audit log", icon: ScrollText, desc: "Historial de cambios y overrides" },
   { to: "/superadmin/soporte", label: "WhatsApp soporte", icon: MessageCircle, desc: "Número global de ayuda" },
   { to: "/superadmin/cloud-tareas", label: "Cloud / Tareas", icon: Zap, desc: "Migraciones, seeds, secrets" },
+  { to: "/superadmin/einvoice-bulk-retry", label: "Bulk retry DIAN", icon: FileText, desc: "Reenvío masivo multi-tenant" },
 ];
 
 const TENANT_ITEMS = [

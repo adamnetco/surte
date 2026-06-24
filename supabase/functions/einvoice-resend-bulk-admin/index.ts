@@ -23,6 +23,11 @@ const corsHeaders = {
 const BodySchema = z.object({
   organization_ids: z.array(z.string().uuid()).min(1).max(20),
   dry_run: z.boolean().optional(),
+  // AC6 (UI superadmin): el front envía estos parámetros para que el worker
+  // los respete cuando se implemente POS-optimizar-bulk-retry-timeouts.
+  // Se persisten en el payload del outbox; no afectan el flujo actual.
+  batch_size: z.number().int().min(1).max(500).optional(),
+  max_retries: z.number().int().min(0).max(10).optional(),
 });
 
 function json(status: number, body: unknown) {
@@ -56,7 +61,7 @@ Deno.serve(async (req) => {
     if (!parsed.success) {
       return json(400, { error: "invalid_payload", details: parsed.error.flatten() });
     }
-    const { organization_ids, dry_run } = parsed.data;
+    const { organization_ids, dry_run, batch_size, max_retries } = parsed.data;
 
     // AC2: solo superadmin global.
     const { data: isSuper, error: roleErr } = await supabase.rpc("has_role", {
@@ -142,7 +147,15 @@ Deno.serve(async (req) => {
       const outboxRows = rows.map((r: any) => ({
         organization_id: r.organization_id,
         operation: "einvoice_emit",
-        payload: { invoice_id: r.id, forced_retry: true, forced_by: userId, bulk: true, admin: true },
+        payload: {
+          invoice_id: r.id,
+          forced_retry: true,
+          forced_by: userId,
+          bulk: true,
+          admin: true,
+          ...(batch_size ? { batch_size } : {}),
+          ...(typeof max_retries === "number" ? { max_retries } : {}),
+        },
         status: "pending",
       }));
       const { error: outErr } = await supabase.from("sync_outbox").insert(outboxRows);
@@ -174,6 +187,8 @@ Deno.serve(async (req) => {
           requeued_count: ids.length,
           requested_by: userId,
           since: since.toISOString(),
+          ...(batch_size ? { batch_size } : {}),
+          ...(typeof max_retries === "number" ? { max_retries } : {}),
         },
       });
       results.push({
