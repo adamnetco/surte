@@ -16,15 +16,16 @@
 ## Gaps críticos
 Ninguno.
 
-## Observaciones (no bloquean)
+## Observaciones (resueltas en follow-up)
 
-1. **Hook filtra `environment='prod'`** — `useOrgDefaultDocTypes.ts:46`. Si la org está operando en `test` (sandbox DIAN), no encontrará la fila y caerá al `FALLBACK`. Considerar leer el ambiente activo desde `useDianHealth()` o `einvoice_configs.active_environment`.
-2. **`cache` Map global module-scope** — no se invalida al cambiar de organización dentro de la misma pestaña (uso multi-tenant). Mitigado por Realtime, pero un `useQueryClient` con key `["einvoice-defaults", orgId]` sería más idiomático.
-3. **Sin validación de coherencia FX** — el spec menciona "Validar con BD que `casas_de_cambio` solo permite `documento_soporte`" pero no se implementó constraint/trigger. El admin podría guardar `factura_electronica` para una casa de cambio desde el UI.
-4. **Backfill asume valores específicos de `business_type`** — `casa_de_cambio`, `b2b`, `mayorista`. Si la enum/lookup cambia (e.g. `bureau_de_change`), el backfill queda silenciosamente sin efecto. Considerar log de filas actualizadas.
-5. **`queueMicrotask(onChange)` en render** (línea 58) — patrón frágil para auto-asignar la sugerencia; preferir `useEffect`. Funciona, pero puede disparar warnings de React 18 en StrictMode.
-6. **Sin test unitario** — a diferencia de `usePosCobroGate`, no hay `useOrgDefaultDocTypes.test.tsx` cubriendo los 6 casos QA del spec.
+1. ✅ **Hook ya no fija `environment='prod'`** — ahora ordena por `is_active DESC, updated_at DESC LIMIT 1`, cubriendo tenants en sandbox DIAN (`dev`).
+2. ⚠️ Cache `Map` global mantenido por simplicidad — invalidación vía Realtime UPDATE + helper `__resetOrgDefaultDocTypesCache` para tests. Migrar a React Query queda como mejora opcional.
+3. ✅ **Constraint FX implementada** — trigger `trg_einvoice_configs_enforce_fx_doctypes` rechaza defaults ≠ `documento_soporte` cuando `business_type='casa_de_cambio'`.
+4. ⚠️ Backfill sigue siendo silencioso si la enum de `business_type` cambia. Aceptable; el trigger nuevo es la red de seguridad principal.
+5. ✅ **`queueMicrotask` → `useEffect`** en `DocumentTypeSelector` (sin warnings en StrictMode).
+6. ✅ **Test unitario añadido** — `useOrgDefaultDocTypes.test.tsx`, 4/4 pasan.
 
 ## Acción
 - Spec actualizado a **SHIPPED**.
-- Observaciones 1, 3 y 6 recomendadas como follow-up corto si se quiere alcanzar paridad con la calidad del hard-block gate.
+- 4 de 6 observaciones cerradas; las 2 restantes (cache global, robustez del backfill) son mejoras menores no bloqueantes.
+
