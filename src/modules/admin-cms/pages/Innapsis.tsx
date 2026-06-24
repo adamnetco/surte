@@ -159,6 +159,63 @@ const Innapsis = () => {
     toast.success("CUFE copiado");
   };
 
+  const toggleSelect = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const selectAllRetriable = () => {
+    const ids = (filtered ?? [])
+      .filter((i) =>
+        ["error", "rejected", "permanent", "retrying", "dead_letter"].includes(
+          (i.status ?? "").toLowerCase(),
+        ),
+      )
+      .map((i) => i.id);
+    setSelected(new Set(ids));
+  };
+
+  const clearSelection = () => setSelected(new Set());
+
+  const runBulkRetry = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    if (!window.confirm(`¿Reintentar ${ids.length} factura(s)? Se enviarán a la cola con backoff.`)) return;
+
+    setBulkRunning(true);
+    setBulkReport(null);
+    const ok: string[] = [];
+    const fail: { id: string; err: string }[] = [];
+
+    // Concurrencia limitada (3 simultáneas) para no saturar la edge function
+    const queue = [...ids];
+    const workers = Array.from({ length: Math.min(3, queue.length) }, async () => {
+      while (queue.length) {
+        const id = queue.shift()!;
+        try {
+          const { error } = await supabase.functions.invoke("innapsis-emit", {
+            body: { invoice_id: id, forced_retry: true },
+          });
+          if (error) throw error;
+          ok.push(id);
+        } catch (e: any) {
+          fail.push({ id, err: e?.message ?? String(e) });
+        }
+      }
+    });
+    await Promise.all(workers);
+
+    setBulkReport({ ok, fail });
+    setBulkRunning(false);
+    if (fail.length === 0) toast.success(`${ok.length} reintento(s) encolados`);
+    else toast.warning(`${ok.length} ok · ${fail.length} con error`);
+    queryClient.invalidateQueries({ queryKey: ["admin", "innapsis", orgId] });
+    clearSelection();
+  };
+
   return (
     <div className="min-h-[100dvh] bg-background pb-12">
       <AdminHeader />
