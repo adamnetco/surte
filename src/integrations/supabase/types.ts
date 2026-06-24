@@ -3255,6 +3255,9 @@ export type Database = {
           cashier_id: string | null
           commission_amount: number | null
           commission_currency_id: string | null
+          commission_invoice_last_error: string | null
+          commission_invoice_next_retry_at: string | null
+          commission_invoice_retry_count: number
           commission_invoice_status: string
           created_at: string
           customer_address: string | null
@@ -3286,6 +3289,9 @@ export type Database = {
           cashier_id?: string | null
           commission_amount?: number | null
           commission_currency_id?: string | null
+          commission_invoice_last_error?: string | null
+          commission_invoice_next_retry_at?: string | null
+          commission_invoice_retry_count?: number
           commission_invoice_status?: string
           created_at?: string
           customer_address?: string | null
@@ -3317,6 +3323,9 @@ export type Database = {
           cashier_id?: string | null
           commission_amount?: number | null
           commission_currency_id?: string | null
+          commission_invoice_last_error?: string | null
+          commission_invoice_next_retry_at?: string | null
+          commission_invoice_retry_count?: number
           commission_invoice_status?: string
           created_at?: string
           customer_address?: string | null
