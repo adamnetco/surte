@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -13,6 +13,8 @@ import {
   Moon,
   Sunrise,
   Sparkles,
+  AlertCircle,
+  FileCheck2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -21,18 +23,15 @@ import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
+import { useDailyChecklist } from "@/modules/admin-cms/hooks/useDailyChecklist";
 
 /**
  * Daily Driver — pantalla mobile-first del flujo diario del admin.
- * Concentra las 5 acciones que el operador hace cada mañana:
- *  1) Revisar ventas de hoy
- *  2) Despachar pedidos pendientes
- *  3) Reabastecer productos en stock bajo
- *  4) Resolver errores de sincronización
- *  5) Abrir / cerrar caja
- *
- * Diseño: vertical cards (no tablas), tap-targets ≥ 56px, base 390px.
+ * - KPIs con refresco automático (60s) + manual + manejo de errores.
+ * - Acciones ordenadas por severidad (danger → warn) según datos reales.
+ * - Checklist persistido en Supabase, reinicio automático al cambiar de día.
  */
+
 
 const COP = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -59,11 +58,13 @@ function useDailySnapshot(orgId: string | undefined) {
     queryKey: ["admin", "diario", orgId],
     enabled: !!orgId,
     refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    retry: 1,
     queryFn: async () => {
       const since = startOfTodayISO();
       const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-      const [ordersToday, pending, lowStock, syncErrors] = await Promise.all([
+      const [ordersToday, pending, lowStock, syncErrors, einvoiceErrors] = await Promise.all([
         supabase
           .from("orders")
           .select("id,total,status,created_at")
@@ -87,7 +88,18 @@ function useDailySnapshot(orgId: string | undefined) {
           .eq("organization_id", orgId!)
           .eq("status", "error")
           .gte("last_run_at", since24h),
+        supabase
+          .from("electronic_invoices")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", orgId!)
+          .in("status", ["error", "dead_letter", "rejected"])
+          .gte("created_at", since24h),
       ]);
+
+      // Propagar el primer error real para que React Query maneje retries/UI
+      const firstErr =
+        ordersToday.error || pending.error || lowStock.error || syncErrors.error || einvoiceErrors.error;
+      if (firstErr) throw firstErr;
 
       const todays = ordersToday.data ?? [];
       const revenue = todays.reduce((s, o: any) => s + Number(o.total || 0), 0);
@@ -99,10 +111,12 @@ function useDailySnapshot(orgId: string | undefined) {
         lowStockCount: lowStock.count ?? 0,
         lowStockSample: (lowStock.data ?? []) as Array<{ id: string; name: string; stock: number }>,
         syncErrors: syncErrors.count ?? 0,
+        einvoiceErrors: einvoiceErrors.count ?? 0,
       };
     },
   });
 }
+
 
 type Severity = "ok" | "info" | "warn" | "danger";
 
@@ -183,52 +197,107 @@ function StatTile({
   );
 }
 
+const CHECKLIST_DEFS = [
+  { item_key: "caja", label: "Abrir caja del día" },
+  { item_key: "precios", label: "Revisar precios actualizados" },
+  { item_key: "stock", label: "Revisar productos con bajo stock" },
+  { item_key: "pedidos", label: "Despachar pedidos pendientes" },
+  { item_key: "cierre", label: "Cierre del día y backup" },
+];
+
+type ActionEntry = {
+  key: string;
+  icon: any;
+  title: string;
+  description: string;
+  badge: string;
+  severity: Severity;
+  onClick: () => void;
+  weight: number;
+};
+
 const Diario = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentOrg } = useOrganization();
-  const { data, isLoading, refetch, isRefetching } = useDailySnapshot(currentOrg?.id);
+  const { data, isLoading, refetch, isRefetching, error, isError } = useDailySnapshot(
+    currentOrg?.id,
+  );
 
   const { txt: hello, Icon: HelloIcon } = useMemo(greeting, []);
   const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
     ?? user?.email?.split("@")[0];
 
-  // checklist diaria local — se reinicia al cambiar de día
-  const checklistKey = useMemo(
-    () => `sistecpos:diario:${currentOrg?.id ?? "_"}:${new Date().toISOString().slice(0, 10)}`,
-    [currentOrg?.id],
-  );
-  const [done, setDone] = useState<Record<string, boolean>>({});
-  useEffect(() => {
-    try {
-      setDone(JSON.parse(localStorage.getItem(checklistKey) || "{}"));
-    } catch {
-      setDone({});
-    }
-  }, [checklistKey]);
-  const toggleDone = (k: string) => {
-    setDone((prev) => {
-      const next = { ...prev, [k]: !prev[k] };
-      localStorage.setItem(checklistKey, JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const checklist = [
-    { k: "caja", label: "Abrir caja del día" },
-    { k: "precios", label: "Revisar precios actualizados" },
-    { k: "stock", label: "Revisar productos con bajo stock" },
-    { k: "pedidos", label: "Despachar pedidos pendientes" },
-    { k: "cierre", label: "Cierre del día y backup" },
-  ];
-  const doneCount = checklist.filter((c) => done[c.k]).length;
+  const { items: checkItems, toggle, doneCount, loading: checklistLoading } =
+    useDailyChecklist(CHECKLIST_DEFS);
 
   const hasData = !!data;
-  const noActionsNeeded =
-    hasData &&
-    data.pendingCount === 0 &&
-    data.lowStockCount === 0 &&
-    data.syncErrors === 0;
+
+  // Acciones ordenadas por severidad (danger primero, luego warn) con datos reales
+  const actions = useMemo<ActionEntry[]>(() => {
+    if (!data) return [];
+    const list: ActionEntry[] = [];
+
+    if (data.einvoiceErrors > 0) {
+      list.push({
+        key: "einvoice",
+        icon: FileCheck2,
+        title: "Errores de facturación electrónica",
+        description: `${data.einvoiceErrors} factura(s) DIAN en error en 24h`,
+        badge: String(data.einvoiceErrors),
+        severity: "danger",
+        onClick: () => navigate("/admin/innapsis"),
+        weight: 4 * data.einvoiceErrors,
+      });
+    }
+    if (data.syncErrors > 0) {
+      list.push({
+        key: "sync",
+        icon: RefreshCw,
+        title: "Resolver errores de sincronización",
+        description: `${data.syncErrors} error(es) en las últimas 24h`,
+        badge: String(data.syncErrors),
+        severity: "danger",
+        onClick: () => navigate("/admin/health-logs"),
+        weight: 3 * data.syncErrors,
+      });
+    }
+    if (data.lowStockCount > 0) {
+      list.push({
+        key: "stock",
+        icon: AlertTriangle,
+        title: "Reabastecer stock bajo",
+        description: data.lowStockSample[0]
+          ? `${data.lowStockSample[0].name} (${data.lowStockSample[0].stock}) y ${Math.max(0, data.lowStockCount - 1)} más`
+          : `${data.lowStockCount} productos en mínimo`,
+        badge: String(data.lowStockCount),
+        severity: data.lowStockCount > 10 ? "danger" : "warn",
+        onClick: () => navigate("/admin?tab=products&filter=low-stock"),
+        weight: (data.lowStockCount > 10 ? 3 : 2) * data.lowStockCount,
+      });
+    }
+    if (data.pendingCount > 0) {
+      list.push({
+        key: "pending",
+        icon: ShoppingCart,
+        title: "Despachar pedidos pendientes",
+        description: `${data.pendingCount} pedido(s) esperando confirmación`,
+        badge: String(data.pendingCount),
+        severity: "warn",
+        onClick: () => navigate("/admin?tab=orders"),
+        weight: 2 * data.pendingCount,
+      });
+    }
+
+    const sevOrder: Record<Severity, number> = { danger: 0, warn: 1, info: 2, ok: 3 };
+    return list.sort(
+      (a, b) => sevOrder[a.severity] - sevOrder[b.severity] || b.weight - a.weight,
+    );
+  }, [data, navigate]);
+
+  const totalAlerts = actions.length;
+  const noActionsNeeded = hasData && totalAlerts === 0;
+
 
   return (
     <div className="min-h-[100dvh] bg-background pb-24">
@@ -286,13 +355,33 @@ const Diario = () => {
               Acciones de hoy
             </h2>
             {hasData && (
-              <span className="text-[11px] text-muted-foreground">
-                {[data.pendingCount, data.lowStockCount, data.syncErrors].filter((n) => n > 0).length} pendiente(s)
+              <span className="text-[11px] text-muted-foreground tabular-nums">
+                {totalAlerts} pendiente(s)
               </span>
             )}
           </div>
 
-          {isLoading && (
+          {isError && (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-3">
+              <AlertCircle className="text-destructive shrink-0 mt-0.5" size={18} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-destructive">
+                  No pudimos cargar los datos del día
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                  {(error as Error)?.message ?? "Error desconocido"}
+                </p>
+                <button
+                  onClick={() => refetch()}
+                  className="mt-2 text-xs font-semibold text-destructive hover:underline"
+                >
+                  Reintentar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isLoading && !isError && (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
                 <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
@@ -304,47 +393,24 @@ const Diario = () => {
             <EmptyState
               icon={Sparkles}
               title="Todo al día"
-              description="No hay pedidos pendientes, stock crítico ni errores de sincronización. Buen trabajo."
+              description="No hay pedidos pendientes, stock crítico ni errores. Buen trabajo."
               compact
             />
           )}
 
           {hasData && !noActionsNeeded && (
             <div className="space-y-2">
-              {data.pendingCount > 0 && (
+              {actions.map((a) => (
                 <ActionCard
-                  icon={ShoppingCart}
-                  title="Despachar pedidos pendientes"
-                  description={`${data.pendingCount} pedido${data.pendingCount === 1 ? "" : "s"} esperando confirmación`}
-                  badge={String(data.pendingCount)}
-                  severity="warn"
-                  onClick={() => navigate("/admin?tab=orders")}
+                  key={a.key}
+                  icon={a.icon}
+                  title={a.title}
+                  description={a.description}
+                  badge={a.badge}
+                  severity={a.severity}
+                  onClick={a.onClick}
                 />
-              )}
-              {data.lowStockCount > 0 && (
-                <ActionCard
-                  icon={AlertTriangle}
-                  title="Reabastecer stock bajo"
-                  description={
-                    data.lowStockSample[0]
-                      ? `${data.lowStockSample[0].name} (${data.lowStockSample[0].stock}) y ${Math.max(0, data.lowStockCount - 1)} más`
-                      : `${data.lowStockCount} productos en mínimo`
-                  }
-                  badge={String(data.lowStockCount)}
-                  severity={data.lowStockCount > 10 ? "danger" : "warn"}
-                  onClick={() => navigate("/admin?tab=products&filter=low-stock")}
-                />
-              )}
-              {data.syncErrors > 0 && (
-                <ActionCard
-                  icon={RefreshCw}
-                  title="Resolver errores de sincronización"
-                  description={`${data.syncErrors} errores en las últimas 24h`}
-                  badge={String(data.syncErrors)}
-                  severity="danger"
-                  onClick={() => navigate("/admin/health-logs")}
-                />
-              )}
+              ))}
             </div>
           )}
         </section>
@@ -376,64 +442,76 @@ const Diario = () => {
               severity="info"
               onClick={() => navigate("/admin?tab=products")}
             />
+            <ActionCard
+              icon={FileCheck2}
+              title="Facturación DIAN (Innapsis)"
+              description="Listado, reintentos y descargas"
+              severity="info"
+              onClick={() => navigate("/admin/innapsis")}
+            />
           </div>
         </section>
 
-        {/* Checklist diaria */}
+        {/* Checklist diaria — persistido en Supabase */}
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Checklist del día
             </h2>
             <span className="text-[11px] text-muted-foreground tabular-nums">
-              {doneCount}/{checklist.length}
+              {doneCount}/{CHECKLIST_DEFS.length}
             </span>
           </div>
           <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
-            {checklist.map((c) => {
-              const checked = !!done[c.k];
-              return (
-                <button
-                  key={c.k}
-                  onClick={() => toggleDone(c.k)}
-                  className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-muted/40 transition min-h-[52px]"
-                >
-                  <span
-                    className={cn(
-                      "w-5 h-5 rounded-md border-2 grid place-items-center transition",
-                      checked
-                        ? "bg-emerald-500 border-emerald-500 text-white"
-                        : "border-border bg-background",
-                    )}
-                  >
-                    {checked && (
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                        <path
-                          fillRule="evenodd"
-                          d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-sm flex-1",
-                      checked ? "text-muted-foreground line-through" : "text-foreground",
-                    )}
-                  >
-                    {c.label}
-                  </span>
-                </button>
-              );
-            })}
+            {checklistLoading
+              ? CHECKLIST_DEFS.map((c) => (
+                  <Skeleton key={c.item_key} className="h-[52px] w-full rounded-none" />
+                ))
+              : CHECKLIST_DEFS.map((c) => {
+                  const checked = !!checkItems[c.item_key]?.done;
+                  return (
+                    <button
+                      key={c.item_key}
+                      onClick={() => toggle(c.item_key)}
+                      className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-muted/40 transition min-h-[52px]"
+                    >
+                      <span
+                        className={cn(
+                          "w-5 h-5 rounded-md border-2 grid place-items-center transition",
+                          checked
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : "border-border bg-background",
+                        )}
+                      >
+                        {checked && (
+                          <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                            <path
+                              fillRule="evenodd"
+                              d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-sm flex-1",
+                          checked ? "text-muted-foreground line-through" : "text-foreground",
+                        )}
+                      >
+                        {c.label}
+                      </span>
+                    </button>
+                  );
+                })}
           </div>
           <p className="text-[11px] text-muted-foreground">
-            La lista se reinicia automáticamente cada día.
+            Tu progreso se guarda en la nube y se reinicia cada día.
           </p>
         </section>
       </main>
     </div>
+
   );
 };
 
