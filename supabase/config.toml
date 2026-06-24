@@ -72,3 +72,6 @@ project_id = "dimyhjzcwlgfczimqhet"
     verify_jwt = true
   [functions.cloudflare-domain-status]
     verify_jwt = true
+
+  [functions.einvoice-resend]
+    verify_jwt = true
