@@ -356,12 +356,23 @@ export default function PosFxPage() {
                 const f = currencies.find((c) => c.id === t.from_currency_id);
                 const to = currencies.find((c) => c.id === t.to_currency_id);
                 return (
-                  <div key={t.id} className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0">
-                    <div>
-                      <div className="font-mono">{fmt(Number(t.from_amount))} {f?.code} → {fmt(Number(t.to_amount))} {to?.code}</div>
-                      <div className="text-muted-foreground text-[10px]">{new Date(t.created_at).toLocaleString("es-CO")}</div>
+                  <div key={t.id} className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0 gap-2">
+                    <div className="min-w-0">
+                      <div className="font-mono truncate">{fmt(Number(t.from_amount))} {f?.code} → {fmt(Number(t.to_amount))} {to?.code}</div>
+                      <div className="text-muted-foreground text-[10px] flex items-center gap-1.5">
+                        <span>{new Date(t.created_at).toLocaleString("es-CO")}</span>
+                        {Number(t.commission_amount) > 0 && (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-mono">
+                            · margen {fmt(Number(t.commission_amount), 2)}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {t.is_above_threshold && <Badge variant="outline" className="text-[10px]">UIAF</Badge>}
+                    <div className="flex flex-col items-end gap-0.5">
+                      {t.is_above_threshold && <Badge variant="outline" className="text-[10px]">UIAF</Badge>}
+                      {t.commission_invoice_status === "emitted" && <Badge className="text-[10px]" variant="secondary">FE</Badge>}
+                      {t.commission_invoice_status === "failed" && <Badge className="text-[10px]" variant="destructive">FE err</Badge>}
+                    </div>
                   </div>
                 );
               })}
