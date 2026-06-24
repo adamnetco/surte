@@ -24,12 +24,39 @@ export default function FxReportsPage() {
 
   const range = useMemo(() => monthRange(year, month), [year, month]);
   const { data: currencies = [] } = useFxCurrencies();
-  const { txs, totals, byCurrency, isLoading } = useFxSummary(range);
+  const { txs, totals, byCurrency, byPair, byCashier, byDay, isLoading } = useFxSummary(range);
 
   const currMap = useMemo(
     () => Object.fromEntries(currencies.map((c) => [c.id, { code: c.code, name: c.name }])),
     [currencies],
   );
+
+  // Resolve cashier names
+  const cashierIds = useMemo(
+    () => Array.from(new Set(byCashier.map((b) => b.key).filter((k) => k && k !== "—"))),
+    [byCashier],
+  );
+  const [cashierNames, setCashierNames] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (cashierIds.length === 0) return;
+    let cancel = false;
+    supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", cashierIds)
+      .then(({ data }) => {
+        if (cancel || !data) return;
+        setCashierNames(Object.fromEntries(data.map((p: any) => [p.id, p.full_name ?? p.id.slice(0, 8)])));
+      });
+    return () => { cancel = true; };
+  }, [cashierIds.join(",")]);
+
+  const fmtPair = (key: string) => {
+    const [a, b] = key.split("__");
+    return `${currMap[a]?.code ?? "?"} → ${currMap[b]?.code ?? "?"}`;
+  };
+  const fmtMargin = (b: MarginBucket) =>
+    `${b.margin.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currMap[b.marginCurrencyId ?? ""]?.code ?? ""}`.trim();
 
   const exportUiaf = () => {
     const csv = buildUiafCsv(txs as any[], currMap);
