@@ -47,6 +47,7 @@ export default function POSTopBar({
   onCloseShift,
   onOpenShortcuts,
   rightExtras,
+  sync,
 }: Props) {
   const [elapsed, setElapsed] = useState("00:00");
 
@@ -56,6 +57,8 @@ export default function POSTopBar({
     const i = setInterval(tick, 30_000);
     return () => clearInterval(i);
   }, [openedAt]);
+
+  const hasSyncActivity = !!sync && (sync.pending > 0 || sync.syncing);
 
   return (
     <header className="sticky top-0 z-30 bg-card border-b">
