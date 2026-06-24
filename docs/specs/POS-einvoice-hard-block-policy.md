@@ -67,8 +67,9 @@ Combina `useDianHealth`, `useEinvoiceResolutionStatus`, `useContingencyRangeStat
 
 - Atajo `Ctrl+Shift+B` solo activo cuando `usePosCobroGate().canCharge=false` y user tiene rol `superadmin`.
 - Setea `sessionStorage['pos:hard_block_override:<orgId>'] = '<timestamp>'` (TTL 30 min).
-- Inserta fila en `sync_logs` con `event_type='hard_block_override'`, payload `{ user_id, org_id, dian_health, has_contingency, reason }`.
-- Banner persistente rojo en topbar mientras override esté activo: "Override de hard-block activo — auditoría registrada".
+- Inserta fila en `sync_logs` con `service_name='pos_hard_block_override'`, `status='warning'`, payload `{ user_id, dian_health, has_contingency, activated_at, ttl_minutes }`. (`sync_logs` no tiene `event_type`; se usa `service_name` que es el campo de categorización existente.)
+- Banner persistente rojo en el `PaymentDialog` mientras override esté activo: "Override hard-block activo · auditoría registrada".
+- **Scope:** el override es **per-device** (sessionStorage). Otras pestañas/dispositivos del mismo superadmin no lo heredan — esto es intencional para minimizar superficie de uso indebido y deber registrarse en cada terminal.
 
 ## QA / Casos
 
