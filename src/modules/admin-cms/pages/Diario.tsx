@@ -240,7 +240,7 @@ const Diario = () => {
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <HelloIcon size={14} />
-              <span>{hello}{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}</span>
+              <span>{hello}{firstName ? `, ${firstName}` : ""}</span>
             </div>
             <h1 className="font-heading font-bold text-xl text-foreground tracking-tight">
               Tu día en {currentOrg?.name ?? "la tienda"}
