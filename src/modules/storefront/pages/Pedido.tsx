@@ -44,9 +44,12 @@ type WaEvent = {
   status: keyof typeof waStatusConfig;
   error: string | null;
   created_at: string;
+  payload: any;
 };
 
 const TIMELINE_PAGE = 20;
+
+const dayKey = (iso: string) => new Date(iso).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
 
 const PedidoSkeleton = () => (
   <div className="space-y-3" aria-busy="true" aria-label="Cargando pedido">
@@ -62,6 +65,7 @@ const Pedido = () => {
   const navigate = useNavigate();
   const { data: settings } = useAppSettings();
   const [isRetrying, setIsRetrying] = useState(false);
+  const [isPaging, setIsPaging] = useState(false);
   const [visibleCount, setVisibleCount] = useState(TIMELINE_PAGE);
 
   const { data: order, isLoading, refetch } = useQuery({
@@ -91,10 +95,10 @@ const Pedido = () => {
       if (!order?.id) return [];
       const { data, error } = await (supabase as any)
         .from("whatsapp_message_events")
-        .select("id, order_id, whatsapp_ref, status, error, created_at")
+        .select("id, order_id, whatsapp_ref, status, error, created_at, payload")
         .eq("order_id", order.id)
         .order("created_at", { ascending: true })
-        .limit(200);
+        .limit(500);
       if (error) throw error;
       return (data ?? []) as WaEvent[];
     },
@@ -140,11 +144,22 @@ const Pedido = () => {
 
   const handleRetryWhatsApp = async () => {
     if (!order?.order_number) return;
-    if (!window.confirm("¿Reenviar la confirmación por WhatsApp para este pedido?")) return;
+    const reason = window.prompt(
+      "Motivo del reenvío (opcional):\n— No llegó el mensaje\n— Cliente cambió número\n— Otro",
+      ""
+    );
+    if (reason === null) return; // canceló
     setIsRetrying(true);
     try {
+      const { data: userResp } = await supabase.auth.getUser().catch(() => ({ data: { user: null } as any }));
+      const actor = userResp?.user;
       const { data, error } = await supabase.functions.invoke("resend-whatsapp-order", {
-        body: { order_number: order.order_number },
+        body: {
+          order_number: order.order_number,
+          reason: reason || undefined,
+          actor_id: actor?.id ?? null,
+          actor_name: actor?.email ?? actor?.user_metadata?.full_name ?? "anónimo",
+        },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -158,6 +173,14 @@ const Pedido = () => {
     } finally {
       setIsRetrying(false);
     }
+  };
+
+  const loadMore = () => {
+    setIsPaging(true);
+    setTimeout(() => {
+      setVisibleCount((n) => n + TIMELINE_PAGE);
+      setIsPaging(false);
+    }, 150);
   };
 
   // Build unified timeline (order milestones + WhatsApp events).
