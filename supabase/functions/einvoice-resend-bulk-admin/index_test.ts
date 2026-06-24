@@ -17,6 +17,8 @@ type FakeConfig = {
   queryErrByOrg?: Record<string, string>;
   updateErrByOrg?: Record<string, string>;
   outboxErr?: string;
+  // POS-optimizar-bulk-retry-timeouts: simular falla en lotes específicos.
+  outboxErrAtCall?: number[]; // call indices (0-based) que deben fallar
 };
 
 function makeFake(cfg: FakeConfig = {}) {
