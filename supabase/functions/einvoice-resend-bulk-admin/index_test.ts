@@ -34,6 +34,8 @@ function makeFake(cfg: FakeConfig = {}) {
         return selectBuilder;
       },
       gte() { return selectBuilder; },
+      gt() { return selectBuilder; },
+      order() { return selectBuilder; },
       async in(_col: string, _vals: string[]) {
         const org = currentOrg!;
         ops.push({ table, type: "select", payload: { org } });
