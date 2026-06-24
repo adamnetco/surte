@@ -231,6 +231,41 @@ export default function Facturacion() {
               </div>
             </div>
 
+            <div className="border-t pt-3 space-y-2">
+              <div className="flex items-center gap-3">
+                <FileCode2 className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1">
+                  <Label className="text-sm">Formato de payload Innapsis</Label>
+                  <p className="text-xs text-muted-foreground">
+                    JSON es el formato probado en producción. XML usa el endpoint <code>envieDocumento?nit=...&amp;configuracion=string</code> según spec v1.9.
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={((cfg.extra as any)?.payload_format ?? "json") === "json" ? "default" : "outline"}
+                    onClick={() => setCfg({ ...cfg, extra: { ...(cfg.extra ?? {}), payload_format: "json" } })}
+                  >
+                    JSON
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={(cfg.extra as any)?.payload_format === "xml" ? "default" : "outline"}
+                    onClick={() => setCfg({ ...cfg, extra: { ...(cfg.extra ?? {}), payload_format: "xml" } })}
+                  >
+                    XML
+                  </Button>
+                </div>
+              </div>
+              {(cfg.extra as any)?.payload_format === "xml" && (
+                <p className="text-xs text-orange-600">
+                  ⚠ XML opt-in. Verifica con Innapsis que tu cuenta acepta el endpoint single-emision antes de activar en PROD.
+                </p>
+              )}
+            </div>
+
             <div className="flex flex-wrap gap-2">
               <Button onClick={save} disabled={loading}>Guardar configuración</Button>
               <Button variant="outline" onClick={testConnection} disabled={loading || !cfg.id}>
