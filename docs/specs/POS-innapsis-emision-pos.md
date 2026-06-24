@@ -45,7 +45,7 @@ Este spec cierra la última milla **POS → DIAN** para que un nuevo tenant pued
 - [x] **AC14:** `ResolutionStatusBanner` en `/pos/vender` lee `useEinvoiceResolutionStatus` (Realtime): muestra banner rojo si la resolución está agotada/ausente, ámbar si queda <=5%, gris si emisión inactiva. Apunta al cajero a *Facturación → Configuración*.
 
 ### Observabilidad cajero
-- [ ] **AC15:** Widget en sidebar POS: "Documentos hoy: 47 ✓ | 2 retry | 0 errores" — click abre lista de últimas 20 emisiones del turno actual.
+- [x] **AC15:** `EinvoiceShiftWidget` en topbar POS: "Docs N · X ok · Y retry · Z err" con Realtime sobre `electronic_invoices`. Popover muestra últimos 10 docs del día + acción "Reintentar pendientes" (admin) que invoca `einvoice-resend` con `retry_all_today`.
 
 ## Schema DB (incremental)
 
