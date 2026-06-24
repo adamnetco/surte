@@ -197,52 +197,107 @@ function StatTile({
   );
 }
 
+const CHECKLIST_DEFS = [
+  { item_key: "caja", label: "Abrir caja del día" },
+  { item_key: "precios", label: "Revisar precios actualizados" },
+  { item_key: "stock", label: "Revisar productos con bajo stock" },
+  { item_key: "pedidos", label: "Despachar pedidos pendientes" },
+  { item_key: "cierre", label: "Cierre del día y backup" },
+];
+
+type ActionEntry = {
+  key: string;
+  icon: any;
+  title: string;
+  description: string;
+  badge: string;
+  severity: Severity;
+  onClick: () => void;
+  weight: number;
+};
+
 const Diario = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentOrg } = useOrganization();
-  const { data, isLoading, refetch, isRefetching } = useDailySnapshot(currentOrg?.id);
+  const { data, isLoading, refetch, isRefetching, error, isError } = useDailySnapshot(
+    currentOrg?.id,
+  );
 
   const { txt: hello, Icon: HelloIcon } = useMemo(greeting, []);
   const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
     ?? user?.email?.split("@")[0];
 
-  // checklist diaria local — se reinicia al cambiar de día
-  const checklistKey = useMemo(
-    () => `sistecpos:diario:${currentOrg?.id ?? "_"}:${new Date().toISOString().slice(0, 10)}`,
-    [currentOrg?.id],
-  );
-  const [done, setDone] = useState<Record<string, boolean>>({});
-  useEffect(() => {
-    try {
-      setDone(JSON.parse(localStorage.getItem(checklistKey) || "{}"));
-    } catch {
-      setDone({});
-    }
-  }, [checklistKey]);
-  const toggleDone = (k: string) => {
-    setDone((prev) => {
-      const next = { ...prev, [k]: !prev[k] };
-      localStorage.setItem(checklistKey, JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const checklist = [
-    { k: "caja", label: "Abrir caja del día" },
-    { k: "precios", label: "Revisar precios actualizados" },
-    { k: "stock", label: "Revisar productos con bajo stock" },
-    { k: "pedidos", label: "Despachar pedidos pendientes" },
-    { k: "cierre", label: "Cierre del día y backup" },
-  ];
-  const doneCount = checklist.filter((c) => done[c.k]).length;
+  const { items: checkItems, toggle, doneCount, loading: checklistLoading } =
+    useDailyChecklist(CHECKLIST_DEFS);
 
   const hasData = !!data;
-  const noActionsNeeded =
-    hasData &&
-    data.pendingCount === 0 &&
-    data.lowStockCount === 0 &&
-    data.syncErrors === 0;
+
+  // Acciones ordenadas por severidad (danger primero, luego warn) con datos reales
+  const actions = useMemo<ActionEntry[]>(() => {
+    if (!data) return [];
+    const list: ActionEntry[] = [];
+
+    if (data.einvoiceErrors > 0) {
+      list.push({
+        key: "einvoice",
+        icon: FileCheck2,
+        title: "Errores de facturación electrónica",
+        description: `${data.einvoiceErrors} factura(s) DIAN en error en 24h`,
+        badge: String(data.einvoiceErrors),
+        severity: "danger",
+        onClick: () => navigate("/admin/innapsis"),
+        weight: 4 * data.einvoiceErrors,
+      });
+    }
+    if (data.syncErrors > 0) {
+      list.push({
+        key: "sync",
+        icon: RefreshCw,
+        title: "Resolver errores de sincronización",
+        description: `${data.syncErrors} error(es) en las últimas 24h`,
+        badge: String(data.syncErrors),
+        severity: "danger",
+        onClick: () => navigate("/admin/health-logs"),
+        weight: 3 * data.syncErrors,
+      });
+    }
+    if (data.lowStockCount > 0) {
+      list.push({
+        key: "stock",
+        icon: AlertTriangle,
+        title: "Reabastecer stock bajo",
+        description: data.lowStockSample[0]
+          ? `${data.lowStockSample[0].name} (${data.lowStockSample[0].stock}) y ${Math.max(0, data.lowStockCount - 1)} más`
+          : `${data.lowStockCount} productos en mínimo`,
+        badge: String(data.lowStockCount),
+        severity: data.lowStockCount > 10 ? "danger" : "warn",
+        onClick: () => navigate("/admin?tab=products&filter=low-stock"),
+        weight: (data.lowStockCount > 10 ? 3 : 2) * data.lowStockCount,
+      });
+    }
+    if (data.pendingCount > 0) {
+      list.push({
+        key: "pending",
+        icon: ShoppingCart,
+        title: "Despachar pedidos pendientes",
+        description: `${data.pendingCount} pedido(s) esperando confirmación`,
+        badge: String(data.pendingCount),
+        severity: "warn",
+        onClick: () => navigate("/admin?tab=orders"),
+        weight: 2 * data.pendingCount,
+      });
+    }
+
+    const sevOrder: Record<Severity, number> = { danger: 0, warn: 1, info: 2, ok: 3 };
+    return list.sort(
+      (a, b) => sevOrder[a.severity] - sevOrder[b.severity] || b.weight - a.weight,
+    );
+  }, [data, navigate]);
+
+  const totalAlerts = actions.length;
+  const noActionsNeeded = hasData && totalAlerts === 0;
+
 
   return (
     <div className="min-h-[100dvh] bg-background pb-24">
