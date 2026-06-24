@@ -185,11 +185,13 @@ function StatTile({
 
 const Diario = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const { currentOrg } = useOrganization();
   const { data, isLoading, refetch, isRefetching } = useDailySnapshot(currentOrg?.id);
 
   const { txt: hello, Icon: HelloIcon } = useMemo(greeting, []);
+  const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
+    ?? user?.email?.split("@")[0];
 
   // checklist diaria local — se reinicia al cambiar de día
   const checklistKey = useMemo(
