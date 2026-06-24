@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, ShieldAlert, Receipt, Loader2, Wallet } from "lucide-react";
+import { ArrowLeftRight, ShieldAlert, Receipt, Loader2, Wallet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import {
   useCreateFxTransaction,
   useFxTransactionsRecent,
   useUiafThreshold,
+  useEmitFxCommissionInvoice,
 } from "../hooks/useFxTransactions";
 import { useActiveFxCashSession } from "../hooks/useFxCashSession";
 import CloseFxSessionDialog from "../components/CloseFxSessionDialog";
@@ -30,6 +31,7 @@ export default function PosFxPage() {
   const { data: threshold } = useUiafThreshold();
   const { data: recent = [] } = useFxTransactionsRecent(10);
   const createTx = useCreateFxTransaction();
+  const emitCommission = useEmitFxCommissionInvoice();
   const { data: activeSession } = useActiveFxCashSession();
   const [closeOpen, setCloseOpen] = useState(false);
 
@@ -356,10 +358,10 @@ export default function PosFxPage() {
                 const f = currencies.find((c) => c.id === t.from_currency_id);
                 const to = currencies.find((c) => c.id === t.to_currency_id);
                 return (
-                  <div key={t.id} className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0 gap-2">
-                    <div className="min-w-0">
+                  <div key={t.id} className="flex items-start justify-between border-b border-border/50 py-1.5 last:border-0 gap-2">
+                    <div className="min-w-0 flex-1">
                       <div className="font-mono truncate">{fmt(Number(t.from_amount))} {f?.code} → {fmt(Number(t.to_amount))} {to?.code}</div>
-                      <div className="text-muted-foreground text-[10px] flex items-center gap-1.5">
+                      <div className="text-muted-foreground text-[10px] flex items-center gap-1.5 flex-wrap">
                         <span>{new Date(t.created_at).toLocaleString("es-CO")}</span>
                         {Number(t.commission_amount) > 0 && (
                           <span className="text-emerald-600 dark:text-emerald-400 font-mono">
@@ -367,11 +369,30 @@ export default function PosFxPage() {
                           </span>
                         )}
                       </div>
+                      {Number(t.commission_amount) > 0 &&
+                        (t.commission_invoice_status === "pending" || t.commission_invoice_status === "failed") && (
+                          <Button
+                            size="sm"
+                            variant={t.commission_invoice_status === "failed" ? "destructive" : "outline"}
+                            className="h-7 mt-1.5 text-[11px] gap-1"
+                            disabled={emitCommission.isPending && emitCommission.variables === t.id}
+                            onClick={() => emitCommission.mutate(t.id)}
+                          >
+                            {emitCommission.isPending && emitCommission.variables === t.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <FileText className="h-3 w-3" />
+                            )}
+                            {t.commission_invoice_status === "failed" ? "Reintentar factura" : "Facturar comisión"}
+                          </Button>
+                        )}
                     </div>
-                    <div className="flex flex-col items-end gap-0.5">
+                    <div className="flex flex-col items-end gap-0.5 shrink-0">
                       {t.is_above_threshold && <Badge variant="outline" className="text-[10px]">UIAF</Badge>}
                       {t.commission_invoice_status === "emitted" && <Badge className="text-[10px]" variant="secondary">FE</Badge>}
+                      {t.commission_invoice_status === "queued" && <Badge className="text-[10px]" variant="outline">FE…</Badge>}
                       {t.commission_invoice_status === "failed" && <Badge className="text-[10px]" variant="destructive">FE err</Badge>}
+                      {t.commission_invoice_status === "skipped" && <Badge className="text-[10px]" variant="outline">s/margen</Badge>}
                     </div>
                   </div>
                 );

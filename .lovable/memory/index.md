@@ -45,4 +45,5 @@
 - [Standup 2026-06-24](mem://features/standup-2026-06-24) — Snapshot Norte Q3 + plan 4 olas WIP=1 (Ola 1 Innapsis cierre legal, Ola 2 FX transaccional, Ola 3 DD polish/onboarding, Ola 4 Tracking+Hardening E2E)
 - [Ola 1 Closure](mem://features/ola-1-closure) — Cierre Ola 1: contingencia DIAN + auto-email PDF/XML en innapsis-emit + reporte /admin/innapsis/resumen (CSV, refetch 30s)
 - [Ola 2 FX Spread](mem://features/ola-2-fx-spread) — fx_transactions con mid_rate/commission_amount/commission_currency_id/commission_invoice_status; UI POS FX muestra spread+margen estimado; preparado para facturación de comisión vía Innapsis
+- [Ola 2 FX Commission Invoice](mem://features/ola-2-fx-commission-invoice) — Edge fx-emit-commission-invoice crea pos_order sintético sale_mode=fx_commission y delega en innapsis-emit (contingencia+email Ola 1); botón "Facturar comisión" en POS FX con reintento manual
 - [WhatsApp Retry Detallado](mem://features/whatsapp-retry-detalle) — Reintentos WA con actor/reason/attempt en payload + edge function whatsapp-status-fixture (token) + vitest E2E timeline + agrupación por día + skeleton paginación

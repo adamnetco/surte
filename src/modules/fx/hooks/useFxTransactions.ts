@@ -70,6 +70,43 @@ export function useCreateFxTransaction() {
   });
 }
 
+/**
+ * Slice 2 — Ola 2: dispara la facturación electrónica de la comisión
+ * implícita de una operación FX. Llama a la edge `fx-emit-commission-invoice`
+ * que crea un pos_order sintético y delega en `innapsis-emit`.
+ */
+export function useEmitFxCommissionInvoice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (fxTransactionId: string) => {
+      const { data, error } = await supabase.functions.invoke("fx-emit-commission-invoice", {
+        body: { fx_transaction_id: fxTransactionId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["fx_transactions_recent"] });
+      if (data?.skipped) {
+        toast.info("Operación sin margen — no requiere factura.");
+      } else if (data?.contingency) {
+        toast.warning(`Emitida en contingencia ${data.full_number ?? ""}. Se transmitirá cuando DIAN se restaure.`);
+      } else if (data?.already_emitted) {
+        toast.info("Esta comisión ya fue facturada.");
+      } else {
+        toast.success(`Comisión facturada ${data?.full_number ?? ""}`.trim());
+      }
+    },
+    onError: (e: any) => {
+      const msg = e?.message ?? "Error al facturar comisión";
+      toast.error(msg.includes("fx_tx_missing_session_or_location")
+        ? "La operación no tiene sesión de caja o sede asociada."
+        : msg);
+    },
+  });
+}
+
 /** Lee el umbral UIAF configurado en la organización. */
 export function useUiafThreshold() {
   const { currentOrg } = useOrganization();
