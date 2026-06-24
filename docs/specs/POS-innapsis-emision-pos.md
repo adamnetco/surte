@@ -1,6 +1,6 @@
 # POS — Emisión Innapsis desde el flujo POS (Wave 1)
 
-**Estado:** IN_BUILD — Slices 1 + 2A+2B + Acciones rápidas (AC7-AC9) + Contingencia (AC10-AC12) SHIPPED · pendiente AC13-AC14 (config UX), AC15 (widget cajero)
+**Estado:** IN_BUILD — Slices 1 + 2A+2B + Acciones rápidas (AC7-AC9) + Contingencia (AC10-AC12) + Config UX (AC13-AC14) SHIPPED · pendiente AC15 (widget cajero)
 **Módulo:** `pos` (consumidor) + `admin-cms` (config) + edge `innapsis-emit` (ya existe)
 **Wave:** 1 — Innapsis Electronic Billing (NORTE/camino-a-produccion)
 **Spec padre:** [POS-innapsis-integration.md](./POS-innapsis-integration.md) (Slices 1-4 SHIPPED)
