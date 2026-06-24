@@ -334,15 +334,20 @@ export default function FxReportsPage() {
             <div>
               <div className="font-medium text-sm">Reporte UIAF mensual</div>
               <p className="text-xs text-muted-foreground">
-                Archivo plano con todas las operaciones del mes seleccionado, incluyendo
-                datos de cliente, montos, tasas y marcas de umbral / ROS. Sirve como
-                insumo para el reporte oficial UIAF de Casas de Cambio.
+                Operaciones del mes con datos de cliente, montos, tasas y marcas de umbral / ROS.
+                Descarga en CSV plano o en XML estructurado (Res. UIAF 285) como insumo del reporte oficial.
               </p>
             </div>
-            <Button onClick={exportUiaf} disabled={isLoading || txs.length === 0} className="shrink-0">
-              <Download className="h-4 w-4 mr-1" /> UIAF CSV
-            </Button>
+            <div className="flex flex-col gap-1.5 shrink-0">
+              <Button onClick={exportUiafXml} disabled={isLoading || txs.length === 0} size="sm">
+                <Download className="h-4 w-4 mr-1" /> UIAF XML
+              </Button>
+              <Button variant="outline" onClick={exportUiaf} disabled={isLoading || txs.length === 0} size="sm">
+                <Download className="h-4 w-4 mr-1" /> UIAF CSV
+              </Button>
+            </div>
           </div>
+
           <div className="flex items-start justify-between gap-3 border rounded-lg p-3">
             <div>
               <div className="font-medium text-sm">Histórico completo del mes</div>
