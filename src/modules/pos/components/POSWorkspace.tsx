@@ -23,6 +23,7 @@ import SaleCompleteDialog from "./SaleCompleteDialog";
 import DianHealthIndicator from "./DianHealthIndicator";
 import ContingencyBanner from "./ContingencyBanner";
 import ResolutionStatusBanner from "./ResolutionStatusBanner";
+import EinvoiceShiftWidget from "./EinvoiceShiftWidget";
 import { useDianHealth } from "@/modules/pos/hooks/useDianHealth";
 import { useEinvoiceResolutionStatus } from "@/modules/pos/hooks/useEinvoiceResolutionStatus";
 import OfflineIndicator from "@/modules/offline/components/OfflineIndicator";
@@ -486,6 +487,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </button>
             )}
             <DianHealthIndicator organizationId={organizationId} className="hidden md:inline-flex" />
+            <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex" />
           </>
         }
       />

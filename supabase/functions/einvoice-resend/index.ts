@@ -16,8 +16,8 @@ const corsHeaders = {
 };
 
 const BodySchema = z.object({
-  invoice_id: z.string().uuid(),
-  action: z.enum(["send_email", "send_whatsapp", "retry_now"]),
+  invoice_id: z.string().uuid().optional(),
+  action: z.enum(["send_email", "send_whatsapp", "retry_now", "retry_all_today"]),
   to: z.string().max(200).optional(), // email o teléfono override
 });
 
@@ -51,6 +51,49 @@ Deno.serve(async (req) => {
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) return json(400, { error: "invalid_payload", details: parsed.error.flatten() });
     const { invoice_id, action, to } = parsed.data;
+
+    // ============================================================
+    // RETRY ALL TODAY (AC15) — bulk requeue de docs pendientes del turno
+    // ============================================================
+    if (action === "retry_all_today") {
+      // Tomar org del primer membership del caller (admin) — flexible para 1 org
+      const { data: memberships } = await supabase
+        .from("organization_members")
+        .select("organization_id, role")
+        .eq("user_id", userId);
+      const adminOrgs = (memberships ?? []).filter((m: any) =>
+        ["owner", "admin", "superadmin"].includes(String(m.role)),
+      );
+      if (adminOrgs.length === 0) return json(403, { error: "admin_required" });
+
+      const orgIds = adminOrgs.map((m: any) => m.organization_id);
+      const since = new Date(); since.setHours(0, 0, 0, 0);
+
+      const { data: pendings } = await supabase
+        .from("electronic_invoices")
+        .select("id, organization_id")
+        .in("organization_id", orgIds)
+        .gte("created_at", since.toISOString())
+        .in("status", ["retrying", "rejected", "error", "dead_letter", "queued", "pending"]);
+
+      let requeued = 0;
+      for (const row of pendings ?? []) {
+        await supabase
+          .from("electronic_invoices")
+          .update({ status: "queued", retry_count: 0, next_retry_at: null, last_error: null })
+          .eq("id", (row as any).id);
+        await supabase.from("sync_outbox").insert({
+          organization_id: (row as any).organization_id,
+          operation: "einvoice_emit",
+          payload: { invoice_id: (row as any).id, forced_retry: true, forced_by: userId, bulk: true },
+          status: "pending",
+        });
+        requeued += 1;
+      }
+      return json(200, { success: true, requeued });
+    }
+
+    if (!invoice_id) return json(400, { error: "missing_invoice_id" });
 
     // Cargar factura + verificar pertenencia a la org del caller
     const { data: invoice, error: invErr } = await supabase

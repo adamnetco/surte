@@ -1,6 +1,6 @@
 # POS — Emisión Innapsis desde el flujo POS (Wave 1)
 
-**Estado:** IN_BUILD — Slices 1 + 2A+2B + Acciones rápidas (AC7-AC9) + Contingencia (AC10-AC12) + Config UX (AC13-AC14) SHIPPED · pendiente AC15 (widget cajero)
+**Estado:** IN_REVIEW — Todos los ACs (1-15) SHIPPED · listo para POS-review
 **Módulo:** `pos` (consumidor) + `admin-cms` (config) + edge `innapsis-emit` (ya existe)
 **Wave:** 1 — Innapsis Electronic Billing (NORTE/camino-a-produccion)
 **Spec padre:** [POS-innapsis-integration.md](./POS-innapsis-integration.md) (Slices 1-4 SHIPPED)
@@ -45,7 +45,7 @@ Este spec cierra la última milla **POS → DIAN** para que un nuevo tenant pued
 - [x] **AC14:** `ResolutionStatusBanner` en `/pos/vender` lee `useEinvoiceResolutionStatus` (Realtime): muestra banner rojo si la resolución está agotada/ausente, ámbar si queda <=5%, gris si emisión inactiva. Apunta al cajero a *Facturación → Configuración*.
 
 ### Observabilidad cajero
-- [ ] **AC15:** Widget en sidebar POS: "Documentos hoy: 47 ✓ | 2 retry | 0 errores" — click abre lista de últimas 20 emisiones del turno actual.
+- [x] **AC15:** `EinvoiceShiftWidget` en topbar POS: "Docs N · X ok · Y retry · Z err" con Realtime sobre `electronic_invoices`. Popover muestra últimos 10 docs del día + acción "Reintentar pendientes" (admin) que invoca `einvoice-resend` con `retry_all_today`.
 
 ## Schema DB (incremental)
 
