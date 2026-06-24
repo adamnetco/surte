@@ -41,3 +41,31 @@ Tras shippear el bulk retry multi-org (AC1–AC7) y el batching/wallclock+cursor
 
 - Marker insert falla silenciosamente → un replay subsiguiente re-ejecuta. Aceptable: el peor caso es duplicar reencolado (idempotencia best-effort).
 - Cambio de contrato `operation → target`: filas viejas con `operation` quedan huérfanas. Migración manual no requerida (eran filas dead-on-arrival).
+
+---
+
+## Ampliación 2026-06-24 · Auditoría + cobertura adicional
+
+### Auditoría UI (superadmin)
+
+Ruta: `/superadmin/einvoice-bulk-retry/auditoria` (`EinvoiceBulkRetryAudit.tsx`).
+
+- Lee `sync_logs` filtrado por `service_name in ('einvoice_bulk_retry_admin','einvoice_bulk_retry_admin_idem')` en ventana configurable (default 24h).
+- Agrupa por `idempotency_key` usando el marker `..._idem`; las corridas sin marker (truncadas o sin idem) caen a buckets huérfanos por `requested_by`+minuto.
+- Estado derivado: `succeeded | failed | truncated | running` (función `deriveStatus`).
+- Detalle expandible por corrida: lista de filas agregadas por org con `requeued/batches`, `failed_batches`, `last_processed_id`, `phase`, mensaje de error.
+
+### Cobertura adicional de pruebas
+
+Añadidas en `supabase/functions/einvoice-resend-bulk-admin/index_test.ts`:
+
+- **Contract tests** (7 nuevos): target, attempts=0, max_attempts ∈ [0..10], `next_attempt_at` ISO válido y dentro de la ventana de la llamada, preservación de `idempotency_key`, `status='pending'`, `organization_id` uuid-shaped, `payload.invoice_id/organization_id/forced_retry/admin/bulk` siempre presentes.
+
+Nuevo archivo `supabase/functions/sync-outbox-flush/backoff_test.ts` + helper puro `backoff.ts`:
+
+- Simula reintentos transitorios (5xx/timeouts) y valida que `attempts` incremente y `next_attempt_at` siga la ventana 1/5/30/120/720 min.
+- Verifica que `permanent:true` (4xx Innapsis) corte el ciclo a `dead` inmediato.
+- Verifica jitter ±20%.
+- Simulación E2E `3 fallos + 1 éxito` demuestra que **un mismo row** se reprograma sin emitir nuevas filas (no duplica envíos).
+
+**Suite total**: 39/39 verde (33 bulk-admin + 6 backoff).

@@ -679,3 +679,121 @@ Deno.test("AC4 E2E: 3 orgs multi-escenario (success/empty/error) con stub realis
   );
   assertEquals(orgLogs.length, 2); // orgEmpty no escribe agregado (continue early)
 });
+
+// ---------- Contract tests del payload del outbox (hardening adicional) ----------
+// Garantiza que ninguna fila enviada al worker quede con campos inválidos
+// (target, attempts, next_attempt_at) y que idempotency_key se preserve.
+
+function collectOutboxRows(ops: any[]): any[] {
+  return ops
+    .filter((o) => o.table === "sync_outbox" && o.type === "insert")
+    .flatMap((o) => o.payload);
+}
+
+Deno.test("contract: cada fila de outbox tiene target='einvoice_emit_retry'", async () => {
+  const orgA = crypto.randomUUID();
+  const pendings = Array.from({ length: 30 }, (_, i) => ({
+    id: `inv-${i}`, organization_id: orgA,
+  }));
+  const { client, ops } = makeFake({ pendingsByOrg: { [orgA]: pendings } });
+  await processBulkRetry(client, { organization_ids: [orgA], batch_size: 10 }, "u");
+  const rows = collectOutboxRows(ops);
+  assertEquals(rows.length, 30);
+  assertEquals(rows.every((r) => r.target === "einvoice_emit_retry"), true);
+});
+
+Deno.test("contract: attempts=0 y max_attempts en rango válido [0..10]", async () => {
+  const orgA = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [{ id: "inv-1", organization_id: orgA }] },
+  });
+  await processBulkRetry(client, { organization_ids: [orgA], max_retries: 7 }, "u");
+  const rows = collectOutboxRows(ops);
+  assertEquals(rows.every((r) => r.attempts === 0), true);
+  assertEquals(rows.every((r) => Number.isInteger(r.max_attempts)), true);
+  assertEquals(rows.every((r) => r.max_attempts >= 0 && r.max_attempts <= 10), true);
+});
+
+Deno.test("contract: next_attempt_at es ISO-8601 válido y NO en el pasado lejano", async () => {
+  const orgA = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [{ id: "inv-1", organization_id: orgA }] },
+  });
+  const before = Date.now();
+  await processBulkRetry(client, { organization_ids: [orgA] }, "u");
+  const after = Date.now();
+  const rows = collectOutboxRows(ops);
+  for (const r of rows) {
+    assertEquals(typeof r.next_attempt_at, "string");
+    const t = Date.parse(r.next_attempt_at);
+    assertEquals(Number.isFinite(t), true);
+    // Debe estar dentro del rango de la llamada (no es default Date(0)).
+    assertEquals(t >= before - 1000 && t <= after + 1000, true);
+  }
+});
+
+Deno.test("contract: idempotency_key se preserva en payload cuando se envía", async () => {
+  const orgA = crypto.randomUUID();
+  const key = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [
+      { id: "inv-1", organization_id: orgA },
+      { id: "inv-2", organization_id: orgA },
+      { id: "inv-3", organization_id: orgA },
+    ]},
+  });
+  await processBulkRetry(
+    client,
+    { organization_ids: [orgA], idempotency_key: key, batch_size: 2 },
+    "u",
+  );
+  const rows = collectOutboxRows(ops);
+  assertEquals(rows.length, 3);
+  assertEquals(rows.every((r) => r.payload.idempotency_key === key), true);
+});
+
+Deno.test("contract: sin idempotency_key, payload NO contiene la clave (no undefined)", async () => {
+  const orgA = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [{ id: "inv-1", organization_id: orgA }] },
+  });
+  await processBulkRetry(client, { organization_ids: [orgA] }, "u");
+  const rows = collectOutboxRows(ops);
+  assertEquals("idempotency_key" in rows[0].payload, false);
+});
+
+Deno.test("contract: status='pending' y organization_id presente y FK-shaped (uuid string)", async () => {
+  const orgA = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [
+      { id: "inv-1", organization_id: orgA },
+      { id: "inv-2", organization_id: orgA },
+    ]},
+  });
+  await processBulkRetry(client, { organization_ids: [orgA] }, "u");
+  const rows = collectOutboxRows(ops);
+  assertEquals(rows.every((r) => r.status === "pending"), true);
+  assertEquals(rows.every((r) => r.organization_id === orgA), true);
+  assertEquals(rows.every((r) => /^[0-9a-f-]{36}$/i.test(r.organization_id)), true);
+});
+
+Deno.test("contract: payload.invoice_id y payload.organization_id siempre presentes", async () => {
+  const orgA = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [
+      { id: "inv-1", organization_id: orgA },
+      { id: "inv-2", organization_id: orgA },
+    ]},
+  });
+  await processBulkRetry(client, { organization_ids: [orgA] }, "u");
+  const rows = collectOutboxRows(ops);
+  for (const r of rows) {
+    assertEquals(typeof r.payload.invoice_id, "string");
+    assertEquals(r.payload.invoice_id.length > 0, true);
+    assertEquals(r.payload.organization_id, orgA);
+    assertEquals(r.payload.forced_retry, true);
+    assertEquals(r.payload.admin, true);
+    assertEquals(r.payload.bulk, true);
+  }
+});
+
