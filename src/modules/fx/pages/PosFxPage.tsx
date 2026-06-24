@@ -294,9 +294,26 @@ export default function PosFxPage() {
                 </Alert>
               )}
 
+              {exceedsMonthly && !isAboveThreshold && (
+                <Alert>
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Acumulado mensual UIAF superado</AlertTitle>
+                  <AlertDescription>
+                    Este documento acumula {fmt(monthly?.accumulated ?? 0)} {thresholdCcy} este mes ({monthly?.txCount ?? 0} operaciones). Sumando esta operación llega a {fmt(projectedMonthly)} {thresholdCcy}, igual o superior al umbral de {fmt(thresholdAmount)} {thresholdCcy}. Datos del cliente obligatorios.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {requiresCustomer && (
                 <div className="space-y-3 rounded-lg border bg-card p-3">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Datos del cliente (UIAF)</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Datos del cliente (UIAF)</div>
+                    {monthly && monthly.txCount > 0 && (
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Mes: {fmt(monthly.accumulated)} {monthly.currency} · {monthly.txCount} op.
+                      </span>
+                    )}
+                  </div>
                   <div className="grid gap-3 md:grid-cols-3">
                     <div className="space-y-1.5">
                       <Label>Tipo doc.</Label>
