@@ -116,11 +116,37 @@ export async function processBulkRetry(
   userId: string,
   nowFn: () => number = () => Date.now(),
 ): Promise<BulkResponse> {
-  const { organization_ids, dry_run, batch_size, max_retries, wallclock_ms, cursor } = body;
+  const { organization_ids, dry_run, batch_size, max_retries, wallclock_ms, cursor, idempotency_key } = body;
   const effectiveBatch = batch_size && batch_size > 0 ? batch_size : DEFAULT_BATCH_SIZE;
   const budgetMs = wallclock_ms && wallclock_ms > 0 ? wallclock_ms : DEFAULT_WALLCLOCK_MS;
   const startedAt = nowFn();
   const deadlineAt = startedAt + budgetMs;
+
+  // POS-einvoice-bulk-retry-hardening AC1: short-circuit por idempotency_key.
+  if (idempotency_key) {
+    try {
+      const sinceIdem = new Date(Date.now() - IDEM_TTL_MS).toISOString();
+      const { data: cached } = await supabase
+        .from("sync_logs")
+        .select("payload, created_at")
+        .eq("service_name", IDEM_MARKER_SERVICE)
+        .gte("created_at", sinceIdem)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      const hit = (cached ?? []).find(
+        (r: any) => r?.payload?.idempotency_key === idempotency_key,
+      );
+      if (hit?.payload?.cached_response) {
+        return {
+          ...(hit.payload.cached_response as BulkResponse),
+          idempotent_replay: true,
+          elapsed_ms: nowFn() - startedAt,
+        };
+      }
+    } catch {
+      // fail-open: si el lookup falla, seguimos con la ejecución normal.
+    }
+  }
 
   const since = new Date();
   since.setHours(0, 0, 0, 0);
