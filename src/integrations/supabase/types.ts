@@ -2045,7 +2045,9 @@ export type Database = {
           contact_email: string | null
           contact_name: string | null
           contact_phone: string | null
+          contingency_range: Json | null
           created_at: string
+          dian_health_status: string
           dv: string | null
           environment: string
           extra: Json
@@ -2053,6 +2055,7 @@ export type Database = {
           is_active: boolean
           nit: string
           organization_id: string
+          pos_behavior: Json
           razon_social: string | null
           resolution_current: number | null
           resolution_from: number | null
@@ -2069,7 +2072,9 @@ export type Database = {
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
+          contingency_range?: Json | null
           created_at?: string
+          dian_health_status?: string
           dv?: string | null
           environment?: string
           extra?: Json
@@ -2077,6 +2082,7 @@ export type Database = {
           is_active?: boolean
           nit: string
           organization_id: string
+          pos_behavior?: Json
           razon_social?: string | null
           resolution_current?: number | null
           resolution_from?: number | null
@@ -2093,7 +2099,9 @@ export type Database = {
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
+          contingency_range?: Json | null
           created_at?: string
+          dian_health_status?: string
           dv?: string | null
           environment?: string
           extra?: Json
@@ -2101,6 +2109,7 @@ export type Database = {
           is_active?: boolean
           nit?: string
           organization_id?: string
+          pos_behavior?: Json
           razon_social?: string | null
           resolution_current?: number | null
           resolution_from?: number | null
@@ -5531,6 +5540,7 @@ export type Database = {
           customer_phone: string | null
           customer_profile_id: string | null
           discount: number
+          einvoice_doc_type: string | null
           id: string
           location_id: string
           metadata: Json
@@ -5561,6 +5571,7 @@ export type Database = {
           customer_phone?: string | null
           customer_profile_id?: string | null
           discount?: number
+          einvoice_doc_type?: string | null
           id?: string
           location_id: string
           metadata?: Json
@@ -5591,6 +5602,7 @@ export type Database = {
           customer_phone?: string | null
           customer_profile_id?: string | null
           discount?: number
+          einvoice_doc_type?: string | null
           id?: string
           location_id?: string
           metadata?: Json
