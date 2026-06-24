@@ -172,6 +172,56 @@ export default function GlobalCommandPalette() {
     },
   });
 
+  // Pedidos: si la query es numérica, buscar por order_number; si no, ilike por order_number::text via cast no es trivial → solo numérico.
+  const numericQuery = useMemo(() => {
+    const m = debouncedQuery.match(/\d+/);
+    return m ? Number(m[0]) : null;
+  }, [debouncedQuery]);
+
+  const { data: orderResults = [] } = useQuery({
+    queryKey: ["cmdk-orders", orgId, numericQuery],
+    enabled: open && !!orgId && numericQuery !== null,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("orders")
+        .select("id, order_number, status, total, customer_name, created_at")
+        .eq("organization_id", orgId)
+        .gte("order_number", numericQuery)
+        .lte("order_number", numericQuery! + 999)
+        .order("order_number", { ascending: false })
+        .limit(6);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; order_number: number; status: string;
+        total: number; customer_name: string | null; created_at: string;
+      }>;
+    },
+  });
+
+  // Facturas electrónicas: por full_number (prefijo+número) o cufe
+  const { data: invoiceResults = [] } = useQuery({
+    queryKey: ["cmdk-invoices", orgId, debouncedQuery],
+    enabled: open && !!orgId && debouncedQuery.length >= 3 && (role === "superadmin" || role === "admin"),
+    staleTime: 30_000,
+    queryFn: async () => {
+      const q = debouncedQuery.replace(/[%,]/g, " ");
+      const { data, error } = await (supabase as any)
+        .from("electronic_invoices")
+        .select("id, full_number, prefix, number, status, total, cufe, customer_name, issue_date")
+        .eq("organization_id", orgId)
+        .or(`full_number.ilike.%${q}%,cufe.ilike.%${q}%`)
+        .order("issue_date", { ascending: false })
+        .limit(6);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; full_number: string | null; prefix: string | null; number: number | null;
+        status: string; total: number; cufe: string | null; customer_name: string | null; issue_date: string;
+      }>;
+    },
+  });
+
+
   const allowed = useMemo(
     () => ACTIONS.filter((a) => !a.roles || a.roles.includes(role)),
     [role]
