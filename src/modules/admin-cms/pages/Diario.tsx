@@ -26,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import { useDailyChecklist } from "@/modules/admin-cms/hooks/useDailyChecklist";
+import SyncStatusPanel from "@/modules/admin-cms/components/SyncStatusPanel";
 
 /**
  * Daily Driver — pantalla mobile-first del flujo diario del admin.
