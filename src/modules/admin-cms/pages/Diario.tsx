@@ -31,6 +31,11 @@ import { useDailyChecklist } from "@/modules/admin-cms/hooks/useDailyChecklist";
 import SyncStatusPanel from "@/modules/admin-cms/components/SyncStatusPanel";
 import DiarioBulkSheet, { type BulkKind } from "@/modules/admin-cms/components/DiarioBulkSheet";
 import DiarioShareDialog from "@/modules/admin-cms/components/DiarioShareDialog";
+import {
+  CHECKLIST_TEMPLATES,
+  templateForRole,
+  getTemplateByKey,
+} from "@/modules/admin-cms/lib/checklistTemplates";
 
 /**
  * Daily Driver — pantalla mobile-first del flujo diario del admin.
@@ -226,13 +231,8 @@ function StatTile({
   );
 }
 
-const CHECKLIST_DEFS = [
-  { item_key: "caja", label: "Abrir caja del día" },
-  { item_key: "precios", label: "Revisar precios actualizados" },
-  { item_key: "stock", label: "Revisar productos con bajo stock" },
-  { item_key: "pedidos", label: "Despachar pedidos pendientes" },
-  { item_key: "cierre", label: "Cierre del día y backup" },
-];
+const TEMPLATE_LS_KEY = "sistecpos:diario:tplKey";
+
 
 type ActionEntry = {
   key: string;
@@ -401,8 +401,25 @@ const Diario = () => {
   const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
     ?? user?.email?.split("@")[0];
 
+  // Plantilla de checklist según rol, con override manual persistido
+  const suggested = useMemo(() => templateForRole(currentOrg?.role), [currentOrg?.role]);
+  const [templateKey, setTemplateKey] = useState<string>(() => {
+    if (typeof window === "undefined") return suggested.key;
+    return localStorage.getItem(TEMPLATE_LS_KEY) ?? suggested.key;
+  });
+  // Si cambia el rol sugerido y el usuario no ha override-eado, sigue al sugerido
+  useEffect(() => {
+    if (!localStorage.getItem(TEMPLATE_LS_KEY)) setTemplateKey(suggested.key);
+  }, [suggested.key]);
+  const activeTemplate = getTemplateByKey(templateKey) ?? suggested;
+  const onPickTemplate = (k: string) => {
+    setTemplateKey(k);
+    localStorage.setItem(TEMPLATE_LS_KEY, k);
+  };
+
   const { items: checkItems, toggle, setNotes, doneCount, loading: checklistLoading } =
-    useDailyChecklist(CHECKLIST_DEFS);
+    useDailyChecklist(activeTemplate.items);
+
 
   const hasData = !!data;
   const [sevFilter, setSevFilter] = useState<Severity | "all">("all");
@@ -727,22 +744,59 @@ const Diario = () => {
           </div>
         </section>
 
-        {/* Checklist diaria — persistido en Supabase */}
+        {/* Checklist diaria — plantilla por rol, persistido en Supabase */}
         <section className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Checklist del día
             </h2>
             <span className="text-[11px] text-muted-foreground tabular-nums">
-              {doneCount}/{CHECKLIST_DEFS.length}
+              {doneCount}/{activeTemplate.items.length}
             </span>
           </div>
+
+          {/* Selector de plantilla por rol */}
+          <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+            {CHECKLIST_TEMPLATES.map((t) => {
+              const isActive = t.key === activeTemplate.key;
+              const isSuggested = t.key === suggested.key;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => onPickTemplate(t.key)}
+                  className={cn(
+                    "shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition flex items-center gap-1",
+                    isActive
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-card text-muted-foreground border-border hover:text-foreground",
+                  )}
+                  title={t.description}
+                >
+                  {t.label}
+                  {isSuggested && (
+                    <span
+                      className={cn(
+                        "text-[9px] uppercase font-bold tracking-wide px-1 rounded",
+                        isActive ? "bg-background/20" : "bg-emerald-500/15 text-emerald-700",
+                      )}
+                    >
+                      Tu rol
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-muted-foreground -mt-1">
+            {activeTemplate.description}
+          </p>
+
           <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
             {checklistLoading
-              ? CHECKLIST_DEFS.map((c) => (
+              ? activeTemplate.items.map((c) => (
                   <Skeleton key={c.item_key} className="h-[52px] w-full rounded-none" />
                 ))
-              : CHECKLIST_DEFS.map((c) => (
+              : activeTemplate.items.map((c) => (
                   <ChecklistRow
                     key={c.item_key}
                     item_key={c.item_key}
@@ -755,9 +809,10 @@ const Diario = () => {
                 ))}
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Tu progreso se guarda en la nube y se reinicia cada día.
+            Tu progreso se guarda en la nube y se reinicia cada día. Cada plantilla mantiene su propio avance.
           </p>
         </section>
+
       </main>
 
       <DiarioBulkSheet
@@ -775,7 +830,7 @@ const Diario = () => {
         orgName={currentOrg?.name ?? "Mi negocio"}
         userName={firstName}
         checklistDone={doneCount}
-        checklistTotal={CHECKLIST_DEFS.length}
+        checklistTotal={activeTemplate.items.length}
       />
     </div>
 
