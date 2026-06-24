@@ -260,17 +260,62 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
             )}
           </div>
 
-          <Button
-            variant="cta"
-            className="w-full h-12 text-base"
-            disabled={!canConfirm}
-            onClick={doConfirm}
-          >
-            {submitting ? "Procesando…" : "Confirmar cobro"}
-            {!submitting && (
-              <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
-            )}
-          </Button>
+          {!gate.canCharge && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                <div className="text-xs">
+                  <p className="font-semibold text-destructive">Cobro bloqueado</p>
+                  <p className="text-muted-foreground mt-0.5">
+                    DIAN offline y sin rango de contingencia vigente. Configura un rango o espera al restablecimiento.
+                  </p>
+                </div>
+              </div>
+              <Button asChild variant="outline" size="sm" className="w-full h-8 text-xs">
+                <Link to="/admin/facturacion/configuracion" target="_blank" rel="noreferrer">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Configurar rango de contingencia
+                </Link>
+              </Button>
+              {isSuperadmin && (
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Superadmin: <kbd className="px-1 py-0.5 bg-muted rounded font-mono">Ctrl+Shift+B</kbd> para forzar override (auditado)
+                </p>
+              )}
+            </div>
+          )}
+
+          {gate.overrideActive && gate.canCharge && (
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
+              <ShieldOff className="h-3.5 w-3.5 text-destructive" />
+              <span className="text-destructive font-medium">Override hard-block activo · auditoría registrada</span>
+            </div>
+          )}
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="block">
+                  <Button
+                    variant="cta"
+                    className="w-full h-12 text-base"
+                    disabled={!canConfirm}
+                    onClick={doConfirm}
+                  >
+                    {submitting ? "Procesando…" : "Confirmar cobro"}
+                    {!submitting && canConfirm && (
+                      <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
+                    )}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!gate.canCharge && (
+                <TooltipContent>
+                  DIAN offline. Configure rango de contingencia o espere a restablecimiento.
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </DialogContent>
     </Dialog>
