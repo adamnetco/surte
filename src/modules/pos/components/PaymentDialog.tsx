@@ -3,8 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight, ShieldAlert, ShieldOff, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import DocumentTypeSelector from "./DocumentTypeSelector";
+import { usePosCobroGate } from "@/modules/pos/hooks/usePosCobroGate";
+import { useAuth } from "@/modules/auth/context/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 type MethodKey = "efectivo" | "tarjeta_debito" | "tarjeta_credito" | "transferencia" | "nequi" | "daviplata";
 
