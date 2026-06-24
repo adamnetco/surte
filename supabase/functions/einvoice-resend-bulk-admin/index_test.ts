@@ -109,17 +109,27 @@ Deno.test("OPTIONS preflight returns CORS headers", async () => {
   assertEquals(res.headers.get("Access-Control-Allow-Origin"), "*");
 });
 
-Deno.test("rejects missing Authorization with 401", async () => {
-  const res = await handler(post({ organization_ids: [crypto.randomUUID()] }));
-  assertEquals(res.status, 401);
-  const body = await res.json();
-  assertEquals(body.error, "Unauthorized");
+Deno.test({
+  name: "rejects missing Authorization with 401",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const res = await handler(post({ organization_ids: [crypto.randomUUID()] }));
+    assertEquals(res.status, 401);
+    const body = await res.json();
+    assertEquals(body.error, "Unauthorized");
+  },
 });
 
-Deno.test("rejects non-Bearer Authorization with 401", async () => {
-  const res = await handler(post({}, { Authorization: "Basic abc" }));
-  assertEquals(res.status, 401);
-  await res.text();
+Deno.test({
+  name: "rejects non-Bearer Authorization with 401",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const res = await handler(post({}, { Authorization: "Basic abc" }));
+    assertEquals(res.status, 401);
+    await res.text();
+  },
 });
 
 // ---------- processBulkRetry (AC3 / AC4 / AC5) ----------
