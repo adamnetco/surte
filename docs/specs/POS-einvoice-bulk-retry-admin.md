@@ -1,6 +1,6 @@
 # POS — Bulk Retry Admin Multi-Org (follow-up AC5)
 
-**Estado:** IN_REVIEW
+**Estado:** SHIPPED
 **Módulo:** edge `einvoice-resend-bulk-admin` (NEW) + `admin-cms/Facturacion`
 **Wave:** Follow-up de [POS-einvoice-retry-scoping](./POS-einvoice-retry-scoping.md) AC5
 
