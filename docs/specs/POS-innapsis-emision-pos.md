@@ -31,9 +31,9 @@ Este spec cierra la última milla **POS → DIAN** para que un nuevo tenant pued
 - [ ] **AC6:** Si en 3s no hay update (Innapsis lento), badge muestra `Procesando en segundo plano — puedes continuar`. El cajero no queda bloqueado.
 
 ### Acciones rápidas sobre el documento emitido
-- [ ] **AC7:** En `SaleCompleteDialog`, botones: `Imprimir POS` (siempre), `Re-imprimir DIAN` (si aceptado), `Enviar por email` (si aceptado + cliente con email), `Enviar por WhatsApp` (si aceptado + cliente con teléfono).
-- [ ] **AC8:** Botón "Ver factura" abre drawer lateral con PDF (renderizado desde response Innapsis) sin salir del POS.
-- [ ] **AC9:** Si el documento quedó en `retrying` o `dead_letter`, botón "Reintentar ahora" fuerza nuevo intento (bypass del backoff, requiere permiso `admin` o `superadmin`).
+- [x] **AC7:** En `SaleCompleteDialog`, botones: `Imprimir POS` (siempre), `Ver factura` (drawer con PDF, si aceptada), `Email` (si aceptada + cliente con email), `WhatsApp` (si aceptada + cliente con teléfono). _Re-imprimir DIAN integrado en drawer (botones descargar PDF/XML)._
+- [x] **AC8:** Botón "Ver factura" abre `InvoicePdfDrawer` lateral con PDF embebido + descarga XML/QR sin salir del POS.
+- [x] **AC9:** Si el documento quedó en `retrying`/`rejected`/`dead_letter`, botón "Reintentar emisión ahora" fuerza nuevo intento (bypass backoff, requiere `isAdmin`).
 
 ### Modo contingencia DIAN
 - [ ] **AC10:** Toggle visible en topbar POS: `🟢 DIAN Online` / `🟡 DIAN Lento` / `🔴 DIAN Offline — modo contingencia`. Estado auto-detectado por % de errores 5xx en últimos 5min de `einvoice_events`.
