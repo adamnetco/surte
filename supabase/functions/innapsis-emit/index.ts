@@ -276,9 +276,20 @@ Deno.serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    const { organization_id, pos_order_id, order_id, document_type = "invoice" } = await req.json();
-    if (!organization_id || (!pos_order_id && !order_id)) {
-      return new Response(JSON.stringify({ error: "organization_id y pos_order_id u order_id requeridos" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const reqBody = await req.json();
+    const {
+      organization_id,
+      pos_order_id,
+      order_id,
+      document_type = "invoice",
+      contingency_mode: contingencyModeRaw,
+      transmit_invoice_id,
+    } = reqBody;
+    if (!organization_id && !transmit_invoice_id) {
+      return new Response(JSON.stringify({ error: "organization_id requerido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (!transmit_invoice_id && !pos_order_id && !order_id) {
+      return new Response(JSON.stringify({ error: "pos_order_id u order_id requeridos" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
