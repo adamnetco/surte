@@ -3228,6 +3228,9 @@ export type Database = {
         Row: {
           cash_session_id: string | null
           cashier_id: string | null
+          commission_amount: number | null
+          commission_currency_id: string | null
+          commission_invoice_status: string
           created_at: string
           customer_address: string | null
           customer_doc_number: string | null
@@ -3242,6 +3245,7 @@ export type Database = {
           is_above_threshold: boolean
           is_suspicious: boolean
           location_id: string | null
+          mid_rate: number | null
           notes: string | null
           operation: string
           organization_id: string
@@ -3255,6 +3259,9 @@ export type Database = {
         Insert: {
           cash_session_id?: string | null
           cashier_id?: string | null
+          commission_amount?: number | null
+          commission_currency_id?: string | null
+          commission_invoice_status?: string
           created_at?: string
           customer_address?: string | null
           customer_doc_number?: string | null
@@ -3269,6 +3276,7 @@ export type Database = {
           is_above_threshold?: boolean
           is_suspicious?: boolean
           location_id?: string | null
+          mid_rate?: number | null
           notes?: string | null
           operation: string
           organization_id: string
@@ -3282,6 +3290,9 @@ export type Database = {
         Update: {
           cash_session_id?: string | null
           cashier_id?: string | null
+          commission_amount?: number | null
+          commission_currency_id?: string | null
+          commission_invoice_status?: string
           created_at?: string
           customer_address?: string | null
           customer_doc_number?: string | null
@@ -3296,6 +3307,7 @@ export type Database = {
           is_above_threshold?: boolean
           is_suspicious?: boolean
           location_id?: string | null
+          mid_rate?: number | null
           notes?: string | null
           operation?: string
           organization_id?: string
@@ -3312,6 +3324,13 @@ export type Database = {
             columns: ["cash_session_id"]
             isOneToOne: false
             referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_transactions_commission_currency_id_fkey"
+            columns: ["commission_currency_id"]
+            isOneToOne: false
+            referencedRelation: "fx_currencies"
             referencedColumns: ["id"]
           },
           {

@@ -11,6 +11,9 @@ export type FxTransactionInput = {
   from_amount: number;
   to_amount: number;
   rate_applied: number;
+  mid_rate?: number | null;
+  commission_amount?: number | null;
+  commission_currency_id?: string | null;
   is_above_threshold: boolean;
   customer_doc_type?: string | null;
   customer_doc_number?: string | null;

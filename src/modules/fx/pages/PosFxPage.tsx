@@ -53,6 +53,7 @@ export default function PosFxPage() {
   // operation buy = casa COMPRA divisa base al cliente → entrega quote (buy_rate)
   // operation sell = casa VENDE divisa base al cliente → recibe quote (sell_rate)
   const rateApplied = rate ? (operation === "buy" ? rate.buy_rate : rate.sell_rate) : 0;
+  const midRate = rate ? (Number(rate.buy_rate) + Number(rate.sell_rate)) / 2 : 0;
   const fromCcy = operation === "buy" ? baseCcy : quoteCcy;
   const toCcy = operation === "buy" ? quoteCcy : baseCcy;
   const fromAmountNum = Number(fromAmount) || 0;
@@ -61,6 +62,15 @@ export default function PosFxPage() {
     // base/quote: 1 base = rate quote. buy → from(base)*rate. sell → from(quote)/rate.
     return operation === "buy" ? fromAmountNum * rateApplied : fromAmountNum / rateApplied;
   }, [fromAmountNum, rateApplied, operation]);
+
+  // Margen (comisión implícita) = diferencia entre la tasa aplicada y la tasa media,
+  // expresada en la divisa quote (la que cotiza el par). Siempre positiva para la casa.
+  const commission = useMemo(() => {
+    if (!rate || !fromAmountNum || !midRate) return { amount: 0, currencyId: quoteCcy?.id };
+    const baseUnits = operation === "buy" ? fromAmountNum : toAmount;
+    const perUnit = operation === "buy" ? midRate - rateApplied : rateApplied - midRate;
+    return { amount: Math.max(0, baseUnits * perUnit), currencyId: quoteCcy?.id };
+  }, [rate, fromAmountNum, midRate, rateApplied, operation, toAmount, quoteCcy?.id]);
 
   // Cálculo umbral UIAF: si alguna divisa de la operación coincide con la moneda del umbral,
   // comparamos directo; si no, mostramos advertencia (no podemos convertir sin par cruzado).
@@ -100,6 +110,9 @@ export default function PosFxPage() {
       from_amount: Number(fromAmountNum.toFixed(2)),
       to_amount: Number(toAmount.toFixed(2)),
       rate_applied: Number(rateApplied.toFixed(6)),
+      mid_rate: Number(midRate.toFixed(6)),
+      commission_amount: Number(commission.amount.toFixed(2)),
+      commission_currency_id: commission.currencyId ?? null,
       is_above_threshold: isAboveThreshold,
       customer_doc_type: requiresCustomer ? customer.doc_type : null,
       customer_doc_number: requiresCustomer ? customer.doc_number.trim() : null,
@@ -202,9 +215,13 @@ export default function PosFxPage() {
               )}
 
               {rate && (
-                <div className="text-xs text-muted-foreground flex items-center gap-3">
-                  <span>Tasa compra: <strong className="text-foreground font-mono">{fmt(rate.buy_rate, 4)}</strong></span>
-                  <span>Tasa venta: <strong className="text-foreground font-mono">{fmt(rate.sell_rate, 4)}</strong></span>
+                <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>Compra: <strong className="text-foreground font-mono">{fmt(rate.buy_rate, 4)}</strong></span>
+                  <span>Venta: <strong className="text-foreground font-mono">{fmt(rate.sell_rate, 4)}</strong></span>
+                  <span>Media: <strong className="text-foreground font-mono">{fmt(midRate, 4)}</strong></span>
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    Spread: <strong className="font-mono">{fmt(Number(rate.sell_rate) - Number(rate.buy_rate), 4)}</strong> {quoteCcy?.code}
+                  </span>
                   <Badge variant="secondary" className="text-[10px] uppercase">{rate.source}</Badge>
                 </div>
               )}
@@ -230,6 +247,22 @@ export default function PosFxPage() {
                   </div>
                 </div>
               </div>
+
+              {commission.amount > 0 && (
+                <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30 p-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                      Margen estimado de la operación
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Calculado contra la tasa media · base imponible para la factura de comisión.
+                    </div>
+                  </div>
+                  <div className="font-mono text-lg text-emerald-700 dark:text-emerald-300">
+                    {fmt(commission.amount, 2)} {quoteCcy?.code}
+                  </div>
+                </div>
+              )}
 
               {isAboveThreshold && (
                 <Alert>
@@ -323,12 +356,23 @@ export default function PosFxPage() {
                 const f = currencies.find((c) => c.id === t.from_currency_id);
                 const to = currencies.find((c) => c.id === t.to_currency_id);
                 return (
-                  <div key={t.id} className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0">
-                    <div>
-                      <div className="font-mono">{fmt(Number(t.from_amount))} {f?.code} → {fmt(Number(t.to_amount))} {to?.code}</div>
-                      <div className="text-muted-foreground text-[10px]">{new Date(t.created_at).toLocaleString("es-CO")}</div>
+                  <div key={t.id} className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0 gap-2">
+                    <div className="min-w-0">
+                      <div className="font-mono truncate">{fmt(Number(t.from_amount))} {f?.code} → {fmt(Number(t.to_amount))} {to?.code}</div>
+                      <div className="text-muted-foreground text-[10px] flex items-center gap-1.5">
+                        <span>{new Date(t.created_at).toLocaleString("es-CO")}</span>
+                        {Number(t.commission_amount) > 0 && (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-mono">
+                            · margen {fmt(Number(t.commission_amount), 2)}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {t.is_above_threshold && <Badge variant="outline" className="text-[10px]">UIAF</Badge>}
+                    <div className="flex flex-col items-end gap-0.5">
+                      {t.is_above_threshold && <Badge variant="outline" className="text-[10px]">UIAF</Badge>}
+                      {t.commission_invoice_status === "emitted" && <Badge className="text-[10px]" variant="secondary">FE</Badge>}
+                      {t.commission_invoice_status === "failed" && <Badge className="text-[10px]" variant="destructive">FE err</Badge>}
+                    </div>
                   </div>
                 );
               })}
