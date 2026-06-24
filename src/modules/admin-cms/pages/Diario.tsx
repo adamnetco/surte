@@ -667,6 +667,8 @@ const Diario = () => {
                     badge={a.badge}
                     severity={a.severity}
                     onClick={a.onClick}
+                    bulkLabel={a.bulkKind === "einvoice" ? "Reintentar" : a.bulkKind === "pending" ? "Confirmar" : undefined}
+                    onBulk={a.bulkKind ? () => setBulkKind(a.bulkKind!) : undefined}
                   />
                 ))
               )}
