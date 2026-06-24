@@ -241,6 +241,9 @@ export default function Facturacion() {
                   <div>
                     <div className="font-medium">{i.full_number ?? "—"} · {i.document_type}</div>
                     <div className="text-xs text-muted-foreground">{i.customer_name ?? "Consumidor final"} · ${i.total.toLocaleString("es-CO")} · {new Date(i.created_at).toLocaleString("es-CO")}</div>
+                    {i.reference_full_number && (
+                      <div className="text-xs text-muted-foreground">↳ Ref: {i.reference_full_number}</div>
+                    )}
                     {i.last_error && <div className="text-xs text-destructive">{i.last_error}</div>}
                   </div>
                   <div className="flex items-center gap-2">
@@ -251,6 +254,11 @@ export default function Facturacion() {
                     <Button size="icon" variant="ghost" onClick={() => checkStatus(i.id)} title="Consultar estado">
                       <Send className="h-4 w-4" />
                     </Button>
+                    {i.document_type === "invoice" && (i.status === "sent" || i.status === "accepted") && (
+                      <Button size="icon" variant="ghost" onClick={() => setNoteInvoice(i)} title="Emitir Nota Crédito/Débito">
+                        <FileMinus className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
