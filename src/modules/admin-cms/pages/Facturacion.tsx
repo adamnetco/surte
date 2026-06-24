@@ -9,8 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { FileText, RefreshCw, Send, Plug, Wand2 } from "lucide-react";
+import { FileText, RefreshCw, Send, Plug, Wand2, Layers } from "lucide-react";
 import { calculateNitDv, isValidNitDv } from "../lib/nitDv";
+import DocumentTypesManager from "../components/DocumentTypesManager";
 
 interface Config {
   id?: string;
