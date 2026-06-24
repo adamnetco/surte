@@ -261,7 +261,7 @@ const InnapsisDetail = () => {
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Timeline DIAN ({events.length})
+              Timeline DIAN ({events.length}{totalEvents > events.length ? ` de ${totalEvents}` : ""})
             </h2>
             <button
               onClick={() => eventsQ.refetch()}
