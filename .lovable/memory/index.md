@@ -60,5 +60,7 @@
 - [Ola 4 Daily Driver CmdK](mem://features/ola-4-daily-driver-cmdk) — Slice 4: GlobalCommandPalette extendido con búsqueda de pedidos por order_number y facturas DIAN por full_number/cufe
 - [Ola 5 UIAF cross-rate](mem://features/ola-5-fx-uiaf-crossrate) — Slice 1: fx_convert_to_currency + acumulado UIAF cross-rate vía fx_rates publicado
 - [Ola 5 UIAF XML](mem://features/ola-5-fx-uiaf-xml) — Slice 2: buildUiafXml + botón UIAF XML en /casas-de-cambio/reportes (Res. UIAF 285)
+- [Ola 5 Commission Retry](mem://features/ola-5-fx-commission-retry) — Slice 3: pg_cron `*/10` reintenta facturación comisión FX con backoff 1m→5m→30m→2h→12h, 5 intentos máx
+
 
 
