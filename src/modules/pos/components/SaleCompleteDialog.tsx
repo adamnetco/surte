@@ -31,6 +31,7 @@ const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 export default function SaleCompleteDialog({
   open, onOpenChange, total, amountPaid, change, canEmitInvoice,
   onNewSale, onPrint, onEmitInvoice, posOrderId,
+  customerEmail, customerPhone, isAdmin = false,
 }: Props) {
   const einvoice = useEinvoiceLiveStatus(open ? posOrderId ?? null : null);
   const [soundOn, setSoundOn] = useState<boolean>(() => getPosSoundEnabled());
