@@ -83,6 +83,44 @@ export default function POSTopBar({
 
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {rightExtras}
+          {/* Slot interno de SYNC (ancho fijo 28px, siempre reservado) — evita reflow
+              y mantiene el ícono Settings anclado en pixel-position. Visualmente discreto:
+              un punto + (opcional) badge con conteo. Nunca se desmonta. */}
+          <div
+            data-testid="pos-topbar-sync-slot"
+            className="w-7 h-7 shrink-0 flex items-center justify-center"
+            aria-live="polite"
+            aria-label={
+              !sync ? "Sincronización inactiva"
+              : sync.syncing ? "Sincronizando"
+              : sync.pending > 0 ? `${sync.pending} operaciones pendientes`
+              : sync.online ? "Sincronizado" : "Sin conexión"
+            }
+          >
+            {hasSyncActivity ? (
+              <button
+                type="button"
+                onClick={sync?.onFlush}
+                title={sync?.lastError ?? (sync?.online ? "Sincronizar pendientes" : "Sin conexión · en cola")}
+                className="relative inline-flex items-center justify-center h-6 w-6 rounded-md hover:bg-muted/60 transition"
+                data-testid="pos-topbar-sync-btn"
+              >
+                {sync?.syncing
+                  ? <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600" />
+                  : sync?.online
+                    ? <CloudUpload className="h-3.5 w-3.5 text-amber-600" />
+                    : <CloudOff className="h-3.5 w-3.5 text-muted-foreground" />}
+                {sync && sync.pending > 0 && !sync.syncing ? (
+                  <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-[3px] rounded-full bg-amber-500 text-[9px] font-bold text-white tabular-nums grid place-items-center">
+                    {sync.pending > 9 ? "9+" : sync.pending}
+                  </span>
+                ) : null}
+              </button>
+            ) : (
+              // Placeholder invisible: ocupa exactamente el mismo espacio
+              <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-transparent" />
+            )}
+          </div>
           <Button
             variant="ghost"
             size="icon"
