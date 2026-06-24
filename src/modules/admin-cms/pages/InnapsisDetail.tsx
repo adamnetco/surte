@@ -341,6 +341,18 @@ const InnapsisDetail = () => {
               })}
             </ol>
           )}
+
+          {totalEvents > events.length && !eventsQ.isLoading && (
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setEventsLimit((n) => n + 25)}
+                disabled={eventsQ.isFetching}
+                className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+              >
+                {eventsQ.isFetching ? "Cargando…" : `Cargar 25 más (${totalEvents - events.length} restantes)`}
+              </button>
+            </div>
+          )}
         </section>
       </main>
     </div>
