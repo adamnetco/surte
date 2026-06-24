@@ -1,6 +1,6 @@
 # POS — Scoping de retry_all_today por organization_id
 
-**Estado:** IN_REVIEW
+**Estado:** SHIPPED
 **Módulo:** edge `einvoice-resend` + `EinvoiceShiftWidget`
 **Wave:** Follow-up de [POS-innapsis-emision-pos](./POS-innapsis-emision-pos.md) (Observación #4 del review)
 **Tablas:** `electronic_invoices`, `sync_outbox`

@@ -1,37 +1,31 @@
 # Reporte de Revisión — POS-einvoice-retry-scoping
 
 **Fecha:** 2026-06-24
-**Resultado general:** ❌ RECHAZADO — feature aún no implementado
-
-> ⚠️ El spec figura como **DRAFT**. La skill `/POS-review` exige estado `IN_BUILD` o `IN_REVIEW`. Se ejecuta este reporte para dejar constancia del baseline antes de implementarlo en `/pos-feature`.
+**Resultado general:** ⚠️ APROBADO CON OBSERVACIONES
 
 ## Criterios de Aceptación
 
 | AC | Estado | Evidencia |
 |---|---|---|
-| AC1 — `BodySchema` requiere `organization_id` para `retry_all_today` | ❌ | `supabase/functions/einvoice-resend/index.ts:18-22` — `BodySchema` solo tiene `invoice_id?`, `action`, `to?`. Falta `organization_id`. |
-| AC2 — Validar rol del caller en la `organization_id` solicitada | ❌ | Líneas 60-69 — el handler toma **todos** los memberships admin del usuario, no valida contra una org específica. Multi-tenant cross-contamination. |
-| AC3 — `EinvoiceShiftWidget` envía `organization_id` explícito | ❌ | `EinvoiceShiftWidget.tsx:48-49` — body es `{ action: "retry_all_today" }`, sin `organization_id`. |
-| AC4 — Auditoría a `sync_logs` con metadata `{org, requeued_count, requested_by}` | ❌ | Líneas 79-93 — solo retorna `{ success, requeued }`. No hay INSERT a `sync_logs`. |
-| AC5 — Endpoint admin separado para retry global multi-org | ❌ | No existe; el endpoint actual ya hace de facto multi-org sin scoping, lo cual es el problema raíz. |
+| AC1 — `BodySchema` + 400 si falta `organization_id` | ✅ | `einvoice-resend/index.ts:18-24` (schema) + `:62-66` (guard). |
+| AC2 — Validar rol del caller en esa org | ✅ | `:67-77` — `SELECT role FROM organization_members WHERE org=? AND user=?`; 403 si no `owner/admin/superadmin`. |
+| AC3 — Widget envía `organization_id` | ✅ | `EinvoiceShiftWidget.tsx:48-50`. |
+| AC4 — Auditoría en `sync_logs` | ✅ | `:103-114` — `service_name='einvoice_bulk_retry'`, `payload={action, requeued_count, requested_by, since}`, `organization_id` correcto. |
+| AC5 — Endpoint admin separado para multi-org | ⚠️ | Documentado como follow-up fuera de scope. Riesgo principal neutralizado por AC1+AC2. |
 
-## Gaps críticos (bloquean aprobación)
+## Gaps críticos
+Ninguno.
 
-1. **Riesgo activo en producción**: cualquier superadmin con membership en N orgs que dispare retry_all_today desde el POS de la org A requeueará pendientes de las orgs B…N. Confirmar si hay superadmins multi-org en Live antes de tocar.
-2. **Schema breaking**: el cambio en `BodySchema` (campo nuevo obligatorio) requiere coordinar deploy de la edge function + frontend en el mismo PR. Cualquier cliente desfasado romperá con 400.
-3. **No hay tests E2E** que cubran el flujo widget→edge→requeue.
+## Observaciones (no bloquean)
 
-## Recomendación
-
-Pasar el spec a **IN_BUILD** y ejecutar `/pos-feature POS-einvoice-retry-scoping`. Implementación sugerida:
-
-1. Edge: añadir `organization_id: z.string().uuid()` cuando `action='retry_all_today'` (usar `z.discriminatedUnion` o `superRefine`).
-2. Edge: validar membership con `SELECT 1 FROM organization_members WHERE user_id=$1 AND organization_id=$2 AND role IN ('owner','admin','superadmin')`; si no → 403.
-3. Edge: filtrar `electronic_invoices` por la `organization_id` recibida (no por `IN (orgIds)`).
-4. Edge: `INSERT INTO sync_logs (organization_id, service_name='einvoice_bulk_retry', status='success', payload={requeued, requested_by, action})`.
-5. Frontend: `EinvoiceShiftWidget.tsx` envía `{ action, organization_id: currentOrganization.id }`.
-6. (AC5 opcional) Endpoint admin `einvoice-resend-bulk-admin` para superadmin con scope multi-org explícito.
+1. **Loop secuencial en bulk** — `for (const row of pendings)` hace 2 awaits por factura (UPDATE + INSERT outbox). Para turnos con >50 pendientes la latencia puede pasar el timeout de la edge (60s). Considerar batch INSERT a `sync_outbox` y `UPDATE ... WHERE id = ANY($1)` para reducir round-trips.
+2. **Sin `dry_run`** — la nota original del spec sugería `dry_run: boolean` para preview. No se implementó. Útil para UX cuando hay decenas de pendientes.
+3. **No se registra falla** — si `pendings` viene `null` por error de Supabase, el handler retorna `requeued: 0` sin log. Considerar `sync_logs` con `status='error'` cuando la query falla.
+4. **AC5 sin spec propio** — recomendado crear `POS-einvoice-bulk-retry-admin.md` (DRAFT) para no perder el follow-up.
+5. **Sin test E2E ni unit** — el cambio es seguridad-crítico; un test que confirme `403` cuando el caller no es admin de la org sería deseable. Bloqueado por mocks de edge function (no existe harness en repo).
+6. **Mensaje 400 cambiado** — clientes externos que reusen este endpoint (no hay hoy) romperán. Mitigación: solo `EinvoiceShiftWidget` lo consume y se actualizó en el mismo cambio.
 
 ## Acción
-- Spec mantiene estado **DRAFT** (no cumple criterios para SHIPPED).
-- Próximo paso: `/pos-feature POS-einvoice-retry-scoping`.
+- Spec actualizado a **SHIPPED**.
+- Observaciones 1 y 2 candidatas a follow-up corto si aparece queja de performance.
+- Observación 4 (AC5) requiere su propio spec cuando surja el caso de uso superadmin.
