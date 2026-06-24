@@ -426,10 +426,23 @@ const Innapsis = () => {
               return (
                 <article
                   key={inv.id}
-                  className="bg-card border border-border rounded-xl p-3.5 space-y-2"
+                  className={cn(
+                    "bg-card border rounded-xl p-3.5 space-y-2 transition",
+                    selected.has(inv.id) ? "border-amber-500/60 ring-1 ring-amber-500/30" : "border-border",
+                  )}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    {canRetry && (
+                      <label className="shrink-0 mt-1 cursor-pointer" aria-label="Seleccionar para reintento masivo">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-amber-600"
+                          checked={selected.has(inv.id)}
+                          onChange={() => toggleSelect(inv.id)}
+                        />
+                      </label>
+                    )}
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold text-sm text-foreground truncate">
                           {inv.full_number ?? `${inv.prefix ?? ""}${inv.number ?? "—"}`}
