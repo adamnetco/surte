@@ -493,12 +493,13 @@ Deno.serve(async (req) => {
         total: payload.Fe.Totales.TotalaPagar,
         track_id: trackId,
         status: "sending",
-      request_payload: payload,
-      environment: cfg.environment,
-      created_by: userId,
-    }).select().single();
-
-    if (invErr) throw invErr;
+        request_payload: payload,
+        environment: cfg.environment,
+        created_by: userId,
+      }).select().single();
+      if (invErr) throw invErr;
+      inv = ins;
+    }
 
     // 5) Llamada Innapsis
     try {
