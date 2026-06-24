@@ -75,3 +75,6 @@ project_id = "dimyhjzcwlgfczimqhet"
 
   [functions.einvoice-resend]
     verify_jwt = true
+
+  [functions.einvoice-resend-bulk-admin]
+    verify_jwt = true
