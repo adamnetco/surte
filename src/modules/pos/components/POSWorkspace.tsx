@@ -496,6 +496,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         hasContingencyRange={dianSnap.hasContingencyRange}
       />
 
+      {/* AC14 — Banner pre-cobro si falta/se agota la resolución DIAN */}
+      <ResolutionStatusBanner
+        snapshot={resolutionSnap}
+        einvoiceEnabled={resolutionSnap.status !== "unknown"}
+      />
+
       {/* Tabs de categorías (60%) + Cliente (40%) */}
       <div className="flex items-stretch border-b bg-card">
         <div className="flex-1 min-w-0 border-r">
