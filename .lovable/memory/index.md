@@ -46,4 +46,5 @@
 - [Ola 1 Closure](mem://features/ola-1-closure) — Cierre Ola 1: contingencia DIAN + auto-email PDF/XML en innapsis-emit + reporte /admin/innapsis/resumen (CSV, refetch 30s)
 - [Ola 2 FX Spread](mem://features/ola-2-fx-spread) — fx_transactions con mid_rate/commission_amount/commission_currency_id/commission_invoice_status; UI POS FX muestra spread+margen estimado; preparado para facturación de comisión vía Innapsis
 - [Ola 2 FX Commission Invoice](mem://features/ola-2-fx-commission-invoice) — Edge fx-emit-commission-invoice crea pos_order sintético sale_mode=fx_commission y delega en innapsis-emit (contingencia+email Ola 1); botón "Facturar comisión" en POS FX con reintento manual
+- [Ola 2 FX Margin Report](mem://features/ola-2-fx-margin-report) — /casas-de-cambio/reportes: KPI margen total + 3 MarginCard (par/cajero/día) con desglose FE/Pend/Err, top 10, nombres de cajero vía profiles.full_name
 - [WhatsApp Retry Detallado](mem://features/whatsapp-retry-detalle) — Reintentos WA con actor/reason/attempt en payload + edge function whatsapp-status-fixture (token) + vitest E2E timeline + agrupación por día + skeleton paginación
