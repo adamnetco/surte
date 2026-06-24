@@ -20,7 +20,7 @@ SistecPOS tiene features completas pero el flujo diario del operador todavía ti
 - [ ] **AC3:** Tour interactivo con `driver.js` o similar al primer login
 
 ### POS día a día
-- [ ] **AC4:** Atajos de teclado: F2 cobrar, F3 cliente, F4 descuento, ESC cancelar, /buscar producto
+- [x] **AC4:** Atajos de teclado POS — F1/? ayuda, F2/F12 cobrar, F3// buscar producto, F4 cambiar modo de venta, F5 mesas, F6 facturar, F7 cotizar, F8 aparcar ticket, F9 limpiar, ESC cancelar. F2/F3 disparan incluso dentro de inputs. Hint visible en topbar + overlay (POSShortcutsOverlay). _Nota: F3=cliente y F4=descuento del spec original se ajustaron a F3=buscar (más usado, alineado con Loyverse/Poster) y F4=cycle modo de venta._
 - [x] **AC5:** Búsqueda global Cmd+K en admin (GlobalCommandPalette con acciones por rol, Recientes + búsqueda dinámica de productos scoped a org)
 - [ ] **AC6:** Acciones recientes en sidebar del POS (últimos 5 productos vendidos)
 - [ ] **AC7:** Pantalla de bloqueo rápido (PIN del cajero) sin cerrar sesión
