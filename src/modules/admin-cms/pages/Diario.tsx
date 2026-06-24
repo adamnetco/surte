@@ -469,43 +469,17 @@ const Diario = () => {
               ? CHECKLIST_DEFS.map((c) => (
                   <Skeleton key={c.item_key} className="h-[52px] w-full rounded-none" />
                 ))
-              : CHECKLIST_DEFS.map((c) => {
-                  const checked = !!checkItems[c.item_key]?.done;
-                  return (
-                    <button
-                      key={c.item_key}
-                      onClick={() => toggle(c.item_key)}
-                      className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-muted/40 transition min-h-[52px]"
-                    >
-                      <span
-                        className={cn(
-                          "w-5 h-5 rounded-md border-2 grid place-items-center transition",
-                          checked
-                            ? "bg-emerald-500 border-emerald-500 text-white"
-                            : "border-border bg-background",
-                        )}
-                      >
-                        {checked && (
-                          <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                            <path
-                              fillRule="evenodd"
-                              d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </span>
-                      <span
-                        className={cn(
-                          "text-sm flex-1",
-                          checked ? "text-muted-foreground line-through" : "text-foreground",
-                        )}
-                      >
-                        {c.label}
-                      </span>
-                    </button>
-                  );
-                })}
+              : CHECKLIST_DEFS.map((c) => (
+                  <ChecklistRow
+                    key={c.item_key}
+                    item_key={c.item_key}
+                    label={c.label}
+                    checked={!!checkItems[c.item_key]?.done}
+                    notes={checkItems[c.item_key]?.notes ?? ""}
+                    onToggle={() => toggle(c.item_key)}
+                    onSaveNotes={(v) => setNotes(c.item_key, v)}
+                  />
+                ))}
           </div>
           <p className="text-[11px] text-muted-foreground">
             Tu progreso se guarda en la nube y se reinicia cada día.
