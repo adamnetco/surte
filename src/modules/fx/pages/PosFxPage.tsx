@@ -13,6 +13,7 @@ import {
   useFxTransactionsRecent,
   useUiafThreshold,
   useEmitFxCommissionInvoice,
+  useFxCustomerMonthly,
 } from "../hooks/useFxTransactions";
 import { useActiveFxCashSession } from "../hooks/useFxCashSession";
 import CloseFxSessionDialog from "../components/CloseFxSessionDialog";
