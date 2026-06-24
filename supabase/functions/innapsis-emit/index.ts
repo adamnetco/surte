@@ -239,12 +239,6 @@ function buildInnapsisPayload(input: BuildInput) {
       CondicionPago: "1",
       MedioDePago: medioPago,
     },
-    CondicionesDePago: {
-      FechaVencimiento: fecha,
-      DescripcionDePago: "Contado",
-      CondicionPago: "1",
-      MedioDePago: medioPago,
-    },
     Emisor: emisor,
     Receptor: receptor,
     Totales: {
