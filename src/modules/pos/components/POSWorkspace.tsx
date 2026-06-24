@@ -868,6 +868,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onOpenChange={setPayOpen}
         total={totals.total}
         onConfirm={handlePaid}
+        organizationId={organizationId}
+        hasCustomerId={!!(customer?.nit || customer?.document)}
       />
 
       <InvoiceActionsDialog
