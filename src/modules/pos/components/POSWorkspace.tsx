@@ -486,6 +486,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </button>
             )}
             <DianHealthIndicator organizationId={organizationId} className="hidden md:inline-flex" />
+            <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex" />
           </>
         }
       />
