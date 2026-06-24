@@ -9,6 +9,7 @@ import {
   Users, MessageSquare, Map as MapIcon, Bell, FileText, Layers, Star, Globe, Search, Ticket, Code,
   MapPin, Truck, Printer, ChefHat, Monitor, Utensils, Receipt, ShoppingBag, Warehouse,
   CreditCard, Wallet, Sparkles, Rocket, Building2, Home, LayoutGrid, History, PackageSearch,
+  FileSearch, Hash,
 } from "lucide-react";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import type { AppRole } from "@/modules/auth/context/AuthContext";
