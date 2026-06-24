@@ -110,7 +110,7 @@ describe("usePosCobroGate", () => {
     expect(result.current.reason).toBe("override_active");
     expect(sessionStorage.getItem(`pos:hard_block_override:${ORG}`)).toBeTruthy();
     expect(insertSpy).toHaveBeenCalledTimes(1);
-    const payload = insertSpy.mock.calls[0][0] as any;
+    const payload = (insertSpy.mock.calls as any[])[0][0] as any;
     expect(payload.service_name).toBe("pos_hard_block_override");
     expect(payload.status).toBe("warning");
     expect(payload.organization_id).toBe(ORG);
