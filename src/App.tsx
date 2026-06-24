@@ -52,6 +52,7 @@ const TenantAwareLogin = lazy(() => import("./modules/auth/components/TenantAwar
 const AdminDashboard = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.AdminDashboardPage })));
 const Diario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.DiarioPage })));
 const Innapsis = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisPage })));
+const InnapsisDetail = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisDetailPage })));
 
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
