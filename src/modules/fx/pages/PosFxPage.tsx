@@ -425,7 +425,25 @@ export default function PosFxPage() {
                       {t.is_above_threshold && <Badge variant="outline" className="text-[10px]">UIAF</Badge>}
                       {t.commission_invoice_status === "emitted" && <Badge className="text-[10px]" variant="secondary">FE</Badge>}
                       {t.commission_invoice_status === "queued" && <Badge className="text-[10px]" variant="outline">FE…</Badge>}
-                      {t.commission_invoice_status === "failed" && <Badge className="text-[10px]" variant="destructive">FE err</Badge>}
+                      {t.commission_invoice_status === "failed" && (
+                        <Badge
+                          className="text-[10px]"
+                          variant="destructive"
+                          title={
+                            (t.commission_invoice_last_error
+                              ? `Último error: ${t.commission_invoice_last_error}\n`
+                              : "") +
+                            (t.commission_invoice_next_retry_at
+                              ? `Próximo reintento: ${new Date(t.commission_invoice_next_retry_at).toLocaleString("es-CO")}`
+                              : (Number(t.commission_invoice_retry_count ?? 0) >= 5
+                                  ? "Reintentos automáticos agotados"
+                                  : "Reintento automático pendiente"))
+                          }
+                        >
+                          FE err{Number(t.commission_invoice_retry_count ?? 0) > 0 ? ` ×${t.commission_invoice_retry_count}` : ""}
+                        </Badge>
+                      )}
+
                       {t.commission_invoice_status === "skipped" && <Badge className="text-[10px]" variant="outline">s/margen</Badge>}
                     </div>
                   </div>
