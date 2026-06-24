@@ -36,7 +36,7 @@ const META: Record<DianHealth, { dot: string; text: string; label: string }> = {
  * AC10 de POS-innapsis-emision-pos.
  */
 export default function DianHealthIndicator({ organizationId, className, compact }: Props) {
-  const health = useDianHealth(organizationId);
+  const { health } = useDianHealth(organizationId);
   const meta = META[health];
 
   return (

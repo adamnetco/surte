@@ -263,42 +263,90 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const bearerToken = authHeader.replace("Bearer ", "");
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const isServiceCall = bearerToken === SERVICE_KEY;
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: userData, error: authErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (authErr || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let userId: string | null;
+    if (isServiceCall) {
+      // Llamada interna (cron einvoice-contingency-flush). created_by/performed_by quedan null.
+      userId = null;
+    } else {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: userData, error: authErr } = await supabase.auth.getUser(bearerToken);
+      if (authErr || !userData?.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      userId = userData.user.id;
     }
-    const userId = userData.user.id;
 
-    const { organization_id, pos_order_id, order_id, document_type = "invoice" } = await req.json();
-    if (!organization_id || (!pos_order_id && !order_id)) {
-      return new Response(JSON.stringify({ error: "organization_id y pos_order_id u order_id requeridos" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const reqBody = await req.json();
+    const {
+      organization_id: bodyOrgId,
+      pos_order_id,
+      order_id,
+      document_type = "invoice",
+      contingency_mode: contingencyModeRaw,
+      transmit_invoice_id,
+    } = reqBody;
+    if (!bodyOrgId && !transmit_invoice_id) {
+      return new Response(JSON.stringify({ error: "organization_id requerido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (!transmit_invoice_id && !pos_order_id && !order_id) {
+      return new Response(JSON.stringify({ error: "pos_order_id u order_id requeridos" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // 0) Membresía
-    const { data: membership } = await admin
-      .from("organization_members")
-      .select("id, role")
-      .eq("organization_id", organization_id)
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (!membership) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // === Branch A: retransmisión de factura de contingencia (AC12) ===
+    // Cuando DIAN se restaura, einvoice-contingency-flush invoca con transmit_invoice_id
+    // para enviar la factura previamente emitida en contingencia, sin generar nueva numeración.
+    let effectiveOrgId: string = bodyOrgId;
+    let effectivePosOrderId: string | undefined = pos_order_id;
+    let effectiveOrderId: string | undefined = order_id;
+    let existingInvoice: any = null;
+
+    if (transmit_invoice_id) {
+      const { data: existing } = await admin
+        .from("electronic_invoices")
+        .select("*")
+        .eq("id", transmit_invoice_id)
+        .maybeSingle();
+      if (!existing) {
+        return new Response(JSON.stringify({ error: "invoice_not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (!existing.is_contingency || existing.transmitted_at) {
+        return new Response(JSON.stringify({ error: "not_a_pending_contingency_invoice" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      existingInvoice = existing;
+      effectiveOrgId = existing.organization_id;
+      effectivePosOrderId = existing.pos_order_id ?? undefined;
+      effectiveOrderId = existing.order_id ?? undefined;
+    }
+
+    // 0) Membresía (no aplica para retransmisión disparada por cron service-role)
+    if (!isServiceCall) {
+      const { data: membership } = await admin
+        .from("organization_members")
+        .select("id, role")
+        .eq("organization_id", effectiveOrgId)
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!membership) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     // 1) Config activa + organización
     const [{ data: cfg }, { data: org }] = await Promise.all([
-      admin.from("einvoice_configs").select("*").eq("organization_id", organization_id).eq("is_active", true).maybeSingle(),
-      admin.from("organizations").select("id, name, legal_name, tax_id, support_email, city, region").eq("id", organization_id).single(),
+      admin.from("einvoice_configs").select("*").eq("organization_id", effectiveOrgId).eq("is_active", true).maybeSingle(),
+      admin.from("organizations").select("id, name, legal_name, tax_id, support_email, city, region").eq("id", effectiveOrgId).single(),
     ]);
 
     if (!cfg) {
@@ -309,17 +357,17 @@ Deno.serve(async (req) => {
     let order: any = null;
     let items: any[] = [];
     let payments: any[] = [];
-    if (pos_order_id) {
+    if (effectivePosOrderId) {
       const [oRes, itRes, payRes] = await Promise.all([
-        admin.from("pos_orders").select("*").eq("id", pos_order_id).single(),
-        admin.from("pos_order_items").select("*").eq("pos_order_id", pos_order_id),
-        admin.from("pos_payments").select("*").eq("pos_order_id", pos_order_id),
+        admin.from("pos_orders").select("*").eq("id", effectivePosOrderId).single(),
+        admin.from("pos_order_items").select("*").eq("pos_order_id", effectivePosOrderId),
+        admin.from("pos_payments").select("*").eq("pos_order_id", effectivePosOrderId),
       ]);
       order = oRes.data; items = itRes.data ?? []; payments = payRes.data ?? [];
     } else {
       const [oRes, itRes] = await Promise.all([
-        admin.from("orders").select("*").eq("id", order_id).single(),
-        admin.from("order_items").select("*").eq("order_id", order_id),
+        admin.from("orders").select("*").eq("id", effectiveOrderId).single(),
+        admin.from("order_items").select("*").eq("order_id", effectiveOrderId),
       ]);
       order = oRes.data; items = itRes.data ?? [];
     }
@@ -333,40 +381,136 @@ Deno.serve(async (req) => {
       location = loc;
     }
 
-    // 3) Asigna número + arma payload v1.9
-    const nextNumber = (cfg.resolution_current ?? cfg.resolution_from ?? 1) as number;
-    const fullNumber = `${cfg.resolution_prefix ?? ""}${nextNumber}`;
-    const trackId = crypto.randomUUID();
+    // === Decide modo de emisión ===
+    // contingencyMode = explícito por caller (offline real-time) o auto si el cron ya marcó offline.
+    const contingencyRange = (cfg.contingency_range ?? null) as
+      | { from?: number; to?: number; current?: number; prefix?: string }
+      | null;
+    const dianHealth = (cfg.dian_health_status ?? "online") as string;
+    const requestedContingency = contingencyModeRaw === true;
+    const autoContingency = dianHealth === "offline" && !!contingencyRange && !transmit_invoice_id;
+    const useContingency = !transmit_invoice_id && (requestedContingency || autoContingency);
+
+    // === Numeración ===
+    let nextNumber: number;
+    let usedPrefix: string;
+    if (transmit_invoice_id) {
+      nextNumber = Number(existingInvoice.number);
+      usedPrefix = String(existingInvoice.prefix ?? "");
+    } else if (useContingency) {
+      if (!contingencyRange) {
+        return new Response(JSON.stringify({ error: "contingency_range_not_configured" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const cur = Number(contingencyRange.current ?? contingencyRange.from ?? 1);
+      const max = Number(contingencyRange.to ?? Number.MAX_SAFE_INTEGER);
+      if (cur > max) {
+        return new Response(JSON.stringify({ error: "contingency_range_exhausted" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      nextNumber = cur;
+      usedPrefix = String(contingencyRange.prefix ?? "SETC");
+    } else {
+      nextNumber = (cfg.resolution_current ?? cfg.resolution_from ?? 1) as number;
+      usedPrefix = String(cfg.resolution_prefix ?? "");
+    }
+    const fullNumber = `${usedPrefix}${nextNumber}`;
+    const trackId = transmit_invoice_id ? String(existingInvoice.track_id ?? crypto.randomUUID()) : crypto.randomUUID();
 
     const payload = buildInnapsisPayload({
-      cfg, org, location, order, items, payments,
+      cfg: { ...cfg, resolution_prefix: usedPrefix },
+      org, location, order, items, payments,
       number: nextNumber, trackId, documentType: document_type,
     });
+    // Marca el XML para que Innapsis lo procese como contingencia (campo a confirmar con Innapsis v1.9).
+    if (useContingency || (transmit_invoice_id && existingInvoice?.is_contingency)) {
+      (payload.Fe.Encabezado as any).Contingencia = true;
+    }
 
-    // 4) Registro pending
-    const { data: inv, error: invErr } = await admin.from("electronic_invoices").insert({
-      organization_id,
-      location_id: order.location_id ?? null,
-      document_type,
-      pos_order_id: pos_order_id ?? null,
-      order_id: order_id ?? null,
-      prefix: cfg.resolution_prefix,
-      number: nextNumber,
-      full_number: fullNumber,
-      customer_identification: payload.Fe.Receptor.Identificacion,
-      customer_name: payload.Fe.Receptor.RazonSocial,
-      customer_email: (payload.Fe.Receptor as any).Email ?? null,
-      subtotal: payload.Fe.Totales.BaseAfecta,
-      tax_total: payload.Fe.Totales.TotalIva,
-      total: payload.Fe.Totales.TotalaPagar,
-      track_id: trackId,
-      status: "sending",
-      request_payload: payload,
-      environment: cfg.environment,
-      created_by: userId,
-    }).select().single();
+    // === Branch B: emisión en contingencia (AC11) — registra y NO llama a Innapsis ===
+    if (useContingency) {
+      const { data: cInv, error: cErr } = await admin.from("electronic_invoices").insert({
+        organization_id: effectiveOrgId,
+        location_id: order.location_id ?? null,
+        document_type,
+        pos_order_id: effectivePosOrderId ?? null,
+        order_id: effectiveOrderId ?? null,
+        prefix: usedPrefix,
+        number: nextNumber,
+        full_number: fullNumber,
+        customer_identification: payload.Fe.Receptor.Identificacion,
+        customer_name: payload.Fe.Receptor.RazonSocial,
+        customer_email: (payload.Fe.Receptor as any).Email ?? null,
+        subtotal: payload.Fe.Totales.BaseAfecta,
+        tax_total: payload.Fe.Totales.TotalIva,
+        total: payload.Fe.Totales.TotalaPagar,
+        track_id: trackId,
+        status: "contingency",
+        is_contingency: true,
+        contingency_emitted_at: new Date().toISOString(),
+        request_payload: payload,
+        environment: cfg.environment,
+        created_by: userId,
+      }).select().single();
+      if (cErr) throw cErr;
 
-    if (invErr) throw invErr;
+      // Incrementar puntero del rango de contingencia
+      await admin.from("einvoice_configs").update({
+        contingency_range: { ...contingencyRange, current: nextNumber + 1 },
+      }).eq("id", cfg.id);
+
+      await admin.from("einvoice_events").insert({
+        organization_id: effectiveOrgId,
+        invoice_id: cInv.id,
+        event_type: "contingency_emitted",
+        status: "contingency",
+        message: `Emitida en contingencia ${fullNumber} (DIAN ${dianHealth}). Pendiente transmisión.`,
+        payload,
+        performed_by: userId,
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        contingency: true,
+        invoice_id: cInv.id,
+        full_number: fullNumber,
+        track_id: trackId,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // 4) Registro pending — modo normal o retransmisión
+    let inv: any;
+    if (transmit_invoice_id) {
+      const { data: upd, error: uErr } = await admin.from("electronic_invoices")
+        .update({ status: "sending", request_payload: payload })
+        .eq("id", transmit_invoice_id)
+        .select()
+        .single();
+      if (uErr) throw uErr;
+      inv = upd;
+    } else {
+      const { data: ins, error: invErr } = await admin.from("electronic_invoices").insert({
+        organization_id: effectiveOrgId,
+        location_id: order.location_id ?? null,
+        document_type,
+        pos_order_id: effectivePosOrderId ?? null,
+        order_id: effectiveOrderId ?? null,
+        prefix: usedPrefix,
+        number: nextNumber,
+        full_number: fullNumber,
+        customer_identification: payload.Fe.Receptor.Identificacion,
+        customer_name: payload.Fe.Receptor.RazonSocial,
+        customer_email: (payload.Fe.Receptor as any).Email ?? null,
+        subtotal: payload.Fe.Totales.BaseAfecta,
+        tax_total: payload.Fe.Totales.TotalIva,
+        total: payload.Fe.Totales.TotalaPagar,
+        track_id: trackId,
+        status: "sending",
+        request_payload: payload,
+        environment: cfg.environment,
+        created_by: userId,
+      }).select().single();
+      if (invErr) throw invErr;
+      inv = ins;
+    }
 
     // 5) Llamada Innapsis
     try {
@@ -392,9 +536,9 @@ Deno.serve(async (req) => {
       if (retryable) {
         // Encolar retry server-side con backoff exponencial vía sync-outbox-flush.
         const { data: outbox } = await admin.from("sync_outbox").insert({
-          organization_id,
+          organization_id: effectiveOrgId,
           target: "einvoice_emit_retry",
-          payload: { invoice_id: inv.id, organization_id },
+          payload: { invoice_id: inv.id, organization_id: effectiveOrgId },
           status: "pending",
           attempts: 0,
           max_attempts: 5,
@@ -415,16 +559,19 @@ Deno.serve(async (req) => {
         qr_url: responseJson?.qr_url ?? responseJson?.QrUrl ?? null,
         xml_url: responseJson?.xml_url ?? responseJson?.XmlUrl ?? null,
         pdf_url: responseJson?.pdf_url ?? responseJson?.PdfUrl ?? null,
+        transmitted_at: res.ok && transmit_invoice_id ? new Date().toISOString() : undefined,
       }).eq("id", inv.id);
 
-      if (res.ok) {
+      // Solo avanzar la resolución cuando NO sea retransmisión de contingencia
+      // (la contingencia ya consumió su propio rango contingency_range.current).
+      if (res.ok && !transmit_invoice_id) {
         await admin.from("einvoice_configs").update({
           resolution_current: nextNumber + 1,
         }).eq("id", cfg.id);
       }
 
       await admin.from("einvoice_events").insert({
-        organization_id,
+        organization_id: effectiveOrgId,
         invoice_id: inv.id,
         event_type: retryable ? "emit_retry_scheduled" : "emit",
         status,
@@ -451,9 +598,9 @@ Deno.serve(async (req) => {
     } catch (e: any) {
       // Error de red → tratamos como retryable
       const { data: outbox } = await admin.from("sync_outbox").insert({
-        organization_id,
+        organization_id: effectiveOrgId,
         target: "einvoice_emit_retry",
-        payload: { invoice_id: inv.id, organization_id },
+        payload: { invoice_id: inv.id, organization_id: effectiveOrgId },
         status: "pending",
         attempts: 0,
         max_attempts: 5,
@@ -469,7 +616,7 @@ Deno.serve(async (req) => {
       }).eq("id", inv.id);
 
       await admin.from("einvoice_events").insert({
-        organization_id,
+        organization_id: effectiveOrgId,
         invoice_id: inv.id,
         event_type: "emit_retry_scheduled",
         status: "retrying",

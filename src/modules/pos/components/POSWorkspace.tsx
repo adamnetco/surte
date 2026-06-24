@@ -20,6 +20,9 @@ import {
 import CloseSessionDialog from "./CloseSessionDialog";
 import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import SaleCompleteDialog from "./SaleCompleteDialog";
+import DianHealthIndicator from "./DianHealthIndicator";
+import ContingencyBanner from "./ContingencyBanner";
+import { useDianHealth } from "@/modules/pos/hooks/useDianHealth";
 import OfflineIndicator from "@/modules/offline/components/OfflineIndicator";
 import { usePrintQueue, TicketPreviewDialog, type TicketData } from "@/modules/printing";
 import {
@@ -98,6 +101,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
   const { shouldEmit: shouldEmitEinvoice } = useEinvoiceAutoEmit(organizationId);
+  const dianSnap = useDianHealth(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
 
   // === Impresión térmica ===
@@ -414,9 +418,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       //    organización tiene Facturación activa y el cliente cumple el
       //    umbral configurado. Ver useEinvoiceAutoEmit.
       if (shouldEmitEinvoice(snapshotTotal, customer)) {
+        // AC11: si DIAN está offline y la org tiene rango de contingencia, pedimos
+        // explícitamente modo contingencia. El backend igual auto-detecta (defensa en profundidad).
+        const contingencyMode = dianSnap.health === "offline" && dianSnap.hasContingencyRange;
         enqueue(
           "einvoice_emit",
-          { client_uuid: clientUuid, document_type: "invoice" },
+          { client_uuid: clientUuid, document_type: "invoice", contingency_mode: contingencyMode },
           organizationId
         ).catch((err) => console.warn("[einvoice] enqueue failed", err));
       }
@@ -475,8 +482,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <span>{sync.syncing ? "Sync…" : `${sync.pending}`}</span>
               </button>
             )}
+            <DianHealthIndicator organizationId={organizationId} className="hidden md:inline-flex" />
           </>
         }
+      />
+
+      {/* AC10/AC11 — Banner DIAN offline / contingencia */}
+      <ContingencyBanner
+        health={dianSnap.health}
+        hasContingencyRange={dianSnap.hasContingencyRange}
       />
 
       {/* Tabs de categorías (60%) + Cliente (40%) */}

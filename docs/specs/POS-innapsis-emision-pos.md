@@ -1,6 +1,6 @@
 # POS — Emisión Innapsis desde el flujo POS (Wave 1)
 
-**Estado:** IN_BUILD — Slices 1 + 2A+2B + Acciones rápidas (AC7-AC9) SHIPPED · pendiente AC11-AC12 (contingencia), AC13-AC14 (config UX), AC15 (widget cajero)
+**Estado:** IN_BUILD — Slices 1 + 2A+2B + Acciones rápidas (AC7-AC9) + Contingencia (AC10-AC12) SHIPPED · pendiente AC13-AC14 (config UX), AC15 (widget cajero)
 **Módulo:** `pos` (consumidor) + `admin-cms` (config) + edge `innapsis-emit` (ya existe)
 **Wave:** 1 — Innapsis Electronic Billing (NORTE/camino-a-produccion)
 **Spec padre:** [POS-innapsis-integration.md](./POS-innapsis-integration.md) (Slices 1-4 SHIPPED)
@@ -36,9 +36,9 @@ Este spec cierra la última milla **POS → DIAN** para que un nuevo tenant pued
 - [x] **AC9:** Si el documento quedó en `retrying`/`rejected`/`dead_letter`, botón "Reintentar emisión ahora" fuerza nuevo intento (bypass backoff, requiere `isAdmin`).
 
 ### Modo contingencia DIAN
-- [ ] **AC10:** Toggle visible en topbar POS: `🟢 DIAN Online` / `🟡 DIAN Lento` / `🔴 DIAN Offline — modo contingencia`. Estado auto-detectado por % de errores 5xx en últimos 5min de `einvoice_events`.
-- [ ] **AC11:** En modo contingencia, las ventas se emiten con `consecutivo_contingencia` (rango pre-autorizado por DIAN, configurable en `einvoice_configs.contingency_range`). El XML lleva flag `Contingencia=true`.
-- [ ] **AC12:** Al recuperar conexión, worker procesa cola de contingencia y emite los documentos pendientes en orden cronológico (ya cubierto parcialmente por Slice 4).
+- [x] **AC10:** `DianHealthIndicator` montado en topbar POS leyendo `einvoice_configs.dian_health_status`. Cron `dian-health-check` cada 5 min recalcula estado por org desde `einvoice_events` recientes.
+- [x] **AC11:** Ventas se emiten con `consecutivo_contingencia` (`einvoice_configs.contingency_range = {from,to,current,prefix}`). El XML lleva `Encabezado.Contingencia=true` (campo final a confirmar con Innapsis). `electronic_invoices.is_contingency=true`, `status='contingency'`, `contingency_emitted_at`. `ContingencyBanner` visible al cajero.
+- [x] **AC12:** Cron `einvoice-contingency-flush` cada 2 min; cuando `dian_health_status != 'offline'`, retransmite las facturas pendientes (`is_contingency=true AND transmitted_at IS NULL`) en orden FIFO via `innapsis-emit` con `transmit_invoice_id` (service-role short-circuit, throttle 300ms/org, batch 25/run). Marca `transmitted_at` al recibir 2xx de DIAN.
 
 ### Configuración por organización
 - [ ] **AC13:** En `/admin/facturacion/configuracion`, sección "Comportamiento POS": (a) tipo documento default por punto de venta, (b) toggle "Emitir automático al cobrar" vs "Preguntar siempre", (c) email/WhatsApp automático al cliente si tiene contacto.
