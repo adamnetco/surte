@@ -142,8 +142,7 @@ export async function processBulkRetry(
       .from("electronic_invoices")
       .select("id, organization_id")
       .eq("organization_id", orgId)
-      .gte("created_at", since.toISOString())
-      .in("status", ["retrying", "rejected", "error", "dead_letter", "queued", "pending"]);
+      .gte("created_at", since.toISOString());
 
     // AC4: reanudación dentro de la org del cursor.
     if (cursor && oi === cursorOrgIdx && cursor.last_processed_id) {
@@ -152,7 +151,10 @@ export async function processBulkRetry(
     // Orden estable para que el cursor (last id) sea reanudable.
     query = query.order("id", { ascending: true });
 
-    const { data: pendings, error: queryErr } = await query;
+    const { data: pendings, error: queryErr } = await query.in(
+      "status",
+      ["retrying", "rejected", "error", "dead_letter", "queued", "pending"],
+    );
 
     if (queryErr) {
       await supabase.from("sync_logs").insert({
