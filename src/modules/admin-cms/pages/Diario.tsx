@@ -241,6 +241,7 @@ type ActionEntry = {
   severity: Severity;
   onClick: () => void;
   weight: number;
+  bulkKind?: BulkKind;
 };
 
 function ChecklistRow({
