@@ -17,6 +17,7 @@ import {
   FileCheck2,
   StickyNote,
   Check,
+  Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -27,6 +28,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import { useDailyChecklist } from "@/modules/admin-cms/hooks/useDailyChecklist";
 import SyncStatusPanel from "@/modules/admin-cms/components/SyncStatusPanel";
+import DiarioBulkSheet, { type BulkKind } from "@/modules/admin-cms/components/DiarioBulkSheet";
 
 /**
  * Daily Driver — pantalla mobile-first del flujo diario del admin.
