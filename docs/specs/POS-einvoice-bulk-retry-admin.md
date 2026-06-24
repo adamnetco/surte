@@ -1,6 +1,6 @@
 # POS — Bulk Retry Admin Multi-Org (follow-up AC5)
 
-**Estado:** IN_REVIEW
+**Estado:** SHIPPED
 **Módulo:** edge `einvoice-resend-bulk-admin` (NEW) + `admin-cms/Facturacion`
 **Wave:** Follow-up de [POS-einvoice-retry-scoping](./POS-einvoice-retry-scoping.md) AC5
 
@@ -25,6 +25,7 @@ Endpoint **separado** `einvoice-resend-bulk-admin` en vez de extender `einvoice-
 - [x] **AC4:** `dry_run=true` no muta: devuelve `candidates` por org sin tocar `electronic_invoices` ni `sync_outbox`. Cubre el preview de UI.
 - [x] **AC5:** Respuesta agregada: `{ success, dry_run, total_orgs, total_requeued, results: [{ organization_id, candidates, requeued, status, error? }] }`. Cada org se loguea con su propio row de `sync_logs`.
 - [x] **AC6 (UI superadmin):** Página `/superadmin/einvoice-bulk-retry` (`src/modules/superadmin/pages/EinvoiceBulkRetry.tsx`) con multi-select de orgs (cap 20), inputs `batch_size` / `max_retries`, switch `dry_run`, botón "Dry-run (preview)" y "Reencolar ahora" con `window.confirm`. Resultado por org renderizado con badges (candidates / requeued / error). Llama a `einvoice-resend-bulk-admin` vía `supabase.functions.invoke`. Entrada en `SuperadminSidebar` (zona Global). Manejo explícito de 403 → toast "Acceso denegado: se requiere rol superadmin global."
+- [x] **AC7 (tests Deno):** Handler refactorizado para exportar `handler`, `BodySchema` y la función pura `processBulkRetry`. Suite `supabase/functions/einvoice-resend-bulk-admin/index_test.ts` cubre 11 casos: BodySchema (vacío / >20 / no-uuid / payload válido con `batch_size`+`max_retries`), preflight CORS, 401 sin/Authorization mal formado, AC4 (`dry_run` no muta `electronic_invoices` ni `sync_outbox`), AC3 (error en una org no bloquea las demás y queda en `sync_logs` con `phase='query'`), AC5 (success path inserta outbox con `admin:true`+params y loguea `requeued_count`), edge case 0 pendientes. **11/11 verde**.
 
 ## Criterios de aceptación verificables
 
@@ -36,6 +37,7 @@ Endpoint **separado** `einvoice-resend-bulk-admin` en vez de extender `einvoice-
 | AC4 | Branch `if (dry_run \|\| ids.length === 0)` retorna sin UPDATE/INSERT | ✅ |
 | AC5 | `results.push({...})` por org + agregados `total_orgs`/`total_requeued` | ✅ |
 | AC6 | `src/modules/superadmin/pages/EinvoiceBulkRetry.tsx` + ruta `/superadmin/einvoice-bulk-retry` + entry en `SuperadminSidebar`. Edge function acepta `batch_size`/`max_retries` opcionales y los propaga al payload del outbox + `sync_logs` | ✅ |
+| AC7 | `supabase/functions/einvoice-resend-bulk-admin/index_test.ts` — 11/11 verde vía `supabase--test_edge_functions` | ✅ |
 
 ## Riesgos & mitigación
 
