@@ -107,6 +107,26 @@ export default function Facturacion() {
     else toast({ title: "Consulta enviada", description: JSON.stringify(data).slice(0, 120) });
   };
 
+  const openPreview = async (invoice_id: string) => {
+    const { data, error } = await supabase
+      .from("electronic_invoices")
+      .select("request_payload")
+      .eq("id", invoice_id)
+      .maybeSingle();
+    if (error || !data?.request_payload) {
+      toast({ title: "Sin payload", description: "Esta factura no tiene payload registrado.", variant: "destructive" });
+      return;
+    }
+    const fmt = (cfg.extra as any)?.payload_format === "xml" ? "xml" : "json";
+    setPreviewKind(fmt);
+    setPreviewText(
+      fmt === "xml"
+        ? (await import("../lib/feToXmlPreview")).feToXmlPreview(data.request_payload as any)
+        : JSON.stringify(data.request_payload, null, 2),
+    );
+    setPreviewOpen(true);
+  };
+
   const computedDv = cfg.nit ? calculateNitDv(cfg.nit) : null;
   const dvMismatch = !!cfg.dv && computedDv !== null && String(computedDv) !== String(cfg.dv).trim();
 
