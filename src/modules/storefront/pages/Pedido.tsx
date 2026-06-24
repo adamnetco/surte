@@ -219,6 +219,55 @@ const Pedido = () => {
           {order.notes && <p className="text-sm text-muted-foreground mt-1">📝 {order.notes}</p>}
         </motion.div>
 
+        {/* Timeline / Historial */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22 }}
+          className="bg-card rounded-xl border border-border p-4 mb-4"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Historial</p>
+            <button
+              onClick={() => refetch()}
+              className="text-muted-foreground active:scale-95 p-1"
+              aria-label="Refrescar historial"
+            >
+              <RefreshCw size={14} />
+            </button>
+          </div>
+          <ol className="relative border-l border-border ml-2 space-y-3">
+            {[
+              { ts: order.created_at, icon: Package, label: "Pedido recibido", color: "text-accent" },
+              order.whatsapp_ref ? { ts: order.created_at, icon: Send, label: `WhatsApp enviado · ${order.whatsapp_ref}`, color: "text-green-600" } : null,
+              order.payment_recorded_at ? { ts: order.payment_recorded_at, icon: CreditCard, label: `Pago registrado${order.payment_method ? ` · ${order.payment_method}` : ""}`, color: "text-blue-600" } : null,
+              order.external_sync_sent_at ? { ts: order.external_sync_sent_at, icon: CheckCircle, label: `Sincronizado (${order.external_sync_status || "ok"})`, color: "text-purple-600" } : null,
+              order.updated_at && order.updated_at !== order.created_at ? { ts: order.updated_at, icon: status.icon, label: `Estado actual: ${status.label}`, color: status.color } : null,
+            ]
+              .filter(Boolean)
+              .sort((a: any, b: any) => new Date(a.ts).getTime() - new Date(b.ts).getTime())
+              .map((ev: any, idx: number) => {
+                const Icon = ev.icon;
+                return (
+                  <li key={idx} className="ml-4">
+                    <span className={`absolute -left-[7px] flex items-center justify-center w-3.5 h-3.5 rounded-full bg-background border-2 ${ev.color.replace("text-", "border-")}`} />
+                    <div className="flex items-start gap-2">
+                      <Icon size={14} className={`${ev.color} mt-0.5 flex-shrink-0`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground">{ev.label}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {new Date(ev.ts).toLocaleString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+          </ol>
+        </motion.div>
+
+
         {/* Actions */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
