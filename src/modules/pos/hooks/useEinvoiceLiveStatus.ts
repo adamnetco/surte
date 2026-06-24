@@ -57,23 +57,21 @@ export function useEinvoiceLiveStatus(posOrderId: string | null | undefined): Ei
     (async () => {
       const { data } = await supabase
         .from("electronic_invoices")
-        .select("id, status, cufe, error_message, retry_attempt, next_retry_at, document_type")
+        .select("id, status, cufe, last_error, retry_count, next_retry_at, document_type")
         .eq("pos_order_id", posOrderId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (cancelled) return;
-      if (data) {
-        setSnap({
-          status: STATUS_MAP[data.status as string] ?? "queued",
-          cufe: (data as any).cufe ?? null,
-          errorMessage: (data as any).error_message ?? null,
-          retryAttempt: (data as any).retry_attempt ?? null,
-          nextRetryAt: (data as any).next_retry_at ?? null,
-          invoiceId: data.id,
-          docType: (data as any).document_type ?? null,
-        });
-      }
+      if (cancelled || !data) return;
+      setSnap({
+        status: STATUS_MAP[data.status as string] ?? "queued",
+        cufe: data.cufe ?? null,
+        errorMessage: data.last_error ?? null,
+        retryAttempt: data.retry_count ?? null,
+        nextRetryAt: data.next_retry_at ?? null,
+        invoiceId: data.id,
+        docType: data.document_type ?? null,
+      });
     })();
 
     // Timeout suave a 3s — si no hay actualización, mostramos "procesando en background"
@@ -101,8 +99,8 @@ export function useEinvoiceLiveStatus(posOrderId: string | null | undefined): Ei
           setSnap({
             status: STATUS_MAP[row.status] ?? "queued",
             cufe: row.cufe ?? null,
-            errorMessage: row.error_message ?? null,
-            retryAttempt: row.retry_attempt ?? null,
+            errorMessage: row.last_error ?? null,
+            retryAttempt: row.retry_count ?? null,
             nextRetryAt: row.next_retry_at ?? null,
             invoiceId: row.id,
             docType: row.document_type ?? null,
