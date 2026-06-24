@@ -9,6 +9,8 @@ import { useFxCurrencies } from "../hooks/useFx";
 import { useFxSummary, monthRange, type MarginBucket } from "../hooks/useFxReports";
 import { useUiafThreshold } from "../hooks/useFxTransactions";
 import { buildUiafCsv, downloadCsv } from "../lib/uiafExport";
+import { buildUiafXml, downloadXml } from "../lib/uiafXml";
+
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 
