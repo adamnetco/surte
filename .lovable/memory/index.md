@@ -43,3 +43,4 @@
 - [Order Tracking WhatsApp](mem://features/order-tracking-whatsapp) — /pedido/:orderNumber timeline broadcast_logs con Realtime de orders+broadcast_logs
 - [WhatsApp Message Events](mem://features/whatsapp-message-events) — Tabla whatsapp_message_events (queued/sent/delivered/read/failed/retry_requested), webhook YCloud+Cloud API, edge function resend-whatsapp-order rate-limited 3/10min, retry button + skeleton + paginación en /pedido/:orderNumber
 - [Standup 2026-06-24](mem://features/standup-2026-06-24) — Snapshot Norte Q3 + plan 4 olas WIP=1 (Ola 1 Innapsis cierre legal, Ola 2 FX transaccional, Ola 3 DD polish/onboarding, Ola 4 Tracking+Hardening E2E)
+- [WhatsApp Retry Detallado](mem://features/whatsapp-retry-detalle) — Reintentos WA con actor/reason/attempt en payload + edge function whatsapp-status-fixture (token) + vitest E2E timeline + agrupación por día + skeleton paginación

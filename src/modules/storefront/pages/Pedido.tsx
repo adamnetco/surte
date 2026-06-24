@@ -44,9 +44,12 @@ type WaEvent = {
   status: keyof typeof waStatusConfig;
   error: string | null;
   created_at: string;
+  payload: any;
 };
 
 const TIMELINE_PAGE = 20;
+
+const dayKey = (iso: string) => new Date(iso).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
 
 const PedidoSkeleton = () => (
   <div className="space-y-3" aria-busy="true" aria-label="Cargando pedido">
@@ -62,6 +65,7 @@ const Pedido = () => {
   const navigate = useNavigate();
   const { data: settings } = useAppSettings();
   const [isRetrying, setIsRetrying] = useState(false);
+  const [isPaging, setIsPaging] = useState(false);
   const [visibleCount, setVisibleCount] = useState(TIMELINE_PAGE);
 
   const { data: order, isLoading, refetch } = useQuery({
@@ -91,10 +95,10 @@ const Pedido = () => {
       if (!order?.id) return [];
       const { data, error } = await (supabase as any)
         .from("whatsapp_message_events")
-        .select("id, order_id, whatsapp_ref, status, error, created_at")
+        .select("id, order_id, whatsapp_ref, status, error, created_at, payload")
         .eq("order_id", order.id)
         .order("created_at", { ascending: true })
-        .limit(200);
+        .limit(500);
       if (error) throw error;
       return (data ?? []) as WaEvent[];
     },
@@ -140,11 +144,22 @@ const Pedido = () => {
 
   const handleRetryWhatsApp = async () => {
     if (!order?.order_number) return;
-    if (!window.confirm("¿Reenviar la confirmación por WhatsApp para este pedido?")) return;
+    const reason = window.prompt(
+      "Motivo del reenvío (opcional):\n— No llegó el mensaje\n— Cliente cambió número\n— Otro",
+      ""
+    );
+    if (reason === null) return; // canceló
     setIsRetrying(true);
     try {
+      const { data: userResp } = await supabase.auth.getUser().catch(() => ({ data: { user: null } as any }));
+      const actor = userResp?.user;
       const { data, error } = await supabase.functions.invoke("resend-whatsapp-order", {
-        body: { order_number: order.order_number },
+        body: {
+          order_number: order.order_number,
+          reason: reason || undefined,
+          actor_id: actor?.id ?? null,
+          actor_name: actor?.email ?? actor?.user_metadata?.full_name ?? "anónimo",
+        },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -160,11 +175,20 @@ const Pedido = () => {
     }
   };
 
-  // Build unified timeline (order milestones + WhatsApp events).
+  const loadMore = () => {
+    setIsPaging(true);
+    setTimeout(() => {
+      setVisibleCount((n) => n + TIMELINE_PAGE);
+      setIsPaging(false);
+    }, 150);
+  };
+
+  // Build unified timeline (order milestones + WhatsApp events) with retry metadata.
   const timeline = useMemo(() => {
-    if (!order) return [] as Array<{ ts: string; icon: any; label: string; color: string; sub?: string }>;
+    type Ev = { ts: string; icon: any; label: string; color: string; sub?: string; meta?: string };
+    if (!order) return [] as Ev[];
     const status = statusConfig[order.status] || statusConfig.pendiente;
-    const events: Array<{ ts: string; icon: any; label: string; color: string; sub?: string } | null> = [
+    const events: Array<Ev | null> = [
       { ts: order.created_at, icon: Package, label: "Pedido recibido", color: "text-accent" },
       order.payment_recorded_at
         ? { ts: order.payment_recorded_at, icon: CreditCard, label: `Pago registrado${order.payment_method ? ` · ${order.payment_method}` : ""}`, color: "text-blue-600" }
@@ -179,16 +203,26 @@ const Pedido = () => {
     for (const ev of waEvents) {
       const c = waStatusConfig[ev.status];
       if (!c) continue;
+      const p = ev.payload || {};
+      const isRetry = ev.status === "retry_requested";
+      const meta = isRetry
+        ? [
+            p.attempt ? `intento #${p.attempt}` : null,
+            p.actor_name ? `por ${p.actor_name}` : null,
+            p.reason ? `motivo: "${p.reason}"` : null,
+          ].filter(Boolean).join(" · ")
+        : undefined;
       events.push({
         ts: ev.created_at,
         icon: c.icon,
-        label: ev.whatsapp_ref ? `${c.label} · ${ev.whatsapp_ref.slice(0, 12)}…` : c.label,
+        label: ev.whatsapp_ref && !isRetry ? `${c.label} · ${ev.whatsapp_ref.slice(0, 12)}…` : c.label,
         color: c.color,
         sub: ev.error || undefined,
+        meta,
       });
     }
     return events
-      .filter((e): e is NonNullable<typeof e> => Boolean(e))
+      .filter((e): e is Ev => Boolean(e))
       .sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
   }, [order, waEvents]);
 
@@ -345,35 +379,60 @@ const Pedido = () => {
             </div>
           ) : (
             <>
-              <ol className="relative border-l border-border ml-2 space-y-3">
-                {displayedTimeline.map((ev, idx) => {
-                  const Icon = ev.icon;
-                  return (
-                    <li key={idx} className="ml-4">
-                      <span className={`absolute -left-[7px] flex items-center justify-center w-3.5 h-3.5 rounded-full bg-background border-2 ${ev.color.replace("text-", "border-")}`} />
-                      <div className="flex items-start gap-2">
-                        <Icon size={14} className={`${ev.color} mt-0.5 flex-shrink-0`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground">{ev.label}</p>
-                          {ev.sub && <p className="text-[11px] text-destructive break-words">{ev.sub}</p>}
-                          <p className="text-[11px] text-muted-foreground">
-                            {new Date(ev.ts).toLocaleString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          </p>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-              {hasMore && (
+              {(() => {
+                // Agrupar por día para timelines largos (mobile-first, scan rápido).
+                const groups: Array<{ day: string; items: typeof displayedTimeline }> = [];
+                for (const ev of displayedTimeline) {
+                  const d = dayKey(ev.ts);
+                  const last = groups[groups.length - 1];
+                  if (last && last.day === d) last.items.push(ev);
+                  else groups.push({ day: d, items: [ev] });
+                }
+                return groups.map((g, gi) => (
+                  <div key={`g-${gi}`} className="mb-3 last:mb-0">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mb-1.5 sticky top-0 bg-card/95 backdrop-blur py-1">
+                      {g.day}
+                    </p>
+                    <ol className="relative border-l border-border ml-2 space-y-3">
+                      {g.items.map((ev, idx) => {
+                        const Icon = ev.icon;
+                        return (
+                          <li key={`${gi}-${idx}`} className="ml-4" data-testid="timeline-item">
+                            <span className={`absolute -left-[7px] flex items-center justify-center w-3.5 h-3.5 rounded-full bg-background border-2 ${ev.color.replace("text-", "border-")}`} />
+                            <div className="flex items-start gap-2">
+                              <Icon size={14} className={`${ev.color} mt-0.5 flex-shrink-0`} />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-foreground">{ev.label}</p>
+                                {ev.meta && <p className="text-[11px] text-muted-foreground/90 break-words">{ev.meta}</p>}
+                                {ev.sub && <p className="text-[11px] text-destructive break-words">{ev.sub}</p>}
+                                <p className="text-[11px] text-muted-foreground">
+                                  {new Date(ev.ts).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}
+                                </p>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </div>
+                ));
+              })()}
+              {isPaging && (
+                <div className="space-y-2 mt-2" aria-busy="true" data-testid="paging-skeleton">
+                  {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-8 bg-muted animate-pulse rounded" />)}
+                </div>
+              )}
+              {hasMore && !isPaging && (
                 <button
-                  onClick={() => setVisibleCount((n) => n + TIMELINE_PAGE)}
-                  className="mt-3 w-full text-xs text-accent font-medium py-2 rounded-md bg-accent/5"
+                  onClick={loadMore}
+                  className="mt-3 w-full text-xs text-accent font-medium py-2 rounded-md bg-accent/5 active:scale-[0.98]"
+                  data-testid="load-more"
                 >
                   Ver más ({timeline.length - visibleCount} restantes)
                 </button>
               )}
             </>
+
           )}
         </section>
 

@@ -18,6 +18,9 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const orderNumber = Number(body.order_number);
+    const reason: string = typeof body.reason === "string" ? body.reason.slice(0, 240) : "";
+    const actorId: string | null = typeof body.actor_id === "string" ? body.actor_id : null;
+    const actorName: string | null = typeof body.actor_name === "string" ? body.actor_name.slice(0, 120) : null;
     if (!orderNumber || Number.isNaN(orderNumber)) {
       return new Response(JSON.stringify({ error: "order_number required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -35,25 +38,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Rate limit: max 3 retries in last 10 min per order.
+    // Rate limit + attempt counter (últimos 10 min).
     const since = new Date(Date.now() - 10 * 60_000).toISOString();
-    const { count } = await sb
+    const { count, data: recent } = await sb
       .from("whatsapp_message_events")
-      .select("id", { count: "exact", head: true })
+      .select("id", { count: "exact" })
       .eq("order_id", order.id)
       .eq("status", "retry_requested")
       .gte("created_at", since);
-    if ((count ?? 0) >= 3) {
+    const attemptsSoFar = count ?? recent?.length ?? 0;
+    if (attemptsSoFar >= 3) {
       return new Response(JSON.stringify({ error: "rate_limited", retry_after_seconds: 600 }), {
         status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Log the retry request immediately.
+    const attempt = attemptsSoFar + 1;
+    const retryPayload = {
+      source: "pedido_page",
+      attempt,
+      reason: reason || null,
+      actor_id: actorId,
+      actor_name: actorName,
+      requested_at: new Date().toISOString(),
+    };
     await sb.from("whatsapp_message_events").insert({
       order_id: order.id,
       status: "retry_requested",
-      payload: { source: "pedido_page" },
+      payload: retryPayload,
     });
 
     // Fire YCloud send (service-role bearer).
@@ -95,7 +107,7 @@ Deno.serve(async (req) => {
       order_id: order.id,
       whatsapp_ref: String(newRef),
       status: "sent",
-      payload: sendData,
+      payload: { ...sendData, attempt, retry_of: retryPayload },
     });
 
     return new Response(JSON.stringify({ success: true, whatsapp_ref: newRef }), {
