@@ -24,7 +24,7 @@ Endpoint **separado** `einvoice-resend-bulk-admin` en vez de extender `einvoice-
 - [x] **AC3:** Itera org por org con la **misma** lógica batch que `einvoice-resend` (SELECT pendientes del día → UPDATE in → INSERT outbox). Si un org falla, las demás siguen procesándose y el error queda en `sync_logs` con `service_name='einvoice_bulk_retry_admin'`, `status='error'`, `phase='query'|'update'|'outbox'`.
 - [x] **AC4:** `dry_run=true` no muta: devuelve `candidates` por org sin tocar `electronic_invoices` ni `sync_outbox`. Cubre el preview de UI.
 - [x] **AC5:** Respuesta agregada: `{ success, dry_run, total_orgs, total_requeued, results: [{ organization_id, candidates, requeued, status, error? }] }`. Cada org se loguea con su propio row de `sync_logs`.
-- [ ] **AC6 (UI, fuera de scope edge):** Página `admin-cms/Facturacion/BulkRetry` con multi-select de orgs visibles para el superadmin + botón "Preview" (dry_run) + botón "Reencolar" (commit). _Pendiente: spec separado cuando se construya el UI._
+- [x] **AC6 (UI superadmin):** Página `/superadmin/einvoice-bulk-retry` (`src/modules/superadmin/pages/EinvoiceBulkRetry.tsx`) con multi-select de orgs (cap 20), inputs `batch_size` / `max_retries`, switch `dry_run`, botón "Dry-run (preview)" y "Reencolar ahora" con `window.confirm`. Resultado por org renderizado con badges (candidates / requeued / error). Llama a `einvoice-resend-bulk-admin` vía `supabase.functions.invoke`. Entrada en `SuperadminSidebar` (zona Global). Manejo explícito de 403 → toast "Acceso denegado: se requiere rol superadmin global."
 
 ## Criterios de aceptación verificables
 
