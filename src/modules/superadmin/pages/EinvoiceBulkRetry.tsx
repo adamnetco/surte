@@ -316,21 +316,42 @@ export default function EinvoiceBulkRetry() {
               {lastResponse.dry_run ? "dry_run" : "ejecutado"}
             </Badge>
           </div>
+          {lastResponse.partial && !lastResponse.dry_run && (
+            <p className="text-xs text-amber-600">
+              ⚠ Ejecución parcial: algunos lotes fallaron — revisa <code>sync_logs</code> con <code>phase=batch_N</code>.
+            </p>
+          )}
           <div className="divide-y rounded-md border">
             {lastResponse.results.map((r) => (
-              <div key={r.organization_id} className="px-3 py-2 text-sm flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium truncate">{nameById[r.organization_id] ?? r.organization_id}</p>
-                  {r.error && <p className="text-xs text-destructive truncate">{r.error}</p>}
+              <div key={r.organization_id} className="px-3 py-2 text-sm flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{nameById[r.organization_id] ?? r.organization_id}</p>
+                    {r.error && <p className="text-xs text-destructive truncate">{r.error}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant="outline">{r.candidates} candidatas</Badge>
+                    {!lastResponse.dry_run && (
+                      <Badge variant={r.status === "success" ? (r.partial ? "secondary" : "default") : r.status === "error" ? "destructive" : "secondary"}>
+                        {r.requeued} reencoladas{r.partial ? " (parcial)" : ""}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="outline">{r.candidates} candidatas</Badge>
-                  {!lastResponse.dry_run && (
-                    <Badge variant={r.status === "success" ? "default" : r.status === "error" ? "destructive" : "secondary"}>
-                      {r.requeued} reencoladas
-                    </Badge>
-                  )}
-                </div>
+                {r.batches && r.batches.length > 1 && (
+                  <div className="flex flex-wrap gap-1 pl-1">
+                    {r.batches.map((b) => (
+                      <Badge
+                        key={b.index}
+                        variant={b.status === "success" ? "outline" : "destructive"}
+                        className="text-[10px] font-mono"
+                        title={b.error}
+                      >
+                        L{b.index}: {b.requeued}/{b.candidates}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
