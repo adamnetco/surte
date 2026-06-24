@@ -155,6 +155,7 @@ export default function Facturacion() {
         <TabsList>
           <TabsTrigger value="config">Configuración</TabsTrigger>
           <TabsTrigger value="doc-types"><Layers className="h-3.5 w-3.5 mr-1" /> Tipos de documento</TabsTrigger>
+          <TabsTrigger value="pos-behavior"><Settings2 className="h-3.5 w-3.5 mr-1" /> Comportamiento POS</TabsTrigger>
           <TabsTrigger value="invoices">Documentos emitidos</TabsTrigger>
         </TabsList>
 
