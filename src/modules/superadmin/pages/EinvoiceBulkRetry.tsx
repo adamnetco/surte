@@ -200,7 +200,7 @@ export default function EinvoiceBulkRetry() {
       </header>
 
       <Card className="p-4 space-y-4">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           <div>
             <Label htmlFor="batch_size">Batch size</Label>
             <Input
