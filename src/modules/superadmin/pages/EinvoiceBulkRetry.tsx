@@ -184,7 +184,11 @@ export default function EinvoiceBulkRetry() {
           `Truncado por wallclock: ${resp.total_requeued} reencoladas. Usa "Reanudar" para continuar.`,
         );
       } else {
-        toast.success(`Reencoladas ${resp.total_requeued} facturas en ${resp.total_orgs} org(s).`);
+        toast.success(
+          resp.idempotent_replay
+            ? `Replay idempotente: ${resp.total_requeued} facturas (sin re-encolar).`
+            : `Reencoladas ${resp.total_requeued} facturas en ${resp.total_orgs} org(s).`,
+        );
       }
     } catch (e: any) {
       toast.error(e?.message ?? "Error inesperado");
