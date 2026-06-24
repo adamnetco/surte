@@ -514,14 +514,25 @@ const Diario = () => {
               })}
             </p>
           </div>
-          <button
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            className="shrink-0 h-9 w-9 rounded-lg border border-border grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-50"
-            aria-label="Actualizar"
-          >
-            <RefreshCw size={16} className={isRefetching ? "animate-spin" : ""} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShareOpen(true)}
+              disabled={!hasData}
+              className="h-9 px-3 rounded-lg border border-border flex items-center gap-1.5 text-xs font-semibold text-foreground hover:bg-foreground hover:text-background disabled:opacity-50 transition"
+              aria-label="Compartir resumen del día"
+            >
+              <Share2 size={14} />
+              <span className="hidden xs:inline sm:inline">Compartir</span>
+            </button>
+            <button
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              className="h-9 w-9 rounded-lg border border-border grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-50"
+              aria-label="Actualizar"
+            >
+              <RefreshCw size={16} className={isRefetching ? "animate-spin" : ""} />
+            </button>
+          </div>
         </header>
 
         {/* KPIs del día */}
