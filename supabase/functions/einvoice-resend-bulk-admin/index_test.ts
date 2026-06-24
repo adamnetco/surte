@@ -19,6 +19,9 @@ type FakeConfig = {
   outboxErr?: string;
   // POS-optimizar-bulk-retry-timeouts: simular falla en lotes específicos.
   outboxErrAtCall?: number[]; // call indices (0-based) que deben fallar
+  // POS-einvoice-bulk-retry-hardening AC1: filas precargadas en sync_logs para
+  // que el lookup de idempotency_key encuentre un hit.
+  syncLogsRows?: Array<{ payload: any; created_at?: string }>;
 };
 
 function makeFake(cfg: FakeConfig = {}) {
@@ -36,6 +39,14 @@ function makeFake(cfg: FakeConfig = {}) {
       gte() { return selectBuilder; },
       gt() { return selectBuilder; },
       order() { return selectBuilder; },
+      // AC1: terminal del lookup idempotente en sync_logs.
+      async limit(_n: number) {
+        ops.push({ table, type: "select", payload: { kind: "limit" } });
+        if (table === "sync_logs") {
+          return { data: cfg.syncLogsRows ?? [], error: null };
+        }
+        return { data: [], error: null };
+      },
       async in(_col: string, _vals: string[]) {
         const org = currentOrg!;
         ops.push({ table, type: "select", payload: { org } });
