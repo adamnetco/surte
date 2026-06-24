@@ -19,6 +19,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/audit", label: "Audit log", icon: ScrollText, desc: "Historial de cambios y overrides" },
   { to: "/superadmin/soporte", label: "WhatsApp soporte", icon: MessageCircle, desc: "Número global de ayuda" },
   { to: "/superadmin/cloud-tareas", label: "Cloud / Tareas", icon: Zap, desc: "Migraciones, seeds, secrets" },
+  { to: "/superadmin/einvoice-bulk-retry", label: "Bulk retry DIAN", icon: FileText, desc: "Reenvío masivo multi-tenant" },
 ];
 
 const TENANT_ITEMS = [
