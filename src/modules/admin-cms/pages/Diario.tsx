@@ -617,17 +617,23 @@ const Diario = () => {
 
           {hasData && !noActionsNeeded && (
             <div className="space-y-2">
-              {actions.map((a) => (
-                <ActionCard
-                  key={a.key}
-                  icon={a.icon}
-                  title={a.title}
-                  description={a.description}
-                  badge={a.badge}
-                  severity={a.severity}
-                  onClick={a.onClick}
-                />
-              ))}
+              {visibleActions.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic px-1">
+                  Sin acciones en este filtro.
+                </p>
+              ) : (
+                visibleActions.map((a) => (
+                  <ActionCard
+                    key={a.key}
+                    icon={a.icon}
+                    title={a.title}
+                    description={a.description}
+                    badge={a.badge}
+                    severity={a.severity}
+                    onClick={a.onClick}
+                  />
+                ))
+              )}
             </div>
           )}
         </section>
