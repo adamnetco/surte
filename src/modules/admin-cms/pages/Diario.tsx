@@ -31,6 +31,11 @@ import { useDailyChecklist } from "@/modules/admin-cms/hooks/useDailyChecklist";
 import SyncStatusPanel from "@/modules/admin-cms/components/SyncStatusPanel";
 import DiarioBulkSheet, { type BulkKind } from "@/modules/admin-cms/components/DiarioBulkSheet";
 import DiarioShareDialog from "@/modules/admin-cms/components/DiarioShareDialog";
+import {
+  CHECKLIST_TEMPLATES,
+  templateForRole,
+  getTemplateByKey,
+} from "@/modules/admin-cms/lib/checklistTemplates";
 
 /**
  * Daily Driver — pantalla mobile-first del flujo diario del admin.
