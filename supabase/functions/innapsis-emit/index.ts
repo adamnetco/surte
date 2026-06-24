@@ -110,7 +110,7 @@ interface BuildInput {
 }
 
 function buildInnapsisPayload(input: BuildInput) {
-  const { cfg, org, location, order, items, payments, number, trackId, documentType } = input;
+  const { cfg, org, location, order, items, payments, number, trackId, documentType, reference } = input;
   const now = new Date();
   const iso = now.toISOString();
   const fecha = iso.slice(0, 10);
