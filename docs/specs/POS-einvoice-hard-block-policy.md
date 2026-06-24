@@ -15,11 +15,11 @@ La política debe ser **configurable por organización**.
 
 ## Outcomes
 
-- [ ] **AC1:** Nueva columna `einvoice_configs.hard_block_when_dian_down BOOLEAN DEFAULT false`.
-- [ ] **AC2:** Toggle en `POSBehaviorSettings` (admin/facturacion/configuracion): "Bloquear cobro si DIAN está offline y no hay rango de contingencia activo" con explicación clara del trade-off.
-- [ ] **AC3:** En `PaymentDialog` / `SaleCompleteDialog`, si `hard_block_when_dian_down = true` Y `dian_health = down` Y `no hay contingency_range vigente` → botón "Cobrar" deshabilitado con tooltip "DIAN offline. Configure rango de contingencia o espere a restablecimiento".
-- [ ] **AC4:** El bloqueo NO aplica a ventas marcadas como "Sin documento DIAN" (recibo interno explícito).
-- [ ] **AC5:** Superadmin puede forzar override por sesión con `Ctrl+Shift+B` (auditado en `sync_logs` con `event_type='hard_block_override'`).
+- [x] **AC1:** Nueva columna `einvoice_configs.hard_block_when_dian_down BOOLEAN DEFAULT false` (migración aplicada).
+- [x] **AC2:** Toggle en `POSBehaviorSettings` (admin/facturacion/configuracion): "Bloquear cobro si DIAN está offline y no hay rango de contingencia activo" con explicación clara del trade-off.
+- [x] **AC3:** En `PaymentDialog`, si `hard_block_when_dian_down = true` Y `dian_health = down` Y `no hay contingency_range vigente` → botón "Cobrar" deshabilitado con tooltip "DIAN offline. Configure rango de contingencia o espere a restablecimiento".
+- [x] **AC4:** El bloqueo NO aplica a ventas marcadas como "Sin documento DIAN" (recibo interno explícito) — `BYPASS_DOC_TYPES` en `usePosCobroGate`.
+- [x] **AC5:** Superadmin puede forzar override por sesión con `Ctrl+Shift+B` (auditado en `sync_logs` con `service_name='pos_hard_block_override'`).
 
 ## Notas de Implementación
 
