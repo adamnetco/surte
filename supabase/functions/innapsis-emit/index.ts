@@ -98,6 +98,15 @@ interface BuildInput {
   number: number;
   trackId: string;
   documentType: "invoice" | "credit_note" | "debit_note";
+  reference?: {
+    tipoDoc?: string;
+    prefix?: string | null;
+    number?: number | string | null;
+    issueDate?: string | null;
+    cufe?: string | null;
+    conceptCode?: string | null;
+    conceptText?: string | null;
+  } | null;
 }
 
 function buildInnapsisPayload(input: BuildInput) {
