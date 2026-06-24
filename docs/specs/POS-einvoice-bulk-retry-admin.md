@@ -37,6 +37,7 @@ Endpoint **separado** `einvoice-resend-bulk-admin` en vez de extender `einvoice-
 | AC4 | Branch `if (dry_run \|\| ids.length === 0)` retorna sin UPDATE/INSERT | ✅ |
 | AC5 | `results.push({...})` por org + agregados `total_orgs`/`total_requeued` | ✅ |
 | AC6 | `src/modules/superadmin/pages/EinvoiceBulkRetry.tsx` + ruta `/superadmin/einvoice-bulk-retry` + entry en `SuperadminSidebar`. Edge function acepta `batch_size`/`max_retries` opcionales y los propaga al payload del outbox + `sync_logs` | ✅ |
+| AC7 | `supabase/functions/einvoice-resend-bulk-admin/index_test.ts` — 11/11 verde vía `supabase--test_edge_functions` | ✅ |
 
 ## Riesgos & mitigación
 
