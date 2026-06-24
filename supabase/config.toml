@@ -1,8 +1,13 @@
 project_id = "dimyhjzcwlgfczimqhet"
 
 [functions]
+  [functions.whatsapp-status-webhook]
+    verify_jwt = false
+  [functions.resend-whatsapp-order]
+    verify_jwt = false
   [functions.auth-email-hook]
     verify_jwt = false
+
   [functions.process-email-queue]
     verify_jwt = true
   [functions.send-transactional-email]
