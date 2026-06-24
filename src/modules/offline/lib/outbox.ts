@@ -171,6 +171,7 @@ async function executeOp(item: OutboxItem) {
           pos_order_id: posOrderId ?? payload.pos_order_id,
           order_id: payload.order_id,
           document_type: payload.document_type ?? "invoice",
+          contingency_mode: payload.contingency_mode === true,
         },
       });
       if (error) throw error;
