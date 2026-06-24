@@ -322,7 +322,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   // dejaban la puerta abierta a que un Enter/click repetido encolara la venta
   // dos veces (vimos 2 órdenes idénticas en pos_orders).
   const payingRef = useRef(false);
-  const handlePaid = async (payments: { method: string; amount: number; reference?: string }[]) => {
+  const handlePaid = async (
+    payments: { method: string; amount: number; reference?: string }[],
+    meta: { docType: string | null } = { docType: null },
+  ) => {
     if (payingRef.current) return;
     if (!ticket.length) { toast.error("El ticket está vacío"); return; }
     payingRef.current = true;
@@ -344,6 +347,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       change_due: change,
       status: "paid",
       sale_mode: saleMode,
+      einvoice_doc_type: meta.docType ?? "pos_electronico",
       paid_at: new Date().toISOString(),
     };
     const items = snapshotItems.map((l) => ({
