@@ -54,3 +54,33 @@ Deno.test("buildFeXml omite null/undefined/cadenas vacías", () => {
   assertEquals(xml.includes("<Prefijo>"), false);
   assertEquals(xml.includes("<Dv>"), false);
 });
+
+Deno.test("buildFeXml Slice 3 — incluye bloque Referencia para NC/ND con motivo DIAN", () => {
+  const xml = buildFeXml({
+    trackId: "nc-1",
+    Fe: {
+      Encabezado: { TipoDocumento: "6", FolioAutorizado: 100 },
+      Emisor: { RazonSocial: "Emisor", Identificacion: "900000000" },
+      Receptor: { RazonSocial: "Cliente", Identificacion: "222222222222" },
+      Referencia: {
+        TipoDoc: "1",
+        Prefijo: "SETP",
+        Folio: "42",
+        FechaEmision: "2026-06-20",
+        Cufe: "abc123def",
+        CodigoMotivoNota: "2",
+        DescripcionMotivoNota: "Anulación de factura",
+      },
+      Totales: { TotalaPagar: 0 },
+    },
+  });
+  // Referencia debe ir entre Receptor y Totales (orden de SECTION_ORDER).
+  const idxReceptor = xml.indexOf("<Receptor>");
+  const idxRef = xml.indexOf("<Referencia>");
+  const idxTotales = xml.indexOf("<Totales>");
+  assertEquals(idxReceptor < idxRef, true);
+  assertEquals(idxRef < idxTotales, true);
+  assertStringIncludes(xml, "<CodigoMotivoNota>2</CodigoMotivoNota>");
+  assertStringIncludes(xml, "<Cufe>abc123def</Cufe>");
+  assertStringIncludes(xml, "<Folio>42</Folio>");
+});
