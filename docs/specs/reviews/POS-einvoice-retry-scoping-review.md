@@ -16,16 +16,16 @@
 ## Gaps críticos
 Ninguno.
 
-## Observaciones (no bloquean)
+## Observaciones (resueltas)
 
-1. **Loop secuencial en bulk** — `for (const row of pendings)` hace 2 awaits por factura (UPDATE + INSERT outbox). Para turnos con >50 pendientes la latencia puede pasar el timeout de la edge (60s). Considerar batch INSERT a `sync_outbox` y `UPDATE ... WHERE id = ANY($1)` para reducir round-trips.
-2. **Sin `dry_run`** — la nota original del spec sugería `dry_run: boolean` para preview. No se implementó. Útil para UX cuando hay decenas de pendientes.
-3. **No se registra falla** — si `pendings` viene `null` por error de Supabase, el handler retorna `requeued: 0` sin log. Considerar `sync_logs` con `status='error'` cuando la query falla.
-4. **AC5 sin spec propio** — recomendado crear `POS-einvoice-bulk-retry-admin.md` (DRAFT) para no perder el follow-up.
-5. **Sin test E2E ni unit** — el cambio es seguridad-crítico; un test que confirme `403` cuando el caller no es admin de la org sería deseable. Bloqueado por mocks de edge function (no existe harness en repo).
-6. **Mensaje 400 cambiado** — clientes externos que reusen este endpoint (no hay hoy) romperán. Mitigación: solo `EinvoiceShiftWidget` lo consume y se actualizó en el mismo cambio.
+1. ✅ **Batch UPDATE + INSERT** — un solo `UPDATE ... IN (ids)` y un solo `INSERT` con array de rows, en lugar del loop secuencial. Elimina riesgo de timeout para turnos con >50 pendientes.
+2. ✅ **`dry_run` implementado** — body acepta `dry_run: boolean`; retorna `{ candidates }` sin mutar. Widget hace preview + `window.confirm("Se reencolarán N documentos") ` antes de ejecutar.
+3. ✅ **Auditoría de fallas** — fallas de query/update/insert se loguean en `sync_logs` con `status='error'` y `error_message`; el éxito sigue siendo logueado.
+4. ✅ **AC5 movido a spec propio** — `docs/specs/POS-einvoice-bulk-retry-admin.md` (DRAFT).
+5. ✅ **Tests unit añadidos** — `EinvoiceShiftWidget.test.tsx` 3/3: (a) envía `organization_id` en dry_run y commit, (b) aborta si candidates=0, (c) respeta cancelación del confirm.
+6. ⚠️ **Mensaje 400 cambiado** — aceptado: único consumer (`EinvoiceShiftWidget`) actualizado en el mismo cambio.
 
 ## Acción
-- Spec actualizado a **SHIPPED**.
-- Observaciones 1 y 2 candidatas a follow-up corto si aparece queja de performance.
-- Observación 4 (AC5) requiere su propio spec cuando surja el caso de uso superadmin.
+- Spec **SHIPPED**, todas las observaciones cerradas.
+- Edge function `einvoice-resend` redeployada.
+

@@ -21,7 +21,10 @@ const BodySchema = z.object({
   to: z.string().max(200).optional(), // email o teléfono override
   // POS-einvoice-retry-scoping AC1: requerido para retry_all_today (validado abajo)
   organization_id: z.string().uuid().optional(),
+  // Preview-only: no muta nada, retorna conteo de docs candidatos.
+  dry_run: z.boolean().optional(),
 });
+
 
 
 function json(status: number, body: unknown) {
@@ -53,7 +56,7 @@ Deno.serve(async (req) => {
     const raw = await req.json().catch(() => null);
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) return json(400, { error: "invalid_payload", details: parsed.error.flatten() });
-    const { invoice_id, action, to, organization_id } = parsed.data;
+    const { invoice_id, action, to, organization_id, dry_run } = parsed.data;
 
     // ============================================================
     // RETRY ALL TODAY — bulk requeue de docs pendientes del turno
@@ -78,43 +81,86 @@ Deno.serve(async (req) => {
 
       const since = new Date(); since.setHours(0, 0, 0, 0);
 
-      const { data: pendings } = await supabase
+      const { data: pendings, error: queryErr } = await supabase
         .from("electronic_invoices")
         .select("id, organization_id")
-        .eq("organization_id", organization_id) // scoped a la org solicitada
+        .eq("organization_id", organization_id)
         .gte("created_at", since.toISOString())
         .in("status", ["retrying", "rejected", "error", "dead_letter", "queued", "pending"]);
 
-      let requeued = 0;
-      for (const row of pendings ?? []) {
-        await supabase
-          .from("electronic_invoices")
-          .update({ status: "queued", retry_count: 0, next_retry_at: null, last_error: null })
-          .eq("id", (row as any).id);
-        await supabase.from("sync_outbox").insert({
-          organization_id: (row as any).organization_id,
-          operation: "einvoice_emit",
-          payload: { invoice_id: (row as any).id, forced_retry: true, forced_by: userId, bulk: true },
-          status: "pending",
+      if (queryErr) {
+        // Observación #3: auditar fallas de lectura, no solo éxitos.
+        await supabase.from("sync_logs").insert({
+          organization_id,
+          service_name: "einvoice_bulk_retry",
+          status: "error",
+          error_message: queryErr.message,
+          payload: { action: "retry_all_today", requested_by: userId, phase: "query_pendings" },
         });
-        requeued += 1;
+        return json(500, { error: "query_failed", details: queryErr.message });
       }
 
-      // AC4: auditoría a sync_logs con metadata completa
+      const rows = pendings ?? [];
+      const ids = rows.map((r: any) => r.id);
+
+      // dry_run: preview sin mutación
+      if (dry_run) {
+        return json(200, { success: true, dry_run: true, candidates: ids.length, organization_id });
+      }
+
+      let requeued = 0;
+      let logStatus: "success" | "error" = "success";
+      let logError: string | null = null;
+
+      if (ids.length > 0) {
+        // Observación #1: UPDATE en batch (1 round-trip vs N).
+        const { error: updErr } = await supabase
+          .from("electronic_invoices")
+          .update({ status: "queued", retry_count: 0, next_retry_at: null, last_error: null })
+          .in("id", ids);
+
+        if (updErr) {
+          logStatus = "error";
+          logError = `update_failed: ${updErr.message}`;
+        } else {
+          // INSERT batch en sync_outbox (1 round-trip vs N).
+          const outboxRows = rows.map((r: any) => ({
+            organization_id: r.organization_id,
+            operation: "einvoice_emit",
+            payload: { invoice_id: r.id, forced_retry: true, forced_by: userId, bulk: true },
+            status: "pending",
+          }));
+          const { error: outErr } = await supabase.from("sync_outbox").insert(outboxRows);
+          if (outErr) {
+            logStatus = "error";
+            logError = `outbox_insert_failed: ${outErr.message}`;
+          } else {
+            requeued = ids.length;
+          }
+        }
+      }
+
+      // AC4 + Observación #3: auditar éxito Y error.
       await supabase.from("sync_logs").insert({
         organization_id,
         service_name: "einvoice_bulk_retry",
-        status: "success",
+        status: logStatus,
+        error_message: logError,
         payload: {
           action: "retry_all_today",
           requeued_count: requeued,
+          candidates: ids.length,
           requested_by: userId,
           since: since.toISOString(),
         },
       });
 
+      if (logStatus === "error") {
+        return json(500, { error: logError, requeued, organization_id });
+      }
       return json(200, { success: true, requeued, organization_id });
     }
+
 
 
     if (!invoice_id) return json(400, { error: "missing_invoice_id" });
