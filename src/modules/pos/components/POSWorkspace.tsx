@@ -869,7 +869,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         total={totals.total}
         onConfirm={handlePaid}
         organizationId={organizationId}
-        hasCustomerId={!!(customer?.nit || customer?.document)}
+        hasCustomerId={!!(customer?.docNumber && customer.docNumber !== "222222222222")}
       />
 
       <InvoiceActionsDialog
