@@ -488,6 +488,7 @@ const Diario = () => {
 
   const [bulkKind, setBulkKind] = useState<BulkKind | null>(null);
   const bulkOpen = bulkKind !== null;
+  const [shareOpen, setShareOpen] = useState(false);
 
 
   return (
