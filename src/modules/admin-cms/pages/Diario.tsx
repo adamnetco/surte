@@ -441,6 +441,18 @@ const Diario = () => {
     );
   }, [data, navigate]);
 
+  const counts = useMemo(
+    () => ({
+      danger: actions.filter((a) => a.severity === "danger").length,
+      warn: actions.filter((a) => a.severity === "warn").length,
+      info: actions.filter((a) => a.severity === "info").length,
+    }),
+    [actions],
+  );
+  const visibleActions = useMemo(
+    () => (sevFilter === "all" ? actions : actions.filter((a) => a.severity === sevFilter)),
+    [actions, sevFilter],
+  );
   const totalAlerts = actions.length;
   const noActionsNeeded = hasData && totalAlerts === 0;
 
