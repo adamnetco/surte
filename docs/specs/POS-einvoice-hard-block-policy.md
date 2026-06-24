@@ -87,3 +87,17 @@ Combina `useDianHealth`, `useEinvoiceResolutionStatus`, `useContingencyRangeStat
 
 </content>
 </invoke>
+## Implementación (Build)
+
+**Migración:** `einvoice_configs.hard_block_when_dian_down BOOLEAN NOT NULL DEFAULT false` (idempotente).
+
+**Archivos creados/modificados:**
+- `src/modules/pos/hooks/usePosCobroGate.ts` (NEW) — combina `useDianHealth` + flag + override sessionStorage + auditoría sync_logs.
+- `src/modules/admin-cms/components/POSBehaviorSettings.tsx` — añade Switch destructivo con badge "Recomendado HORECA alto volumen".
+- `src/modules/pos/components/PaymentDialog.tsx` — wiring del gate, CTA configurar contingencia, banner override, atajo `Ctrl+Shift+B` para superadmin.
+
+**Decisiones de diseño:**
+- Se reutiliza `useDianHealth().hasContingencyRange` (lee JSON `einvoice_configs.contingency_range`) en lugar de crear hook nuevo contra `einvoice_contingency_ranges` (esa tabla no existe en este schema; el rango está embebido en `einvoice_configs`).
+- Bypass por doc type vía set `["recibo_interno", "sin_dian", "ticket_pos"]` — ajustable.
+- Override TTL 30 min en `sessionStorage['pos:hard_block_override:<orgId>']`. Auditoría en `sync_logs` con `service_name='pos_hard_block_override'` y status `warning`.
+- `SaleCompleteDialog` no recibe el gate (es post-emisión, no decide cobro). El bloqueo ocurre en `PaymentDialog` antes de generar la venta.
