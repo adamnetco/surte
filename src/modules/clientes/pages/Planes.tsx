@@ -23,6 +23,8 @@ const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 
 export default function Planes() {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly");
   const [params] = useSearchParams();
 
@@ -34,10 +36,22 @@ export default function Planes() {
   useEffect(() => {
     document.title = "Planes y precios · SistecPOS";
     (async () => {
-      const { data } = await supabase.from("saas_plans").select("*").eq("is_public", true).order("sort_order");
+      setLoading(true);
+      setError(null);
+      const { data, error: err } = await supabase
+        .from("saas_plans")
+        .select("*")
+        .eq("is_public", true)
+        .order("sort_order");
+      if (err) {
+        console.error("[Planes] saas_plans fetch failed", err);
+        setError(err.message || "No se pudieron cargar los planes.");
+      }
       setPlans((data as any) ?? []);
+      setLoading(false);
     })();
   }, []);
+
 
   const reasonLabel = useMemo(() => (reason ? MODULE_LABELS[reason] ?? reason : null), [reason]);
 
