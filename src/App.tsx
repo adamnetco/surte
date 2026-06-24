@@ -285,6 +285,7 @@ const App = () => (
                         desde <slug>.sistecpos.com (subdominio del tenant). El acceso
                         real lo controlan RoleGuard / módulos, no el host. */}
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
+                    <Route path="/admin/diario" element={<RoleGuard section="admin"><Diario /></RoleGuard>} />
                     <Route path="/pos" element={<PosHub />} />
                     <Route path="/pos/vender" element={<POS />} />
                     <Route path="/pos/fx" element={<PosFx />} />
