@@ -1,14 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { TrendingUp, Download, AlertTriangle, FileText, ArrowRightLeft } from "lucide-react";
+import { TrendingUp, Download, AlertTriangle, FileText, ArrowRightLeft, Coins, Users, CalendarDays } from "lucide-react";
 import { useFxCurrencies } from "../hooks/useFx";
-import { useFxSummary, monthRange } from "../hooks/useFxReports";
+import { useFxSummary, monthRange, type MarginBucket } from "../hooks/useFxReports";
 import { buildUiafCsv, downloadCsv } from "../lib/uiafExport";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const MONTHS = [
   "Enero","Febrero","Marzo","Abril","Mayo","Junio",
