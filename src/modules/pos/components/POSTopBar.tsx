@@ -49,25 +49,25 @@ export default function POSTopBar({
   return (
     <header className="sticky top-0 z-30 bg-card border-b">
       <div className="h-12 flex items-center px-3 gap-3">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground grid place-items-center text-xs font-black">
             SP
           </div>
           <span className="hidden sm:inline text-sm font-bold text-primary">SistecPOS</span>
         </div>
 
-        <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground shrink-0">
           <span className="font-semibold text-foreground">{shiftLabel}</span>
           <span className="flex items-center gap-1"><User className="w-3 h-3" />{cashierName}</span>
           <span className="flex items-center gap-1 tabular-nums"><Clock className="w-3 h-3" />{elapsed}</span>
         </div>
 
         {/* Switcher operativo Panel/Vender/Mesas/KDS — evita volver al hub */}
-        <POSWorkspaceNav className="ml-1" />
+        <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none">
+          <POSWorkspaceNav className="ml-1" />
+        </div>
 
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {rightExtras}
           <Button
             variant="ghost"
