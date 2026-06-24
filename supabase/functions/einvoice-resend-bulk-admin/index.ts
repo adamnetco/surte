@@ -187,6 +187,8 @@ Deno.serve(async (req) => {
           requeued_count: ids.length,
           requested_by: userId,
           since: since.toISOString(),
+          ...(batch_size ? { batch_size } : {}),
+          ...(typeof max_retries === "number" ? { max_retries } : {}),
         },
       });
       results.push({
