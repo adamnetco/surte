@@ -228,3 +228,139 @@ Deno.test("zero pendings returns success with candidates=0 and no mutations", as
   assertEquals(out.total_requeued, 0);
   assertEquals(ops.some((o) => o.table === "sync_outbox"), false);
 });
+
+// ---------- POS-optimizar-bulk-retry-timeouts (AC1/AC2/AC3/AC5) ----------
+Deno.test("AC5: 250 pendings split into 3 batches (100/100/50) with single aggregated sync_log", async () => {
+  const orgA = crypto.randomUUID();
+  const pendings = Array.from({ length: 250 }, (_, i) => ({
+    id: `inv-${i}`,
+    organization_id: orgA,
+  }));
+  const { client, ops } = makeFake({ pendingsByOrg: { [orgA]: pendings } });
+
+  const out = await processBulkRetry(
+    client,
+    { organization_ids: [orgA], batch_size: 100 },
+    "user-1",
+  );
+
+  assertEquals(out.total_requeued, 250);
+  assertEquals(out.partial, false);
+  assertEquals(out.results[0].status, "success");
+  assertEquals(out.results[0].batches?.length, 3);
+  assertEquals(out.results[0].batches?.map((b) => b.candidates), [100, 100, 50]);
+  assertEquals(out.results[0].batches?.map((b) => b.requeued), [100, 100, 50]);
+  assertEquals(out.results[0].batches?.every((b) => b.status === "success"), true);
+
+  // 3 inserts en sync_outbox (uno por lote)
+  const outboxInserts = ops.filter((o) => o.table === "sync_outbox" && o.type === "insert");
+  assertEquals(outboxInserts.length, 3);
+  assertEquals(outboxInserts.map((o) => o.payload.length), [100, 100, 50]);
+
+  // 3 updates de electronic_invoices (uno por lote)
+  const updates = ops.filter((o) => o.table === "electronic_invoices" && o.type === "update");
+  assertEquals(updates.length, 3);
+
+  // Un único sync_logs agregado de éxito (AC5)
+  const okLogs = ops.filter(
+    (o) => o.table === "sync_logs" && o.payload?.status === "success",
+  );
+  assertEquals(okLogs.length, 1);
+  assertEquals(okLogs[0].payload.payload.batches, 3);
+  assertEquals(okLogs[0].payload.payload.failed_batches, 0);
+  assertEquals(okLogs[0].payload.payload.batch_size, 100);
+  assertEquals(okLogs[0].payload.payload.requeued_count, 250);
+});
+
+Deno.test("AC2/AC3: failure in one batch logs phase=batch_N and continues with next batch (partial=true)", async () => {
+  const orgA = crypto.randomUUID();
+  const pendings = Array.from({ length: 150 }, (_, i) => ({
+    id: `inv-${i}`,
+    organization_id: orgA,
+  }));
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: pendings },
+    outboxErrAtCall: [0], // primer lote falla en outbox
+  });
+
+  const out = await processBulkRetry(
+    client,
+    { organization_ids: [orgA], batch_size: 100 },
+    "user-1",
+  );
+
+  assertEquals(out.partial, true);
+  assertEquals(out.total_requeued, 50); // solo el 2º lote pasó
+  const org = out.results[0];
+  assertEquals(org.status, "success"); // hubo al menos un lote OK
+  assertEquals(org.partial, true);
+  assertEquals(org.batches?.[0].status, "error");
+  assertEquals(org.batches?.[1].status, "success");
+
+  // sync_logs con phase=batch_0 para el lote fallido
+  const phaseLog = ops.find(
+    (o) =>
+      o.table === "sync_logs" &&
+      o.payload?.payload?.phase === "batch_0",
+  );
+  assertEquals(!!phaseLog, true);
+  assertEquals(phaseLog?.payload?.status, "error");
+
+  // Un único sync_logs agregado, con failed_batches=1
+  const aggLogs = ops.filter(
+    (o) =>
+      o.table === "sync_logs" &&
+      o.payload?.payload?.action === "bulk_admin" &&
+      typeof o.payload?.payload?.failed_batches === "number",
+  );
+  assertEquals(aggLogs.length, 1);
+  assertEquals(aggLogs[0].payload.payload.failed_batches, 1);
+  assertEquals(aggLogs[0].payload.payload.requeued_count, 50);
+});
+
+Deno.test("AC3: when ALL batches fail, org status=error and total_requeued=0", async () => {
+  const orgA = crypto.randomUUID();
+  const pendings = Array.from({ length: 200 }, (_, i) => ({
+    id: `inv-${i}`,
+    organization_id: orgA,
+  }));
+  const { client } = makeFake({
+    pendingsByOrg: { [orgA]: pendings },
+    outboxErr: "outbox_down",
+  });
+
+  const out = await processBulkRetry(
+    client,
+    { organization_ids: [orgA], batch_size: 100 },
+    "user-1",
+  );
+
+  assertEquals(out.total_requeued, 0);
+  assertEquals(out.partial, true);
+  assertEquals(out.results[0].status, "error");
+  assertEquals(out.results[0].batches?.length, 2);
+  assertEquals(out.results[0].batches?.every((b) => b.status === "error"), true);
+});
+
+Deno.test("AC1: default batch_size=100 when not provided", async () => {
+  const orgA = crypto.randomUUID();
+  const pendings = Array.from({ length: 120 }, (_, i) => ({
+    id: `inv-${i}`,
+    organization_id: orgA,
+  }));
+  const { client, ops } = makeFake({ pendingsByOrg: { [orgA]: pendings } });
+
+  const out = await processBulkRetry(
+    client,
+    { organization_ids: [orgA] }, // sin batch_size
+    "user-1",
+  );
+
+  assertEquals(out.results[0].batches?.length, 2);
+  assertEquals(out.results[0].batches?.map((b) => b.candidates), [100, 20]);
+
+  const okLog = ops.find(
+    (o) => o.table === "sync_logs" && o.payload?.status === "success",
+  );
+  assertEquals(okLog?.payload?.payload?.batch_size, 100);
+});
