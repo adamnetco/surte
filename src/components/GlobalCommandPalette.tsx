@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/command";
 import {
   BarChart3, ShoppingCart, CalendarDays, Package, Tag, Handshake, Box, Settings, FileUp,
-  Users, MessageSquare, Map, Bell, FileText, Layers, Star, Globe, Search, Ticket, Code,
+  Users, MessageSquare, Map as MapIcon, Bell, FileText, Layers, Star, Globe, Search, Ticket, Code,
   MapPin, Truck, Printer, ChefHat, Monitor, Utensils, Receipt, ShoppingBag, Warehouse,
   CreditCard, Wallet, Sparkles, Rocket, Building2, Home, LayoutGrid, History, PackageSearch,
 } from "lucide-react";
