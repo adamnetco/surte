@@ -215,9 +215,13 @@ export default function PosFxPage() {
               )}
 
               {rate && (
-                <div className="text-xs text-muted-foreground flex items-center gap-3">
-                  <span>Tasa compra: <strong className="text-foreground font-mono">{fmt(rate.buy_rate, 4)}</strong></span>
-                  <span>Tasa venta: <strong className="text-foreground font-mono">{fmt(rate.sell_rate, 4)}</strong></span>
+                <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>Compra: <strong className="text-foreground font-mono">{fmt(rate.buy_rate, 4)}</strong></span>
+                  <span>Venta: <strong className="text-foreground font-mono">{fmt(rate.sell_rate, 4)}</strong></span>
+                  <span>Media: <strong className="text-foreground font-mono">{fmt(midRate, 4)}</strong></span>
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    Spread: <strong className="font-mono">{fmt(Number(rate.sell_rate) - Number(rate.buy_rate), 4)}</strong> {quoteCcy?.code}
+                  </span>
                   <Badge variant="secondary" className="text-[10px] uppercase">{rate.source}</Badge>
                 </div>
               )}
