@@ -9048,6 +9048,10 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      einvoice_apply_business_type_defaults: {
+        Args: { _org_id?: string }
+        Returns: number
+      }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number

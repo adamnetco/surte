@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface OrgDefaultDocTypes {
@@ -8,92 +9,77 @@ export interface OrgDefaultDocTypes {
   loading: boolean;
 }
 
-const FALLBACK: OrgDefaultDocTypes = {
+const FALLBACK = {
   consumerFinal: "pos_electronico",
   withNit: "factura_electronica",
   fxOperation: "documento_soporte",
-  loading: false,
-};
+} as const;
 
-const cache = new Map<string, OrgDefaultDocTypes>();
+const queryKey = (orgId: string) => ["einvoice-defaults", orgId] as const;
+
+async function fetchDefaults(orgId: string): Promise<Omit<OrgDefaultDocTypes, "loading">> {
+  // Preferimos la fila activa; si no existe, la más reciente (cubre sandbox `dev`).
+  const { data } = await supabase
+    .from("einvoice_configs")
+    .select(
+      "default_doc_type_consumer_final, default_doc_type_with_nit, default_doc_type_fx_operation, is_active, updated_at",
+    )
+    .eq("organization_id", orgId)
+    .order("is_active", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  const row = data?.[0] as any;
+  return {
+    consumerFinal: row?.default_doc_type_consumer_final ?? FALLBACK.consumerFinal,
+    withNit: row?.default_doc_type_with_nit ?? FALLBACK.withNit,
+    fxOperation: row?.default_doc_type_fx_operation ?? FALLBACK.fxOperation,
+  };
+}
 
 /**
  * POS-einvoice-default-doctype-by-business
- * Lee los defaults por tipo de cliente desde `einvoice_configs`.
- *
- * Selección de fila:
- *  1. is_active = true (cualquier environment)
- *  2. Fallback: la fila más reciente por organization_id
- * Esto cubre tenants en sandbox DIAN (`environment='dev'`) y en producción (`prod`).
+ * Lee defaults DIAN por tipo de cliente desde `einvoice_configs`.
+ * - React Query con key `["einvoice-defaults", orgId]` → cache por-org, invalidación correcta al cambiar de tenant.
+ * - Realtime UPDATE invalida la query.
+ * - Fallback estándar si la org no tiene config.
  */
 export function useOrgDefaultDocTypes(organizationId: string | null | undefined): OrgDefaultDocTypes {
-  const [snap, setSnap] = useState<OrgDefaultDocTypes>(() => {
-    if (!organizationId) return { ...FALLBACK, loading: false };
-    return cache.get(organizationId) ?? { ...FALLBACK, loading: true };
+  const qc = useQueryClient();
+  const enabled = !!organizationId;
+
+  const { data, isLoading } = useQuery({
+    queryKey: enabled ? queryKey(organizationId!) : ["einvoice-defaults", "_disabled_"],
+    queryFn: () => fetchDefaults(organizationId!),
+    enabled,
+    staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
-    if (!organizationId) {
-      setSnap({ ...FALLBACK, loading: false });
-      return;
-    }
-    let cancelled = false;
-    const cached = cache.get(organizationId);
-    if (cached) setSnap(cached);
-    else setSnap((s) => ({ ...s, loading: true }));
-
-    (async () => {
-      // Preferimos la fila activa; si no existe, la más reciente (cubre setups en `dev`).
-      const { data: rows } = await supabase
-        .from("einvoice_configs")
-        .select(
-          "default_doc_type_consumer_final, default_doc_type_with_nit, default_doc_type_fx_operation, is_active, updated_at",
-        )
-        .eq("organization_id", organizationId)
-        .order("is_active", { ascending: false })
-        .order("updated_at", { ascending: false })
-        .limit(1);
-      if (cancelled) return;
-      const row = rows?.[0] as any;
-      const next: OrgDefaultDocTypes = {
-        consumerFinal: row?.default_doc_type_consumer_final ?? FALLBACK.consumerFinal,
-        withNit: row?.default_doc_type_with_nit ?? FALLBACK.withNit,
-        fxOperation: row?.default_doc_type_fx_operation ?? FALLBACK.fxOperation,
-        loading: false,
-      };
-      cache.set(organizationId, next);
-      setSnap(next);
-    })();
-
+    if (!organizationId) return;
     const channel = supabase
       .channel(`einvoice-defaults-${organizationId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "einvoice_configs", filter: `organization_id=eq.${organizationId}` },
-        (payload) => {
-          const row = payload.new as any;
-          const next: OrgDefaultDocTypes = {
-            consumerFinal: row?.default_doc_type_consumer_final ?? FALLBACK.consumerFinal,
-            withNit: row?.default_doc_type_with_nit ?? FALLBACK.withNit,
-            fxOperation: row?.default_doc_type_fx_operation ?? FALLBACK.fxOperation,
-            loading: false,
-          };
-          cache.set(organizationId, next);
-          setSnap(next);
+        () => {
+          qc.invalidateQueries({ queryKey: queryKey(organizationId) });
         },
       )
       .subscribe();
-
     return () => {
-      cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [organizationId]);
+  }, [organizationId, qc]);
 
-  return snap;
+  return {
+    consumerFinal: data?.consumerFinal ?? FALLBACK.consumerFinal,
+    withNit: data?.withNit ?? FALLBACK.withNit,
+    fxOperation: data?.fxOperation ?? FALLBACK.fxOperation,
+    loading: enabled && isLoading,
+  };
 }
 
-/** Test-only: limpia el cache module-scope entre tests. */
+/** Test-only: stub retained for backwards compat with existing test file. */
 export function __resetOrgDefaultDocTypesCache() {
-  cache.clear();
+  // React Query maneja el cache; los tests crean un QueryClient nuevo por test.
 }
