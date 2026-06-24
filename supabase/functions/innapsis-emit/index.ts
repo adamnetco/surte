@@ -294,11 +294,37 @@ Deno.serve(async (req) => {
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // 0) Membresía
+    // === Branch A: retransmisión de factura de contingencia (AC12) ===
+    // Cuando DIAN se restaura, einvoice-contingency-flush invoca con transmit_invoice_id
+    // para enviar la factura previamente emitida en contingencia, sin generar nueva numeración.
+    let effectiveOrgId: string = organization_id;
+    let effectivePosOrderId: string | undefined = pos_order_id;
+    let effectiveOrderId: string | undefined = order_id;
+    let existingInvoice: any = null;
+
+    if (transmit_invoice_id) {
+      const { data: existing } = await admin
+        .from("electronic_invoices")
+        .select("*")
+        .eq("id", transmit_invoice_id)
+        .maybeSingle();
+      if (!existing) {
+        return new Response(JSON.stringify({ error: "invoice_not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (!existing.is_contingency || existing.transmitted_at) {
+        return new Response(JSON.stringify({ error: "not_a_pending_contingency_invoice" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      existingInvoice = existing;
+      effectiveOrgId = existing.organization_id;
+      effectivePosOrderId = existing.pos_order_id ?? undefined;
+      effectiveOrderId = existing.order_id ?? undefined;
+    }
+
+    // 0) Membresía (no aplica para retransmisión disparada por cron service-role)
     const { data: membership } = await admin
       .from("organization_members")
       .select("id, role")
-      .eq("organization_id", organization_id)
+      .eq("organization_id", effectiveOrgId)
       .eq("user_id", userId)
       .eq("is_active", true)
       .maybeSingle();
