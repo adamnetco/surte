@@ -334,8 +334,8 @@ Deno.serve(async (req) => {
 
     // 1) Config activa + organización
     const [{ data: cfg }, { data: org }] = await Promise.all([
-      admin.from("einvoice_configs").select("*").eq("organization_id", organization_id).eq("is_active", true).maybeSingle(),
-      admin.from("organizations").select("id, name, legal_name, tax_id, support_email, city, region").eq("id", organization_id).single(),
+      admin.from("einvoice_configs").select("*").eq("organization_id", effectiveOrgId).eq("is_active", true).maybeSingle(),
+      admin.from("organizations").select("id, name, legal_name, tax_id, support_email, city, region").eq("id", effectiveOrgId).single(),
     ]);
 
     if (!cfg) {
@@ -346,17 +346,17 @@ Deno.serve(async (req) => {
     let order: any = null;
     let items: any[] = [];
     let payments: any[] = [];
-    if (pos_order_id) {
+    if (effectivePosOrderId) {
       const [oRes, itRes, payRes] = await Promise.all([
-        admin.from("pos_orders").select("*").eq("id", pos_order_id).single(),
-        admin.from("pos_order_items").select("*").eq("pos_order_id", pos_order_id),
-        admin.from("pos_payments").select("*").eq("pos_order_id", pos_order_id),
+        admin.from("pos_orders").select("*").eq("id", effectivePosOrderId).single(),
+        admin.from("pos_order_items").select("*").eq("pos_order_id", effectivePosOrderId),
+        admin.from("pos_payments").select("*").eq("pos_order_id", effectivePosOrderId),
       ]);
       order = oRes.data; items = itRes.data ?? []; payments = payRes.data ?? [];
     } else {
       const [oRes, itRes] = await Promise.all([
-        admin.from("orders").select("*").eq("id", order_id).single(),
-        admin.from("order_items").select("*").eq("order_id", order_id),
+        admin.from("orders").select("*").eq("id", effectiveOrderId).single(),
+        admin.from("order_items").select("*").eq("order_id", effectiveOrderId),
       ]);
       order = oRes.data; items = itRes.data ?? [];
     }
@@ -370,34 +370,129 @@ Deno.serve(async (req) => {
       location = loc;
     }
 
-    // 3) Asigna número + arma payload v1.9
-    const nextNumber = (cfg.resolution_current ?? cfg.resolution_from ?? 1) as number;
-    const fullNumber = `${cfg.resolution_prefix ?? ""}${nextNumber}`;
-    const trackId = crypto.randomUUID();
+    // === Decide modo de emisión ===
+    // contingencyMode = explícito por caller (offline real-time) o auto si el cron ya marcó offline.
+    const contingencyRange = (cfg.contingency_range ?? null) as
+      | { from?: number; to?: number; current?: number; prefix?: string }
+      | null;
+    const dianHealth = (cfg.dian_health_status ?? "online") as string;
+    const requestedContingency = contingencyModeRaw === true;
+    const autoContingency = dianHealth === "offline" && !!contingencyRange && !transmit_invoice_id;
+    const useContingency = !transmit_invoice_id && (requestedContingency || autoContingency);
+
+    // === Numeración ===
+    let nextNumber: number;
+    let usedPrefix: string;
+    if (transmit_invoice_id) {
+      nextNumber = Number(existingInvoice.number);
+      usedPrefix = String(existingInvoice.prefix ?? "");
+    } else if (useContingency) {
+      if (!contingencyRange) {
+        return new Response(JSON.stringify({ error: "contingency_range_not_configured" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const cur = Number(contingencyRange.current ?? contingencyRange.from ?? 1);
+      const max = Number(contingencyRange.to ?? Number.MAX_SAFE_INTEGER);
+      if (cur > max) {
+        return new Response(JSON.stringify({ error: "contingency_range_exhausted" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      nextNumber = cur;
+      usedPrefix = String(contingencyRange.prefix ?? "SETC");
+    } else {
+      nextNumber = (cfg.resolution_current ?? cfg.resolution_from ?? 1) as number;
+      usedPrefix = String(cfg.resolution_prefix ?? "");
+    }
+    const fullNumber = `${usedPrefix}${nextNumber}`;
+    const trackId = transmit_invoice_id ? String(existingInvoice.track_id ?? crypto.randomUUID()) : crypto.randomUUID();
 
     const payload = buildInnapsisPayload({
-      cfg, org, location, order, items, payments,
+      cfg: { ...cfg, resolution_prefix: usedPrefix },
+      org, location, order, items, payments,
       number: nextNumber, trackId, documentType: document_type,
     });
+    // Marca el XML para que Innapsis lo procese como contingencia (campo a confirmar con Innapsis v1.9).
+    if (useContingency || (transmit_invoice_id && existingInvoice?.is_contingency)) {
+      (payload.Fe.Encabezado as any).Contingencia = true;
+    }
 
-    // 4) Registro pending
-    const { data: inv, error: invErr } = await admin.from("electronic_invoices").insert({
-      organization_id,
-      location_id: order.location_id ?? null,
-      document_type,
-      pos_order_id: pos_order_id ?? null,
-      order_id: order_id ?? null,
-      prefix: cfg.resolution_prefix,
-      number: nextNumber,
-      full_number: fullNumber,
-      customer_identification: payload.Fe.Receptor.Identificacion,
-      customer_name: payload.Fe.Receptor.RazonSocial,
-      customer_email: (payload.Fe.Receptor as any).Email ?? null,
-      subtotal: payload.Fe.Totales.BaseAfecta,
-      tax_total: payload.Fe.Totales.TotalIva,
-      total: payload.Fe.Totales.TotalaPagar,
-      track_id: trackId,
-      status: "sending",
+    // === Branch B: emisión en contingencia (AC11) — registra y NO llama a Innapsis ===
+    if (useContingency) {
+      const { data: cInv, error: cErr } = await admin.from("electronic_invoices").insert({
+        organization_id: effectiveOrgId,
+        location_id: order.location_id ?? null,
+        document_type,
+        pos_order_id: effectivePosOrderId ?? null,
+        order_id: effectiveOrderId ?? null,
+        prefix: usedPrefix,
+        number: nextNumber,
+        full_number: fullNumber,
+        customer_identification: payload.Fe.Receptor.Identificacion,
+        customer_name: payload.Fe.Receptor.RazonSocial,
+        customer_email: (payload.Fe.Receptor as any).Email ?? null,
+        subtotal: payload.Fe.Totales.BaseAfecta,
+        tax_total: payload.Fe.Totales.TotalIva,
+        total: payload.Fe.Totales.TotalaPagar,
+        track_id: trackId,
+        status: "contingency",
+        is_contingency: true,
+        contingency_emitted_at: new Date().toISOString(),
+        request_payload: payload,
+        environment: cfg.environment,
+        created_by: userId,
+      }).select().single();
+      if (cErr) throw cErr;
+
+      // Incrementar puntero del rango de contingencia
+      await admin.from("einvoice_configs").update({
+        contingency_range: { ...contingencyRange, current: nextNumber + 1 },
+      }).eq("id", cfg.id);
+
+      await admin.from("einvoice_events").insert({
+        organization_id: effectiveOrgId,
+        invoice_id: cInv.id,
+        event_type: "contingency_emitted",
+        status: "contingency",
+        message: `Emitida en contingencia ${fullNumber} (DIAN ${dianHealth}). Pendiente transmisión.`,
+        payload,
+        performed_by: userId,
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        contingency: true,
+        invoice_id: cInv.id,
+        full_number: fullNumber,
+        track_id: trackId,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // 4) Registro pending — modo normal o retransmisión
+    let inv: any;
+    if (transmit_invoice_id) {
+      const { data: upd, error: uErr } = await admin.from("electronic_invoices")
+        .update({ status: "sending", request_payload: payload })
+        .eq("id", transmit_invoice_id)
+        .select()
+        .single();
+      if (uErr) throw uErr;
+      inv = upd;
+    } else {
+      const { data: ins, error: invErr } = await admin.from("electronic_invoices").insert({
+        organization_id: effectiveOrgId,
+        location_id: order.location_id ?? null,
+        document_type,
+        pos_order_id: effectivePosOrderId ?? null,
+        order_id: effectiveOrderId ?? null,
+        prefix: usedPrefix,
+        number: nextNumber,
+        full_number: fullNumber,
+        customer_identification: payload.Fe.Receptor.Identificacion,
+        customer_name: payload.Fe.Receptor.RazonSocial,
+        customer_email: (payload.Fe.Receptor as any).Email ?? null,
+        subtotal: payload.Fe.Totales.BaseAfecta,
+        tax_total: payload.Fe.Totales.TotalIva,
+        total: payload.Fe.Totales.TotalaPagar,
+        track_id: trackId,
+        status: "sending",
       request_payload: payload,
       environment: cfg.environment,
       created_by: userId,
