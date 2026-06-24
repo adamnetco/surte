@@ -76,6 +76,7 @@ export default function EinvoiceBulkRetry() {
   const [dryRun, setDryRun] = useState(true);
   const [batchSize, setBatchSize] = useState(DEFAULT_BATCH_SIZE);
   const [maxRetries, setMaxRetries] = useState(DEFAULT_MAX_RETRIES);
+  const [wallclockMs, setWallclockMs] = useState(DEFAULT_WALLCLOCK_MS);
   const [running, setRunning] = useState(false);
   const [lastResponse, setLastResponse] = useState<BulkResponse | null>(null);
 
