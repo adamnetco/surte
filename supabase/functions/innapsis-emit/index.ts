@@ -263,18 +263,27 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const bearerToken = authHeader.replace("Bearer ", "");
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const isServiceCall = bearerToken === SERVICE_KEY;
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: userData, error: authErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (authErr || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let userId: string;
+    if (isServiceCall) {
+      // Llamada interna (cron einvoice-contingency-flush). Saltamos getUser; usamos system user.
+      userId = "00000000-0000-0000-0000-000000000000";
+    } else {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: userData, error: authErr } = await supabase.auth.getUser(bearerToken);
+      if (authErr || !userData?.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      userId = userData.user.id;
     }
-    const userId = userData.user.id;
+
 
     const reqBody = await req.json();
     const {
