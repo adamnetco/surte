@@ -54,3 +54,4 @@
 - [Ola 3 XML Builder](mem://features/ola-3-innapsis-xml-builder) — Slice 2: buildXml.ts (Fe→string v1.9, orden secciones spec, escapado XML, arrays repetidos) + toggle cfg.extra.payload_format opt-in en innapsis-emit, endpoint single-emision para XML. Tests 2/2
 - [Ola 3 NC/ND](mem://features/ola-3-innapsis-notes) — Slice 3: cols reference_* + note_concept_* en electronic_invoices, EmitNoteDialog con motivos DIAN, Fe.Referencia en payload Innapsis v1.9, botón NC/ND en /admin/facturacion solo sobre invoice sent/accepted
 - [Ola 3 XML Toggle](mem://features/ola-3-innapsis-xml-toggle) — Slice 4: botones JSON|XML en config + preview Dialog del request_payload con feToXmlPreview.ts mirror cliente del buildXml edge
+- [Ola 4 Daily Driver Bulk](mem://features/ola-4-daily-driver-bulk) — Slice 1: DiarioBulkSheet con multi-select para reintentar facturas DIAN (loop einvoice-resend + retry_all_today) y confirmar pedidos pendientes en lote
