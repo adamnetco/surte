@@ -37,6 +37,7 @@ import { useSyncService } from "@/modules/integrations/sync/useSyncService";
 import { enqueue } from "@/modules/offline/lib/outbox";
 import { useEinvoiceAutoEmit } from "@/modules/pos/hooks/useEinvoiceAutoEmit";
 import POSTopBar from "./POSTopBar";
+import POSRightRail from "./POSRightRail";
 import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
 import POSCommandPalette from "./POSCommandPalette";
@@ -449,9 +450,23 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || clearConfirmOpen || !!actionMode || !!saleComplete;
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden md:pr-14">
       {/* Scanner global invisible */}
       <POSScannerListener onScan={handleScan} disabled={dialogOpen} />
+
+      {/* Mini-rail derecho (tablet+) — atajos de alta frecuencia */}
+      <POSRightRail
+        onCloseShift={() => setCloseOpen(true)}
+        onOpenShortcuts={() => setHelpOpen(true)}
+        onPark={() => { if (ticket.length > 0) setActionMode("park"); }}
+        onNotasCredito={() => navigate("/admin/devoluciones")}
+        onVentasDelDia={() => navigate("/pos/panel")}
+        onCajon={() => toast.info("Apertura de cajón: configura la impresora de tirilla para enviar el pulso ESC/POS.")}
+        onRefresh={() => sync.flushNow()}
+        parkDisabled={ticket.length === 0}
+        syncing={sync.syncing}
+        pendingCount={sync.pending}
+      />
 
       {/* TopBar 48px + ModeBar */}
       <POSTopBar

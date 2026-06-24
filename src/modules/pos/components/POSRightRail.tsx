@@ -68,7 +68,7 @@ export default function POSRightRail({
   return (
     <aside
       aria-label="Atajos rápidos del POS"
-      className="hidden md:flex w-14 shrink-0 flex-col items-center gap-1 border-l bg-card py-2"
+      className="hidden md:flex fixed right-0 top-12 bottom-0 z-20 w-14 flex-col items-center gap-1 border-l bg-card py-2 shadow-sm"
     >
       {items.map((it) => {
         const Icon = it.icon;
