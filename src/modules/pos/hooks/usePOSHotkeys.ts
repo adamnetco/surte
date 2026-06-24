@@ -34,6 +34,8 @@ export function usePOSHotkeys(handlers: HotkeyHandlers) {
 
       switch (key) {
         case "F1":
+        case "?":
+          // "?" requiere Shift en US/ES layout, así que solo dispara fuera de inputs.
           e.preventDefault();
           handlers.onHelp?.();
           break;
@@ -43,6 +45,8 @@ export function usePOSHotkeys(handlers: HotkeyHandlers) {
           handlers.onPay?.();
           break;
         case "F3":
+        case "/":
+          // "/" es un alias rápido tipo Linear/GitHub para enfocar el buscador.
           e.preventDefault();
           handlers.onSearch?.();
           break;
