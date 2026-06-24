@@ -68,7 +68,11 @@ vi.mock("@/modules/storefront/components/TopBar", () => ({ default: () => <div d
 vi.mock("@/modules/storefront/components/BottomNav", () => ({ default: () => <div data-testid="bottomnav" /> }));
 vi.mock("@/modules/marketing/seo/SeoBreadcrumbs", () => ({ default: () => null }));
 vi.mock("@/modules/storefront/hooks/useStore", () => ({ useAppSettings: () => ({ data: { whatsapp_number: "300" } }) }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
+vi.mock("sonner", () => {
+  const fn: any = vi.fn();
+  fn.success = vi.fn(); fn.error = vi.fn(); fn.info = vi.fn();
+  return { toast: fn };
+});
 
 import Pedido from "../Pedido";
 
