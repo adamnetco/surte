@@ -272,7 +272,10 @@ export default function CasasDeCambioPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {pairs.length === 0 && <p className="text-sm text-muted-foreground">Crea pares primero.</p>}
-              {pairs.map(p => {
+              {pairs.length > 0 && filteredPairs.length === 0 && (
+                <p className="text-sm text-muted-foreground">Sin resultados para “{search}”.</p>
+              )}
+              {filteredPairs.map(p => {
                 const base = currMap[p.base_currency_id];
                 const quote = currMap[p.quote_currency_id];
                 const r = latestRates[p.id];
