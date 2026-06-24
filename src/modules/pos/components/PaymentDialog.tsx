@@ -23,7 +23,9 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   total: number;
-  onConfirm: (payments: Pay[]) => void | Promise<void>;
+  onConfirm: (payments: Pay[], meta: { docType: string | null }) => void | Promise<void>;
+  organizationId?: string;
+  hasCustomerId?: boolean;
 }
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
@@ -43,7 +45,8 @@ function suggestedQuickAmounts(pending: number): number[] {
   return Array.from(new Set([pending, ...next])).slice(0, 5);
 }
 
-export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: Props) {
+export default function PaymentDialog({ open, onOpenChange, total, onConfirm, organizationId, hasCustomerId = false }: Props) {
+  const [docType, setDocType] = useState<string | null>(null);
   const [payments, setPayments] = useState<Pay[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const firstAmountRef = useRef<HTMLInputElement>(null);
