@@ -401,8 +401,25 @@ const Diario = () => {
   const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
     ?? user?.email?.split("@")[0];
 
+  // Plantilla de checklist según rol, con override manual persistido
+  const suggested = useMemo(() => templateForRole(currentOrg?.role), [currentOrg?.role]);
+  const [templateKey, setTemplateKey] = useState<string>(() => {
+    if (typeof window === "undefined") return suggested.key;
+    return localStorage.getItem(TEMPLATE_LS_KEY) ?? suggested.key;
+  });
+  // Si cambia el rol sugerido y el usuario no ha override-eado, sigue al sugerido
+  useEffect(() => {
+    if (!localStorage.getItem(TEMPLATE_LS_KEY)) setTemplateKey(suggested.key);
+  }, [suggested.key]);
+  const activeTemplate = getTemplateByKey(templateKey) ?? suggested;
+  const onPickTemplate = (k: string) => {
+    setTemplateKey(k);
+    localStorage.setItem(TEMPLATE_LS_KEY, k);
+  };
+
   const { items: checkItems, toggle, setNotes, doneCount, loading: checklistLoading } =
-    useDailyChecklist(CHECKLIST_DEFS);
+    useDailyChecklist(activeTemplate.items);
+
 
   const hasData = !!data;
   const [sevFilter, setSevFilter] = useState<Severity | "all">("all");
