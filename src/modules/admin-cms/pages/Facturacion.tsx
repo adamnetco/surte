@@ -70,7 +70,7 @@ export default function Facturacion() {
 
     const { data: inv } = await supabase
       .from("electronic_invoices")
-      .select("id, full_number, document_type, customer_name, total, status, environment, created_at, track_id, last_error")
+      .select("id, full_number, document_type, customer_name, total, status, environment, created_at, track_id, last_error, pos_order_id, order_id, cufe, reference_full_number")
       .eq("organization_id", currentOrg.id)
       .order("created_at", { ascending: false })
       .limit(50);
