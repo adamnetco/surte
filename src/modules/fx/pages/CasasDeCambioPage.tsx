@@ -30,13 +30,52 @@ export default function CasasDeCambioPage() {
   const upsertCurrency = useUpsertCurrency();
   const createPair = useCreatePair();
   const setRate = useSetRate();
+  const qc = useQueryClient();
 
+  const [search, setSearch] = useState("");
   const [newCurr, setNewCurr] = useState({ code: "", name: "", symbol: "", decimals: 2 });
   const [newPair, setNewPair] = useState({ base: "", quote: "" });
   const [rateInputs, setRateInputs] = useState<Record<string, { buy: string; sell: string }>>({});
 
   const currMap = useMemo(() => Object.fromEntries(currencies.map(c => [c.id, c])), [currencies]);
   const activeCurrencies = currencies.filter(c => c.is_active);
+
+  const importTrm = useMutation({
+    mutationFn: async (pair_id: string) => {
+      const { data, error } = await supabase.functions.invoke("fx-import-trm", {
+        body: { pair_id, publish: true },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fx_latest_rates"] });
+      toast.success("Tasa actualizada desde TRM (Banrep)");
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo importar TRM"),
+  });
+
+  const filteredCurrencies = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return currencies;
+    return currencies.filter(
+      (c) =>
+        c.code.toLowerCase().includes(q) ||
+        c.name.toLowerCase().includes(q) ||
+        (c.symbol ?? "").toLowerCase().includes(q),
+    );
+  }, [currencies, search]);
+
+  const filteredPairs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return pairs;
+    return pairs.filter((p) => {
+      const b = currMap[p.base_currency_id];
+      const qc = currMap[p.quote_currency_id];
+      const label = `${b?.code ?? ""}/${qc?.code ?? ""} ${b?.name ?? ""} ${qc?.name ?? ""}`.toLowerCase();
+      return label.includes(q);
+    });
+  }, [pairs, currMap, search]);
 
   const seedDefaults = async () => {
     for (const c of SEED_CURRENCIES) {
