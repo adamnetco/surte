@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Save, Settings2, Mail, MessageCircle, HelpCircle } from "lucide-react";
+import { Save, Settings2, Mail, MessageCircle, HelpCircle, ShieldAlert } from "lucide-react";
 import { useOrgDocumentTypes } from "@/modules/pos/hooks/useOrgDocumentTypes";
 
 interface PosBehavior {
@@ -32,6 +33,7 @@ interface Props { organizationId: string; }
  */
 export default function POSBehaviorSettings({ organizationId }: Props) {
   const [behavior, setBehavior] = useState<PosBehavior>(DEFAULTS);
+  const [hardBlock, setHardBlock] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [configId, setConfigId] = useState<string | null>(null);
@@ -42,13 +44,14 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
       setLoading(true);
       const { data } = await supabase
         .from("einvoice_configs")
-        .select("id, pos_behavior")
+        .select("id, pos_behavior, hard_block_when_dian_down")
         .eq("organization_id", organizationId)
         .eq("environment", "prod")
         .maybeSingle();
       if (data) {
         setConfigId(data.id);
         setBehavior({ ...DEFAULTS, ...((data.pos_behavior as any) ?? {}) });
+        setHardBlock(!!(data as any).hard_block_when_dian_down);
       }
       setLoading(false);
     })();
@@ -60,6 +63,7 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
       organization_id: organizationId,
       environment: "prod",
       pos_behavior: behavior as any,
+      hard_block_when_dian_down: hardBlock,
     };
     if (configId) payload.id = configId;
     const { error } = await supabase
@@ -144,6 +148,25 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
         checked={behavior.auto_send_whatsapp}
         onChange={(v) => setBehavior({ ...behavior, auto_send_whatsapp: v })}
       />
+
+      <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-destructive/30 bg-destructive/5">
+        <div className="flex items-start gap-2 flex-1 min-w-0">
+          <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-medium">Bloquear cobro si DIAN está offline</p>
+              <Badge variant="secondary" className="text-[10px]">Recomendado para HORECA alto volumen</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Cuando la DIAN/Innapsis está caída y no hay rango de contingencia vigente, el botón <b>Cobrar</b> se deshabilita.
+              Evita ventas que después no se podrán normalizar dentro de las 48h. Superadmin puede forzar override por sesión.
+            </p>
+          </div>
+        </div>
+        <Switch checked={hardBlock} onCheckedChange={setHardBlock} />
+      </div>
+
+
 
       <div className="flex justify-end pt-2 border-t">
         <Button onClick={save} disabled={saving}>

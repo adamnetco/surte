@@ -2105,6 +2105,7 @@ export type Database = {
           dv: string | null
           environment: string
           extra: Json
+          hard_block_when_dian_down: boolean
           id: string
           is_active: boolean
           nit: string
@@ -2132,6 +2133,7 @@ export type Database = {
           dv?: string | null
           environment?: string
           extra?: Json
+          hard_block_when_dian_down?: boolean
           id?: string
           is_active?: boolean
           nit: string
@@ -2159,6 +2161,7 @@ export type Database = {
           dv?: string | null
           environment?: string
           extra?: Json
+          hard_block_when_dian_down?: boolean
           id?: string
           is_active?: boolean
           nit?: string

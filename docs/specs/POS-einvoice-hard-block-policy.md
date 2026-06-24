@@ -1,6 +1,6 @@
 # POS — Hard-Block de Cobro cuando DIAN está offline sin contingencia
 
-**Estado:** IN_SPEC
+**Estado:** IN_REVIEW
 **Módulo:** `pos` + `admin-cms` (config) + `einvoice_configs`
 **Wave:** Follow-up de [POS-innapsis-emision-pos](./POS-innapsis-emision-pos.md) (Observación #1 del review)
 **Tablas:** `einvoice_configs` (nueva columna `hard_block_when_dian_down`), `einvoice_contingency_ranges`
@@ -15,11 +15,11 @@ La política debe ser **configurable por organización**.
 
 ## Outcomes
 
-- [ ] **AC1:** Nueva columna `einvoice_configs.hard_block_when_dian_down BOOLEAN DEFAULT false`.
-- [ ] **AC2:** Toggle en `POSBehaviorSettings` (admin/facturacion/configuracion): "Bloquear cobro si DIAN está offline y no hay rango de contingencia activo" con explicación clara del trade-off.
-- [ ] **AC3:** En `PaymentDialog` / `SaleCompleteDialog`, si `hard_block_when_dian_down = true` Y `dian_health = down` Y `no hay contingency_range vigente` → botón "Cobrar" deshabilitado con tooltip "DIAN offline. Configure rango de contingencia o espere a restablecimiento".
-- [ ] **AC4:** El bloqueo NO aplica a ventas marcadas como "Sin documento DIAN" (recibo interno explícito).
-- [ ] **AC5:** Superadmin puede forzar override por sesión con `Ctrl+Shift+B` (auditado en `sync_logs` con `event_type='hard_block_override'`).
+- [x] **AC1:** Nueva columna `einvoice_configs.hard_block_when_dian_down BOOLEAN DEFAULT false` (migración aplicada).
+- [x] **AC2:** Toggle en `POSBehaviorSettings` (admin/facturacion/configuracion): "Bloquear cobro si DIAN está offline y no hay rango de contingencia activo" con explicación clara del trade-off.
+- [x] **AC3:** En `PaymentDialog`, si `hard_block_when_dian_down = true` Y `dian_health = down` Y `no hay contingency_range vigente` → botón "Cobrar" deshabilitado con tooltip "DIAN offline. Configure rango de contingencia o espere a restablecimiento".
+- [x] **AC4:** El bloqueo NO aplica a ventas marcadas como "Sin documento DIAN" (recibo interno explícito) — `BYPASS_DOC_TYPES` en `usePosCobroGate`.
+- [x] **AC5:** Superadmin puede forzar override por sesión con `Ctrl+Shift+B` (auditado en `sync_logs` con `service_name='pos_hard_block_override'`).
 
 ## Notas de Implementación
 
@@ -87,3 +87,17 @@ Combina `useDianHealth`, `useEinvoiceResolutionStatus`, `useContingencyRangeStat
 
 </content>
 </invoke>
+## Implementación (Build)
+
+**Migración:** `einvoice_configs.hard_block_when_dian_down BOOLEAN NOT NULL DEFAULT false` (idempotente).
+
+**Archivos creados/modificados:**
+- `src/modules/pos/hooks/usePosCobroGate.ts` (NEW) — combina `useDianHealth` + flag + override sessionStorage + auditoría sync_logs.
+- `src/modules/admin-cms/components/POSBehaviorSettings.tsx` — añade Switch destructivo con badge "Recomendado HORECA alto volumen".
+- `src/modules/pos/components/PaymentDialog.tsx` — wiring del gate, CTA configurar contingencia, banner override, atajo `Ctrl+Shift+B` para superadmin.
+
+**Decisiones de diseño:**
+- Se reutiliza `useDianHealth().hasContingencyRange` (lee JSON `einvoice_configs.contingency_range`) en lugar de crear hook nuevo contra `einvoice_contingency_ranges` (esa tabla no existe en este schema; el rango está embebido en `einvoice_configs`).
+- Bypass por doc type vía set `["recibo_interno", "sin_dian", "ticket_pos"]` — ajustable.
+- Override TTL 30 min en `sessionStorage['pos:hard_block_override:<orgId>']`. Auditoría en `sync_logs` con `service_name='pos_hard_block_override'` y status `warning`.
+- `SaleCompleteDialog` no recibe el gate (es post-emisión, no decide cobro). El bloqueo ocurre en `PaymentDialog` antes de generar la venta.
