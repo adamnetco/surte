@@ -48,4 +48,5 @@
 - [Ola 2 FX Commission Invoice](mem://features/ola-2-fx-commission-invoice) — Edge fx-emit-commission-invoice crea pos_order sintético sale_mode=fx_commission y delega en innapsis-emit (contingencia+email Ola 1); botón "Facturar comisión" en POS FX con reintento manual
 - [Ola 2 FX Margin Report](mem://features/ola-2-fx-margin-report) — /casas-de-cambio/reportes: KPI margen total + 3 MarginCard (par/cajero/día) con desglose FE/Pend/Err, top 10, nombres de cajero vía profiles.full_name
 - [Ola 2 FX UIAF Mensual](mem://features/ola-2-fx-uiaf-monthly) — Slice 4: SQL `fx_customer_monthly_accumulated` + hook `useFxCustomerMonthly`; POS FX fuerza captura cliente cuando acumulado del mes ≥ umbral aunque la operación individual sea menor
+- [Ola 2 Cierre](mem://features/ola-2-closure) — Resumen 5 slices FX transaccional (spread, comisión FE, reporte margen, UIAF mensual POS + Reportes). Pendientes: cross-rate, XML UIAF, retries automáticos
 - [WhatsApp Retry Detallado](mem://features/whatsapp-retry-detalle) — Reintentos WA con actor/reason/attempt en payload + edge function whatsapp-status-fixture (token) + vitest E2E timeline + agrupación por día + skeleton paginación
