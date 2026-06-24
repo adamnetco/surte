@@ -830,7 +830,7 @@ const Diario = () => {
         orgName={currentOrg?.name ?? "Mi negocio"}
         userName={firstName}
         checklistDone={doneCount}
-        checklistTotal={CHECKLIST_DEFS.length}
+        checklistTotal={activeTemplate.items.length}
       />
     </div>
 
