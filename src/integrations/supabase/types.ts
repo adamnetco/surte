@@ -8861,6 +8861,44 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_message_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          order_id: string | null
+          payload: Json | null
+          status: string
+          whatsapp_ref: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          status: string
+          whatsapp_ref?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          status?: string
+          whatsapp_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       products_public: {
