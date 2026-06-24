@@ -272,3 +272,57 @@ export default function FxReportsPage() {
     </div>
   );
 }
+
+function MarginCard({
+  title,
+  icon,
+  buckets,
+  labelFor,
+  fmtMargin,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  buckets: MarginBucket[];
+  labelFor: (b: MarginBucket) => string;
+  fmtMargin: (b: MarginBucket) => string;
+}) {
+  const visible = buckets.filter((b) => b.count > 0).slice(0, 10);
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          {icon} {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {visible.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Sin datos.</p>
+        ) : (
+          <div className="space-y-1">
+            {visible.map((b) => (
+              <div key={b.key} className="flex items-center justify-between border rounded-md px-2 py-1.5 text-xs">
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{labelFor(b)}</div>
+                  <div className="text-[10px] text-muted-foreground flex gap-1 flex-wrap">
+                    <span>{b.count} ops</span>
+                    {b.invoiced > 0 && <Badge variant="secondary" className="h-4 px-1 text-[9px]">FE {b.invoiced}</Badge>}
+                    {b.pending > 0 && <Badge variant="outline" className="h-4 px-1 text-[9px]">Pend {b.pending}</Badge>}
+                    {b.failed > 0 && <Badge variant="destructive" className="h-4 px-1 text-[9px]">Err {b.failed}</Badge>}
+                  </div>
+                </div>
+                <div className="tabular-nums text-emerald-600 font-semibold whitespace-nowrap">
+                  {fmtMargin(b)}
+                </div>
+              </div>
+            ))}
+            {buckets.length > visible.length && (
+              <p className="text-[10px] text-muted-foreground pt-1">
+                Mostrando 10 de {buckets.length}.
+              </p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
