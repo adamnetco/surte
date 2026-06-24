@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   Search, FileText, FileSignature, Pause, Keyboard, Printer,
-  CloudUpload, CloudOff, Loader2, ScanLine, CreditCard, Percent, StickyNote, ArrowLeftRight, Utensils,
+  ScanLine, CreditCard, Percent, StickyNote, ArrowLeftRight, Utensils,
   Bike, ShoppingBag,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
@@ -478,6 +478,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onChangeMode={setSaleMode}
         onCloseShift={() => setCloseOpen(true)}
         onOpenShortcuts={() => setHelpOpen(true)}
+        sync={{
+          pending: sync.pending,
+          syncing: sync.syncing,
+          online: sync.online,
+          lastError: sync.lastError,
+          onFlush: () => sync.flushNow(),
+        }}
         rightExtras={
           <>
             <POSStatusBar
@@ -486,30 +493,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               className="hidden md:flex"
             />
             <OfflineIndicator />
-            {/* Slot de ancho fijo (64px) para evitar layout shift del cluster derecho
-                cuando el botón se monta/desmonta o cambia entre "Sync…" y un conteo. */}
-            <div className="w-[64px] shrink-0 flex justify-center">
-              {(sync.pending > 0 || sync.syncing) ? (
-                <button
-                  onClick={() => sync.flushNow()}
-                  title={sync.lastError ?? (sync.online ? "Sincronizar pendientes" : "Sin conexión · en cola")}
-                  className={`inline-flex items-center justify-center gap-1 rounded-md border px-2 py-1 text-[11px] tabular-nums w-full transition ${
-                    sync.online
-                      ? "bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {sync.syncing ? <Loader2 className="h-3 w-3 animate-spin" />
-                    : sync.online ? <CloudUpload className="h-3 w-3" /> : <CloudOff className="h-3 w-3" />}
-                  <span className="min-w-[2ch] text-center">{sync.syncing ? "Sync" : sync.pending}</span>
-                </button>
-              ) : null}
-            </div>
             <DianHealthIndicator organizationId={organizationId} className="hidden md:inline-flex" />
             <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex" />
           </>
         }
       />
+
 
       {/* AC10/AC11 — Banner DIAN offline / contingencia */}
       <ContingencyBanner
