@@ -45,6 +45,7 @@ import { POS_MODES } from "@/modules/pos/lib/posModes";
 import { supabase } from "@/integrations/supabase/client";
 import type { PosMode } from "@/modules/pos/lib/posModes";
 import type { POSCustomer } from "@/modules/pos/lib/posCustomer";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 
 
 interface Product {
