@@ -9,6 +9,8 @@ import { useFxCurrencies } from "../hooks/useFx";
 import { useFxSummary, monthRange, type MarginBucket } from "../hooks/useFxReports";
 import { useUiafThreshold } from "../hooks/useFxTransactions";
 import { buildUiafCsv, downloadCsv } from "../lib/uiafExport";
+import { buildUiafXml, downloadXml } from "../lib/uiafXml";
+
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -103,11 +105,24 @@ export default function FxReportsPage() {
     downloadCsv(`UIAF-${slug}-${year}-${String(month).padStart(2, "0")}.csv`, csv);
   };
 
+  const exportUiafXml = () => {
+    const xml = buildUiafXml(txs as any[], currMap, {
+      organizationName: currentOrg?.name ?? "Organización",
+      organizationLegalName: (currentOrg as any)?.legal_name ?? null,
+      organizationTaxId: (currentOrg as any)?.tax_id ?? null,
+      year,
+      month,
+    });
+    const slug = (currentOrg?.slug ?? "org").replace(/[^a-z0-9-]/gi, "");
+    downloadXml(`UIAF-${slug}-${year}-${String(month).padStart(2, "0")}.xml`, xml);
+  };
+
   const exportAll = () => {
     const csv = buildUiafCsv(txs as any[], currMap);
     const slug = (currentOrg?.slug ?? "org").replace(/[^a-z0-9-]/gi, "");
     downloadCsv(`FX-operaciones-${slug}-${year}-${String(month).padStart(2, "0")}.csv`, csv);
   };
+
 
   const years = Array.from({ length: 5 }, (_, i) => now.getUTCFullYear() - i);
 
@@ -319,15 +334,20 @@ export default function FxReportsPage() {
             <div>
               <div className="font-medium text-sm">Reporte UIAF mensual</div>
               <p className="text-xs text-muted-foreground">
-                Archivo plano con todas las operaciones del mes seleccionado, incluyendo
-                datos de cliente, montos, tasas y marcas de umbral / ROS. Sirve como
-                insumo para el reporte oficial UIAF de Casas de Cambio.
+                Operaciones del mes con datos de cliente, montos, tasas y marcas de umbral / ROS.
+                Descarga en CSV plano o en XML estructurado (Res. UIAF 285) como insumo del reporte oficial.
               </p>
             </div>
-            <Button onClick={exportUiaf} disabled={isLoading || txs.length === 0} className="shrink-0">
-              <Download className="h-4 w-4 mr-1" /> UIAF CSV
-            </Button>
+            <div className="flex flex-col gap-1.5 shrink-0">
+              <Button onClick={exportUiafXml} disabled={isLoading || txs.length === 0} size="sm">
+                <Download className="h-4 w-4 mr-1" /> UIAF XML
+              </Button>
+              <Button variant="outline" onClick={exportUiaf} disabled={isLoading || txs.length === 0} size="sm">
+                <Download className="h-4 w-4 mr-1" /> UIAF CSV
+              </Button>
+            </div>
           </div>
+
           <div className="flex items-start justify-between gap-3 border rounded-lg p-3">
             <div>
               <div className="font-medium text-sm">Histórico completo del mes</div>
