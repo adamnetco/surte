@@ -21,7 +21,7 @@ SistecPOS tiene features completas pero el flujo diario del operador todavía ti
 
 ### POS día a día
 - [ ] **AC4:** Atajos de teclado: F2 cobrar, F3 cliente, F4 descuento, ESC cancelar, /buscar producto
-- [ ] **AC5:** Búsqueda global Cmd+K en admin
+- [x] **AC5:** Búsqueda global Cmd+K en admin (GlobalCommandPalette con acciones por rol, Recientes + búsqueda dinámica de productos scoped a org)
 - [ ] **AC6:** Acciones recientes en sidebar del POS (últimos 5 productos vendidos)
 - [ ] **AC7:** Pantalla de bloqueo rápido (PIN del cajero) sin cerrar sesión
 
