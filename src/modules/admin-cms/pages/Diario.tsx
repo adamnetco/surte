@@ -377,6 +377,7 @@ const Diario = () => {
     useDailyChecklist(CHECKLIST_DEFS);
 
   const hasData = !!data;
+  const [sevFilter, setSevFilter] = useState<Severity | "all">("all");
 
   // Acciones ordenadas por severidad (danger primero, luego warn) con datos reales
   const actions = useMemo<ActionEntry[]>(() => {
