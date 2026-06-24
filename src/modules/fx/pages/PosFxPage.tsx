@@ -248,6 +248,22 @@ export default function PosFxPage() {
                 </div>
               </div>
 
+              {commission.amount > 0 && (
+                <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30 p-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                      Margen estimado de la operación
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Calculado contra la tasa media · base imponible para la factura de comisión.
+                    </div>
+                  </div>
+                  <div className="font-mono text-lg text-emerald-700 dark:text-emerald-300">
+                    {fmt(commission.amount, 2)} {quoteCcy?.code}
+                  </div>
+                </div>
+              )}
+
               {isAboveThreshold && (
                 <Alert>
                   <ShieldAlert className="h-4 w-4" />
