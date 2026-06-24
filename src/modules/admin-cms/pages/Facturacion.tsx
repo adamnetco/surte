@@ -54,6 +54,7 @@ export default function Facturacion() {
   });
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
+  const [noteInvoice, setNoteInvoice] = useState<Invoice | null>(null);
 
   const moduleOn = hasModule("einvoice_innapsis");
 
