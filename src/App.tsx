@@ -51,6 +51,8 @@ const Ofertas = lazy(() => import("./modules/storefront").then((m) => ({ default
 const TenantAwareLogin = lazy(() => import("./modules/auth/components/TenantAwareLogin"));
 const AdminDashboard = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.AdminDashboardPage })));
 const Diario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.DiarioPage })));
+const Innapsis = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisPage })));
+
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
 const Favoritos = lazy(() => import("./pages/Favoritos"));
@@ -286,6 +288,8 @@ const App = () => (
                         real lo controlan RoleGuard / módulos, no el host. */}
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
                     <Route path="/admin/diario" element={<RoleGuard section="admin"><Diario /></RoleGuard>} />
+                    <Route path="/admin/innapsis" element={<RoleGuard section="admin"><Innapsis /></RoleGuard>} />
+
                     <Route path="/pos" element={<PosHub />} />
                     <Route path="/pos/vender" element={<POS />} />
                     <Route path="/pos/fx" element={<PosFx />} />
