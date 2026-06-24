@@ -72,20 +72,24 @@ const InnapsisDetail = () => {
     },
   });
 
+  const [eventsLimit, setEventsLimit] = useState(25);
+
   const eventsQ = useQuery({
-    queryKey: ["admin", "innapsis", "events", id],
+    queryKey: ["admin", "innapsis", "events", id, eventsLimit],
     enabled: !!id && !!orgId,
     refetchInterval: 15_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from("einvoice_events")
-        .select("id,event_type,status,message,payload,response,created_at,performed_by")
+        .select("id,event_type,status,message,payload,response,created_at,performed_by", {
+          count: "exact",
+        })
         .eq("invoice_id", id!)
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(eventsLimit);
       if (error) throw error;
-      return data ?? [];
+      return { rows: data ?? [], total: count ?? 0 };
     },
   });
 
