@@ -30,12 +30,23 @@ interface Org {
   is_active: boolean;
 }
 
+interface BatchResult {
+  index: number;
+  candidates: number;
+  requeued: number;
+  status: "success" | "error";
+  error?: string;
+}
+
 interface PerOrgResult {
   organization_id: string;
   candidates: number;
   requeued: number;
   status: "success" | "error" | "skipped";
   error?: string;
+  // POS-optimizar-bulk-retry-timeouts
+  batches?: BatchResult[];
+  partial?: boolean;
 }
 
 interface BulkResponse {
@@ -43,6 +54,7 @@ interface BulkResponse {
   dry_run: boolean;
   total_orgs: number;
   total_requeued: number;
+  partial?: boolean;
   results: PerOrgResult[];
 }
 
