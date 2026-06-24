@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { useDailyChecklist } from "@/modules/admin-cms/hooks/useDailyChecklist";
 import SyncStatusPanel from "@/modules/admin-cms/components/SyncStatusPanel";
 import DiarioBulkSheet, { type BulkKind } from "@/modules/admin-cms/components/DiarioBulkSheet";
+import DiarioShareDialog from "@/modules/admin-cms/components/DiarioShareDialog";
 
 /**
  * Daily Driver — pantalla mobile-first del flujo diario del admin.
