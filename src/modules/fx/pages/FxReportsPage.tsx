@@ -105,11 +105,24 @@ export default function FxReportsPage() {
     downloadCsv(`UIAF-${slug}-${year}-${String(month).padStart(2, "0")}.csv`, csv);
   };
 
+  const exportUiafXml = () => {
+    const xml = buildUiafXml(txs as any[], currMap, {
+      organizationName: currentOrg?.name ?? "Organización",
+      organizationLegalName: (currentOrg as any)?.legal_name ?? null,
+      organizationTaxId: (currentOrg as any)?.tax_id ?? null,
+      year,
+      month,
+    });
+    const slug = (currentOrg?.slug ?? "org").replace(/[^a-z0-9-]/gi, "");
+    downloadXml(`UIAF-${slug}-${year}-${String(month).padStart(2, "0")}.xml`, xml);
+  };
+
   const exportAll = () => {
     const csv = buildUiafCsv(txs as any[], currMap);
     const slug = (currentOrg?.slug ?? "org").replace(/[^a-z0-9-]/gi, "");
     downloadCsv(`FX-operaciones-${slug}-${year}-${String(month).padStart(2, "0")}.csv`, csv);
   };
+
 
   const years = Array.from({ length: 5 }, (_, i) => now.getUTCFullYear() - i);
 
