@@ -420,6 +420,7 @@ const Diario = () => {
         severity: "danger",
         onClick: () => navigate("/admin/innapsis"),
         weight: 4 * data.einvoiceErrors,
+        bulkKind: "einvoice",
       });
     }
     if (data.syncErrors > 0) {
@@ -458,6 +459,7 @@ const Diario = () => {
         severity: "warn",
         onClick: () => navigate("/admin?tab=orders"),
         weight: 2 * data.pendingCount,
+        bulkKind: "pending",
       });
     }
 
