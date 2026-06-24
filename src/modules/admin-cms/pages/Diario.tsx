@@ -18,6 +18,7 @@ import {
   StickyNote,
   Check,
   Zap,
+  Share2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
