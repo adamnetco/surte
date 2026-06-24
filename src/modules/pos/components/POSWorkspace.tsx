@@ -22,7 +22,9 @@ import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import SaleCompleteDialog from "./SaleCompleteDialog";
 import DianHealthIndicator from "./DianHealthIndicator";
 import ContingencyBanner from "./ContingencyBanner";
+import ResolutionStatusBanner from "./ResolutionStatusBanner";
 import { useDianHealth } from "@/modules/pos/hooks/useDianHealth";
+import { useEinvoiceResolutionStatus } from "@/modules/pos/hooks/useEinvoiceResolutionStatus";
 import OfflineIndicator from "@/modules/offline/components/OfflineIndicator";
 import { usePrintQueue, TicketPreviewDialog, type TicketData } from "@/modules/printing";
 import {
@@ -102,6 +104,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const { config: posModes } = usePOSModes(organizationId);
   const { shouldEmit: shouldEmitEinvoice } = useEinvoiceAutoEmit(organizationId);
   const dianSnap = useDianHealth(organizationId);
+  const resolutionSnap = useEinvoiceResolutionStatus(organizationId);
   const [saleMode, setSaleMode] = useState<PosMode>(posModes.default);
 
   // === Impresión térmica ===
@@ -491,6 +494,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       <ContingencyBanner
         health={dianSnap.health}
         hasContingencyRange={dianSnap.hasContingencyRange}
+      />
+
+      {/* AC14 — Banner pre-cobro si falta/se agota la resolución DIAN */}
+      <ResolutionStatusBanner
+        snapshot={resolutionSnap}
+        einvoiceEnabled={resolutionSnap.status !== "unknown"}
       />
 
       {/* Tabs de categorías (60%) + Cliente (40%) */}

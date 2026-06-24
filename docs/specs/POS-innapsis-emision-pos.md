@@ -1,6 +1,6 @@
 # POS — Emisión Innapsis desde el flujo POS (Wave 1)
 
-**Estado:** IN_BUILD — Slices 1 + 2A+2B + Acciones rápidas (AC7-AC9) + Contingencia (AC10-AC12) SHIPPED · pendiente AC13-AC14 (config UX), AC15 (widget cajero)
+**Estado:** IN_BUILD — Slices 1 + 2A+2B + Acciones rápidas (AC7-AC9) + Contingencia (AC10-AC12) + Config UX (AC13-AC14) SHIPPED · pendiente AC15 (widget cajero)
 **Módulo:** `pos` (consumidor) + `admin-cms` (config) + edge `innapsis-emit` (ya existe)
 **Wave:** 1 — Innapsis Electronic Billing (NORTE/camino-a-produccion)
 **Spec padre:** [POS-innapsis-integration.md](./POS-innapsis-integration.md) (Slices 1-4 SHIPPED)
@@ -41,8 +41,8 @@ Este spec cierra la última milla **POS → DIAN** para que un nuevo tenant pued
 - [x] **AC12:** Cron `einvoice-contingency-flush` cada 2 min; cuando `dian_health_status != 'offline'`, retransmite las facturas pendientes (`is_contingency=true AND transmitted_at IS NULL`) en orden FIFO via `innapsis-emit` con `transmit_invoice_id` (service-role short-circuit, throttle 300ms/org, batch 25/run). Marca `transmitted_at` al recibir 2xx de DIAN.
 
 ### Configuración por organización
-- [ ] **AC13:** En `/admin/facturacion/configuracion`, sección "Comportamiento POS": (a) tipo documento default por punto de venta, (b) toggle "Emitir automático al cobrar" vs "Preguntar siempre", (c) email/WhatsApp automático al cliente si tiene contacto.
-- [ ] **AC14:** Validación pre-cobro: si `einvoice_configs.status != 'active'` o falta resolución DIAN vigente, banner rojo en POS: "Facturación electrónica no configurada. [Configurar]" con link directo.
+- [x] **AC13:** En `/admin/facturacion` tab "Comportamiento POS": (a) tipo documento default por organización, (b) toggle "Preguntar tipo en cada venta", (c) email/WhatsApp automático al cliente. Persistido en `einvoice_configs.pos_behavior` (JSONB).
+- [x] **AC14:** `ResolutionStatusBanner` en `/pos/vender` lee `useEinvoiceResolutionStatus` (Realtime): muestra banner rojo si la resolución está agotada/ausente, ámbar si queda <=5%, gris si emisión inactiva. Apunta al cajero a *Facturación → Configuración*.
 
 ### Observabilidad cajero
 - [ ] **AC15:** Widget en sidebar POS: "Documentos hoy: 47 ✓ | 2 retry | 0 errores" — click abre lista de últimas 20 emisiones del turno actual.
