@@ -278,14 +278,14 @@ Deno.serve(async (req) => {
 
     const reqBody = await req.json();
     const {
-      organization_id: effectiveOrgId,
+      organization_id: bodyOrgId,
       pos_order_id,
       order_id,
       document_type = "invoice",
       contingency_mode: contingencyModeRaw,
       transmit_invoice_id,
     } = reqBody;
-    if (!organization_id && !transmit_invoice_id) {
+    if (!bodyOrgId && !transmit_invoice_id) {
       return new Response(JSON.stringify({ error: "organization_id requerido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     if (!transmit_invoice_id && !pos_order_id && !order_id) {
