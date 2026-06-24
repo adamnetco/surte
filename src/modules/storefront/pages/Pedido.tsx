@@ -183,11 +183,12 @@ const Pedido = () => {
     }, 150);
   };
 
-  // Build unified timeline (order milestones + WhatsApp events).
+  // Build unified timeline (order milestones + WhatsApp events) with retry metadata.
   const timeline = useMemo(() => {
-    if (!order) return [] as Array<{ ts: string; icon: any; label: string; color: string; sub?: string }>;
+    type Ev = { ts: string; icon: any; label: string; color: string; sub?: string; meta?: string };
+    if (!order) return [] as Ev[];
     const status = statusConfig[order.status] || statusConfig.pendiente;
-    const events: Array<{ ts: string; icon: any; label: string; color: string; sub?: string } | null> = [
+    const events: Array<Ev | null> = [
       { ts: order.created_at, icon: Package, label: "Pedido recibido", color: "text-accent" },
       order.payment_recorded_at
         ? { ts: order.payment_recorded_at, icon: CreditCard, label: `Pago registrado${order.payment_method ? ` · ${order.payment_method}` : ""}`, color: "text-blue-600" }
@@ -202,16 +203,26 @@ const Pedido = () => {
     for (const ev of waEvents) {
       const c = waStatusConfig[ev.status];
       if (!c) continue;
+      const p = ev.payload || {};
+      const isRetry = ev.status === "retry_requested";
+      const meta = isRetry
+        ? [
+            p.attempt ? `intento #${p.attempt}` : null,
+            p.actor_name ? `por ${p.actor_name}` : null,
+            p.reason ? `motivo: "${p.reason}"` : null,
+          ].filter(Boolean).join(" · ")
+        : undefined;
       events.push({
         ts: ev.created_at,
         icon: c.icon,
-        label: ev.whatsapp_ref ? `${c.label} · ${ev.whatsapp_ref.slice(0, 12)}…` : c.label,
+        label: ev.whatsapp_ref && !isRetry ? `${c.label} · ${ev.whatsapp_ref.slice(0, 12)}…` : c.label,
         color: c.color,
         sub: ev.error || undefined,
+        meta,
       });
     }
     return events
-      .filter((e): e is NonNullable<typeof e> => Boolean(e))
+      .filter((e): e is Ev => Boolean(e))
       .sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
   }, [order, waEvents]);
 
