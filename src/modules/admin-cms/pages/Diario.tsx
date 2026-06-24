@@ -139,6 +139,8 @@ function ActionCard({
   badge,
   severity = "info",
   onClick,
+  bulkLabel,
+  onBulk,
 }: {
   icon: React.ComponentType<any>;
   title: string;
@@ -146,33 +148,53 @@ function ActionCard({
   badge?: string;
   severity?: Severity;
   onClick: () => void;
+  bulkLabel?: string;
+  onBulk?: () => void;
 }) {
   const sev = SEV_STYLES[severity];
   return (
-    <button
-      onClick={onClick}
+    <div
       className={cn(
-        "w-full text-left bg-card border border-border rounded-xl p-4",
-        "min-h-[72px] flex items-center gap-3 active:scale-[0.99] transition",
+        "w-full bg-card border border-border rounded-xl p-4",
+        "min-h-[72px] flex items-center gap-3 transition",
         "hover:border-foreground/20",
       )}
     >
-      <div className={cn("w-11 h-11 rounded-lg grid place-items-center shrink-0", sev.bar)}>
-        <Icon className={sev.text} size={20} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-sm text-foreground truncate">{title}</h3>
-          {badge && (
-            <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white", sev.dot)}>
-              {badge}
-            </span>
-          )}
+      <button onClick={onClick} className="flex items-center gap-3 flex-1 min-w-0 text-left active:scale-[0.99]">
+        <div className={cn("w-11 h-11 rounded-lg grid place-items-center shrink-0", sev.bar)}>
+          <Icon className={sev.text} size={20} />
         </div>
-        <p className="text-xs text-muted-foreground line-clamp-1">{description}</p>
-      </div>
-      <ChevronRight className="text-muted-foreground shrink-0" size={18} />
-    </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm text-foreground truncate">{title}</h3>
+            {badge && (
+              <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white", sev.dot)}>
+                {badge}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground line-clamp-1">{description}</p>
+        </div>
+      </button>
+      {onBulk ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onBulk();
+          }}
+          className={cn(
+            "shrink-0 flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition",
+            "border-foreground/20 text-foreground hover:bg-foreground hover:text-background",
+          )}
+          aria-label={bulkLabel ?? "Resolver"}
+        >
+          <Zap size={12} />
+          {bulkLabel ?? "Resolver"}
+        </button>
+      ) : (
+        <ChevronRight className="text-muted-foreground shrink-0" size={18} onClick={onClick} />
+      )}
+    </div>
   );
 }
 
