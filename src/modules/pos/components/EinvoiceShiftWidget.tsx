@@ -45,15 +45,33 @@ export default function EinvoiceShiftWidget({ organizationId, className }: Props
 
   const retryAll = async () => {
     setRetrying(true);
-    // POS-einvoice-retry-scoping AC3: enviar organization_id explícito
-    const { data, error } = await supabase.functions.invoke("einvoice-resend", {
-      body: { action: "retry_all_today", organization_id: organizationId },
-    });
-    setRetrying(false);
-    if (error) toast.error("No se pudo reintentar", { description: error.message });
-    else toast.success(`Reencoladas: ${(data as any)?.requeued ?? 0}`);
-    loadRecent();
+    try {
+      // Preview con dry_run para confirmar count antes de mutar.
+      const { data: preview, error: preErr } = await supabase.functions.invoke("einvoice-resend", {
+        body: { action: "retry_all_today", organization_id: organizationId, dry_run: true },
+      });
+      if (preErr) throw preErr;
+      const candidates = (preview as any)?.candidates ?? 0;
+      if (candidates === 0) {
+        toast.info("Sin pendientes que reintentar");
+        return;
+      }
+      if (!window.confirm(`Se reencolarán ${candidates} documentos. ¿Continuar?`)) return;
+
+      // POS-einvoice-retry-scoping AC3: enviar organization_id explícito
+      const { data, error } = await supabase.functions.invoke("einvoice-resend", {
+        body: { action: "retry_all_today", organization_id: organizationId },
+      });
+      if (error) throw error;
+      toast.success(`Reencoladas: ${(data as any)?.requeued ?? 0}`);
+      loadRecent();
+    } catch (e: any) {
+      toast.error("No se pudo reintentar", { description: e?.message });
+    } finally {
+      setRetrying(false);
+    }
   };
+
 
 
   if (stats.loading) {
