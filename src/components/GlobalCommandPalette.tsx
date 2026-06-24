@@ -171,8 +171,6 @@ export default function GlobalCommandPalette() {
     },
   });
 
-  if (!user) return null;
-
   const allowed = useMemo(
     () => ACTIONS.filter((a) => !a.roles || a.roles.includes(role)),
     [role]
@@ -182,6 +180,8 @@ export default function GlobalCommandPalette() {
     () => recents.map((id) => allowedById.get(id)).filter(Boolean) as Action[],
     [recents, allowedById]
   );
+
+  if (!user) return null;
 
   const grouped = allowed.reduce<Record<string, Action[]>>((acc, a) => {
     (acc[a.group] ||= []).push(a);
