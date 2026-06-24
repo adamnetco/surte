@@ -39,6 +39,8 @@ export const BodySchema = z.object({
       last_processed_id: z.string().nullable().optional(),
     })
     .optional(),
+  // POS-einvoice-bulk-retry-hardening AC1: clave de idempotencia por request.
+  idempotency_key: z.string().uuid().optional(),
 });
 
 export type BulkBody = z.infer<typeof BodySchema>;
@@ -82,7 +84,12 @@ export type BulkResponse = {
   truncated: boolean;
   next_cursor?: NextCursor;
   elapsed_ms: number;
+  // POS-einvoice-bulk-retry-hardening AC1: replay idempotente.
+  idempotent_replay?: boolean;
 };
+
+const IDEM_MARKER_SERVICE = "einvoice_bulk_retry_admin_idem";
+const IDEM_TTL_MS = 24 * 60 * 60 * 1000;
 
 const DEFAULT_BATCH_SIZE = 100;
 const DEFAULT_WALLCLOCK_MS = 45_000;
@@ -109,11 +116,37 @@ export async function processBulkRetry(
   userId: string,
   nowFn: () => number = () => Date.now(),
 ): Promise<BulkResponse> {
-  const { organization_ids, dry_run, batch_size, max_retries, wallclock_ms, cursor } = body;
+  const { organization_ids, dry_run, batch_size, max_retries, wallclock_ms, cursor, idempotency_key } = body;
   const effectiveBatch = batch_size && batch_size > 0 ? batch_size : DEFAULT_BATCH_SIZE;
   const budgetMs = wallclock_ms && wallclock_ms > 0 ? wallclock_ms : DEFAULT_WALLCLOCK_MS;
   const startedAt = nowFn();
   const deadlineAt = startedAt + budgetMs;
+
+  // POS-einvoice-bulk-retry-hardening AC1: short-circuit por idempotency_key.
+  if (idempotency_key) {
+    try {
+      const sinceIdem = new Date(Date.now() - IDEM_TTL_MS).toISOString();
+      const { data: cached } = await supabase
+        .from("sync_logs")
+        .select("payload, created_at")
+        .eq("service_name", IDEM_MARKER_SERVICE)
+        .gte("created_at", sinceIdem)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      const hit = (cached ?? []).find(
+        (r: any) => r?.payload?.idempotency_key === idempotency_key,
+      );
+      if (hit?.payload?.cached_response) {
+        return {
+          ...(hit.payload.cached_response as BulkResponse),
+          idempotent_replay: true,
+          elapsed_ms: nowFn() - startedAt,
+        };
+      }
+    } catch {
+      // fail-open: si el lookup falla, seguimos con la ejecución normal.
+    }
+  }
 
   const since = new Date();
   since.setHours(0, 0, 0, 0);
@@ -237,19 +270,29 @@ export async function processBulkRetry(
         continue;
       }
 
+      // POS-einvoice-bulk-retry-hardening AC2: usar target='einvoice_emit_retry'
+      // + attempts/max_attempts/next_attempt_at para integrar con sync-outbox-flush
+      // (backoff exponencial 1/5/30/120/720 min con jitter ±20%).
+      const nextAt = new Date(nowFn()).toISOString();
+      const effectiveMaxAttempts = typeof max_retries === "number" ? max_retries : 5;
       const outboxRows = lote.map((r) => ({
         organization_id: r.organization_id,
-        operation: "einvoice_emit",
+        target: "einvoice_emit_retry",
         payload: {
           invoice_id: r.id,
+          organization_id: r.organization_id,
           forced_retry: true,
           forced_by: userId,
           bulk: true,
           admin: true,
           ...(batch_size ? { batch_size } : {}),
           ...(typeof max_retries === "number" ? { max_retries } : {}),
+          ...(idempotency_key ? { idempotency_key } : {}),
         },
         status: "pending",
+        attempts: 0,
+        max_attempts: effectiveMaxAttempts,
+        next_attempt_at: nextAt,
       }));
       const { error: outErr } = await supabase.from("sync_outbox").insert(outboxRows);
 
@@ -334,7 +377,7 @@ export async function processBulkRetry(
 
   const anyPartial = truncated || results.some((r) => r.partial || r.status === "error");
 
-  return {
+  const response: BulkResponse = {
     success: true,
     dry_run: Boolean(dry_run),
     total_orgs: organization_ids.length,
@@ -345,6 +388,26 @@ export async function processBulkRetry(
     ...(nextCursor ? { next_cursor: nextCursor } : {}),
     elapsed_ms: nowFn() - startedAt,
   };
+
+  // POS-einvoice-bulk-retry-hardening AC1: persistir marker idempotente
+  // sólo en corridas terminadas (no truncadas) para que el cursor permita reanudar.
+  if (idempotency_key && !truncated) {
+    try {
+      await supabase.from("sync_logs").insert({
+        service_name: IDEM_MARKER_SERVICE,
+        status: "success",
+        payload: {
+          idempotency_key,
+          requested_by: userId,
+          cached_response: response,
+        },
+      });
+    } catch {
+      // best-effort
+    }
+  }
+
+  return response;
 }
 
 export const handler = async (req: Request): Promise<Response> => {

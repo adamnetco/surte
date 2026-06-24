@@ -19,6 +19,9 @@ type FakeConfig = {
   outboxErr?: string;
   // POS-optimizar-bulk-retry-timeouts: simular falla en lotes específicos.
   outboxErrAtCall?: number[]; // call indices (0-based) que deben fallar
+  // POS-einvoice-bulk-retry-hardening AC1: filas precargadas en sync_logs para
+  // que el lookup de idempotency_key encuentre un hit.
+  syncLogsRows?: Array<{ payload: any; created_at?: string }>;
 };
 
 function makeFake(cfg: FakeConfig = {}) {
@@ -36,6 +39,14 @@ function makeFake(cfg: FakeConfig = {}) {
       gte() { return selectBuilder; },
       gt() { return selectBuilder; },
       order() { return selectBuilder; },
+      // AC1: terminal del lookup idempotente en sync_logs.
+      async limit(_n: number) {
+        ops.push({ table, type: "select", payload: { kind: "limit" } });
+        if (table === "sync_logs") {
+          return { data: cfg.syncLogsRows ?? [], error: null };
+        }
+        return { data: [], error: null };
+      },
       async in(_col: string, _vals: string[]) {
         const org = currentOrg!;
         ops.push({ table, type: "select", payload: { org } });
@@ -481,4 +492,190 @@ Deno.test("AC4: BodySchema acepta wallclock_ms y cursor", () => {
     cursor: { organization_id: crypto.randomUUID(), last_processed_id: "inv-1" },
   });
   assertEquals(r.success, true);
+});
+
+// ---------- POS-einvoice-bulk-retry-hardening ----------
+Deno.test("AC2: outbox rows use target='einvoice_emit_retry' with backoff fields", async () => {
+  const orgA = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [{ id: "inv-1", organization_id: orgA }] },
+  });
+  await processBulkRetry(
+    client,
+    { organization_ids: [orgA], max_retries: 7 },
+    "user-1",
+  );
+  const outbox = ops.find((o) => o.table === "sync_outbox" && o.type === "insert");
+  const row = outbox?.payload[0];
+  assertEquals(row.target, "einvoice_emit_retry");
+  assertEquals(row.attempts, 0);
+  assertEquals(row.max_attempts, 7);
+  assertEquals(typeof row.next_attempt_at, "string");
+  assertEquals(row.payload.invoice_id, "inv-1");
+  assertEquals(row.payload.organization_id, orgA);
+});
+
+Deno.test("AC2: default max_attempts=5 when max_retries not provided", async () => {
+  const orgA = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [{ id: "inv-1", organization_id: orgA }] },
+  });
+  await processBulkRetry(client, { organization_ids: [orgA] }, "user-1");
+  const outbox = ops.find((o) => o.table === "sync_outbox" && o.type === "insert");
+  assertEquals(outbox?.payload[0].max_attempts, 5);
+});
+
+Deno.test("AC3: idempotency_key se propaga al payload de cada fila de outbox", async () => {
+  const orgA = crypto.randomUUID();
+  const key = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [{ id: "inv-1", organization_id: orgA }, { id: "inv-2", organization_id: orgA }] },
+  });
+  await processBulkRetry(
+    client,
+    { organization_ids: [orgA], idempotency_key: key },
+    "user-1",
+  );
+  const outbox = ops.find((o) => o.table === "sync_outbox" && o.type === "insert");
+  assertEquals(outbox?.payload.every((r: any) => r.payload.idempotency_key === key), true);
+});
+
+Deno.test("AC1: idempotency short-circuit devuelve cached_response sin mutar", async () => {
+  const orgA = crypto.randomUUID();
+  const key = crypto.randomUUID();
+  const cachedResponse = {
+    success: true,
+    dry_run: false,
+    total_orgs: 1,
+    total_requeued: 42,
+    partial: false,
+    results: [{ organization_id: orgA, candidates: 42, requeued: 42, status: "success" }],
+    truncated: false,
+    elapsed_ms: 123,
+  };
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [{ id: "inv-new", organization_id: orgA }] },
+    syncLogsRows: [
+      { payload: { idempotency_key: key, cached_response: cachedResponse } },
+    ],
+  });
+  const out = await processBulkRetry(
+    client,
+    { organization_ids: [orgA], idempotency_key: key },
+    "user-1",
+  );
+  assertEquals(out.idempotent_replay, true);
+  assertEquals(out.total_requeued, 42);
+  // No debió tocar electronic_invoices ni sync_outbox.
+  assertEquals(ops.some((o) => o.table === "electronic_invoices" && o.type === "update"), false);
+  assertEquals(ops.some((o) => o.table === "sync_outbox" && o.type === "insert"), false);
+});
+
+Deno.test("AC1: idempotency marker se persiste tras corrida exitosa", async () => {
+  const orgA = crypto.randomUUID();
+  const key = crypto.randomUUID();
+  const { client, ops } = makeFake({
+    pendingsByOrg: { [orgA]: [{ id: "inv-1", organization_id: orgA }] },
+  });
+  await processBulkRetry(
+    client,
+    { organization_ids: [orgA], idempotency_key: key },
+    "user-1",
+  );
+  const marker = ops.find(
+    (o) =>
+      o.table === "sync_logs" &&
+      o.type === "insert" &&
+      o.payload?.service_name === "einvoice_bulk_retry_admin_idem",
+  );
+  assertEquals(!!marker, true);
+  assertEquals(marker?.payload?.payload?.idempotency_key, key);
+  assertEquals(marker?.payload?.payload?.cached_response?.total_requeued, 1);
+});
+
+Deno.test("AC1: corridas truncadas NO persisten marker (permiten reanudación con cursor)", async () => {
+  const orgA = crypto.randomUUID();
+  const key = crypto.randomUUID();
+  const pendings = Array.from({ length: 300 }, (_, i) => ({
+    id: `inv-${String(i).padStart(4, "0")}`,
+    organization_id: orgA,
+  }));
+  const { client, ops } = makeFake({ pendingsByOrg: { [orgA]: pendings } });
+  const ticks = [0, 1_000, 2_000, 60_000, 60_000, 60_000];
+  let i = 0;
+  const now = () => ticks[Math.min(i++, ticks.length - 1)];
+  const out = await processBulkRetry(
+    client,
+    { organization_ids: [orgA], batch_size: 100, wallclock_ms: 50_000, idempotency_key: key },
+    "user-1",
+    now,
+  );
+  assertEquals(out.truncated, true);
+  const marker = ops.find(
+    (o) =>
+      o.table === "sync_logs" &&
+      o.type === "insert" &&
+      o.payload?.service_name === "einvoice_bulk_retry_admin_idem",
+  );
+  assertEquals(!!marker, false);
+});
+
+Deno.test("AC4 E2E: 3 orgs multi-escenario (success/empty/error) con stub realista", async () => {
+  const orgOk = crypto.randomUUID();
+  const orgEmpty = crypto.randomUUID();
+  const orgErr = crypto.randomUUID();
+  const pendingsOk = Array.from({ length: 150 }, (_, i) => ({
+    id: `ok-${String(i).padStart(4, "0")}`,
+    organization_id: orgOk,
+  }));
+  const { client, ops } = makeFake({
+    pendingsByOrg: {
+      [orgOk]: pendingsOk,
+      [orgEmpty]: [],
+    },
+    queryErrByOrg: { [orgErr]: "db_unavailable" },
+  });
+
+  const out = await processBulkRetry(
+    client,
+    {
+      organization_ids: [orgOk, orgEmpty, orgErr],
+      batch_size: 100,
+      max_retries: 3,
+    },
+    "user-e2e",
+  );
+
+  assertEquals(out.total_orgs, 3);
+  assertEquals(out.total_requeued, 150);
+  assertEquals(out.partial, true); // orgErr falló
+  // orgOk: success en 2 lotes (100/50)
+  assertEquals(out.results[0].organization_id, orgOk);
+  assertEquals(out.results[0].batches?.length, 2);
+  assertEquals(out.results[0].requeued, 150);
+  // orgEmpty: success con candidates=0, sin lotes
+  assertEquals(out.results[1].organization_id, orgEmpty);
+  assertEquals(out.results[1].candidates, 0);
+  assertEquals(out.results[1].requeued, 0);
+  // orgErr: error
+  assertEquals(out.results[2].organization_id, orgErr);
+  assertEquals(out.results[2].status, "error");
+  assertEquals(out.results[2].error, "db_unavailable");
+
+  // 2 inserts en sync_outbox (uno por lote del orgOk; ninguno para empty/err)
+  const outboxInserts = ops.filter((o) => o.table === "sync_outbox" && o.type === "insert");
+  assertEquals(outboxInserts.length, 2);
+  // Todas las filas con target correcto + max_attempts=3
+  const allRows = outboxInserts.flatMap((o) => o.payload);
+  assertEquals(allRows.length, 150);
+  assertEquals(allRows.every((r: any) => r.target === "einvoice_emit_retry"), true);
+  assertEquals(allRows.every((r: any) => r.max_attempts === 3), true);
+
+  // sync_logs: 1 phase=query (orgErr) + 1 agregado orgOk + 1 agregado orgEmpty = 3
+  const orgLogs = ops.filter(
+    (o) =>
+      o.table === "sync_logs" &&
+      o.payload?.service_name === "einvoice_bulk_retry_admin",
+  );
+  assertEquals(orgLogs.length, 2); // orgEmpty no escribe agregado (continue early)
 });
