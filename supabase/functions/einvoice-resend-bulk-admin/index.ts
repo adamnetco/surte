@@ -39,6 +39,8 @@ export const BodySchema = z.object({
       last_processed_id: z.string().nullable().optional(),
     })
     .optional(),
+  // POS-einvoice-bulk-retry-hardening AC1: clave de idempotencia por request.
+  idempotency_key: z.string().uuid().optional(),
 });
 
 export type BulkBody = z.infer<typeof BodySchema>;
@@ -82,7 +84,12 @@ export type BulkResponse = {
   truncated: boolean;
   next_cursor?: NextCursor;
   elapsed_ms: number;
+  // POS-einvoice-bulk-retry-hardening AC1: replay idempotente.
+  idempotent_replay?: boolean;
 };
+
+const IDEM_MARKER_SERVICE = "einvoice_bulk_retry_admin_idem";
+const IDEM_TTL_MS = 24 * 60 * 60 * 1000;
 
 const DEFAULT_BATCH_SIZE = 100;
 const DEFAULT_WALLCLOCK_MS = 45_000;
