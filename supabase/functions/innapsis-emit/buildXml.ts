@@ -44,6 +44,7 @@ export function buildFeXml(payload: { trackId: string; Fe: Record<string, unknow
     "OyRReceptor",
     "Mandatos",
     "Transportista",
+    "Referencia",
     "Totales",
     "Anticipos",
     "Descuentos",
