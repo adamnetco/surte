@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import TopBar from "@/modules/storefront/components/TopBar";
 import BottomNav from "@/modules/storefront/components/BottomNav";
-import { Package, Clock, CheckCircle, Truck, XCircle, MessageCircle, Copy, ArrowLeft, ShoppingBag } from "lucide-react";
+import { Package, Clock, CheckCircle, Truck, XCircle, MessageCircle, Copy, ArrowLeft, ShoppingBag, Send, CreditCard, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import SeoBreadcrumbs from "@/modules/marketing/seo/SeoBreadcrumbs";
 import { toast } from "sonner";
