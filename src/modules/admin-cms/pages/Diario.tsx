@@ -18,6 +18,7 @@ import {
   StickyNote,
   Check,
   Zap,
+  Share2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -29,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { useDailyChecklist } from "@/modules/admin-cms/hooks/useDailyChecklist";
 import SyncStatusPanel from "@/modules/admin-cms/components/SyncStatusPanel";
 import DiarioBulkSheet, { type BulkKind } from "@/modules/admin-cms/components/DiarioBulkSheet";
+import DiarioShareDialog from "@/modules/admin-cms/components/DiarioShareDialog";
 
 /**
  * Daily Driver — pantalla mobile-first del flujo diario del admin.
@@ -486,6 +488,7 @@ const Diario = () => {
 
   const [bulkKind, setBulkKind] = useState<BulkKind | null>(null);
   const bulkOpen = bulkKind !== null;
+  const [shareOpen, setShareOpen] = useState(false);
 
 
   return (
@@ -511,14 +514,25 @@ const Diario = () => {
               })}
             </p>
           </div>
-          <button
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            className="shrink-0 h-9 w-9 rounded-lg border border-border grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-50"
-            aria-label="Actualizar"
-          >
-            <RefreshCw size={16} className={isRefetching ? "animate-spin" : ""} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShareOpen(true)}
+              disabled={!hasData}
+              className="h-9 px-3 rounded-lg border border-border flex items-center gap-1.5 text-xs font-semibold text-foreground hover:bg-foreground hover:text-background disabled:opacity-50 transition"
+              aria-label="Compartir resumen del día"
+            >
+              <Share2 size={14} />
+              <span className="hidden xs:inline sm:inline">Compartir</span>
+            </button>
+            <button
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              className="h-9 w-9 rounded-lg border border-border grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-50"
+              aria-label="Actualizar"
+            >
+              <RefreshCw size={16} className={isRefetching ? "animate-spin" : ""} />
+            </button>
+          </div>
         </header>
 
         {/* KPIs del día */}
@@ -752,6 +766,16 @@ const Diario = () => {
         kind={bulkKind}
         organizationId={currentOrg?.id}
         onAfterAction={() => refetch()}
+      />
+
+      <DiarioShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        data={data ?? null}
+        orgName={currentOrg?.name ?? "Mi negocio"}
+        userName={firstName}
+        checklistDone={doneCount}
+        checklistTotal={CHECKLIST_DEFS.length}
       />
     </div>
 
