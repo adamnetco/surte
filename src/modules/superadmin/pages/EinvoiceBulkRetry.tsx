@@ -351,10 +351,31 @@ export default function EinvoiceBulkRetry() {
               {lastResponse.dry_run ? "dry_run" : "ejecutado"}
             </Badge>
           </div>
-          {lastResponse.partial && !lastResponse.dry_run && (
+          {lastResponse.partial && !lastResponse.dry_run && !lastResponse.truncated && (
             <p className="text-xs text-amber-600">
               ⚠ Ejecución parcial: algunos lotes fallaron — revisa <code>sync_logs</code> con <code>phase=batch_N</code>.
             </p>
+          )}
+          {lastResponse.truncated && !lastResponse.dry_run && lastResponse.next_cursor && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="flex-1">
+                Truncado por wallclock ({Math.round((lastResponse.elapsed_ms ?? 0) / 100) / 10}s).
+                Reanuda desde org <code className="font-mono">{(nameById[lastResponse.next_cursor.organization_id] ?? lastResponse.next_cursor.organization_id).slice(0, 24)}</code>
+                {lastResponse.next_cursor.last_processed_id
+                  ? <> · último id <code className="font-mono">{lastResponse.next_cursor.last_processed_id.slice(0, 12)}…</code></>
+                  : null}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={running}
+                onClick={() => run(false, lastResponse.next_cursor!)}
+              >
+                {running ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                Reanudar
+              </Button>
+            </div>
           )}
           <div className="divide-y rounded-md border">
             {lastResponse.results.map((r) => (
