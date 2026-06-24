@@ -78,7 +78,29 @@ Deno.serve(async (req) => {
       if (!cfg) return new Response(JSON.stringify({ error: "Sin configuración Innapsis" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       try {
         const token = await getToken(cfg.nit, cfg.api_key || INNAPSIS_PARTNER_API_KEY || "");
-        return new Response(JSON.stringify({ success: true, message: `Token obtenido (${cfg.environment.toUpperCase()})`, token_preview: token.slice(0, 12) + "…" }), {
+        // Hop 2: validar autorización en API gateway via consulteManuales (best-effort).
+        const baseUrl = cfg.environment === "prod" ? INNAPSIS.base_prod : INNAPSIS.base_dev;
+        let gatewayOk = false;
+        let gatewayStatus: number | null = null;
+        let gatewayDetail: unknown = null;
+        try {
+          const gwRes = await fetch(`${baseUrl}/api/v1/configuraciones/manuales/consulteManuales`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ nit: cfg.nit }),
+          });
+          gatewayStatus = gwRes.status;
+          gatewayOk = gwRes.ok;
+          gatewayDetail = await gwRes.json().catch(() => null);
+        } catch (gwErr: any) {
+          gatewayDetail = { error: gwErr?.message ?? String(gwErr) };
+        }
+        return new Response(JSON.stringify({
+          success: true,
+          message: `Token OK (${cfg.environment.toUpperCase()})${gatewayOk ? " · gateway OK" : gatewayStatus ? ` · gateway HTTP ${gatewayStatus}` : ""}`,
+          token_preview: token.slice(0, 12) + "…",
+          gateway: { ok: gatewayOk, status: gatewayStatus, detail: gatewayDetail },
+        }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } catch (e: any) {
