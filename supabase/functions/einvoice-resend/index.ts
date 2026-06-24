@@ -16,8 +16,8 @@ const corsHeaders = {
 };
 
 const BodySchema = z.object({
-  invoice_id: z.string().uuid(),
-  action: z.enum(["send_email", "send_whatsapp", "retry_now"]),
+  invoice_id: z.string().uuid().optional(),
+  action: z.enum(["send_email", "send_whatsapp", "retry_now", "retry_all_today"]),
   to: z.string().max(200).optional(), // email o teléfono override
 });
 
