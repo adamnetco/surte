@@ -379,35 +379,60 @@ const Pedido = () => {
             </div>
           ) : (
             <>
-              <ol className="relative border-l border-border ml-2 space-y-3">
-                {displayedTimeline.map((ev, idx) => {
-                  const Icon = ev.icon;
-                  return (
-                    <li key={idx} className="ml-4">
-                      <span className={`absolute -left-[7px] flex items-center justify-center w-3.5 h-3.5 rounded-full bg-background border-2 ${ev.color.replace("text-", "border-")}`} />
-                      <div className="flex items-start gap-2">
-                        <Icon size={14} className={`${ev.color} mt-0.5 flex-shrink-0`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground">{ev.label}</p>
-                          {ev.sub && <p className="text-[11px] text-destructive break-words">{ev.sub}</p>}
-                          <p className="text-[11px] text-muted-foreground">
-                            {new Date(ev.ts).toLocaleString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          </p>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-              {hasMore && (
+              {(() => {
+                // Agrupar por día para timelines largos (mobile-first, scan rápido).
+                const groups: Array<{ day: string; items: typeof displayedTimeline }> = [];
+                for (const ev of displayedTimeline) {
+                  const d = dayKey(ev.ts);
+                  const last = groups[groups.length - 1];
+                  if (last && last.day === d) last.items.push(ev);
+                  else groups.push({ day: d, items: [ev] });
+                }
+                return groups.map((g, gi) => (
+                  <div key={`g-${gi}`} className="mb-3 last:mb-0">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mb-1.5 sticky top-0 bg-card/95 backdrop-blur py-1">
+                      {g.day}
+                    </p>
+                    <ol className="relative border-l border-border ml-2 space-y-3">
+                      {g.items.map((ev, idx) => {
+                        const Icon = ev.icon;
+                        return (
+                          <li key={`${gi}-${idx}`} className="ml-4" data-testid="timeline-item">
+                            <span className={`absolute -left-[7px] flex items-center justify-center w-3.5 h-3.5 rounded-full bg-background border-2 ${ev.color.replace("text-", "border-")}`} />
+                            <div className="flex items-start gap-2">
+                              <Icon size={14} className={`${ev.color} mt-0.5 flex-shrink-0`} />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-foreground">{ev.label}</p>
+                                {ev.meta && <p className="text-[11px] text-muted-foreground/90 break-words">{ev.meta}</p>}
+                                {ev.sub && <p className="text-[11px] text-destructive break-words">{ev.sub}</p>}
+                                <p className="text-[11px] text-muted-foreground">
+                                  {new Date(ev.ts).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}
+                                </p>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </div>
+                ));
+              })()}
+              {isPaging && (
+                <div className="space-y-2 mt-2" aria-busy="true" data-testid="paging-skeleton">
+                  {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-8 bg-muted animate-pulse rounded" />)}
+                </div>
+              )}
+              {hasMore && !isPaging && (
                 <button
-                  onClick={() => setVisibleCount((n) => n + TIMELINE_PAGE)}
-                  className="mt-3 w-full text-xs text-accent font-medium py-2 rounded-md bg-accent/5"
+                  onClick={loadMore}
+                  className="mt-3 w-full text-xs text-accent font-medium py-2 rounded-md bg-accent/5 active:scale-[0.98]"
+                  data-testid="load-more"
                 >
                   Ver más ({timeline.length - visibleCount} restantes)
                 </button>
               )}
             </>
+
           )}
         </section>
 
