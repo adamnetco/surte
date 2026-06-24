@@ -27,12 +27,23 @@ export const BodySchema = z.object({
 
 export type BulkBody = z.infer<typeof BodySchema>;
 
+export type BatchResult = {
+  index: number;
+  candidates: number;
+  requeued: number;
+  status: "success" | "error";
+  error?: string;
+};
+
 export type OrgResult = {
   organization_id: string;
   candidates: number;
   requeued: number;
   status: "success" | "error" | "skipped";
   error?: string;
+  // POS-optimizar-bulk-retry-timeouts AC2/AC3 — per-batch breakdown
+  batches?: BatchResult[];
+  partial?: boolean;
 };
 
 export type BulkResponse = {
@@ -40,8 +51,19 @@ export type BulkResponse = {
   dry_run: boolean;
   total_orgs: number;
   total_requeued: number;
+  // AC3: true si al menos un org/lote terminó en error parcial
+  partial: boolean;
   results: OrgResult[];
 };
+
+const DEFAULT_BATCH_SIZE = 100;
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  if (size <= 0) return [arr];
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -57,6 +79,7 @@ export async function processBulkRetry(
   userId: string,
 ): Promise<BulkResponse> {
   const { organization_ids, dry_run, batch_size, max_retries } = body;
+  const effectiveBatch = batch_size && batch_size > 0 ? batch_size : DEFAULT_BATCH_SIZE;
 
   const since = new Date();
   since.setHours(0, 0, 0, 0);
@@ -89,8 +112,8 @@ export async function processBulkRetry(
       continue;
     }
 
-    const rows = pendings ?? [];
-    const ids = rows.map((r: any) => r.id);
+    const rows = (pendings ?? []) as Array<{ id: string; organization_id: string }>;
+    const ids = rows.map((r) => r.id);
 
     if (dry_run || ids.length === 0) {
       results.push({
@@ -102,89 +125,133 @@ export async function processBulkRetry(
       continue;
     }
 
-    const { error: updErr } = await supabase
-      .from("electronic_invoices")
-      .update({ status: "queued", retry_count: 0, next_retry_at: null, last_error: null })
-      .in("id", ids);
+    // POS-optimizar-bulk-retry-timeouts AC1/AC2: procesar por lotes.
+    const batches = chunk(rows, effectiveBatch);
+    const batchResults: BatchResult[] = [];
+    let orgRequeued = 0;
 
-    if (updErr) {
-      await supabase.from("sync_logs").insert({
-        organization_id: orgId,
-        service_name: "einvoice_bulk_retry_admin",
-        status: "error",
-        error_message: `update_failed: ${updErr.message}`,
-        payload: { action: "bulk_admin", requested_by: userId, candidates: ids.length },
+    for (let i = 0; i < batches.length; i++) {
+      const lote = batches[i];
+      const loteIds = lote.map((r) => r.id);
+
+      const { error: updErr } = await supabase
+        .from("electronic_invoices")
+        .update({ status: "queued", retry_count: 0, next_retry_at: null, last_error: null })
+        .in("id", loteIds);
+
+      if (updErr) {
+        await supabase.from("sync_logs").insert({
+          organization_id: orgId,
+          service_name: "einvoice_bulk_retry_admin",
+          status: "error",
+          error_message: `update_failed: ${updErr.message}`,
+          payload: {
+            action: "bulk_admin",
+            requested_by: userId,
+            phase: `batch_${i}`,
+            candidates: loteIds.length,
+          },
+        });
+        batchResults.push({
+          index: i,
+          candidates: loteIds.length,
+          requeued: 0,
+          status: "error",
+          error: updErr.message,
+        });
+        continue;
+      }
+
+      const outboxRows = lote.map((r) => ({
+        organization_id: r.organization_id,
+        operation: "einvoice_emit",
+        payload: {
+          invoice_id: r.id,
+          forced_retry: true,
+          forced_by: userId,
+          bulk: true,
+          admin: true,
+          ...(batch_size ? { batch_size } : {}),
+          ...(typeof max_retries === "number" ? { max_retries } : {}),
+        },
+        status: "pending",
+      }));
+      const { error: outErr } = await supabase.from("sync_outbox").insert(outboxRows);
+
+      if (outErr) {
+        await supabase.from("sync_logs").insert({
+          organization_id: orgId,
+          service_name: "einvoice_bulk_retry_admin",
+          status: "error",
+          error_message: `outbox_insert_failed: ${outErr.message}`,
+          payload: {
+            action: "bulk_admin",
+            requested_by: userId,
+            phase: `batch_${i}`,
+            candidates: loteIds.length,
+          },
+        });
+        batchResults.push({
+          index: i,
+          candidates: loteIds.length,
+          requeued: 0,
+          status: "error",
+          error: outErr.message,
+        });
+        continue;
+      }
+
+      orgRequeued += loteIds.length;
+      batchResults.push({
+        index: i,
+        candidates: loteIds.length,
+        requeued: loteIds.length,
+        status: "success",
       });
-      results.push({
-        organization_id: orgId,
-        candidates: ids.length,
-        requeued: 0,
-        status: "error",
-        error: updErr.message,
-      });
-      continue;
     }
 
-    const outboxRows = rows.map((r: any) => ({
-      organization_id: r.organization_id,
-      operation: "einvoice_emit",
-      payload: {
-        invoice_id: r.id,
-        forced_retry: true,
-        forced_by: userId,
-        bulk: true,
-        admin: true,
-        ...(batch_size ? { batch_size } : {}),
-        ...(typeof max_retries === "number" ? { max_retries } : {}),
-      },
-      status: "pending",
-    }));
-    const { error: outErr } = await supabase.from("sync_outbox").insert(outboxRows);
+    const failedBatches = batchResults.filter((b) => b.status === "error").length;
+    const orgPartial = failedBatches > 0 && orgRequeued > 0;
+    const orgStatus: OrgResult["status"] =
+      orgRequeued === 0 ? "error" : "success"; // partial se expresa con `partial:true`
 
-    if (outErr) {
-      await supabase.from("sync_logs").insert({
-        organization_id: orgId,
-        service_name: "einvoice_bulk_retry_admin",
-        status: "error",
-        error_message: `outbox_insert_failed: ${outErr.message}`,
-        payload: { action: "bulk_admin", requested_by: userId, candidates: ids.length },
-      });
-      results.push({
-        organization_id: orgId,
-        candidates: ids.length,
-        requeued: 0,
-        status: "error",
-        error: outErr.message,
-      });
-      continue;
-    }
-
+    // sync_logs agregado por organización (AC5: un solo row resumen).
     await supabase.from("sync_logs").insert({
       organization_id: orgId,
       service_name: "einvoice_bulk_retry_admin",
-      status: "success",
+      status: orgStatus,
+      error_message: orgPartial ? `partial: ${failedBatches} batch(es) failed` : null,
       payload: {
         action: "bulk_admin",
-        requeued_count: ids.length,
+        requeued_count: orgRequeued,
         requested_by: userId,
         since: since.toISOString(),
-        ...(batch_size ? { batch_size } : {}),
+        batches: batchResults.length,
+        failed_batches: failedBatches,
+        batch_size: effectiveBatch,
         ...(typeof max_retries === "number" ? { max_retries } : {}),
       },
     });
+
     results.push({
       organization_id: orgId,
       candidates: ids.length,
-      requeued: ids.length,
-      status: "success",
+      requeued: orgRequeued,
+      status: orgStatus,
+      error: orgStatus === "error" ? batchResults.find((b) => b.error)?.error : undefined,
+      batches: batchResults,
+      partial: orgPartial,
     });
   }
+
+  const anyPartial = results.some((r) => r.partial || r.status === "error");
 
   return {
     success: true,
     dry_run: Boolean(dry_run),
     total_orgs: organization_ids.length,
     total_requeued: results.reduce((s, r) => s + r.requeued, 0),
+    partial: anyPartial,
     results,
   };
 }
