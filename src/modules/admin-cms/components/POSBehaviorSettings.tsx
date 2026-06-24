@@ -149,6 +149,25 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
         onChange={(v) => setBehavior({ ...behavior, auto_send_whatsapp: v })}
       />
 
+      <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-destructive/30 bg-destructive/5">
+        <div className="flex items-start gap-2 flex-1 min-w-0">
+          <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-medium">Bloquear cobro si DIAN está offline</p>
+              <Badge variant="secondary" className="text-[10px]">Recomendado para HORECA alto volumen</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Cuando la DIAN/Innapsis está caída y no hay rango de contingencia vigente, el botón <b>Cobrar</b> se deshabilita.
+              Evita ventas que después no se podrán normalizar dentro de las 48h. Superadmin puede forzar override por sesión.
+            </p>
+          </div>
+        </div>
+        <Switch checked={hardBlock} onCheckedChange={setHardBlock} />
+      </div>
+
+
+
       <div className="flex justify-end pt-2 border-t">
         <Button onClick={save} disabled={saving}>
           <Save className="h-4 w-4 mr-1" />
