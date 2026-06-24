@@ -330,6 +330,9 @@ Deno.serve(async (req) => {
       document_type = "invoice",
       contingency_mode: contingencyModeRaw,
       transmit_invoice_id,
+      reference_invoice_id,
+      note_concept_code,
+      note_concept_text,
     } = reqBody;
     if (!bodyOrgId && !transmit_invoice_id) {
       return new Response(JSON.stringify({ error: "organization_id requerido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
