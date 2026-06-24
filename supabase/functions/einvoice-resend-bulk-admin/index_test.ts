@@ -455,8 +455,8 @@ Deno.test("AC4: budget agotado antes de tocar la siguiente org devuelve next_cur
     },
   });
 
-  // Reloj: deja procesar orgA completa, luego excede deadline antes de orgB.
-  const ticks = [0, 5_000, 10_000, 15_000, 60_000, 60_000, 60_000];
+  // Reloj: orgA procesa (startedAt, outer orgA, pre-batch 0); luego outer orgB excede.
+  const ticks = [0, 5_000, 10_000, 60_000, 60_000];
   let i = 0;
   const now = () => ticks[Math.min(i++, ticks.length - 1)];
 
