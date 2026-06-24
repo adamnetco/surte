@@ -26,10 +26,48 @@ export default function FxReportsPage() {
   const range = useMemo(() => monthRange(year, month), [year, month]);
   const { data: currencies = [] } = useFxCurrencies();
   const { txs, totals, byCurrency, byPair, byCashier, byDay, isLoading } = useFxSummary(range);
+  const { data: threshold } = useUiafThreshold();
+  const thresholdAmount = threshold?.amount ?? 10000;
+  const thresholdCcy = threshold?.currency ?? "USD";
 
   const currMap = useMemo(
     () => Object.fromEntries(currencies.map((c) => [c.id, { code: c.code, name: c.name }])),
     [currencies],
+  );
+
+  // Slice 5 — Ola 2: acumulado mensual por cliente (cliente-side sobre txs ya cargadas).
+  type CustomerAcc = {
+    docNumber: string;
+    name: string;
+    accumulated: number;   // en threshold currency (cuando hay match), 0 si no
+    txCount: number;
+    aboveOps: number;
+    suspicious: number;
+  };
+  const byCustomer = useMemo<CustomerAcc[]>(() => {
+    const map = new Map<string, CustomerAcc>();
+    for (const t of txs as any[]) {
+      const doc = (t.customer_doc_number ?? "").toString().trim();
+      if (!doc) continue;
+      let acc = map.get(doc);
+      if (!acc) {
+        acc = { docNumber: doc, name: t.customer_name ?? "—", accumulated: 0, txCount: 0, aboveOps: 0, suspicious: 0 };
+        map.set(doc, acc);
+      }
+      acc.txCount += 1;
+      if (t.is_above_threshold) acc.aboveOps += 1;
+      if (t.is_suspicious) acc.suspicious += 1;
+      const fromCode = currMap[t.from_currency_id]?.code;
+      const toCode = currMap[t.to_currency_id]?.code;
+      if (fromCode === thresholdCcy) acc.accumulated += Number(t.from_amount) || 0;
+      else if (toCode === thresholdCcy) acc.accumulated += Number(t.to_amount) || 0;
+    }
+    return Array.from(map.values()).sort((a, b) => b.accumulated - a.accumulated);
+  }, [txs, currMap, thresholdCcy]);
+
+  const customersOverThreshold = byCustomer.filter((c) => c.accumulated >= thresholdAmount);
+  const customersNearThreshold = byCustomer.filter(
+    (c) => c.accumulated >= thresholdAmount * 0.8 && c.accumulated < thresholdAmount,
   );
 
   // Resolve cashier names
