@@ -16,16 +16,16 @@
 ## Gaps críticos
 Ninguno.
 
-## Observaciones (resueltas en follow-up)
+## Observaciones (todas resueltas)
 
-1. ✅ **Hook ya no fija `environment='prod'`** — ahora ordena por `is_active DESC, updated_at DESC LIMIT 1`, cubriendo tenants en sandbox DIAN (`dev`).
-2. ⚠️ Cache `Map` global mantenido por simplicidad — invalidación vía Realtime UPDATE + helper `__resetOrgDefaultDocTypesCache` para tests. Migrar a React Query queda como mejora opcional.
+1. ✅ **Hook ya no fija `environment='prod'`** — ordena por `is_active DESC, updated_at DESC LIMIT 1`, cubre sandbox `dev`.
+2. ✅ **Cache migrado a React Query** — key `["einvoice-defaults", orgId]`, invalidación por Realtime UPDATE; sin estado module-scope que contamine tenants.
 3. ✅ **Constraint FX implementada** — trigger `trg_einvoice_configs_enforce_fx_doctypes` rechaza defaults ≠ `documento_soporte` cuando `business_type='casa_de_cambio'`.
-4. ⚠️ Backfill sigue siendo silencioso si la enum de `business_type` cambia. Aceptable; el trigger nuevo es la red de seguridad principal.
-5. ✅ **`queueMicrotask` → `useEffect`** en `DocumentTypeSelector` (sin warnings en StrictMode).
-6. ✅ **Test unitario añadido** — `useOrgDefaultDocTypes.test.tsx`, 4/4 pasan.
+4. ✅ **Backfill robustecido** — función `einvoice_apply_business_type_defaults(_org_id)` con alias (`bureau_de_change`, `fx`, `wholesale`, `distribuidor`), logging a `sync_logs` (`service_name='einvoice_doctype_backfill'`), y trigger en `organizations` que reaplica defaults cuando cambia `business_type`. Re-run idempotente: tocó 2 filas.
+5. ✅ **`queueMicrotask` → `useEffect`** en `DocumentTypeSelector`.
+6. ✅ **Tests unitarios** — `useOrgDefaultDocTypes.test.tsx` 5/5 pasan (incluye caso multi-tenant cache scoping).
 
 ## Acción
-- Spec actualizado a **SHIPPED**.
-- 4 de 6 observaciones cerradas; las 2 restantes (cache global, robustez del backfill) son mejoras menores no bloqueantes.
+- Spec **SHIPPED**, todas las observaciones cerradas.
+
 
