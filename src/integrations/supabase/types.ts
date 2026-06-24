@@ -1964,6 +1964,60 @@ export type Database = {
           },
         ]
       }
+      document_types: {
+        Row: {
+          applies_to_modules: string[]
+          code: string
+          created_at: string
+          default_for_business_types: string[] | null
+          description: string | null
+          dian_code: string | null
+          family: string
+          goes_to_dian: boolean
+          id: string
+          is_active: boolean
+          label: string
+          requires_customer_id: boolean
+          requires_resolution: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          applies_to_modules?: string[]
+          code: string
+          created_at?: string
+          default_for_business_types?: string[] | null
+          description?: string | null
+          dian_code?: string | null
+          family: string
+          goes_to_dian?: boolean
+          id?: string
+          is_active?: boolean
+          label: string
+          requires_customer_id?: boolean
+          requires_resolution?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          applies_to_modules?: string[]
+          code?: string
+          created_at?: string
+          default_for_business_types?: string[] | null
+          description?: string | null
+          dian_code?: string | null
+          family?: string
+          goes_to_dian?: boolean
+          id?: string
+          is_active?: boolean
+          label?: string
+          requires_customer_id?: boolean
+          requires_resolution?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dunning_events: {
         Row: {
           attempt: number
@@ -4934,6 +4988,80 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "crm_leads"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_document_types: {
+        Row: {
+          created_at: string
+          document_type_id: string
+          id: string
+          is_default: boolean
+          is_enabled: boolean
+          numbering_current: number | null
+          numbering_from: number | null
+          numbering_prefix: string | null
+          numbering_to: number | null
+          organization_id: string
+          resolution_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_type_id: string
+          id?: string
+          is_default?: boolean
+          is_enabled?: boolean
+          numbering_current?: number | null
+          numbering_from?: number | null
+          numbering_prefix?: string | null
+          numbering_to?: number | null
+          organization_id: string
+          resolution_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_type_id?: string
+          id?: string
+          is_default?: boolean
+          is_enabled?: boolean
+          numbering_current?: number | null
+          numbering_from?: number | null
+          numbering_prefix?: string | null
+          numbering_to?: number | null
+          organization_id?: string
+          resolution_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_document_types_document_type_id_fkey"
+            columns: ["document_type_id"]
+            isOneToOne: false
+            referencedRelation: "document_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_document_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_document_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "organization_document_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
           },
         ]
       }

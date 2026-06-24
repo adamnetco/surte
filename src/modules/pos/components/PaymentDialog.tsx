@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight } from "lucide-react";
+import DocumentTypeSelector from "./DocumentTypeSelector";
 
 type MethodKey = "efectivo" | "tarjeta_debito" | "tarjeta_credito" | "transferencia" | "nequi" | "daviplata";
 
@@ -22,7 +23,9 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   total: number;
-  onConfirm: (payments: Pay[]) => void | Promise<void>;
+  onConfirm: (payments: Pay[], meta: { docType: string | null }) => void | Promise<void>;
+  organizationId?: string;
+  hasCustomerId?: boolean;
 }
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
@@ -42,7 +45,8 @@ function suggestedQuickAmounts(pending: number): number[] {
   return Array.from(new Set([pending, ...next])).slice(0, 5);
 }
 
-export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: Props) {
+export default function PaymentDialog({ open, onOpenChange, total, onConfirm, organizationId, hasCustomerId = false }: Props) {
+  const [docType, setDocType] = useState<string | null>(null);
   const [payments, setPayments] = useState<Pay[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const firstAmountRef = useRef<HTMLInputElement>(null);
@@ -79,7 +83,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: 
     if (!canConfirm) return;
     setSubmitting(true);
     try {
-      await onConfirm(payments.filter((p) => p.amount > 0));
+      await onConfirm(payments.filter((p) => p.amount > 0), { docType });
     } catch {
       setSubmitting(false);
     }
@@ -105,6 +109,15 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm }: 
         </DialogHeader>
 
         <div className="space-y-3">
+          {organizationId && (
+            <DocumentTypeSelector
+              organizationId={organizationId}
+              value={docType}
+              onChange={(code) => setDocType(code)}
+              hasCustomerId={hasCustomerId}
+              compact
+            />
+          )}
           {payments.map((p, i) => {
             const amountId = `pay-amount-${i}`;
             const remaining = Math.max(0, total - (sum - (Number(p.amount) || 0)));
