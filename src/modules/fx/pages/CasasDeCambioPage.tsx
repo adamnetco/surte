@@ -211,27 +211,49 @@ export default function CasasDeCambioPage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Pares activos ({pairs.length})</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Pares activos ({filteredPairs.length}/{pairs.length})</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {pairs.length === 0 && <p className="text-sm text-muted-foreground">Sin pares todavía.</p>}
-              {pairs.map(p => {
+              {pairs.length > 0 && filteredPairs.length === 0 && (
+                <p className="text-sm text-muted-foreground">Sin resultados para “{search}”.</p>
+              )}
+              {filteredPairs.map(p => {
                 const base = currMap[p.base_currency_id];
                 const quote = currMap[p.quote_currency_id];
                 const r = latestRates[p.id];
+                const canTrm = base?.code === "USD" && quote?.code === "COP";
                 return (
-                  <div key={p.id} className="flex items-center justify-between border rounded-md p-3">
-                    <div className="flex items-center gap-3">
+                  <div key={p.id} className="flex items-center justify-between border rounded-md p-3 gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Badge variant="default" className="font-mono">{base?.code}/{quote?.code}</Badge>
-                      <span className="text-sm text-muted-foreground">{base?.name} → {quote?.name}</span>
+                      <span className="text-sm text-muted-foreground truncate">{base?.name} → {quote?.name}</span>
                     </div>
-                    <div className="text-right text-sm">
-                      {r ? (
-                        <>
-                          <div>Compra <span className="font-mono font-semibold">{r.buy_rate}</span> · Venta <span className="font-mono font-semibold">{r.sell_rate}</span></div>
-                          <div className="text-xs text-muted-foreground">Spread: {((r.sell_rate - r.buy_rate) / r.buy_rate * 100).toFixed(2)}%</div>
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Sin cotización</span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right text-sm">
+                        {r ? (
+                          <>
+                            <div>Compra <span className="font-mono font-semibold">{r.buy_rate}</span> · Venta <span className="font-mono font-semibold">{r.sell_rate}</span></div>
+                            <div className="text-xs text-muted-foreground">Spread: {((r.sell_rate - r.buy_rate) / r.buy_rate * 100).toFixed(2)}% · src: {r.source}</div>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Sin cotización</span>
+                        )}
+                      </div>
+                      {canTrm && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={importTrm.isPending}
+                          onClick={() => importTrm.mutate(p.id)}
+                          title="Importar tasa oficial TRM (Banco de la República)"
+                        >
+                          {importTrm.isPending && importTrm.variables === p.id ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          TRM Banrep
+                        </Button>
                       )}
                     </div>
                   </div>
