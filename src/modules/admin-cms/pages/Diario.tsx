@@ -484,6 +484,9 @@ const Diario = () => {
   const totalAlerts = actions.length;
   const noActionsNeeded = hasData && totalAlerts === 0;
 
+  const [bulkKind, setBulkKind] = useState<BulkKind | null>(null);
+  const bulkOpen = bulkKind !== null;
+
 
   return (
     <div className="min-h-[100dvh] bg-background pb-24">
