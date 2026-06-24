@@ -34,6 +34,11 @@ interface Props { organizationId: string; }
 export default function POSBehaviorSettings({ organizationId }: Props) {
   const [behavior, setBehavior] = useState<PosBehavior>(DEFAULTS);
   const [hardBlock, setHardBlock] = useState<boolean>(false);
+  const [defaultsByClient, setDefaultsByClient] = useState({
+    consumer_final: "pos_electronico",
+    with_nit: "factura_electronica",
+    fx_operation: "documento_soporte",
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [configId, setConfigId] = useState<string | null>(null);
@@ -44,7 +49,7 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
       setLoading(true);
       const { data } = await supabase
         .from("einvoice_configs")
-        .select("id, pos_behavior, hard_block_when_dian_down")
+        .select("id, pos_behavior, hard_block_when_dian_down, default_doc_type_consumer_final, default_doc_type_with_nit, default_doc_type_fx_operation")
         .eq("organization_id", organizationId)
         .eq("environment", "prod")
         .maybeSingle();
@@ -52,6 +57,11 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
         setConfigId(data.id);
         setBehavior({ ...DEFAULTS, ...((data.pos_behavior as any) ?? {}) });
         setHardBlock(!!(data as any).hard_block_when_dian_down);
+        setDefaultsByClient({
+          consumer_final: (data as any).default_doc_type_consumer_final ?? "pos_electronico",
+          with_nit: (data as any).default_doc_type_with_nit ?? "factura_electronica",
+          fx_operation: (data as any).default_doc_type_fx_operation ?? "documento_soporte",
+        });
       }
       setLoading(false);
     })();
@@ -64,6 +74,9 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
       environment: "prod",
       pos_behavior: behavior as any,
       hard_block_when_dian_down: hardBlock,
+      default_doc_type_consumer_final: defaultsByClient.consumer_final,
+      default_doc_type_with_nit: defaultsByClient.with_nit,
+      default_doc_type_fx_operation: defaultsByClient.fx_operation,
     };
     if (configId) payload.id = configId;
     const { error } = await supabase
@@ -124,6 +137,35 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
           Es el documento que el POS asume cuando el cajero presiona <b>COBRAR</b> sin elegir uno manualmente.
         </p>
       </div>
+
+      <div className="space-y-3 p-3 rounded-lg border bg-card">
+        <div>
+          <p className="text-sm font-medium">Defaults por tipo de cliente</p>
+          <p className="text-[11px] text-muted-foreground">
+            El POS sugiere automáticamente uno u otro documento según si el cliente tiene NIT/CC o es una operación FX.
+          </p>
+        </div>
+        <DefaultDocRow
+          label="Consumidor final (sin NIT)"
+          value={defaultsByClient.consumer_final}
+          onChange={(v) => setDefaultsByClient({ ...defaultsByClient, consumer_final: v })}
+          options={docTypes}
+        />
+        <DefaultDocRow
+          label="Cliente con NIT / CC"
+          value={defaultsByClient.with_nit}
+          onChange={(v) => setDefaultsByClient({ ...defaultsByClient, with_nit: v })}
+          options={docTypes}
+        />
+        <DefaultDocRow
+          label="Operación Casa de Cambio (FX)"
+          value={defaultsByClient.fx_operation}
+          onChange={(v) => setDefaultsByClient({ ...defaultsByClient, fx_operation: v })}
+          options={docTypes}
+        />
+      </div>
+
+
 
       <BehaviorRow
         icon={HelpCircle}
@@ -197,6 +239,37 @@ function BehaviorRow({
         </div>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+function DefaultDocRow({
+  label, value, onChange, options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { id: string; code: string; label: string; dian_code?: string | null }[];
+}) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-9 w-[220px] text-xs">
+          <SelectValue placeholder="Seleccionar" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.length === 0 && (
+            <SelectItem value={value} disabled>Sin opciones</SelectItem>
+          )}
+          {options.map((dt) => (
+            <SelectItem key={dt.id} value={dt.code}>
+              {dt.label}
+              {dt.dian_code && <span className="text-muted-foreground ml-2">· DIAN {dt.dian_code}</span>}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

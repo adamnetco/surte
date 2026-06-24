@@ -1,6 +1,7 @@
 import { FileText, Receipt, FileCheck2, FileMinus, FileQuestion } from "lucide-react";
 import { useMemo } from "react";
 import { useOrgDocumentTypes, type DocumentTypeOption } from "../hooks/useOrgDocumentTypes";
+import { useOrgDefaultDocTypes } from "../hooks/useOrgDefaultDocTypes";
 
 interface Props {
   organizationId: string;
@@ -34,17 +35,23 @@ export default function DocumentTypeSelector({
   compact = false,
 }: Props) {
   const { data: options = [], isLoading } = useOrgDocumentTypes(organizationId, module);
+  const defaults = useOrgDefaultDocTypes(organizationId);
 
-  // Selección sugerida: si hay NIT y existe factura electrónica, sugerirla;
-  // si no, usar el default de la org; si no hay default, primer item.
+  // POS-einvoice-default-doctype-by-business AC3:
+  // 1. Si module === 'fx' → fxOperation
+  // 2. Si hasCustomerId → withNit
+  // 3. Else → consumerFinal
+  // 4. Fallback legacy: is_default o primer item
   const suggested = useMemo(() => {
     if (!options.length) return null;
-    if (hasCustomerId) {
-      const fe = options.find((o) => o.code === "factura_electronica");
-      if (fe) return fe;
-    }
+    const wantedCode =
+      module === "fx" ? defaults.fxOperation
+      : hasCustomerId ? defaults.withNit
+      : defaults.consumerFinal;
+    const byDefault = options.find((o) => o.code === wantedCode);
+    if (byDefault) return byDefault;
     return options.find((o) => o.is_default) ?? options[0];
-  }, [options, hasCustomerId]);
+  }, [options, hasCustomerId, module, defaults.consumerFinal, defaults.withNit, defaults.fxOperation]);
 
   // Auto-asignar la sugerencia cuando aún no hay valor
   if (!value && suggested) {

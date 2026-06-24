@@ -2101,6 +2101,9 @@ export type Database = {
           contact_phone: string | null
           contingency_range: Json | null
           created_at: string
+          default_doc_type_consumer_final: string
+          default_doc_type_fx_operation: string
+          default_doc_type_with_nit: string
           dian_health_status: string
           dv: string | null
           environment: string
@@ -2129,6 +2132,9 @@ export type Database = {
           contact_phone?: string | null
           contingency_range?: Json | null
           created_at?: string
+          default_doc_type_consumer_final?: string
+          default_doc_type_fx_operation?: string
+          default_doc_type_with_nit?: string
           dian_health_status?: string
           dv?: string | null
           environment?: string
@@ -2157,6 +2163,9 @@ export type Database = {
           contact_phone?: string | null
           contingency_range?: Json | null
           created_at?: string
+          default_doc_type_consumer_final?: string
+          default_doc_type_fx_operation?: string
+          default_doc_type_with_nit?: string
           dian_health_status?: string
           dv?: string | null
           environment?: string
