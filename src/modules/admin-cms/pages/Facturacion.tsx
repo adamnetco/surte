@@ -215,6 +215,11 @@ export default function Facturacion() {
           <DocumentTypesManager organizationId={currentOrg.id} />
         </TabsContent>
 
+        <TabsContent value="pos-behavior">
+          <POSBehaviorSettings organizationId={currentOrg.id} />
+        </TabsContent>
+
+
 
 
         <TabsContent value="invoices">
