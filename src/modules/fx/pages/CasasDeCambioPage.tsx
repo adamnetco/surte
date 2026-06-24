@@ -95,12 +95,26 @@ export default function CasasDeCambioPage() {
             <p className="text-sm text-muted-foreground">Configuración de divisas, pares y cotizaciones</p>
           </div>
         </div>
-        {currencies.length === 0 && (
-          <Button onClick={seedDefaults} variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-1" /> Cargar divisas comunes (COP, USD, EUR, VES)
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {currencies.length === 0 && (
+            <Button onClick={seedDefaults} variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-1" /> Cargar comunes
+            </Button>
+          )}
+        </div>
       </header>
+
+      {/* Buscador global por código/nombre */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por divisa, par o nombre…"
+          className="pl-9"
+          aria-label="Buscar"
+        />
+      </div>
 
       <Tabs defaultValue="divisas">
         <TabsList>
