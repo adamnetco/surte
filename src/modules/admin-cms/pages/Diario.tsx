@@ -355,13 +355,33 @@ const Diario = () => {
               Acciones de hoy
             </h2>
             {hasData && (
-              <span className="text-[11px] text-muted-foreground">
-                {[data.pendingCount, data.lowStockCount, data.syncErrors].filter((n) => n > 0).length} pendiente(s)
+              <span className="text-[11px] text-muted-foreground tabular-nums">
+                {totalAlerts} pendiente(s)
               </span>
             )}
           </div>
 
-          {isLoading && (
+          {isError && (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-3">
+              <AlertCircle className="text-destructive shrink-0 mt-0.5" size={18} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-destructive">
+                  No pudimos cargar los datos del día
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                  {(error as Error)?.message ?? "Error desconocido"}
+                </p>
+                <button
+                  onClick={() => refetch()}
+                  className="mt-2 text-xs font-semibold text-destructive hover:underline"
+                >
+                  Reintentar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isLoading && !isError && (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
                 <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
@@ -373,47 +393,24 @@ const Diario = () => {
             <EmptyState
               icon={Sparkles}
               title="Todo al día"
-              description="No hay pedidos pendientes, stock crítico ni errores de sincronización. Buen trabajo."
+              description="No hay pedidos pendientes, stock crítico ni errores. Buen trabajo."
               compact
             />
           )}
 
           {hasData && !noActionsNeeded && (
             <div className="space-y-2">
-              {data.pendingCount > 0 && (
+              {actions.map((a) => (
                 <ActionCard
-                  icon={ShoppingCart}
-                  title="Despachar pedidos pendientes"
-                  description={`${data.pendingCount} pedido${data.pendingCount === 1 ? "" : "s"} esperando confirmación`}
-                  badge={String(data.pendingCount)}
-                  severity="warn"
-                  onClick={() => navigate("/admin?tab=orders")}
+                  key={a.key}
+                  icon={a.icon}
+                  title={a.title}
+                  description={a.description}
+                  badge={a.badge}
+                  severity={a.severity}
+                  onClick={a.onClick}
                 />
-              )}
-              {data.lowStockCount > 0 && (
-                <ActionCard
-                  icon={AlertTriangle}
-                  title="Reabastecer stock bajo"
-                  description={
-                    data.lowStockSample[0]
-                      ? `${data.lowStockSample[0].name} (${data.lowStockSample[0].stock}) y ${Math.max(0, data.lowStockCount - 1)} más`
-                      : `${data.lowStockCount} productos en mínimo`
-                  }
-                  badge={String(data.lowStockCount)}
-                  severity={data.lowStockCount > 10 ? "danger" : "warn"}
-                  onClick={() => navigate("/admin?tab=products&filter=low-stock")}
-                />
-              )}
-              {data.syncErrors > 0 && (
-                <ActionCard
-                  icon={RefreshCw}
-                  title="Resolver errores de sincronización"
-                  description={`${data.syncErrors} errores en las últimas 24h`}
-                  badge={String(data.syncErrors)}
-                  severity="danger"
-                  onClick={() => navigate("/admin/health-logs")}
-                />
-              )}
+              ))}
             </div>
           )}
         </section>
@@ -445,64 +442,76 @@ const Diario = () => {
               severity="info"
               onClick={() => navigate("/admin?tab=products")}
             />
+            <ActionCard
+              icon={FileCheck2}
+              title="Facturación DIAN (Innapsis)"
+              description="Listado, reintentos y descargas"
+              severity="info"
+              onClick={() => navigate("/admin/innapsis")}
+            />
           </div>
         </section>
 
-        {/* Checklist diaria */}
+        {/* Checklist diaria — persistido en Supabase */}
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Checklist del día
             </h2>
             <span className="text-[11px] text-muted-foreground tabular-nums">
-              {doneCount}/{checklist.length}
+              {doneCount}/{CHECKLIST_DEFS.length}
             </span>
           </div>
           <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
-            {checklist.map((c) => {
-              const checked = !!done[c.k];
-              return (
-                <button
-                  key={c.k}
-                  onClick={() => toggleDone(c.k)}
-                  className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-muted/40 transition min-h-[52px]"
-                >
-                  <span
-                    className={cn(
-                      "w-5 h-5 rounded-md border-2 grid place-items-center transition",
-                      checked
-                        ? "bg-emerald-500 border-emerald-500 text-white"
-                        : "border-border bg-background",
-                    )}
-                  >
-                    {checked && (
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                        <path
-                          fillRule="evenodd"
-                          d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-sm flex-1",
-                      checked ? "text-muted-foreground line-through" : "text-foreground",
-                    )}
-                  >
-                    {c.label}
-                  </span>
-                </button>
-              );
-            })}
+            {checklistLoading
+              ? CHECKLIST_DEFS.map((c) => (
+                  <Skeleton key={c.item_key} className="h-[52px] w-full rounded-none" />
+                ))
+              : CHECKLIST_DEFS.map((c) => {
+                  const checked = !!checkItems[c.item_key]?.done;
+                  return (
+                    <button
+                      key={c.item_key}
+                      onClick={() => toggle(c.item_key)}
+                      className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-muted/40 transition min-h-[52px]"
+                    >
+                      <span
+                        className={cn(
+                          "w-5 h-5 rounded-md border-2 grid place-items-center transition",
+                          checked
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : "border-border bg-background",
+                        )}
+                      >
+                        {checked && (
+                          <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                            <path
+                              fillRule="evenodd"
+                              d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-sm flex-1",
+                          checked ? "text-muted-foreground line-through" : "text-foreground",
+                        )}
+                      >
+                        {c.label}
+                      </span>
+                    </button>
+                  );
+                })}
           </div>
           <p className="text-[11px] text-muted-foreground">
-            La lista se reinicia automáticamente cada día.
+            Tu progreso se guarda en la nube y se reinicia cada día.
           </p>
         </section>
       </main>
     </div>
+
   );
 };
 
