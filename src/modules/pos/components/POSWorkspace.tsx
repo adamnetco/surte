@@ -22,7 +22,9 @@ import InvoiceActionsDialog from "./InvoiceActionsDialog";
 import SaleCompleteDialog from "./SaleCompleteDialog";
 import DianHealthIndicator from "./DianHealthIndicator";
 import ContingencyBanner from "./ContingencyBanner";
+import ResolutionStatusBanner from "./ResolutionStatusBanner";
 import { useDianHealth } from "@/modules/pos/hooks/useDianHealth";
+import { useEinvoiceResolutionStatus } from "@/modules/pos/hooks/useEinvoiceResolutionStatus";
 import OfflineIndicator from "@/modules/offline/components/OfflineIndicator";
 import { usePrintQueue, TicketPreviewDialog, type TicketData } from "@/modules/printing";
 import {
