@@ -15,11 +15,11 @@ Para una organización con >500 pendientes (caso real: caída prolongada de Inna
 
 ## Outcomes
 
-- [ ] **AC1:** Procesar los pendientes en lotes de tamaño `BATCH_SIZE` (default 100, configurable vía body opcional `batch_size: z.number().int().min(10).max(500)`).
-- [ ] **AC2:** Por cada lote: `UPDATE ... IN (ids[lote])` + `INSERT outbox` (lote). Si un lote falla, registrar en `sync_logs` con `phase='batch_N'` y continuar con el siguiente.
-- [ ] **AC3:** Respuesta final incluye `batches: [{ index, candidates, requeued, status, error? }]` y `partial: boolean` (true si al menos un lote falló).
-- [ ] **AC4:** Timeout guard: si el wallclock supera 45s, interrumpir el bucle y retornar `truncated: true` con el cursor (`last_processed_id`) para que el cliente reintente.
-- [ ] **AC5:** Test unitario que simule 250 pendientes y verifique que se generan 3 lotes (100/100/50) y un solo `sync_logs` agregado.
+- [x] **AC1:** Procesar los pendientes en lotes de tamaño `BATCH_SIZE` (default 100, configurable vía body opcional `batch_size`). Implementado en `processBulkRetry` (`einvoice-resend-bulk-admin/index.ts`) con helper `chunk()`.
+- [x] **AC2:** Por cada lote: `UPDATE ... IN (ids[lote])` + `INSERT outbox`. Si un lote falla, se registra en `sync_logs` con `phase='batch_N'` (`error_message='update_failed:…'` u `'outbox_insert_failed:…'`) y el bucle continúa con el siguiente.
+- [x] **AC3:** Respuesta agregada incluye `batches: BatchResult[]` por org (`{ index, candidates, requeued, status, error? }`), `partial: boolean` por org y `partial: boolean` top-level. UI `EinvoiceBulkRetry.tsx` muestra badges por lote `L{i}: {requeued}/{candidates}` y banner "Ejecución parcial" cuando aplica.
+- [ ] **AC4:** Timeout guard wallclock (>45s) + cursor `last_processed_id` → **pendiente** (chunk separado por ser invasivo: cambia el shape del response con `truncated`/cursor y exige handling de reintento en cliente).
+- [x] **AC5:** Tests `supabase/functions/einvoice-resend-bulk-admin/index_test.ts` — caso 250 pendings → 3 lotes (100/100/50), un único `sync_logs` agregado con `failed_batches=0`, plus tests de batch-failure parcial, all-fail y default batch_size. **15/15 verde**.
 
 ## Notas
 
