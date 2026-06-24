@@ -2,11 +2,12 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Printer, FileSignature, Plus, Volume2, VolumeX } from "lucide-react";
+import { CheckCircle2, Plus, Volume2, VolumeX, FileSignature } from "lucide-react";
 import { getPosSoundEnabled, setPosSoundEnabled, playSaleSuccessSound } from "@/lib/posSoundPrefs";
 import { useState } from "react";
 import { useEinvoiceLiveStatus } from "../hooks/useEinvoiceLiveStatus";
 import EinvoiceStatusBadge from "./EinvoiceStatusBadge";
+import EinvoiceActions from "./EinvoiceActions";
 
 interface Props {
   open: boolean;
@@ -20,6 +21,9 @@ interface Props {
   onEmitInvoice: () => void;
   /** Si se pasa, muestra badge Realtime con el estado DIAN de la factura emitida. */
   posOrderId?: string | null;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  isAdmin?: boolean;
 }
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
@@ -27,6 +31,7 @@ const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 export default function SaleCompleteDialog({
   open, onOpenChange, total, amountPaid, change, canEmitInvoice,
   onNewSale, onPrint, onEmitInvoice, posOrderId,
+  customerEmail, customerPhone, isAdmin = false,
 }: Props) {
   const einvoice = useEinvoiceLiveStatus(open ? posOrderId ?? null : null);
   const [soundOn, setSoundOn] = useState<boolean>(() => getPosSoundEnabled());
@@ -104,20 +109,31 @@ export default function SaleCompleteDialog({
             Nueva venta
             <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
           </Button>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" size="sm" onClick={onPrint}>
-              <Printer className="w-4 h-4 mr-1.5" /> Imprimir
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onEmitInvoice}
-              disabled={!canEmitInvoice}
-              title={canEmitInvoice ? "Emitir factura electrónica DIAN" : "Disponible al sincronizar"}
-            >
-              <FileSignature className="w-4 h-4 mr-1.5" /> Facturar
-            </Button>
-          </div>
+          {einvoice.status !== "idle" ? (
+            <EinvoiceActions
+              snap={einvoice}
+              posOrderId={posOrderId}
+              customerEmail={customerEmail}
+              customerPhone={customerPhone}
+              isAdmin={isAdmin}
+              onReprintPos={onPrint}
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={onPrint}>
+                Imprimir POS
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEmitInvoice}
+                disabled={!canEmitInvoice}
+                title={canEmitInvoice ? "Emitir factura electrónica DIAN" : "Disponible al sincronizar"}
+              >
+                <FileSignature className="w-4 h-4 mr-1.5" /> Facturar
+              </Button>
+            </div>
+          )}
           <button
             type="button"
             onClick={toggleSound}

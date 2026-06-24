@@ -45,6 +45,7 @@ import { POS_MODES } from "@/modules/pos/lib/posModes";
 import { supabase } from "@/integrations/supabase/client";
 import type { PosMode } from "@/modules/pos/lib/posModes";
 import type { POSCustomer } from "@/modules/pos/lib/posCustomer";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 
 
 interface Product {
@@ -69,6 +70,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const { isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [payOpen, setPayOpen] = useState(false);
@@ -957,6 +959,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onPrint={() => setPreviewOpen(true)}
         onEmitInvoice={() => { setSaleComplete(null); setActionMode("emit"); }}
         posOrderId={lastOrderId ?? null}
+        customerEmail={customer?.email ?? null}
+        customerPhone={customer?.phone ?? null}
+        isAdmin={isAdmin}
       />
 
       <TicketPreviewDialog
