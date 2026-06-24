@@ -308,7 +308,62 @@ export default function GlobalCommandPalette() {
           </>
         )}
 
+        {orderResults.length > 0 && (
+          <>
+            <CommandGroup heading={`Pedidos #${numericQuery}…`}>
+              {orderResults.map((o) => (
+                <CommandItem
+                  key={`order-${o.id}`}
+                  value={`pedido ${o.order_number} ${o.customer_name ?? ""} ${o.status}`}
+                  onSelect={() => goToOrder(o)}
+                  className="flex items-center gap-2"
+                >
+                  <Hash className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="flex-1 truncate">
+                    #{o.order_number}
+                    {o.customer_name ? ` · ${o.customer_name}` : ""}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+                    {o.status}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
+        {invoiceResults.length > 0 && (
+          <>
+            <CommandGroup heading="Facturas DIAN">
+              {invoiceResults.map((inv) => (
+                <CommandItem
+                  key={`inv-${inv.id}`}
+                  value={`factura ${inv.full_number ?? ""} ${inv.cufe ?? ""} ${inv.customer_name ?? ""}`}
+                  onSelect={goToInvoice}
+                  className="flex items-center gap-2"
+                >
+                  <FileSearch className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="flex-1 truncate">
+                    {inv.full_number ?? `${inv.prefix ?? ""}${inv.number ?? ""}`}
+                    {inv.customer_name ? ` · ${inv.customer_name}` : ""}
+                  </span>
+                  <span className={`text-[10px] font-mono shrink-0 ${
+                    inv.status === "accepted" ? "text-emerald-600" :
+                    inv.status === "error" || inv.status === "rejected" || inv.status === "dead_letter" ? "text-red-600" :
+                    "text-muted-foreground"
+                  }`}>
+                    {inv.status}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
         {productResults.length > 0 && (
+
           <>
             <CommandGroup heading="Productos">
               {productResults.map((p) => (
