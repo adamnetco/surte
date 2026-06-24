@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { FileText, RefreshCw, Send, Plug, Wand2, Layers, Settings2, FileMinus } from "lucide-react";
+import { FileText, RefreshCw, Send, Plug, Wand2, Layers, Settings2, FileMinus, FileCode2, Eye } from "lucide-react";
 import { calculateNitDv, isValidNitDv } from "../lib/nitDv";
 import DocumentTypesManager from "../components/DocumentTypesManager";
 import POSBehaviorSettings from "../components/POSBehaviorSettings";
@@ -28,6 +29,7 @@ interface Config {
   resolution_to?: number | null;
   resolution_current?: number | null;
   is_active: boolean;
+  extra?: Record<string, any> | null;
 }
 
 interface Invoice {
@@ -55,6 +57,9 @@ export default function Facturacion() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [noteInvoice, setNoteInvoice] = useState<Invoice | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewText, setPreviewText] = useState<string>("");
+  const [previewKind, setPreviewKind] = useState<"json" | "xml">("json");
 
   const moduleOn = hasModule("einvoice_innapsis");
 
@@ -101,6 +106,26 @@ export default function Facturacion() {
     const { data, error } = await supabase.functions.invoke("innapsis-status", { body: { invoice_id } });
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else toast({ title: "Consulta enviada", description: JSON.stringify(data).slice(0, 120) });
+  };
+
+  const openPreview = async (invoice_id: string) => {
+    const { data, error } = await supabase
+      .from("electronic_invoices")
+      .select("request_payload")
+      .eq("id", invoice_id)
+      .maybeSingle();
+    if (error || !data?.request_payload) {
+      toast({ title: "Sin payload", description: "Esta factura no tiene payload registrado.", variant: "destructive" });
+      return;
+    }
+    const fmt = (cfg.extra as any)?.payload_format === "xml" ? "xml" : "json";
+    setPreviewKind(fmt);
+    setPreviewText(
+      fmt === "xml"
+        ? (await import("../lib/feToXmlPreview")).feToXmlPreview(data.request_payload as any)
+        : JSON.stringify(data.request_payload, null, 2),
+    );
+    setPreviewOpen(true);
   };
 
   const computedDv = cfg.nit ? calculateNitDv(cfg.nit) : null;
@@ -207,6 +232,41 @@ export default function Facturacion() {
               </div>
             </div>
 
+            <div className="border-t pt-3 space-y-2">
+              <div className="flex items-center gap-3">
+                <FileCode2 className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1">
+                  <Label className="text-sm">Formato de payload Innapsis</Label>
+                  <p className="text-xs text-muted-foreground">
+                    JSON es el formato probado en producción. XML usa el endpoint <code>envieDocumento?nit=...&amp;configuracion=string</code> según spec v1.9.
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={((cfg.extra as any)?.payload_format ?? "json") === "json" ? "default" : "outline"}
+                    onClick={() => setCfg({ ...cfg, extra: { ...(cfg.extra ?? {}), payload_format: "json" } })}
+                  >
+                    JSON
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={(cfg.extra as any)?.payload_format === "xml" ? "default" : "outline"}
+                    onClick={() => setCfg({ ...cfg, extra: { ...(cfg.extra ?? {}), payload_format: "xml" } })}
+                  >
+                    XML
+                  </Button>
+                </div>
+              </div>
+              {(cfg.extra as any)?.payload_format === "xml" && (
+                <p className="text-xs text-orange-600">
+                  ⚠ XML opt-in. Verifica con Innapsis que tu cuenta acepta el endpoint single-emision antes de activar en PROD.
+                </p>
+              )}
+            </div>
+
             <div className="flex flex-wrap gap-2">
               <Button onClick={save} disabled={loading}>Guardar configuración</Button>
               <Button variant="outline" onClick={testConnection} disabled={loading || !cfg.id}>
@@ -254,6 +314,9 @@ export default function Facturacion() {
                     <Button size="icon" variant="ghost" onClick={() => checkStatus(i.id)} title="Consultar estado">
                       <Send className="h-4 w-4" />
                     </Button>
+                    <Button size="icon" variant="ghost" onClick={() => openPreview(i.id)} title="Previsualizar payload">
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     {i.document_type === "invoice" && (i.status === "sent" || i.status === "accepted") && (
                       <Button size="icon" variant="ghost" onClick={() => setNoteInvoice(i)} title="Emitir Nota Crédito/Débito">
                         <FileMinus className="h-4 w-4" />
@@ -274,6 +337,24 @@ export default function Facturacion() {
         onEmitted={loadAll}
         organizationId={currentOrg.id}
       />
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCode2 className="h-5 w-5" /> Payload Innapsis ({previewKind.toUpperCase()})
+            </DialogTitle>
+          </DialogHeader>
+          <pre className="bg-muted/40 border rounded-md p-3 text-xs overflow-auto max-h-[60vh] whitespace-pre-wrap break-words">
+            {previewText || "—"}
+          </pre>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(previewText)}>
+              Copiar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
