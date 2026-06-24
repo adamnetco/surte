@@ -455,10 +455,42 @@ Deno.serve(async (req) => {
     const fullNumber = `${usedPrefix}${nextNumber}`;
     const trackId = transmit_invoice_id ? String(existingInvoice.track_id ?? crypto.randomUUID()) : crypto.randomUUID();
 
+    // Slice 3 — Cargar referencia para NC/ND
+    let referenceData: any = null;
+    if (
+      !transmit_invoice_id &&
+      (document_type === "credit_note" || document_type === "debit_note") &&
+      reference_invoice_id
+    ) {
+      const { data: refInv } = await admin
+        .from("electronic_invoices")
+        .select("id, prefix, number, full_number, issue_date, cufe, document_type, organization_id")
+        .eq("id", reference_invoice_id)
+        .maybeSingle();
+      if (!refInv || refInv.organization_id !== effectiveOrgId) {
+        return new Response(JSON.stringify({ error: "reference_invoice_not_found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      referenceData = {
+        invoice_id: refInv.id,
+        tipoDoc: refInv.document_type === "credit_note" ? "6"
+                : refInv.document_type === "debit_note" ? "5" : "1",
+        prefix: refInv.prefix,
+        number: refInv.number,
+        full_number: refInv.full_number,
+        issueDate: refInv.issue_date,
+        cufe: refInv.cufe,
+        conceptCode: note_concept_code ?? null,
+        conceptText: note_concept_text ?? null,
+      };
+    }
+
     const payload = buildInnapsisPayload({
       cfg: { ...cfg, resolution_prefix: usedPrefix },
       org, location, order, items, payments,
       number: nextNumber, trackId, documentType: document_type,
+      reference: referenceData,
     });
     // Marca el XML para que Innapsis lo procese como contingencia (campo a confirmar con Innapsis v1.9).
     if (useContingency || (transmit_invoice_id && existingInvoice?.is_contingency)) {
