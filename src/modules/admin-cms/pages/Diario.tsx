@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -13,6 +13,8 @@ import {
   Moon,
   Sunrise,
   Sparkles,
+  AlertCircle,
+  FileCheck2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -21,18 +23,15 @@ import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
+import { useDailyChecklist } from "@/modules/admin-cms/hooks/useDailyChecklist";
 
 /**
  * Daily Driver — pantalla mobile-first del flujo diario del admin.
- * Concentra las 5 acciones que el operador hace cada mañana:
- *  1) Revisar ventas de hoy
- *  2) Despachar pedidos pendientes
- *  3) Reabastecer productos en stock bajo
- *  4) Resolver errores de sincronización
- *  5) Abrir / cerrar caja
- *
- * Diseño: vertical cards (no tablas), tap-targets ≥ 56px, base 390px.
+ * - KPIs con refresco automático (60s) + manual + manejo de errores.
+ * - Acciones ordenadas por severidad (danger → warn) según datos reales.
+ * - Checklist persistido en Supabase, reinicio automático al cambiar de día.
  */
+
 
 const COP = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -59,11 +58,13 @@ function useDailySnapshot(orgId: string | undefined) {
     queryKey: ["admin", "diario", orgId],
     enabled: !!orgId,
     refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    retry: 1,
     queryFn: async () => {
       const since = startOfTodayISO();
       const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-      const [ordersToday, pending, lowStock, syncErrors] = await Promise.all([
+      const [ordersToday, pending, lowStock, syncErrors, einvoiceErrors] = await Promise.all([
         supabase
           .from("orders")
           .select("id,total,status,created_at")
@@ -87,7 +88,18 @@ function useDailySnapshot(orgId: string | undefined) {
           .eq("organization_id", orgId!)
           .eq("status", "error")
           .gte("last_run_at", since24h),
+        supabase
+          .from("electronic_invoices")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", orgId!)
+          .in("status", ["error", "dead_letter", "rejected"])
+          .gte("created_at", since24h),
       ]);
+
+      // Propagar el primer error real para que React Query maneje retries/UI
+      const firstErr =
+        ordersToday.error || pending.error || lowStock.error || syncErrors.error || einvoiceErrors.error;
+      if (firstErr) throw firstErr;
 
       const todays = ordersToday.data ?? [];
       const revenue = todays.reduce((s, o: any) => s + Number(o.total || 0), 0);
@@ -99,10 +111,12 @@ function useDailySnapshot(orgId: string | undefined) {
         lowStockCount: lowStock.count ?? 0,
         lowStockSample: (lowStock.data ?? []) as Array<{ id: string; name: string; stock: number }>,
         syncErrors: syncErrors.count ?? 0,
+        einvoiceErrors: einvoiceErrors.count ?? 0,
       };
     },
   });
 }
+
 
 type Severity = "ok" | "info" | "warn" | "danger";
 
