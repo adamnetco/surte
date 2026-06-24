@@ -218,7 +218,151 @@ type ActionEntry = {
   weight: number;
 };
 
-const Diario = () => {
+function ChecklistRow({
+  item_key,
+  label,
+  checked,
+  notes,
+  onToggle,
+  onSaveNotes,
+}: {
+  item_key: string;
+  label: string;
+  checked: boolean;
+  notes: string;
+  onToggle: () => void;
+  onSaveNotes: (v: string) => void | Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(notes);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  // Sync external changes when not editing (avoid clobbering typing)
+  useEffect(() => {
+    if (!editing) setDraft(notes);
+  }, [notes, editing]);
+
+  useEffect(() => {
+    if (editing) ref.current?.focus();
+  }, [editing]);
+
+  const commit = async () => {
+    const next = draft.trim();
+    if (next !== (notes ?? "").trim()) {
+      setSaving(true);
+      try {
+        await onSaveNotes(next);
+        setSavedAt(Date.now());
+      } finally {
+        setSaving(false);
+      }
+    }
+    setEditing(false);
+  };
+
+  return (
+    <div className="p-2.5">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onToggle}
+          aria-pressed={checked}
+          aria-label={`Marcar ${label}`}
+          className="shrink-0"
+        >
+          <span
+            className={cn(
+              "w-5 h-5 rounded-md border-2 grid place-items-center transition",
+              checked
+                ? "bg-emerald-500 border-emerald-500 text-white"
+                : "border-border bg-background",
+            )}
+          >
+            {checked && (
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                <path
+                  fillRule="evenodd"
+                  d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </span>
+        </button>
+        <button
+          onClick={onToggle}
+          className={cn(
+            "text-sm flex-1 text-left min-h-[32px]",
+            checked ? "text-muted-foreground line-through" : "text-foreground",
+          )}
+        >
+          {label}
+        </button>
+        <button
+          onClick={() => setEditing((v) => !v)}
+          aria-label={`Notas de ${label}`}
+          className={cn(
+            "shrink-0 h-7 w-7 rounded-md grid place-items-center text-xs transition",
+            notes
+              ? "bg-amber-500/10 text-amber-700"
+              : "text-muted-foreground hover:bg-muted",
+          )}
+          title={notes || "Agregar nota"}
+        >
+          <StickyNote size={14} />
+        </button>
+      </div>
+
+      {!editing && notes && (
+        <p
+          onClick={() => setEditing(true)}
+          className="ml-8 mt-1 text-[11px] text-muted-foreground italic cursor-text whitespace-pre-wrap break-words"
+        >
+          {notes}
+        </p>
+      )}
+
+      {editing && (
+        <div className="ml-8 mt-1.5 space-y-1">
+          <textarea
+            ref={ref}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                commit();
+              } else if (e.key === "Escape") {
+                setDraft(notes);
+                setEditing(false);
+              }
+            }}
+            rows={2}
+            placeholder="Agrega una nota (Cmd/Ctrl+Enter para guardar)…"
+            className="w-full text-xs bg-background border border-border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+            maxLength={500}
+            id={`notes-${item_key}`}
+          />
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+            <span>{draft.length}/500</span>
+            <span className="flex items-center gap-1">
+              {saving && <RefreshCw size={10} className="animate-spin" />}
+              {!saving && savedAt && Date.now() - savedAt < 3000 && (
+                <>
+                  <Check size={10} className="text-emerald-600" /> guardado
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentOrg } = useOrganization();
