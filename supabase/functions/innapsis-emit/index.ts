@@ -548,9 +548,12 @@ Deno.serve(async (req) => {
         qr_url: responseJson?.qr_url ?? responseJson?.QrUrl ?? null,
         xml_url: responseJson?.xml_url ?? responseJson?.XmlUrl ?? null,
         pdf_url: responseJson?.pdf_url ?? responseJson?.PdfUrl ?? null,
+        transmitted_at: res.ok && transmit_invoice_id ? new Date().toISOString() : undefined,
       }).eq("id", inv.id);
 
-      if (res.ok) {
+      // Solo avanzar la resolución cuando NO sea retransmisión de contingencia
+      // (la contingencia ya consumió su propio rango contingency_range.current).
+      if (res.ok && !transmit_invoice_id) {
         await admin.from("einvoice_configs").update({
           resolution_current: nextNumber + 1,
         }).eq("id", cfg.id);
