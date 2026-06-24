@@ -9,10 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { FileText, RefreshCw, Send, Plug, Wand2, Layers, Settings2 } from "lucide-react";
+import { FileText, RefreshCw, Send, Plug, Wand2, Layers, Settings2, FileMinus } from "lucide-react";
 import { calculateNitDv, isValidNitDv } from "../lib/nitDv";
 import DocumentTypesManager from "../components/DocumentTypesManager";
 import POSBehaviorSettings from "../components/POSBehaviorSettings";
+import EmitNoteDialog from "../components/EmitNoteDialog";
 
 interface Config {
   id?: string;
@@ -40,6 +41,10 @@ interface Invoice {
   created_at: string;
   track_id: string | null;
   last_error: string | null;
+  pos_order_id: string | null;
+  order_id: string | null;
+  cufe: string | null;
+  reference_full_number: string | null;
 }
 
 export default function Facturacion() {
@@ -49,6 +54,7 @@ export default function Facturacion() {
   });
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
+  const [noteInvoice, setNoteInvoice] = useState<Invoice | null>(null);
 
   const moduleOn = hasModule("einvoice_innapsis");
 
@@ -64,7 +70,7 @@ export default function Facturacion() {
 
     const { data: inv } = await supabase
       .from("electronic_invoices")
-      .select("id, full_number, document_type, customer_name, total, status, environment, created_at, track_id, last_error")
+      .select("id, full_number, document_type, customer_name, total, status, environment, created_at, track_id, last_error, pos_order_id, order_id, cufe, reference_full_number")
       .eq("organization_id", currentOrg.id)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -235,6 +241,9 @@ export default function Facturacion() {
                   <div>
                     <div className="font-medium">{i.full_number ?? "—"} · {i.document_type}</div>
                     <div className="text-xs text-muted-foreground">{i.customer_name ?? "Consumidor final"} · ${i.total.toLocaleString("es-CO")} · {new Date(i.created_at).toLocaleString("es-CO")}</div>
+                    {i.reference_full_number && (
+                      <div className="text-xs text-muted-foreground">↳ Ref: {i.reference_full_number}</div>
+                    )}
                     {i.last_error && <div className="text-xs text-destructive">{i.last_error}</div>}
                   </div>
                   <div className="flex items-center gap-2">
@@ -245,6 +254,11 @@ export default function Facturacion() {
                     <Button size="icon" variant="ghost" onClick={() => checkStatus(i.id)} title="Consultar estado">
                       <Send className="h-4 w-4" />
                     </Button>
+                    {i.document_type === "invoice" && (i.status === "sent" || i.status === "accepted") && (
+                      <Button size="icon" variant="ghost" onClick={() => setNoteInvoice(i)} title="Emitir Nota Crédito/Débito">
+                        <FileMinus className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -252,6 +266,14 @@ export default function Facturacion() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EmitNoteDialog
+        invoice={noteInvoice}
+        open={!!noteInvoice}
+        onClose={() => setNoteInvoice(null)}
+        onEmitted={loadAll}
+        organizationId={currentOrg.id}
+      />
     </div>
   );
 }

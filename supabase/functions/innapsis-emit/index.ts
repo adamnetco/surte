@@ -98,10 +98,19 @@ interface BuildInput {
   number: number;
   trackId: string;
   documentType: "invoice" | "credit_note" | "debit_note";
+  reference?: {
+    tipoDoc?: string;
+    prefix?: string | null;
+    number?: number | string | null;
+    issueDate?: string | null;
+    cufe?: string | null;
+    conceptCode?: string | null;
+    conceptText?: string | null;
+  } | null;
 }
 
 function buildInnapsisPayload(input: BuildInput) {
-  const { cfg, org, location, order, items, payments, number, trackId, documentType } = input;
+  const { cfg, org, location, order, items, payments, number, trackId, documentType, reference } = input;
   const now = new Date();
   const iso = now.toISOString();
   const fecha = iso.slice(0, 10);
@@ -232,7 +241,7 @@ function buildInnapsisPayload(input: BuildInput) {
     encabezado.FechaPeriodoFin = periodFin;
   }
 
-  const fe = {
+  const fe: Record<string, unknown> = {
     Encabezado: encabezado,
     CondicionesDePago: {
       FechaVencimiento: fecha,
@@ -254,6 +263,22 @@ function buildInnapsisPayload(input: BuildInput) {
     TaxTotal: taxTotal,
     Detalles: detalles,
   };
+
+  // Referencia al documento original (NC/ND). Spec Innapsis v1.9 §4.
+  if ((documentType === "credit_note" || documentType === "debit_note") && reference) {
+    fe.Referencia = {
+      TipoDoc: String(reference.tipoDoc ?? "1"),
+      Prefijo: reference.prefix ?? "",
+      Folio: reference.number != null ? String(reference.number) : "",
+      FechaEmision: reference.issueDate
+        ? String(reference.issueDate).slice(0, 10)
+        : fecha,
+      Cufe: reference.cufe ?? "",
+      CodigoMotivoNota: reference.conceptCode ?? (documentType === "credit_note" ? "2" : "4"),
+      DescripcionMotivoNota: reference.conceptText
+        ?? (documentType === "credit_note" ? "Anulación" : "Otros"),
+    };
+  }
 
   return {
     trackId,
@@ -305,6 +330,9 @@ Deno.serve(async (req) => {
       document_type = "invoice",
       contingency_mode: contingencyModeRaw,
       transmit_invoice_id,
+      reference_invoice_id,
+      note_concept_code,
+      note_concept_text,
     } = reqBody;
     if (!bodyOrgId && !transmit_invoice_id) {
       return new Response(JSON.stringify({ error: "organization_id requerido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -427,10 +455,42 @@ Deno.serve(async (req) => {
     const fullNumber = `${usedPrefix}${nextNumber}`;
     const trackId = transmit_invoice_id ? String(existingInvoice.track_id ?? crypto.randomUUID()) : crypto.randomUUID();
 
+    // Slice 3 — Cargar referencia para NC/ND
+    let referenceData: any = null;
+    if (
+      !transmit_invoice_id &&
+      (document_type === "credit_note" || document_type === "debit_note") &&
+      reference_invoice_id
+    ) {
+      const { data: refInv } = await admin
+        .from("electronic_invoices")
+        .select("id, prefix, number, full_number, issue_date, cufe, document_type, organization_id")
+        .eq("id", reference_invoice_id)
+        .maybeSingle();
+      if (!refInv || refInv.organization_id !== effectiveOrgId) {
+        return new Response(JSON.stringify({ error: "reference_invoice_not_found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      referenceData = {
+        invoice_id: refInv.id,
+        tipoDoc: refInv.document_type === "credit_note" ? "6"
+                : refInv.document_type === "debit_note" ? "5" : "1",
+        prefix: refInv.prefix,
+        number: refInv.number,
+        full_number: refInv.full_number,
+        issueDate: refInv.issue_date,
+        cufe: refInv.cufe,
+        conceptCode: note_concept_code ?? null,
+        conceptText: note_concept_text ?? null,
+      };
+    }
+
     const payload = buildInnapsisPayload({
       cfg: { ...cfg, resolution_prefix: usedPrefix },
       org, location, order, items, payments,
       number: nextNumber, trackId, documentType: document_type,
+      reference: referenceData,
     });
     // Marca el XML para que Innapsis lo procese como contingencia (campo a confirmar con Innapsis v1.9).
     if (useContingency || (transmit_invoice_id && existingInvoice?.is_contingency)) {
@@ -461,6 +521,12 @@ Deno.serve(async (req) => {
         request_payload: payload,
         environment: cfg.environment,
         created_by: userId,
+        reference_invoice_id: referenceData?.invoice_id ?? null,
+        reference_cufe: referenceData?.cufe ?? null,
+        reference_full_number: referenceData?.full_number ?? null,
+        reference_issue_date: referenceData?.issueDate ?? null,
+        note_concept_code: referenceData?.conceptCode ?? null,
+        note_concept_text: referenceData?.conceptText ?? null,
       }).select().single();
       if (cErr) throw cErr;
 
@@ -519,6 +585,12 @@ Deno.serve(async (req) => {
         request_payload: payload,
         environment: cfg.environment,
         created_by: userId,
+        reference_invoice_id: referenceData?.invoice_id ?? null,
+        reference_cufe: referenceData?.cufe ?? null,
+        reference_full_number: referenceData?.full_number ?? null,
+        reference_issue_date: referenceData?.issueDate ?? null,
+        note_concept_code: referenceData?.conceptCode ?? null,
+        note_concept_text: referenceData?.conceptText ?? null,
       }).select().single();
       if (invErr) throw invErr;
       inv = ins;

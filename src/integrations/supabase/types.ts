@@ -2357,6 +2357,8 @@ export type Database = {
           last_error: string | null
           location_id: string | null
           next_retry_at: string | null
+          note_concept_code: string | null
+          note_concept_text: string | null
           number: number | null
           order_id: string | null
           organization_id: string
@@ -2365,6 +2367,10 @@ export type Database = {
           pos_order_id: string | null
           prefix: string | null
           qr_url: string | null
+          reference_cufe: string | null
+          reference_full_number: string | null
+          reference_invoice_id: string | null
+          reference_issue_date: string | null
           request_payload: Json | null
           retry_count: number
           status: string
@@ -2395,6 +2401,8 @@ export type Database = {
           last_error?: string | null
           location_id?: string | null
           next_retry_at?: string | null
+          note_concept_code?: string | null
+          note_concept_text?: string | null
           number?: number | null
           order_id?: string | null
           organization_id: string
@@ -2403,6 +2411,10 @@ export type Database = {
           pos_order_id?: string | null
           prefix?: string | null
           qr_url?: string | null
+          reference_cufe?: string | null
+          reference_full_number?: string | null
+          reference_invoice_id?: string | null
+          reference_issue_date?: string | null
           request_payload?: Json | null
           retry_count?: number
           status?: string
@@ -2433,6 +2445,8 @@ export type Database = {
           last_error?: string | null
           location_id?: string | null
           next_retry_at?: string | null
+          note_concept_code?: string | null
+          note_concept_text?: string | null
           number?: number | null
           order_id?: string | null
           organization_id?: string
@@ -2441,6 +2455,10 @@ export type Database = {
           pos_order_id?: string | null
           prefix?: string | null
           qr_url?: string | null
+          reference_cufe?: string | null
+          reference_full_number?: string | null
+          reference_invoice_id?: string | null
+          reference_issue_date?: string | null
           request_payload?: Json | null
           retry_count?: number
           status?: string
@@ -2493,6 +2511,13 @@ export type Database = {
             columns: ["pos_order_id"]
             isOneToOne: false
             referencedRelation: "pos_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "electronic_invoices_reference_invoice_id_fkey"
+            columns: ["reference_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "electronic_invoices"
             referencedColumns: ["id"]
           },
         ]
