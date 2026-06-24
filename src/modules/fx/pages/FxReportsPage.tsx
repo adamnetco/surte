@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { TrendingUp, Download, AlertTriangle, FileText, ArrowRightLeft, Coins, Users, CalendarDays } from "lucide-react";
+import { TrendingUp, Download, AlertTriangle, FileText, ArrowRightLeft, Coins, Users, CalendarDays, ShieldAlert } from "lucide-react";
 import { useFxCurrencies } from "../hooks/useFx";
 import { useFxSummary, monthRange, type MarginBucket } from "../hooks/useFxReports";
+import { useUiafThreshold } from "../hooks/useFxTransactions";
 import { buildUiafCsv, downloadCsv } from "../lib/uiafExport";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,10 +26,48 @@ export default function FxReportsPage() {
   const range = useMemo(() => monthRange(year, month), [year, month]);
   const { data: currencies = [] } = useFxCurrencies();
   const { txs, totals, byCurrency, byPair, byCashier, byDay, isLoading } = useFxSummary(range);
+  const { data: threshold } = useUiafThreshold();
+  const thresholdAmount = threshold?.amount ?? 10000;
+  const thresholdCcy = threshold?.currency ?? "USD";
 
   const currMap = useMemo(
     () => Object.fromEntries(currencies.map((c) => [c.id, { code: c.code, name: c.name }])),
     [currencies],
+  );
+
+  // Slice 5 — Ola 2: acumulado mensual por cliente (cliente-side sobre txs ya cargadas).
+  type CustomerAcc = {
+    docNumber: string;
+    name: string;
+    accumulated: number;   // en threshold currency (cuando hay match), 0 si no
+    txCount: number;
+    aboveOps: number;
+    suspicious: number;
+  };
+  const byCustomer = useMemo<CustomerAcc[]>(() => {
+    const map = new Map<string, CustomerAcc>();
+    for (const t of txs as any[]) {
+      const doc = (t.customer_doc_number ?? "").toString().trim();
+      if (!doc) continue;
+      let acc = map.get(doc);
+      if (!acc) {
+        acc = { docNumber: doc, name: t.customer_name ?? "—", accumulated: 0, txCount: 0, aboveOps: 0, suspicious: 0 };
+        map.set(doc, acc);
+      }
+      acc.txCount += 1;
+      if (t.is_above_threshold) acc.aboveOps += 1;
+      if (t.is_suspicious) acc.suspicious += 1;
+      const fromCode = currMap[t.from_currency_id]?.code;
+      const toCode = currMap[t.to_currency_id]?.code;
+      if (fromCode === thresholdCcy) acc.accumulated += Number(t.from_amount) || 0;
+      else if (toCode === thresholdCcy) acc.accumulated += Number(t.to_amount) || 0;
+    }
+    return Array.from(map.values()).sort((a, b) => b.accumulated - a.accumulated);
+  }, [txs, currMap, thresholdCcy]);
+
+  const customersOverThreshold = byCustomer.filter((c) => c.accumulated >= thresholdAmount);
+  const customersNearThreshold = byCustomer.filter(
+    (c) => c.accumulated >= thresholdAmount * 0.8 && c.accumulated < thresholdAmount,
   );
 
   // Resolve cashier names
@@ -171,6 +210,77 @@ export default function FxReportsPage() {
           fmtMargin={fmtMargin}
         />
       </section>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ShieldAlert className="h-4 w-4 text-amber-500" />
+            Acumulado mensual UIAF por cliente
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Umbral configurado: <b>{thresholdAmount.toLocaleString()} {thresholdCcy}</b>.
+            Solo se suman operaciones cuya divisa origen o destino coincide con la moneda del umbral.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+            <div className="border rounded-lg px-3 py-2">
+              <div className="text-muted-foreground">Clientes con operaciones</div>
+              <div className="text-xl font-bold">{byCustomer.length}</div>
+            </div>
+            <div className="border rounded-lg px-3 py-2 border-destructive/40">
+              <div className="text-muted-foreground">Sobre umbral mensual</div>
+              <div className="text-xl font-bold text-destructive">{customersOverThreshold.length}</div>
+            </div>
+            <div className="border rounded-lg px-3 py-2 border-amber-400/40">
+              <div className="text-muted-foreground">Cerca del umbral (≥80%)</div>
+              <div className="text-xl font-bold text-amber-600">{customersNearThreshold.length}</div>
+            </div>
+          </div>
+
+          {byCustomer.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin clientes identificados en el período.</p>
+          ) : (
+            <div className="space-y-1 max-h-[320px] overflow-y-auto">
+              {byCustomer.slice(0, 50).map((c) => {
+                const pct = thresholdAmount > 0 ? (c.accumulated / thresholdAmount) * 100 : 0;
+                const over = c.accumulated >= thresholdAmount;
+                const near = !over && pct >= 80;
+                return (
+                  <div
+                    key={c.docNumber}
+                    className={`flex items-center justify-between border rounded-md px-2 py-1.5 text-xs ${
+                      over ? "border-destructive/50 bg-destructive/5" : near ? "border-amber-400/50 bg-amber-50/40" : ""
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{c.name}</div>
+                      <div className="text-[10px] text-muted-foreground flex gap-2 flex-wrap">
+                        <span>Doc: {c.docNumber}</span>
+                        <span>{c.txCount} ops</span>
+                        {c.aboveOps > 0 && <Badge variant="outline" className="h-4 px-1 text-[9px]">UIAF op {c.aboveOps}</Badge>}
+                        {c.suspicious > 0 && <Badge variant="destructive" className="h-4 px-1 text-[9px]">ROS {c.suspicious}</Badge>}
+                      </div>
+                    </div>
+                    <div className="text-right whitespace-nowrap">
+                      <div className={`tabular-nums font-semibold ${over ? "text-destructive" : near ? "text-amber-600" : ""}`}>
+                        {c.accumulated.toLocaleString(undefined, { maximumFractionDigits: 2 })} {thresholdCcy}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">{pct.toFixed(0)}% del umbral</div>
+                    </div>
+                  </div>
+                );
+              })}
+              {byCustomer.length > 50 && (
+                <p className="text-[10px] text-muted-foreground pt-1">
+                  Mostrando 50 de {byCustomer.length}. Exporta UIAF para el detalle completo.
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
