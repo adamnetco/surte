@@ -231,13 +231,8 @@ function StatTile({
   );
 }
 
-const CHECKLIST_DEFS = [
-  { item_key: "caja", label: "Abrir caja del día" },
-  { item_key: "precios", label: "Revisar precios actualizados" },
-  { item_key: "stock", label: "Revisar productos con bajo stock" },
-  { item_key: "pedidos", label: "Despachar pedidos pendientes" },
-  { item_key: "cierre", label: "Cierre del día y backup" },
-];
+const TEMPLATE_LS_KEY = "sistecpos:diario:tplKey";
+
 
 type ActionEntry = {
   key: string;
