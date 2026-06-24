@@ -213,16 +213,31 @@ function buildInnapsisPayload(input: BuildInput) {
   // ----- Pago -----
   const medioPago = mapMedioPago(payments[0]?.method);
 
+  const encabezado: Record<string, unknown> = {
+    FechaEmision: fecha,
+    HoraEmision: hora,
+    TipoDocumento: tipoDoc,
+    Prefijo: cfg.resolution_prefix ?? "",
+    FolioAutorizado: number,
+    Operacion: String(extra.operacion ?? "10"),
+    FechaEntrega: fecha,
+    HoraEntrega: hora,
+  };
+  // FechaPeriodo* solo aplica para operación 22 (factura sin referencia, periodo mensual).
+  if (String(encabezado.Operacion) === "22") {
+    const periodIni = extra.periodo_inicio ?? fecha.slice(0, 8) + "01";
+    const periodFin = extra.periodo_fin ?? fecha;
+    encabezado.FechaPeriodoInicio = periodIni;
+    encabezado.FechaPeriodoFin = periodFin;
+  }
+
   const fe = {
-    Encabezado: {
-      FechaEmision: fecha,
-      HoraEmision: hora,
-      TipoDocumento: tipoDoc,
-      Prefijo: cfg.resolution_prefix ?? "",
-      FolioAutorizado: number,
-      Operacion: "10",
-      FechaEntrega: fecha,
-      HoraEntrega: hora,
+    Encabezado: encabezado,
+    CondicionesDePago: {
+      FechaVencimiento: fecha,
+      DescripcionDePago: "Contado",
+      CondicionPago: "1",
+      MedioDePago: medioPago,
     },
     CondicionesDePago: {
       FechaVencimiento: fecha,
