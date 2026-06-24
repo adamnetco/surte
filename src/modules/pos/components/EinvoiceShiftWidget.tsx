@@ -45,14 +45,16 @@ export default function EinvoiceShiftWidget({ organizationId, className }: Props
 
   const retryAll = async () => {
     setRetrying(true);
+    // POS-einvoice-retry-scoping AC3: enviar organization_id explícito
     const { data, error } = await supabase.functions.invoke("einvoice-resend", {
-      body: { action: "retry_all_today" },
+      body: { action: "retry_all_today", organization_id: organizationId },
     });
     setRetrying(false);
     if (error) toast.error("No se pudo reintentar", { description: error.message });
     else toast.success(`Reencoladas: ${(data as any)?.requeued ?? 0}`);
     loadRecent();
   };
+
 
   if (stats.loading) {
     return (
