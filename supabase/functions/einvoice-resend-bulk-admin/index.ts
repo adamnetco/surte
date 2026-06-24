@@ -270,19 +270,29 @@ export async function processBulkRetry(
         continue;
       }
 
+      // POS-einvoice-bulk-retry-hardening AC2: usar target='einvoice_emit_retry'
+      // + attempts/max_attempts/next_attempt_at para integrar con sync-outbox-flush
+      // (backoff exponencial 1/5/30/120/720 min con jitter ±20%).
+      const nextAt = new Date(nowFn()).toISOString();
+      const effectiveMaxAttempts = typeof max_retries === "number" ? max_retries : 5;
       const outboxRows = lote.map((r) => ({
         organization_id: r.organization_id,
-        operation: "einvoice_emit",
+        target: "einvoice_emit_retry",
         payload: {
           invoice_id: r.id,
+          organization_id: r.organization_id,
           forced_retry: true,
           forced_by: userId,
           bulk: true,
           admin: true,
           ...(batch_size ? { batch_size } : {}),
           ...(typeof max_retries === "number" ? { max_retries } : {}),
+          ...(idempotency_key ? { idempotency_key } : {}),
         },
         status: "pending",
+        attempts: 0,
+        max_attempts: effectiveMaxAttempts,
+        next_attempt_at: nextAt,
       }));
       const { error: outErr } = await supabase.from("sync_outbox").insert(outboxRows);
 
@@ -367,7 +377,7 @@ export async function processBulkRetry(
 
   const anyPartial = truncated || results.some((r) => r.partial || r.status === "error");
 
-  return {
+  const response: BulkResponse = {
     success: true,
     dry_run: Boolean(dry_run),
     total_orgs: organization_ids.length,
@@ -378,6 +388,26 @@ export async function processBulkRetry(
     ...(nextCursor ? { next_cursor: nextCursor } : {}),
     elapsed_ms: nowFn() - startedAt,
   };
+
+  // POS-einvoice-bulk-retry-hardening AC1: persistir marker idempotente
+  // sólo en corridas terminadas (no truncadas) para que el cursor permita reanudar.
+  if (idempotency_key && !truncated) {
+    try {
+      await supabase.from("sync_logs").insert({
+        service_name: IDEM_MARKER_SERVICE,
+        status: "success",
+        payload: {
+          idempotency_key,
+          requested_by: userId,
+          cached_response: response,
+        },
+      });
+    } catch {
+      // best-effort
+    }
+  }
+
+  return response;
 }
 
 export const handler = async (req: Request): Promise<Response> => {
