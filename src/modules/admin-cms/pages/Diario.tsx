@@ -745,6 +745,14 @@ const Diario = () => {
           </p>
         </section>
       </main>
+
+      <DiarioBulkSheet
+        open={bulkOpen}
+        onOpenChange={(o) => !o && setBulkKind(null)}
+        kind={bulkKind}
+        organizationId={currentOrg?.id}
+        onAfterAction={() => refetch()}
+      />
     </div>
 
   );
