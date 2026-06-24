@@ -330,15 +330,17 @@ Deno.serve(async (req) => {
     }
 
     // 0) Membresía (no aplica para retransmisión disparada por cron service-role)
-    const { data: membership } = await admin
-      .from("organization_members")
-      .select("id, role")
-      .eq("organization_id", effectiveOrgId)
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (!membership) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!isServiceCall) {
+      const { data: membership } = await admin
+        .from("organization_members")
+        .select("id, role")
+        .eq("organization_id", effectiveOrgId)
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!membership) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     // 1) Config activa + organización
