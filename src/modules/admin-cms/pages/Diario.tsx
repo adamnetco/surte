@@ -230,7 +230,7 @@ const Diario = () => {
   const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
     ?? user?.email?.split("@")[0];
 
-  const { items: checkItems, toggle, doneCount, loading: checklistLoading } =
+  const { items: checkItems, toggle, setNotes, doneCount, loading: checklistLoading } =
     useDailyChecklist(CHECKLIST_DEFS);
 
   const hasData = !!data;
