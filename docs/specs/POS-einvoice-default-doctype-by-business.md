@@ -1,6 +1,6 @@
 # POS — Default Doc Type por business_type
 
-**Estado:** IN_REVIEW
+**Estado:** SHIPPED
 **Módulo:** `pos` (PaymentDialog/SaleCompleteDialog) + `admin-cms` (config)
 **Wave:** Follow-up de [POS-innapsis-emision-pos](./POS-innapsis-emision-pos.md) (Observación #2 del review)
 **Tablas:** `organizations.business_type`, `einvoice_configs.default_doc_type_*`
