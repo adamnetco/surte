@@ -50,6 +50,7 @@ const MenuPage = lazy(() => import("./modules/pos").then((m) => ({ default: m.Me
 const Ofertas = lazy(() => import("./modules/storefront").then((m) => ({ default: m.OfertasPage })));
 const TenantAwareLogin = lazy(() => import("./modules/auth/components/TenantAwareLogin"));
 const AdminDashboard = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.AdminDashboardPage })));
+const Diario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.DiarioPage })));
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
 const Favoritos = lazy(() => import("./pages/Favoritos"));
