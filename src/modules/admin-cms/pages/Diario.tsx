@@ -361,8 +361,7 @@ function ChecklistRow({
     </div>
   );
 }
-
-
+const Diario = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentOrg } = useOrganization();
