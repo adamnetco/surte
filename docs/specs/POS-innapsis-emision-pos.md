@@ -1,6 +1,6 @@
 # POS — Emisión Innapsis desde el flujo POS (Wave 1)
 
-**Estado:** IN_REVIEW — Todos los ACs (1-15) SHIPPED · listo para POS-review
+**Estado:** SHIPPED — 15/15 ACs aprobados por POS-review 2026-06-24. Ver [reporte](./reviews/POS-innapsis-emision-pos-review.md).
 **Módulo:** `pos` (consumidor) + `admin-cms` (config) + edge `innapsis-emit` (ya existe)
 **Wave:** 1 — Innapsis Electronic Billing (NORTE/camino-a-produccion)
 **Spec padre:** [POS-innapsis-integration.md](./POS-innapsis-integration.md) (Slices 1-4 SHIPPED)
