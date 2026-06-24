@@ -1,16 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
 import {
   BarChart3, ShoppingCart, CalendarDays, Package, Tag, Handshake, Box, Settings, FileUp,
-  Users, MessageSquare, Map, Bell, FileText, Layers, Star, Globe, Search, Ticket, Code,
+  Users, MessageSquare, Map as MapIcon, Bell, FileText, Layers, Star, Globe, Search, Ticket, Code,
   MapPin, Truck, Printer, ChefHat, Monitor, Utensils, Receipt, ShoppingBag, Warehouse,
-  CreditCard, Wallet, Sparkles, Rocket, Building2, Home, LayoutGrid,
+  CreditCard, Wallet, Sparkles, Rocket, Building2, Home, LayoutGrid, History, PackageSearch,
 } from "lucide-react";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import type { AppRole } from "@/modules/auth/context/AuthContext";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 type Action = {
   id: string;
@@ -38,7 +41,7 @@ const ACTIONS: Action[] = [
   { id: "tab-contacts", label: "Contactos", icon: Users, group: "Admin · Clientes", to: "/admin?tab=contacts", roles: ["superadmin","admin"] },
   { id: "tab-crm", label: "CRM Leads", icon: MessageSquare, group: "Admin · Clientes", to: "/admin?tab=crm", roles: ["superadmin","admin"] },
   { id: "tab-reviews", label: "Comentarios", icon: MessageSquare, group: "Admin · Clientes", to: "/admin?tab=reviews" },
-  { id: "tab-google-reviews", label: "Reseñas Google", icon: Map, group: "Admin · Clientes", to: "/admin?tab=google-reviews" },
+  { id: "tab-google-reviews", label: "Reseñas Google", icon: MapIcon, group: "Admin · Clientes", to: "/admin?tab=google-reviews" },
   { id: "tab-notifications", label: "Alertas / Notificaciones", icon: Bell, group: "Admin · Clientes", to: "/admin?tab=notifications", roles: ["superadmin","admin"] },
   { id: "tab-content", label: "Contenido", icon: FileText, group: "Admin · Contenido", to: "/admin?tab=content", roles: ["superadmin","admin"] },
   { id: "tab-hero", label: "Hero", icon: Layers, group: "Admin · Contenido", to: "/admin?tab=hero", roles: ["superadmin","admin"] },
@@ -79,15 +82,52 @@ const ACTIONS: Action[] = [
   { id: "go-perfil", label: "Mi perfil", icon: Users, group: "Navegación", to: "/perfil" },
 ];
 
+const RECENTS_KEY = "cmdk:recent-actions:v1";
+const RECENTS_MAX = 5;
+
+function loadRecents(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((x) => typeof x === "string").slice(0, RECENTS_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+
+function pushRecent(id: string) {
+  try {
+    const cur = loadRecents().filter((x) => x !== id);
+    const next = [id, ...cur].slice(0, RECENTS_MAX);
+    localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
+  } catch { /* ignore */ }
+}
+
+/** Debounce a value (UI-only, no deps). */
+function useDebounced<T>(value: T, ms = 200): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return v;
+}
+
 /**
  * Paleta de comandos global (⌘K / Ctrl+K). Accesible desde cualquier pantalla.
- * Filtra acciones por rol del usuario y navega a la ruta correspondiente.
- * Las tabs del admin se abren con `?tab=<id>` que AdminDashboard sincroniza con su estado.
+ * - Filtra acciones por rol del usuario y navega a la ruta correspondiente.
+ * - Las tabs del admin se abren con `?tab=<id>` que AdminDashboard sincroniza con su estado.
+ * - Recientes: últimas 5 acciones ejecutadas (localStorage).
+ * - Búsqueda dinámica de productos en la organización actual (debounced 200ms).
  */
 export default function GlobalCommandPalette() {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const { role, user } = useAuth();
+  const { currentOrg } = useOrganization();
+  const [recents, setRecents] = useState<string[]>(() => loadRecents());
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -104,9 +144,45 @@ export default function GlobalCommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Reset query al cerrar y refrescar recientes al abrir.
+  useEffect(() => {
+    if (!open) setQuery("");
+    else setRecents(loadRecents());
+  }, [open]);
+
+  const debouncedQuery = useDebounced(query.trim(), 200);
+  const orgId = currentOrg?.id;
+
+  const { data: productResults = [] } = useQuery({
+    queryKey: ["cmdk-products", orgId, debouncedQuery],
+    enabled: open && !!orgId && debouncedQuery.length >= 2,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const q = debouncedQuery.replace(/[%,]/g, " ");
+      const { data, error } = await (supabase as any)
+        .from("products")
+        .select("id, name, slug, sku, is_active")
+        .eq("organization_id", orgId)
+        .or(`name.ilike.%${q}%,sku.ilike.%${q}%`)
+        .order("name", { ascending: true })
+        .limit(8);
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string; slug: string | null; sku: string | null; is_active: boolean }>;
+    },
+  });
+
   if (!user) return null;
 
-  const allowed = ACTIONS.filter((a) => !a.roles || a.roles.includes(role));
+  const allowed = useMemo(
+    () => ACTIONS.filter((a) => !a.roles || a.roles.includes(role)),
+    [role]
+  );
+  const allowedById = useMemo(() => new Map(allowed.map((a) => [a.id, a])), [allowed]);
+  const recentActions = useMemo(
+    () => recents.map((id) => allowedById.get(id)).filter(Boolean) as Action[],
+    [recents, allowedById]
+  );
+
   const grouped = allowed.reduce<Record<string, Action[]>>((acc, a) => {
     (acc[a.group] ||= []).push(a);
     return acc;
@@ -114,15 +190,83 @@ export default function GlobalCommandPalette() {
   const groupOrder = Array.from(new Set(allowed.map((a) => a.group)));
 
   const run = (a: Action) => {
+    pushRecent(a.id);
     setOpen(false);
     navigate(a.to);
   };
 
+  const goToProduct = (p: { id: string; slug: string | null }) => {
+    setOpen(false);
+    // Editar producto desde el admin (más útil que el detalle público para roles admin).
+    if (role === "superadmin" || role === "admin") {
+      navigate(`/admin?tab=products&edit=${p.id}`);
+    } else if (p.slug) {
+      navigate(`/producto/${p.slug}`);
+    } else {
+      navigate(`/admin?tab=products`);
+    }
+  };
+
+  const showRecents = !debouncedQuery && recentActions.length > 0;
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Buscar tab, módulo o ruta… (⌘K)" />
+      <CommandInput
+        placeholder="Buscar producto, tab o módulo… (⌘K)"
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList className="max-h-[60vh]">
         <CommandEmpty>Sin resultados.</CommandEmpty>
+
+        {showRecents && (
+          <>
+            <CommandGroup heading="Recientes">
+              {recentActions.map((a) => {
+                const Icon = a.icon;
+                return (
+                  <CommandItem
+                    key={`recent-${a.id}`}
+                    value={`recientes ${a.label} ${a.group}`}
+                    onSelect={() => run(a)}
+                    className="flex items-center gap-2"
+                  >
+                    <History className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className="flex-1 truncate">{a.label}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[40%]">{a.to}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
+        {productResults.length > 0 && (
+          <>
+            <CommandGroup heading="Productos">
+              {productResults.map((p) => (
+                <CommandItem
+                  key={`prod-${p.id}`}
+                  value={`producto ${p.name} ${p.sku ?? ""}`}
+                  onSelect={() => goToProduct(p)}
+                  className="flex items-center gap-2"
+                >
+                  <PackageSearch className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="flex-1 truncate">{p.name}</span>
+                  {p.sku && (
+                    <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[30%]">{p.sku}</span>
+                  )}
+                  {!p.is_active && (
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400">inactivo</span>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
         {groupOrder.map((g, idx) => (
           <div key={g}>
             {idx > 0 && <CommandSeparator />}
