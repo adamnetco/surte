@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight } from "lucide-react";
+import DocumentTypeSelector from "./DocumentTypeSelector";
 
 type MethodKey = "efectivo" | "tarjeta_debito" | "tarjeta_credito" | "transferencia" | "nequi" | "daviplata";
 
