@@ -29,6 +29,7 @@ const SoporteConfig = lazy(() => import("@/modules/superadmin/pages/SoporteConfi
 const CriticalActionsQueue = lazy(() => import("@/modules/superadmin/pages/CriticalActionsQueue"));
 const AuditLogViewer = lazy(() => import("@/modules/superadmin/pages/AuditLogViewer"));
 const SitiosTenantRoute = lazy(() => import("@/modules/superadmin/pages/SitiosTenantRoute"));
+const EinvoiceBulkRetry = lazy(() => import("@/modules/superadmin/pages/EinvoiceBulkRetry"));
 
 const SyncSection = () => (
   <div className="space-y-4">
