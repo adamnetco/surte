@@ -23,6 +23,8 @@ const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 
 export default function Planes() {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly");
   const [params] = useSearchParams();
 
@@ -34,10 +36,22 @@ export default function Planes() {
   useEffect(() => {
     document.title = "Planes y precios · SistecPOS";
     (async () => {
-      const { data } = await supabase.from("saas_plans").select("*").eq("is_public", true).order("sort_order");
+      setLoading(true);
+      setError(null);
+      const { data, error: err } = await supabase
+        .from("saas_plans")
+        .select("*")
+        .eq("is_public", true)
+        .order("sort_order");
+      if (err) {
+        console.error("[Planes] saas_plans fetch failed", err);
+        setError(err.message || "No se pudieron cargar los planes.");
+      }
       setPlans((data as any) ?? []);
+      setLoading(false);
     })();
   }, []);
+
 
   const reasonLabel = useMemo(() => (reason ? MODULE_LABELS[reason] ?? reason : null), [reason]);
 
@@ -64,8 +78,42 @@ export default function Planes() {
         </div>
       </header>
 
+      {loading && (
+        <div className="max-w-7xl mx-auto px-4 pb-16 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="p-6 h-[420px] animate-pulse bg-muted/40" />
+          ))}
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="max-w-2xl mx-auto px-4 pb-16">
+          <Card className="p-6 border-destructive/40 bg-destructive/5">
+            <h2 className="font-semibold text-destructive mb-1">No pudimos cargar los planes</h2>
+            <p className="text-sm text-muted-foreground mb-3">{error}</p>
+            <p className="text-xs text-muted-foreground">
+              Si el problema persiste, verifica que la tabla <code>saas_plans</code> tenga
+              permisos de lectura para anon/authenticated y que existan filas con <code>is_public = true</code>.
+            </p>
+            <Button className="mt-4" onClick={() => window.location.reload()}>Reintentar</Button>
+          </Card>
+        </div>
+      )}
+
+      {!loading && !error && plans.length === 0 && (
+        <div className="max-w-2xl mx-auto px-4 pb-16">
+          <Card className="p-6 border-warning/40 bg-warning/5">
+            <h2 className="font-semibold mb-1">Aún no hay planes publicados</h2>
+            <p className="text-sm text-muted-foreground">
+              Un superadmin debe crear planes públicos en <code>/superadmin/planes</code> para que aparezcan aquí.
+            </p>
+          </Card>
+        </div>
+      )}
+
       <section className="max-w-7xl mx-auto px-4 pb-16 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         {plans.map((p) => {
+
           const price = cycle === "monthly" ? p.price_monthly : Math.round(p.price_yearly / 12);
           const isPro = p.key === "pro";
           const isHighlighted = highlight === p.key;
