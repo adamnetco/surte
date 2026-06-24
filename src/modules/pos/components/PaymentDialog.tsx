@@ -83,7 +83,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
     if (!canConfirm) return;
     setSubmitting(true);
     try {
-      await onConfirm(payments.filter((p) => p.amount > 0));
+      await onConfirm(payments.filter((p) => p.amount > 0), { docType });
     } catch {
       setSubmitting(false);
     }
