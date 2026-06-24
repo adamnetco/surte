@@ -138,6 +138,35 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
         </p>
       </div>
 
+      <div className="space-y-3 p-3 rounded-lg border bg-card">
+        <div>
+          <p className="text-sm font-medium">Defaults por tipo de cliente</p>
+          <p className="text-[11px] text-muted-foreground">
+            El POS sugiere automáticamente uno u otro documento según si el cliente tiene NIT/CC o es una operación FX.
+          </p>
+        </div>
+        <DefaultDocRow
+          label="Consumidor final (sin NIT)"
+          value={defaultsByClient.consumer_final}
+          onChange={(v) => setDefaultsByClient({ ...defaultsByClient, consumer_final: v })}
+          options={docTypes}
+        />
+        <DefaultDocRow
+          label="Cliente con NIT / CC"
+          value={defaultsByClient.with_nit}
+          onChange={(v) => setDefaultsByClient({ ...defaultsByClient, with_nit: v })}
+          options={docTypes}
+        />
+        <DefaultDocRow
+          label="Operación Casa de Cambio (FX)"
+          value={defaultsByClient.fx_operation}
+          onChange={(v) => setDefaultsByClient({ ...defaultsByClient, fx_operation: v })}
+          options={docTypes}
+        />
+      </div>
+
+
+
       <BehaviorRow
         icon={HelpCircle}
         title="Preguntar tipo de documento en cada venta"
