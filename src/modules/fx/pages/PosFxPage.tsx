@@ -89,7 +89,16 @@ export default function PosFxPage() {
     thresholdEquivalent !== null && thresholdEquivalent >= thresholdAmount;
   const thresholdUnknown = thresholdEquivalent === null && fromAmountNum > 0;
 
-  const requiresCustomer = isAboveThreshold;
+  // Slice 4 — Ola 2: acumulado mensual UIAF por cliente.
+  const monthlyQ = useFxCustomerMonthly(customer.doc_number);
+  const monthly = monthlyQ.data;
+  const projectedMonthly = (monthly?.accumulated ?? 0) + (thresholdEquivalent ?? 0);
+  const exceedsMonthly =
+    !!monthly &&
+    (monthly.exceeds || projectedMonthly >= thresholdAmount) &&
+    monthly.currency === thresholdCcy;
+
+  const requiresCustomer = isAboveThreshold || exceedsMonthly;
   const customerComplete =
     customer.doc_number.trim().length > 3 &&
     customer.name.trim().length > 2 &&
