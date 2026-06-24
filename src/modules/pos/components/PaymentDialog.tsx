@@ -109,6 +109,15 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
         </DialogHeader>
 
         <div className="space-y-3">
+          {organizationId && (
+            <DocumentTypeSelector
+              organizationId={organizationId}
+              value={docType}
+              onChange={(code) => setDocType(code)}
+              hasCustomerId={hasCustomerId}
+              compact
+            />
+          )}
           {payments.map((p, i) => {
             const amountId = `pay-amount-${i}`;
             const remaining = Math.max(0, total - (sum - (Number(p.amount) || 0)));
