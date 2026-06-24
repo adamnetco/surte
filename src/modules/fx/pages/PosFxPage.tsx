@@ -53,6 +53,7 @@ export default function PosFxPage() {
   // operation buy = casa COMPRA divisa base al cliente → entrega quote (buy_rate)
   // operation sell = casa VENDE divisa base al cliente → recibe quote (sell_rate)
   const rateApplied = rate ? (operation === "buy" ? rate.buy_rate : rate.sell_rate) : 0;
+  const midRate = rate ? (Number(rate.buy_rate) + Number(rate.sell_rate)) / 2 : 0;
   const fromCcy = operation === "buy" ? baseCcy : quoteCcy;
   const toCcy = operation === "buy" ? quoteCcy : baseCcy;
   const fromAmountNum = Number(fromAmount) || 0;
@@ -61,6 +62,15 @@ export default function PosFxPage() {
     // base/quote: 1 base = rate quote. buy → from(base)*rate. sell → from(quote)/rate.
     return operation === "buy" ? fromAmountNum * rateApplied : fromAmountNum / rateApplied;
   }, [fromAmountNum, rateApplied, operation]);
+
+  // Margen (comisión implícita) = diferencia entre la tasa aplicada y la tasa media,
+  // expresada en la divisa quote (la que cotiza el par). Siempre positiva para la casa.
+  const commission = useMemo(() => {
+    if (!rate || !fromAmountNum || !midRate) return { amount: 0, currencyId: quoteCcy?.id };
+    const baseUnits = operation === "buy" ? fromAmountNum : toAmount;
+    const perUnit = operation === "buy" ? midRate - rateApplied : rateApplied - midRate;
+    return { amount: Math.max(0, baseUnits * perUnit), currencyId: quoteCcy?.id };
+  }, [rate, fromAmountNum, midRate, rateApplied, operation, toAmount, quoteCcy?.id]);
 
   // Cálculo umbral UIAF: si alguna divisa de la operación coincide con la moneda del umbral,
   // comparamos directo; si no, mostramos advertencia (no podemos convertir sin par cruzado).
