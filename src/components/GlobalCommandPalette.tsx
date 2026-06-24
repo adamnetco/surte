@@ -258,15 +258,30 @@ export default function GlobalCommandPalette() {
     }
   };
 
+  const goToOrder = (o: { id: string; order_number: number }) => {
+    setOpen(false);
+    if (role === "superadmin" || role === "admin") {
+      navigate(`/admin?tab=orders&edit=${o.id}`);
+    } else {
+      navigate(`/pedido/${o.order_number}`);
+    }
+  };
+
+  const goToInvoice = () => {
+    setOpen(false);
+    navigate(`/admin/innapsis`);
+  };
+
   const showRecents = !debouncedQuery && recentActions.length > 0;
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
-        placeholder="Buscar producto, tab o módulo… (⌘K)"
+        placeholder="Buscar producto, pedido #, factura, tab o módulo… (⌘K)"
         value={query}
         onValueChange={setQuery}
       />
+
       <CommandList className="max-h-[60vh]">
         <CommandEmpty>Sin resultados.</CommandEmpty>
 
