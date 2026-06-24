@@ -141,6 +141,8 @@ export type FxCustomerMonthly = {
   currency: string;
   txCount: number;
   exceeds: boolean;
+  crossCount: number;
+  missingRateCount: number;
 };
 
 export function useFxCustomerMonthly(docNumber: string) {
@@ -150,7 +152,7 @@ export function useFxCustomerMonthly(docNumber: string) {
     queryKey: ["fx_customer_monthly", currentOrg?.id, trimmed],
     queryFn: async (): Promise<FxCustomerMonthly> => {
       if (!currentOrg?.id || trimmed.length < 3) {
-        return { accumulated: 0, currency: "USD", txCount: 0, exceeds: false };
+        return { accumulated: 0, currency: "USD", txCount: 0, exceeds: false, crossCount: 0, missingRateCount: 0 };
       }
       const { data, error } = await (supabase as any).rpc("fx_customer_monthly_accumulated", {
         p_organization_id: currentOrg.id,
@@ -163,9 +165,12 @@ export function useFxCustomerMonthly(docNumber: string) {
         currency: row?.currency ?? "USD",
         txCount: Number(row?.tx_count ?? 0),
         exceeds: Boolean(row?.exceeds ?? false),
+        crossCount: Number(row?.cross_count ?? 0),
+        missingRateCount: Number(row?.missing_rate_count ?? 0),
       };
     },
     enabled: !!currentOrg?.id && trimmed.length >= 3,
     staleTime: 15_000,
   });
 }
+

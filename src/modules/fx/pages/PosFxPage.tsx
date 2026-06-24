@@ -309,10 +309,17 @@ export default function PosFxPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Datos del cliente (UIAF)</div>
                     {monthly && monthly.txCount > 0 && (
-                      <span className="text-[10px] text-muted-foreground font-mono">
+                      <span className="text-[10px] text-muted-foreground font-mono text-right">
                         Mes: {fmt(monthly.accumulated)} {monthly.currency} · {monthly.txCount} op.
+                        {monthly.crossCount > 0 && ` · ${monthly.crossCount} cross`}
+                        {monthly.missingRateCount > 0 && (
+                          <span className="block text-amber-600">
+                            {monthly.missingRateCount} op. sin cotización publicada (no contadas)
+                          </span>
+                        )}
                       </span>
                     )}
+
                   </div>
                   <div className="grid gap-3 md:grid-cols-3">
                     <div className="space-y-1.5">
