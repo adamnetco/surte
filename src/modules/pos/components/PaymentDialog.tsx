@@ -55,6 +55,9 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   const [payments, setPayments] = useState<Pay[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const firstAmountRef = useRef<HTMLInputElement>(null);
+  const { role } = useAuth();
+  const gate = usePosCobroGate(organizationId, docType);
+  const isSuperadmin = role === "superadmin";
 
   useEffect(() => {
     if (open) {
@@ -68,10 +71,33 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
     }
   }, [open, total]);
 
+  // AC5: Ctrl+Shift+B activa override (solo superadmin, solo si está bloqueado).
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (
+        e.ctrlKey && e.shiftKey && (e.key === "B" || e.key === "b") &&
+        isSuperadmin && !gate.canCharge
+      ) {
+        e.preventDefault();
+        gate.activateOverride().then(() => {
+          toast({
+            title: "Override hard-block activado",
+            description: "TTL 30 min · acción registrada en auditoría",
+            variant: "destructive",
+          });
+        });
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, isSuperadmin, gate.canCharge, gate]);
+
   const sum = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
   const change = Math.max(0, sum - total);
   const pending = Math.max(0, total - sum);
-  const canConfirm = !submitting && pending <= 0 && payments.every((p) => p.amount > 0);
+  const paymentsOk = payments.every((p) => p.amount > 0) && pending <= 0;
+  const canConfirm = !submitting && paymentsOk && gate.canCharge;
 
   // Estado del cobro: falta / exacto / vuelto
   const statusBadge = useMemo(() => {
