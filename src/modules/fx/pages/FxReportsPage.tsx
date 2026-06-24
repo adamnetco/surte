@@ -108,10 +108,21 @@ export default function FxReportsPage() {
         </div>
       </header>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Card>
           <CardHeader className="pb-1"><CardTitle className="text-xs text-muted-foreground">Operaciones</CardTitle></CardHeader>
           <CardContent><div className="text-2xl font-bold">{totals.totalOps}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1"><CardTitle className="text-xs text-muted-foreground">Margen total</CardTitle></CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-600 tabular-nums">
+              {totals.totalMargin.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              {currMap[totals.marginCurrencyId ?? ""]?.code ?? ""}
+            </div>
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-1"><CardTitle className="text-xs text-muted-foreground">Sobre umbral UIAF</CardTitle></CardHeader>
@@ -135,6 +146,30 @@ export default function FxReportsPage() {
           <CardHeader className="pb-1"><CardTitle className="text-xs text-muted-foreground">Divisas operadas</CardTitle></CardHeader>
           <CardContent><div className="text-2xl font-bold">{Object.keys(byCurrency).length}</div></CardContent>
         </Card>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <MarginCard
+          title="Margen por par"
+          icon={<Coins className="h-4 w-4" />}
+          buckets={byPair}
+          labelFor={(b) => fmtPair(b.label)}
+          fmtMargin={fmtMargin}
+        />
+        <MarginCard
+          title="Margen por cajero"
+          icon={<Users className="h-4 w-4" />}
+          buckets={byCashier}
+          labelFor={(b) => cashierNames[b.key] ?? (b.key === "—" ? "Sin asignar" : b.key.slice(0, 8))}
+          fmtMargin={fmtMargin}
+        />
+        <MarginCard
+          title="Margen por día"
+          icon={<CalendarDays className="h-4 w-4" />}
+          buckets={byDay}
+          labelFor={(b) => new Date(b.label + "T00:00:00").toLocaleDateString()}
+          fmtMargin={fmtMargin}
+        />
       </section>
 
       <Card>
