@@ -959,6 +959,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onPrint={() => setPreviewOpen(true)}
         onEmitInvoice={() => { setSaleComplete(null); setActionMode("emit"); }}
         posOrderId={lastOrderId ?? null}
+        customerEmail={customer?.email ?? null}
+        customerPhone={customer?.phone ?? null}
+        isAdmin={isAdmin}
       />
 
       <TicketPreviewDialog
