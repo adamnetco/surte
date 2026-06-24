@@ -47,6 +47,13 @@ interface PerOrgResult {
   // POS-optimizar-bulk-retry-timeouts
   batches?: BatchResult[];
   partial?: boolean;
+  truncated?: boolean;
+  last_processed_id?: string | null;
+}
+
+interface NextCursor {
+  organization_id: string;
+  last_processed_id: string | null;
 }
 
 interface BulkResponse {
@@ -56,6 +63,9 @@ interface BulkResponse {
   total_requeued: number;
   partial?: boolean;
   results: PerOrgResult[];
+  truncated?: boolean;
+  next_cursor?: NextCursor;
+  elapsed_ms?: number;
 }
 
 export default function EinvoiceBulkRetry() {
