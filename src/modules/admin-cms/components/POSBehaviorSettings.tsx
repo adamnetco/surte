@@ -33,6 +33,7 @@ interface Props { organizationId: string; }
  */
 export default function POSBehaviorSettings({ organizationId }: Props) {
   const [behavior, setBehavior] = useState<PosBehavior>(DEFAULTS);
+  const [hardBlock, setHardBlock] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [configId, setConfigId] = useState<string | null>(null);
@@ -43,13 +44,14 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
       setLoading(true);
       const { data } = await supabase
         .from("einvoice_configs")
-        .select("id, pos_behavior")
+        .select("id, pos_behavior, hard_block_when_dian_down")
         .eq("organization_id", organizationId)
         .eq("environment", "prod")
         .maybeSingle();
       if (data) {
         setConfigId(data.id);
         setBehavior({ ...DEFAULTS, ...((data.pos_behavior as any) ?? {}) });
+        setHardBlock(!!(data as any).hard_block_when_dian_down);
       }
       setLoading(false);
     })();
@@ -61,6 +63,7 @@ export default function POSBehaviorSettings({ organizationId }: Props) {
       organization_id: organizationId,
       environment: "prod",
       pos_behavior: behavior as any,
+      hard_block_when_dian_down: hardBlock,
     };
     if (configId) payload.id = configId;
     const { error } = await supabase
