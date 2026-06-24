@@ -121,7 +121,7 @@ function ActionCard({
   severity = "info",
   onClick,
 }: {
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: React.ComponentType<any>;
   title: string;
   description: string;
   badge?: string;
