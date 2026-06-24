@@ -9,4 +9,5 @@ export { default as FacturacionPage } from "./pages/Facturacion";
 export { default as ComprasPage } from "./pages/Compras";
 export { default as HealthLogsPage } from "./pages/HealthLogs";
 export { default as InnapsisPage } from "./pages/Innapsis";
+export { default as InnapsisDetailPage } from "./pages/InnapsisDetail";
 
