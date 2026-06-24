@@ -109,7 +109,8 @@ const InnapsisDetail = () => {
   });
 
   const inv = invoiceQ.data as any;
-  const events = eventsQ.data ?? [];
+  const events = (eventsQ.data as any)?.rows ?? [];
+  const totalEvents = (eventsQ.data as any)?.total ?? events.length;
 
   const lastError = useMemo(() => {
     if (inv?.last_error) return inv.last_error;
