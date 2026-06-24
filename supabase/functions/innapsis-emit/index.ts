@@ -241,7 +241,7 @@ function buildInnapsisPayload(input: BuildInput) {
     encabezado.FechaPeriodoFin = periodFin;
   }
 
-  const fe = {
+  const fe: Record<string, unknown> = {
     Encabezado: encabezado,
     CondicionesDePago: {
       FechaVencimiento: fecha,
@@ -263,6 +263,22 @@ function buildInnapsisPayload(input: BuildInput) {
     TaxTotal: taxTotal,
     Detalles: detalles,
   };
+
+  // Referencia al documento original (NC/ND). Spec Innapsis v1.9 §4.
+  if ((documentType === "credit_note" || documentType === "debit_note") && reference) {
+    fe.Referencia = {
+      TipoDoc: String(reference.tipoDoc ?? "1"),
+      Prefijo: reference.prefix ?? "",
+      Folio: reference.number != null ? String(reference.number) : "",
+      FechaEmision: reference.issueDate
+        ? String(reference.issueDate).slice(0, 10)
+        : fecha,
+      Cufe: reference.cufe ?? "",
+      CodigoMotivoNota: reference.conceptCode ?? (documentType === "credit_note" ? "2" : "4"),
+      DescripcionMotivoNota: reference.conceptText
+        ?? (documentType === "credit_note" ? "Anulación" : "Otros"),
+    };
+  }
 
   return {
     trackId,
