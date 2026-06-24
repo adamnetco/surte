@@ -89,6 +89,9 @@ Retorna `{ consumerFinal, withNit, fxOperation, loading }`. React Query con cach
 ## Implementación
 
 Archivos creados/modificados:
-- `src/modules/pos/hooks/useOrgDefaultDocTypes.ts` (NEW)
-- `src/modules/pos/components/DocumentTypeSelector.tsx` (lógica `suggested` actualizada)
-- `src/modules/admin-cms/components/POSBehaviorSettings.tsx` (sección "Defaults por tipo de cliente")
+- `src/modules/pos/hooks/useOrgDefaultDocTypes.ts` (NEW) — selecciona la fila `is_active` o la más reciente; ya **no** filtra por `environment='prod'` (cubre sandbox).
+- `src/modules/pos/hooks/__tests__/useOrgDefaultDocTypes.test.tsx` (NEW) — 4 casos: null org, defaults personalizados, fallback sin config, sandbox `dev`.
+- `src/modules/pos/components/DocumentTypeSelector.tsx` — auto-asignación de la sugerencia movida a `useEffect` (no `queueMicrotask` en render).
+- `src/modules/admin-cms/components/POSBehaviorSettings.tsx` (sección "Defaults por tipo de cliente").
+- Migración `einvoice_configs_enforce_fx_doctypes` — trigger BEFORE INSERT/UPDATE que rechaza cualquier default distinto de `documento_soporte` cuando `organizations.business_type = 'casa_de_cambio'`.
+

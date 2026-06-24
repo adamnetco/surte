@@ -1,5 +1,6 @@
 import { FileText, Receipt, FileCheck2, FileMinus, FileQuestion } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+
 import { useOrgDocumentTypes, type DocumentTypeOption } from "../hooks/useOrgDocumentTypes";
 import { useOrgDefaultDocTypes } from "../hooks/useOrgDefaultDocTypes";
 
@@ -53,10 +54,14 @@ export default function DocumentTypeSelector({
     return options.find((o) => o.is_default) ?? options[0];
   }, [options, hasCustomerId, module, defaults.consumerFinal, defaults.withNit, defaults.fxOperation]);
 
-  // Auto-asignar la sugerencia cuando aún no hay valor
-  if (!value && suggested) {
-    queueMicrotask(() => onChange(suggested.code, suggested));
-  }
+  // Auto-asignar la sugerencia cuando aún no hay valor (efecto, no microtask en render)
+  useEffect(() => {
+    if (!value && suggested) {
+      onChange(suggested.code, suggested);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, suggested?.code]);
+
 
   if (isLoading) {
     return <div className="h-9 rounded-md bg-muted/50 animate-pulse" aria-label="Cargando tipos de documento" />;
