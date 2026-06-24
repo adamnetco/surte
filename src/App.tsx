@@ -52,6 +52,7 @@ const TenantAwareLogin = lazy(() => import("./modules/auth/components/TenantAwar
 const AdminDashboard = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.AdminDashboardPage })));
 const Diario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.DiarioPage })));
 const Innapsis = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisPage })));
+const InnapsisDetail = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisDetailPage })));
 
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
@@ -289,6 +290,7 @@ const App = () => (
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
                     <Route path="/admin/diario" element={<RoleGuard section="admin"><Diario /></RoleGuard>} />
                     <Route path="/admin/innapsis" element={<RoleGuard section="admin"><Innapsis /></RoleGuard>} />
+                    <Route path="/admin/innapsis/:id" element={<RoleGuard section="admin"><InnapsisDetail /></RoleGuard>} />
 
                     <Route path="/pos" element={<PosHub />} />
                     <Route path="/pos/vender" element={<POS />} />
