@@ -50,6 +50,7 @@ const MenuPage = lazy(() => import("./modules/pos").then((m) => ({ default: m.Me
 const Ofertas = lazy(() => import("./modules/storefront").then((m) => ({ default: m.OfertasPage })));
 const TenantAwareLogin = lazy(() => import("./modules/auth/components/TenantAwareLogin"));
 const AdminDashboard = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.AdminDashboardPage })));
+const Diario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.DiarioPage })));
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
 const Favoritos = lazy(() => import("./pages/Favoritos"));
@@ -284,6 +285,7 @@ const App = () => (
                         desde <slug>.sistecpos.com (subdominio del tenant). El acceso
                         real lo controlan RoleGuard / módulos, no el host. */}
                     <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
+                    <Route path="/admin/diario" element={<RoleGuard section="admin"><Diario /></RoleGuard>} />
                     <Route path="/pos" element={<PosHub />} />
                     <Route path="/pos/vender" element={<POS />} />
                     <Route path="/pos/fx" element={<PosFx />} />

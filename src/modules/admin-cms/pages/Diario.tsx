@@ -1,0 +1,440 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import {
+  TrendingUp,
+  ShoppingCart,
+  AlertTriangle,
+  RefreshCw,
+  Wallet,
+  Tag,
+  ChevronRight,
+  Sun,
+  Moon,
+  Sunrise,
+  Sparkles,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
+import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cn } from "@/lib/utils";
+
+/**
+ * Daily Driver — pantalla mobile-first del flujo diario del admin.
+ * Concentra las 5 acciones que el operador hace cada mañana:
+ *  1) Revisar ventas de hoy
+ *  2) Despachar pedidos pendientes
+ *  3) Reabastecer productos en stock bajo
+ *  4) Resolver errores de sincronización
+ *  5) Abrir / cerrar caja
+ *
+ * Diseño: vertical cards (no tablas), tap-targets ≥ 56px, base 390px.
+ */
+
+const COP = new Intl.NumberFormat("es-CO", {
+  style: "currency",
+  currency: "COP",
+  minimumFractionDigits: 0,
+});
+
+const startOfTodayISO = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+};
+
+const greeting = () => {
+  const h = new Date().getHours();
+  if (h < 6) return { txt: "Buenas noches", Icon: Moon };
+  if (h < 12) return { txt: "Buenos días", Icon: Sunrise };
+  if (h < 19) return { txt: "Buenas tardes", Icon: Sun };
+  return { txt: "Buenas noches", Icon: Moon };
+};
+
+function useDailySnapshot(orgId: string | undefined) {
+  return useQuery({
+    queryKey: ["admin", "diario", orgId],
+    enabled: !!orgId,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const since = startOfTodayISO();
+      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+      const [ordersToday, pending, lowStock, syncErrors] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id,total,status,created_at")
+          .eq("organization_id", orgId!)
+          .gte("created_at", since),
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", orgId!)
+          .eq("status", "pendiente"),
+        supabase
+          .from("products")
+          .select("id,name,stock", { count: "exact" })
+          .eq("organization_id", orgId!)
+          .lte("stock", 5)
+          .order("stock", { ascending: true })
+          .limit(5),
+        supabase
+          .from("sync_logs")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", orgId!)
+          .eq("status", "error")
+          .gte("last_run_at", since24h),
+      ]);
+
+      const todays = ordersToday.data ?? [];
+      const revenue = todays.reduce((s, o: any) => s + Number(o.total || 0), 0);
+
+      return {
+        ordersToday: todays.length,
+        revenueToday: revenue,
+        pendingCount: pending.count ?? 0,
+        lowStockCount: lowStock.count ?? 0,
+        lowStockSample: (lowStock.data ?? []) as Array<{ id: string; name: string; stock: number }>,
+        syncErrors: syncErrors.count ?? 0,
+      };
+    },
+  });
+}
+
+type Severity = "ok" | "info" | "warn" | "danger";
+
+const SEV_STYLES: Record<Severity, { dot: string; text: string; bar: string }> = {
+  ok: { dot: "bg-emerald-500", text: "text-emerald-700", bar: "bg-emerald-500/10" },
+  info: { dot: "bg-sky-500", text: "text-sky-700", bar: "bg-sky-500/10" },
+  warn: { dot: "bg-amber-500", text: "text-amber-700", bar: "bg-amber-500/10" },
+  danger: { dot: "bg-red-500", text: "text-red-700", bar: "bg-red-500/10" },
+};
+
+function ActionCard({
+  icon: Icon,
+  title,
+  description,
+  badge,
+  severity = "info",
+  onClick,
+}: {
+  icon: React.ComponentType<any>;
+  title: string;
+  description: string;
+  badge?: string;
+  severity?: Severity;
+  onClick: () => void;
+}) {
+  const sev = SEV_STYLES[severity];
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full text-left bg-card border border-border rounded-xl p-4",
+        "min-h-[72px] flex items-center gap-3 active:scale-[0.99] transition",
+        "hover:border-foreground/20",
+      )}
+    >
+      <div className={cn("w-11 h-11 rounded-lg grid place-items-center shrink-0", sev.bar)}>
+        <Icon className={sev.text} size={20} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-sm text-foreground truncate">{title}</h3>
+          {badge && (
+            <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white", sev.dot)}>
+              {badge}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground line-clamp-1">{description}</p>
+      </div>
+      <ChevronRight className="text-muted-foreground shrink-0" size={18} />
+    </button>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  hint,
+  loading,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+        {label}
+      </p>
+      {loading ? (
+        <Skeleton className="h-7 w-24 mt-1" />
+      ) : (
+        <p className="text-2xl font-heading font-bold text-foreground mt-0.5 tabular-nums">{value}</p>
+      )}
+      {hint && <p className="text-[11px] text-muted-foreground mt-0.5">{hint}</p>}
+    </div>
+  );
+}
+
+const Diario = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { currentOrg } = useOrganization();
+  const { data, isLoading, refetch, isRefetching } = useDailySnapshot(currentOrg?.id);
+
+  const { txt: hello, Icon: HelloIcon } = useMemo(greeting, []);
+  const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
+    ?? user?.email?.split("@")[0];
+
+  // checklist diaria local — se reinicia al cambiar de día
+  const checklistKey = useMemo(
+    () => `sistecpos:diario:${currentOrg?.id ?? "_"}:${new Date().toISOString().slice(0, 10)}`,
+    [currentOrg?.id],
+  );
+  const [done, setDone] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      setDone(JSON.parse(localStorage.getItem(checklistKey) || "{}"));
+    } catch {
+      setDone({});
+    }
+  }, [checklistKey]);
+  const toggleDone = (k: string) => {
+    setDone((prev) => {
+      const next = { ...prev, [k]: !prev[k] };
+      localStorage.setItem(checklistKey, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const checklist = [
+    { k: "caja", label: "Abrir caja del día" },
+    { k: "precios", label: "Revisar precios actualizados" },
+    { k: "stock", label: "Revisar productos con bajo stock" },
+    { k: "pedidos", label: "Despachar pedidos pendientes" },
+    { k: "cierre", label: "Cierre del día y backup" },
+  ];
+  const doneCount = checklist.filter((c) => done[c.k]).length;
+
+  const hasData = !!data;
+  const noActionsNeeded =
+    hasData &&
+    data.pendingCount === 0 &&
+    data.lowStockCount === 0 &&
+    data.syncErrors === 0;
+
+  return (
+    <div className="min-h-[100dvh] bg-background pb-24">
+      <AdminHeader />
+
+      <main className="max-w-2xl mx-auto px-4 py-4 space-y-5">
+        {/* Saludo */}
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <HelloIcon size={14} />
+              <span>{hello}{firstName ? `, ${firstName}` : ""}</span>
+            </div>
+            <h1 className="font-heading font-bold text-xl text-foreground tracking-tight">
+              Tu día en {currentOrg?.name ?? "la tienda"}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {new Date().toLocaleDateString("es-CO", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="shrink-0 h-9 w-9 rounded-lg border border-border grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-50"
+            aria-label="Actualizar"
+          >
+            <RefreshCw size={16} className={isRefetching ? "animate-spin" : ""} />
+          </button>
+        </header>
+
+        {/* KPIs del día */}
+        <section className="grid grid-cols-2 gap-3">
+          <StatTile
+            label="Ventas hoy"
+            value={hasData ? COP.format(data.revenueToday) : "—"}
+            hint={hasData ? `${data.ordersToday} pedido${data.ordersToday === 1 ? "" : "s"}` : undefined}
+            loading={isLoading}
+          />
+          <StatTile
+            label="Pendientes"
+            value={hasData ? String(data.pendingCount) : "—"}
+            hint={hasData && data.pendingCount > 0 ? "requieren acción" : "todo despachado"}
+            loading={isLoading}
+          />
+        </section>
+
+        {/* Acciones del día */}
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              Acciones de hoy
+            </h2>
+            {hasData && (
+              <span className="text-[11px] text-muted-foreground">
+                {[data.pendingCount, data.lowStockCount, data.syncErrors].filter((n) => n > 0).length} pendiente(s)
+              </span>
+            )}
+          </div>
+
+          {isLoading && (
+            <div className="space-y-2">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
+              ))}
+            </div>
+          )}
+
+          {hasData && noActionsNeeded && (
+            <EmptyState
+              icon={Sparkles}
+              title="Todo al día"
+              description="No hay pedidos pendientes, stock crítico ni errores de sincronización. Buen trabajo."
+              compact
+            />
+          )}
+
+          {hasData && !noActionsNeeded && (
+            <div className="space-y-2">
+              {data.pendingCount > 0 && (
+                <ActionCard
+                  icon={ShoppingCart}
+                  title="Despachar pedidos pendientes"
+                  description={`${data.pendingCount} pedido${data.pendingCount === 1 ? "" : "s"} esperando confirmación`}
+                  badge={String(data.pendingCount)}
+                  severity="warn"
+                  onClick={() => navigate("/admin?tab=orders")}
+                />
+              )}
+              {data.lowStockCount > 0 && (
+                <ActionCard
+                  icon={AlertTriangle}
+                  title="Reabastecer stock bajo"
+                  description={
+                    data.lowStockSample[0]
+                      ? `${data.lowStockSample[0].name} (${data.lowStockSample[0].stock}) y ${Math.max(0, data.lowStockCount - 1)} más`
+                      : `${data.lowStockCount} productos en mínimo`
+                  }
+                  badge={String(data.lowStockCount)}
+                  severity={data.lowStockCount > 10 ? "danger" : "warn"}
+                  onClick={() => navigate("/admin?tab=products&filter=low-stock")}
+                />
+              )}
+              {data.syncErrors > 0 && (
+                <ActionCard
+                  icon={RefreshCw}
+                  title="Resolver errores de sincronización"
+                  description={`${data.syncErrors} errores en las últimas 24h`}
+                  badge={String(data.syncErrors)}
+                  severity="danger"
+                  onClick={() => navigate("/admin/health-logs")}
+                />
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* Atajos diarios */}
+        <section className="space-y-2">
+          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            Atajos
+          </h2>
+          <div className="space-y-2">
+            <ActionCard
+              icon={TrendingUp}
+              title="Ir al POS"
+              description="Empieza a vender ya"
+              severity="ok"
+              onClick={() => navigate("/pos/vender")}
+            />
+            <ActionCard
+              icon={Wallet}
+              title="Caja y cierre del día"
+              description="Aperturas, cierres y cuadre"
+              severity="info"
+              onClick={() => navigate("/admin?tab=overview")}
+            />
+            <ActionCard
+              icon={Tag}
+              title="Actualizar precios"
+              description="Cambios masivos por categoría o marca"
+              severity="info"
+              onClick={() => navigate("/admin?tab=products")}
+            />
+          </div>
+        </section>
+
+        {/* Checklist diaria */}
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              Checklist del día
+            </h2>
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              {doneCount}/{checklist.length}
+            </span>
+          </div>
+          <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
+            {checklist.map((c) => {
+              const checked = !!done[c.k];
+              return (
+                <button
+                  key={c.k}
+                  onClick={() => toggleDone(c.k)}
+                  className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-muted/40 transition min-h-[52px]"
+                >
+                  <span
+                    className={cn(
+                      "w-5 h-5 rounded-md border-2 grid place-items-center transition",
+                      checked
+                        ? "bg-emerald-500 border-emerald-500 text-white"
+                        : "border-border bg-background",
+                    )}
+                  >
+                    {checked && (
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                        <path
+                          fillRule="evenodd"
+                          d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-sm flex-1",
+                      checked ? "text-muted-foreground line-through" : "text-foreground",
+                    )}
+                  >
+                    {c.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            La lista se reinicia automáticamente cada día.
+          </p>
+        </section>
+      </main>
+    </div>
+  );
+};
+
+export default Diario;
