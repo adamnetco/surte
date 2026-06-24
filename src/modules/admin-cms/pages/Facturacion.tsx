@@ -41,6 +41,10 @@ interface Invoice {
   created_at: string;
   track_id: string | null;
   last_error: string | null;
+  pos_order_id: string | null;
+  order_id: string | null;
+  cufe: string | null;
+  reference_full_number: string | null;
 }
 
 export default function Facturacion() {
