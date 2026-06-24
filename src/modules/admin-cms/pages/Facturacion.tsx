@@ -209,6 +209,12 @@ export default function Facturacion() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="doc-types">
+          <DocumentTypesManager organizationId={currentOrg.id} />
+        </TabsContent>
+
+
+
         <TabsContent value="invoices">
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3">
