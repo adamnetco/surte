@@ -2,11 +2,12 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Printer, FileSignature, Plus, Volume2, VolumeX } from "lucide-react";
+import { CheckCircle2, Plus, Volume2, VolumeX, FileSignature } from "lucide-react";
 import { getPosSoundEnabled, setPosSoundEnabled, playSaleSuccessSound } from "@/lib/posSoundPrefs";
 import { useState } from "react";
 import { useEinvoiceLiveStatus } from "../hooks/useEinvoiceLiveStatus";
 import EinvoiceStatusBadge from "./EinvoiceStatusBadge";
+import EinvoiceActions from "./EinvoiceActions";
 
 interface Props {
   open: boolean;
@@ -20,6 +21,9 @@ interface Props {
   onEmitInvoice: () => void;
   /** Si se pasa, muestra badge Realtime con el estado DIAN de la factura emitida. */
   posOrderId?: string | null;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  isAdmin?: boolean;
 }
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
