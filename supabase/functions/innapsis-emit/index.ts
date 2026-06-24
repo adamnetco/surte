@@ -297,7 +297,7 @@ Deno.serve(async (req) => {
     // === Branch A: retransmisión de factura de contingencia (AC12) ===
     // Cuando DIAN se restaura, einvoice-contingency-flush invoca con transmit_invoice_id
     // para enviar la factura previamente emitida en contingencia, sin generar nueva numeración.
-    let effectiveOrgId: string = organization_id;
+    let effectiveOrgId: string = bodyOrgId;
     let effectivePosOrderId: string | undefined = pos_order_id;
     let effectiveOrderId: string | undefined = order_id;
     let existingInvoice: any = null;
