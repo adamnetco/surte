@@ -267,10 +267,10 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const isServiceCall = bearerToken === SERVICE_KEY;
 
-    let userId: string;
+    let userId: string | null;
     if (isServiceCall) {
-      // Llamada interna (cron einvoice-contingency-flush). Saltamos getUser; usamos system user.
-      userId = "00000000-0000-0000-0000-000000000000";
+      // Llamada interna (cron einvoice-contingency-flush). created_by/performed_by quedan null.
+      userId = null;
     } else {
       const supabase = createClient(
         Deno.env.get("SUPABASE_URL")!,
