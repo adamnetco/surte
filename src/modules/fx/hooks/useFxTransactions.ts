@@ -129,3 +129,43 @@ export function useUiafThreshold() {
     staleTime: 60_000,
   });
 }
+
+/**
+ * Slice 4 — Ola 2: acumulado mensual UIAF por cliente.
+ * Llama a la función SECURITY DEFINER `fx_customer_monthly_accumulated`,
+ * que suma las operaciones del mes actual del documento dado expresadas en la
+ * moneda del umbral configurada en la organización.
+ */
+export type FxCustomerMonthly = {
+  accumulated: number;
+  currency: string;
+  txCount: number;
+  exceeds: boolean;
+};
+
+export function useFxCustomerMonthly(docNumber: string) {
+  const { currentOrg } = useOrganization();
+  const trimmed = docNumber.trim();
+  return useQuery({
+    queryKey: ["fx_customer_monthly", currentOrg?.id, trimmed],
+    queryFn: async (): Promise<FxCustomerMonthly> => {
+      if (!currentOrg?.id || trimmed.length < 3) {
+        return { accumulated: 0, currency: "USD", txCount: 0, exceeds: false };
+      }
+      const { data, error } = await (supabase as any).rpc("fx_customer_monthly_accumulated", {
+        p_organization_id: currentOrg.id,
+        p_doc_number: trimmed,
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return {
+        accumulated: Number(row?.accumulated ?? 0),
+        currency: row?.currency ?? "USD",
+        txCount: Number(row?.tx_count ?? 0),
+        exceeds: Boolean(row?.exceeds ?? false),
+      };
+    },
+    enabled: !!currentOrg?.id && trimmed.length >= 3,
+    staleTime: 15_000,
+  });
+}

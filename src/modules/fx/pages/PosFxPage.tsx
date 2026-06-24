@@ -13,6 +13,7 @@ import {
   useFxTransactionsRecent,
   useUiafThreshold,
   useEmitFxCommissionInvoice,
+  useFxCustomerMonthly,
 } from "../hooks/useFxTransactions";
 import { useActiveFxCashSession } from "../hooks/useFxCashSession";
 import CloseFxSessionDialog from "../components/CloseFxSessionDialog";
@@ -88,7 +89,16 @@ export default function PosFxPage() {
     thresholdEquivalent !== null && thresholdEquivalent >= thresholdAmount;
   const thresholdUnknown = thresholdEquivalent === null && fromAmountNum > 0;
 
-  const requiresCustomer = isAboveThreshold;
+  // Slice 4 — Ola 2: acumulado mensual UIAF por cliente.
+  const monthlyQ = useFxCustomerMonthly(customer.doc_number);
+  const monthly = monthlyQ.data;
+  const projectedMonthly = (monthly?.accumulated ?? 0) + (thresholdEquivalent ?? 0);
+  const exceedsMonthly =
+    !!monthly &&
+    (monthly.exceeds || projectedMonthly >= thresholdAmount) &&
+    monthly.currency === thresholdCcy;
+
+  const requiresCustomer = isAboveThreshold || exceedsMonthly;
   const customerComplete =
     customer.doc_number.trim().length > 3 &&
     customer.name.trim().length > 2 &&
@@ -284,9 +294,26 @@ export default function PosFxPage() {
                 </Alert>
               )}
 
+              {exceedsMonthly && !isAboveThreshold && (
+                <Alert>
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Acumulado mensual UIAF superado</AlertTitle>
+                  <AlertDescription>
+                    Este documento acumula {fmt(monthly?.accumulated ?? 0)} {thresholdCcy} este mes ({monthly?.txCount ?? 0} operaciones). Sumando esta operación llega a {fmt(projectedMonthly)} {thresholdCcy}, igual o superior al umbral de {fmt(thresholdAmount)} {thresholdCcy}. Datos del cliente obligatorios.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {requiresCustomer && (
                 <div className="space-y-3 rounded-lg border bg-card p-3">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Datos del cliente (UIAF)</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Datos del cliente (UIAF)</div>
+                    {monthly && monthly.txCount > 0 && (
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Mes: {fmt(monthly.accumulated)} {monthly.currency} · {monthly.txCount} op.
+                      </span>
+                    )}
+                  </div>
                   <div className="grid gap-3 md:grid-cols-3">
                     <div className="space-y-1.5">
                       <Label>Tipo doc.</Label>
