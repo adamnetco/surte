@@ -74,7 +74,7 @@ const SuperadminDashboard = () => {
 
       {/* Mobile top bar */}
       <header className="lg:hidden border-b border-border bg-card sticky top-0 z-10">
-        <div className="px-4 py-3 flex items-center justify-between">
+        <div className="pl-14 pr-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-md bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
               <ShieldCheck size={14} />
