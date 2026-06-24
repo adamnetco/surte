@@ -68,6 +68,8 @@ interface BulkResponse {
   truncated?: boolean;
   next_cursor?: NextCursor;
   elapsed_ms?: number;
+  // POS-einvoice-bulk-retry-hardening AC1
+  idempotent_replay?: boolean;
 }
 
 export default function EinvoiceBulkRetry() {
@@ -79,6 +81,9 @@ export default function EinvoiceBulkRetry() {
   const [wallclockMs, setWallclockMs] = useState(DEFAULT_WALLCLOCK_MS);
   const [running, setRunning] = useState(false);
   const [lastResponse, setLastResponse] = useState<BulkResponse | null>(null);
+  // Idempotency key persistente entre la primera ejecución y sus reanudaciones
+  // por cursor. Se regenera en cada click de "Reencolar ahora" (no en dry-run).
+  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
 
   const { data: orgs, isLoading: orgsLoading } = useQuery({
     queryKey: ["bulk-retry-orgs"],
@@ -136,6 +141,14 @@ export default function EinvoiceBulkRetry() {
       if (!ok) return;
     }
 
+    // AC1: generar idempotency_key en cada click real (no en dry-run).
+    // Las reanudaciones por cursor reusan la misma clave.
+    let key = idempotencyKey;
+    if (!asDryRun && !cursor) {
+      key = crypto.randomUUID();
+      setIdempotencyKey(key);
+    }
+
     setRunning(true);
     try {
       const { data, error } = await supabase.functions.invoke(
@@ -148,6 +161,7 @@ export default function EinvoiceBulkRetry() {
             max_retries: maxRetries,
             wallclock_ms: wallclockMs,
             ...(cursor ? { cursor } : {}),
+            ...(!asDryRun && key ? { idempotency_key: key } : {}),
           },
         },
       );
