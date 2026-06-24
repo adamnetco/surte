@@ -28,6 +28,7 @@ interface Config {
   resolution_to?: number | null;
   resolution_current?: number | null;
   is_active: boolean;
+  extra?: Record<string, any> | null;
 }
 
 interface Invoice {
