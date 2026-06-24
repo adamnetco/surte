@@ -2,25 +2,20 @@
 // POS-einvoice-bulk-retry-admin (follow-up de POS-einvoice-retry-scoping AC5).
 // Bulk retry multi-org RESTRINGIDO a superadmins.
 //
-// Body: { organization_ids: uuid[], dry_run?: boolean }
+// Body: { organization_ids: uuid[], dry_run?: boolean, batch_size?: number, max_retries?: number }
 // Reusa la misma lógica batch (UPDATE in + INSERT outbox) que einvoice-resend,
 // pero itera por organización y aísla el blast radius con validación de visibilidad.
-//
-// Diferencias vs einvoice-resend retry_all_today:
-//   - Solo superadmin (user_roles.role='superadmin' vía has_role).
-//   - Acepta N orgs; loguea 1 row por org en sync_logs.
-//   - Rate-limit suave: máx 20 orgs por request.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 
-const corsHeaders = {
+export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BodySchema = z.object({
+export const BodySchema = z.object({
   organization_ids: z.array(z.string().uuid()).min(1).max(20),
   dry_run: z.boolean().optional(),
   // AC6 (UI superadmin): el front envía estos parámetros para que el worker
@@ -30,6 +25,24 @@ const BodySchema = z.object({
   max_retries: z.number().int().min(0).max(10).optional(),
 });
 
+export type BulkBody = z.infer<typeof BodySchema>;
+
+export type OrgResult = {
+  organization_id: string;
+  candidates: number;
+  requeued: number;
+  status: "success" | "error" | "skipped";
+  error?: string;
+};
+
+export type BulkResponse = {
+  success: true;
+  dry_run: boolean;
+  total_orgs: number;
+  total_requeued: number;
+  results: OrgResult[];
+};
+
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
@@ -37,7 +50,146 @@ function json(status: number, body: unknown) {
   });
 }
 
-Deno.serve(async (req) => {
+// Lógica pura testeable. `supabase` puede ser un fake con la misma forma.
+export async function processBulkRetry(
+  supabase: any,
+  body: BulkBody,
+  userId: string,
+): Promise<BulkResponse> {
+  const { organization_ids, dry_run, batch_size, max_retries } = body;
+
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+
+  const results: OrgResult[] = [];
+
+  for (const orgId of organization_ids) {
+    const { data: pendings, error: queryErr } = await supabase
+      .from("electronic_invoices")
+      .select("id, organization_id")
+      .eq("organization_id", orgId)
+      .gte("created_at", since.toISOString())
+      .in("status", ["retrying", "rejected", "error", "dead_letter", "queued", "pending"]);
+
+    if (queryErr) {
+      await supabase.from("sync_logs").insert({
+        organization_id: orgId,
+        service_name: "einvoice_bulk_retry_admin",
+        status: "error",
+        error_message: queryErr.message,
+        payload: { action: "bulk_admin", requested_by: userId, phase: "query" },
+      });
+      results.push({
+        organization_id: orgId,
+        candidates: 0,
+        requeued: 0,
+        status: "error",
+        error: queryErr.message,
+      });
+      continue;
+    }
+
+    const rows = pendings ?? [];
+    const ids = rows.map((r: any) => r.id);
+
+    if (dry_run || ids.length === 0) {
+      results.push({
+        organization_id: orgId,
+        candidates: ids.length,
+        requeued: 0,
+        status: dry_run ? "skipped" : "success",
+      });
+      continue;
+    }
+
+    const { error: updErr } = await supabase
+      .from("electronic_invoices")
+      .update({ status: "queued", retry_count: 0, next_retry_at: null, last_error: null })
+      .in("id", ids);
+
+    if (updErr) {
+      await supabase.from("sync_logs").insert({
+        organization_id: orgId,
+        service_name: "einvoice_bulk_retry_admin",
+        status: "error",
+        error_message: `update_failed: ${updErr.message}`,
+        payload: { action: "bulk_admin", requested_by: userId, candidates: ids.length },
+      });
+      results.push({
+        organization_id: orgId,
+        candidates: ids.length,
+        requeued: 0,
+        status: "error",
+        error: updErr.message,
+      });
+      continue;
+    }
+
+    const outboxRows = rows.map((r: any) => ({
+      organization_id: r.organization_id,
+      operation: "einvoice_emit",
+      payload: {
+        invoice_id: r.id,
+        forced_retry: true,
+        forced_by: userId,
+        bulk: true,
+        admin: true,
+        ...(batch_size ? { batch_size } : {}),
+        ...(typeof max_retries === "number" ? { max_retries } : {}),
+      },
+      status: "pending",
+    }));
+    const { error: outErr } = await supabase.from("sync_outbox").insert(outboxRows);
+
+    if (outErr) {
+      await supabase.from("sync_logs").insert({
+        organization_id: orgId,
+        service_name: "einvoice_bulk_retry_admin",
+        status: "error",
+        error_message: `outbox_insert_failed: ${outErr.message}`,
+        payload: { action: "bulk_admin", requested_by: userId, candidates: ids.length },
+      });
+      results.push({
+        organization_id: orgId,
+        candidates: ids.length,
+        requeued: 0,
+        status: "error",
+        error: outErr.message,
+      });
+      continue;
+    }
+
+    await supabase.from("sync_logs").insert({
+      organization_id: orgId,
+      service_name: "einvoice_bulk_retry_admin",
+      status: "success",
+      payload: {
+        action: "bulk_admin",
+        requeued_count: ids.length,
+        requested_by: userId,
+        since: since.toISOString(),
+        ...(batch_size ? { batch_size } : {}),
+        ...(typeof max_retries === "number" ? { max_retries } : {}),
+      },
+    });
+    results.push({
+      organization_id: orgId,
+      candidates: ids.length,
+      requeued: ids.length,
+      status: "success",
+    });
+  }
+
+  return {
+    success: true,
+    dry_run: Boolean(dry_run),
+    total_orgs: organization_ids.length,
+    total_requeued: results.reduce((s, r) => s + r.requeued, 0),
+    results,
+  };
+}
+
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -61,7 +213,6 @@ Deno.serve(async (req) => {
     if (!parsed.success) {
       return json(400, { error: "invalid_payload", details: parsed.error.flatten() });
     }
-    const { organization_ids, dry_run, batch_size, max_retries } = parsed.data;
 
     // AC2: solo superadmin global.
     const { data: isSuper, error: roleErr } = await supabase.rpc("has_role", {
@@ -71,142 +222,11 @@ Deno.serve(async (req) => {
     if (roleErr) return json(500, { error: "role_check_failed", details: roleErr.message });
     if (!isSuper) return json(403, { error: "superadmin_required" });
 
-    const since = new Date();
-    since.setHours(0, 0, 0, 0);
-
-    const results: Array<{
-      organization_id: string;
-      candidates: number;
-      requeued: number;
-      status: "success" | "error" | "skipped";
-      error?: string;
-    }> = [];
-
-    for (const orgId of organization_ids) {
-      const { data: pendings, error: queryErr } = await supabase
-        .from("electronic_invoices")
-        .select("id, organization_id")
-        .eq("organization_id", orgId)
-        .gte("created_at", since.toISOString())
-        .in("status", ["retrying", "rejected", "error", "dead_letter", "queued", "pending"]);
-
-      if (queryErr) {
-        await supabase.from("sync_logs").insert({
-          organization_id: orgId,
-          service_name: "einvoice_bulk_retry_admin",
-          status: "error",
-          error_message: queryErr.message,
-          payload: { action: "bulk_admin", requested_by: userId, phase: "query" },
-        });
-        results.push({
-          organization_id: orgId,
-          candidates: 0,
-          requeued: 0,
-          status: "error",
-          error: queryErr.message,
-        });
-        continue;
-      }
-
-      const rows = pendings ?? [];
-      const ids = rows.map((r: any) => r.id);
-
-      if (dry_run || ids.length === 0) {
-        results.push({
-          organization_id: orgId,
-          candidates: ids.length,
-          requeued: 0,
-          status: dry_run ? "skipped" : "success",
-        });
-        continue;
-      }
-
-      const { error: updErr } = await supabase
-        .from("electronic_invoices")
-        .update({ status: "queued", retry_count: 0, next_retry_at: null, last_error: null })
-        .in("id", ids);
-
-      if (updErr) {
-        await supabase.from("sync_logs").insert({
-          organization_id: orgId,
-          service_name: "einvoice_bulk_retry_admin",
-          status: "error",
-          error_message: `update_failed: ${updErr.message}`,
-          payload: { action: "bulk_admin", requested_by: userId, candidates: ids.length },
-        });
-        results.push({
-          organization_id: orgId,
-          candidates: ids.length,
-          requeued: 0,
-          status: "error",
-          error: updErr.message,
-        });
-        continue;
-      }
-
-      const outboxRows = rows.map((r: any) => ({
-        organization_id: r.organization_id,
-        operation: "einvoice_emit",
-        payload: {
-          invoice_id: r.id,
-          forced_retry: true,
-          forced_by: userId,
-          bulk: true,
-          admin: true,
-          ...(batch_size ? { batch_size } : {}),
-          ...(typeof max_retries === "number" ? { max_retries } : {}),
-        },
-        status: "pending",
-      }));
-      const { error: outErr } = await supabase.from("sync_outbox").insert(outboxRows);
-
-      if (outErr) {
-        await supabase.from("sync_logs").insert({
-          organization_id: orgId,
-          service_name: "einvoice_bulk_retry_admin",
-          status: "error",
-          error_message: `outbox_insert_failed: ${outErr.message}`,
-          payload: { action: "bulk_admin", requested_by: userId, candidates: ids.length },
-        });
-        results.push({
-          organization_id: orgId,
-          candidates: ids.length,
-          requeued: 0,
-          status: "error",
-          error: outErr.message,
-        });
-        continue;
-      }
-
-      await supabase.from("sync_logs").insert({
-        organization_id: orgId,
-        service_name: "einvoice_bulk_retry_admin",
-        status: "success",
-        payload: {
-          action: "bulk_admin",
-          requeued_count: ids.length,
-          requested_by: userId,
-          since: since.toISOString(),
-          ...(batch_size ? { batch_size } : {}),
-          ...(typeof max_retries === "number" ? { max_retries } : {}),
-        },
-      });
-      results.push({
-        organization_id: orgId,
-        candidates: ids.length,
-        requeued: ids.length,
-        status: "success",
-      });
-    }
-
-    return json(200, {
-      success: true,
-      dry_run: Boolean(dry_run),
-      total_orgs: organization_ids.length,
-      total_requeued: results.reduce((s, r) => s + r.requeued, 0),
-      results,
-    });
+    const result = await processBulkRetry(supabase, parsed.data, userId);
+    return json(200, result);
   } catch (e: any) {
     return json(500, { error: "internal_error", details: String(e?.message ?? e) });
   }
-});
+};
+
+Deno.serve(handler);
