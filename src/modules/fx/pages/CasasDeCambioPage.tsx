@@ -282,9 +282,24 @@ export default function CasasDeCambioPage() {
                 const inputs = rateInputs[p.id] ?? { buy: "", sell: "" };
                 return (
                   <div key={p.id} className="border rounded-md p-3 space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <Badge variant="default" className="font-mono">{base?.code}/{quote?.code}</Badge>
-                      {r && <span className="text-xs text-muted-foreground">Actual: {r.buy_rate} / {r.sell_rate} · {new Date(r.effective_at).toLocaleString("es-CO")}</span>}
+                      {r && <span className="text-xs text-muted-foreground">Actual: {r.buy_rate} / {r.sell_rate} · {new Date(r.effective_at).toLocaleString("es-CO")} · src: {r.source}</span>}
+                      {base?.code === "USD" && quote?.code === "COP" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={importTrm.isPending}
+                          onClick={() => importTrm.mutate(p.id)}
+                        >
+                          {importTrm.isPending && importTrm.variables === p.id ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          Importar TRM oficial
+                        </Button>
+                      )}
                     </div>
                     <div className="grid md:grid-cols-3 gap-2 items-end">
                       <div>
