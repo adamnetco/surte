@@ -677,5 +677,5 @@ Deno.test("AC4 E2E: 3 orgs multi-escenario (success/empty/error) con stub realis
       o.table === "sync_logs" &&
       o.payload?.service_name === "einvoice_bulk_retry_admin",
   );
-  assertEquals(orgLogs.length, 3);
+  assertEquals(orgLogs.length, 2); // orgEmpty no escribe agregado (continue early)
 });
