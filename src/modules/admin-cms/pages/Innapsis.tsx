@@ -232,6 +232,12 @@ const Innapsis = () => {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
+              onClick={() => navigate("/admin/innapsis/resumen")}
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-border hover:bg-muted"
+            >
+              <FileText size={14} /> Resumen
+            </button>
+            <button
               onClick={() => navigate("/superadmin/einvoice-bulk-retry")}
               className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-border hover:bg-muted"
             >

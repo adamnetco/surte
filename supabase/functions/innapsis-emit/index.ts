@@ -585,6 +585,23 @@ Deno.serve(async (req) => {
         performed_by: userId,
       });
 
+      // POS-innapsis-emision-pos AC7: auto-email PDF/XML al cliente cuando la emisión es aceptada.
+      // Fire-and-forget: si falla no rompe la emisión (queda registrado en email_send_log/einvoice_events).
+      if (res.ok && !transmit_invoice_id && (responseJson?.pdf_url || responseJson?.PdfUrl)) {
+        const recipientEmail = (payload?.Fe?.Receptor as any)?.Email;
+        if (recipientEmail && /.+@.+\..+/.test(recipientEmail)) {
+          fetch(`${SUPABASE_URL}/functions/v1/einvoice-resend`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${SERVICE_KEY}`,
+              "Content-Type": "application/json",
+              "apikey": SERVICE_KEY,
+            },
+            body: JSON.stringify({ invoice_id: inv.id, action: "send_email", to: recipientEmail }),
+          }).catch((err) => console.error("[innapsis-emit] auto-email failed:", err?.message ?? err));
+        }
+      }
+
       return new Response(JSON.stringify({
         success: res.ok,
         invoice_id: inv.id,
