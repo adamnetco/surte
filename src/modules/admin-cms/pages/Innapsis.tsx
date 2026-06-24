@@ -291,6 +291,98 @@ const Innapsis = () => {
           })}
         </div>
 
+        {/* Barra de acción masiva */}
+        {(selected.size > 0 || bulkReport) && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <p className="text-xs font-semibold text-amber-900">
+                {selected.size > 0
+                  ? `${selected.size} factura(s) seleccionada(s)`
+                  : "Resultado del último reintento masivo"}
+              </p>
+              <div className="flex items-center gap-2">
+                {selected.size > 0 && (
+                  <>
+                    <button
+                      onClick={clearSelection}
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-md border border-border bg-card hover:bg-muted"
+                    >
+                      Quitar selección
+                    </button>
+                    <button
+                      onClick={runBulkRetry}
+                      disabled={bulkRunning}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-md bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-60"
+                    >
+                      {bulkRunning ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <RefreshCw size={12} />
+                      )}
+                      Reintentar seleccionadas
+                    </button>
+                  </>
+                )}
+                {selected.size === 0 && bulkReport && (
+                  <button
+                    onClick={() => setBulkReport(null)}
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-md border border-border bg-card hover:bg-muted"
+                  >
+                    Cerrar reporte
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {selected.size > 0 && (
+              <button
+                onClick={selectAllRetriable}
+                className="text-[11px] text-amber-900 underline hover:no-underline"
+              >
+                Seleccionar todas las facturas con error/reintentando visibles
+              </button>
+            )}
+
+            {bulkReport && (
+              <div className="text-[11px] text-foreground space-y-1">
+                <p>
+                  <span className="font-bold text-emerald-700">{bulkReport.ok.length}</span> ok ·{" "}
+                  <span className="font-bold text-red-700">{bulkReport.fail.length}</span> con error
+                </p>
+                {bulkReport.fail.length > 0 && (
+                  <ul className="max-h-32 overflow-y-auto bg-background/60 rounded-md p-2 space-y-0.5">
+                    {bulkReport.fail.slice(0, 20).map((f) => (
+                      <li key={f.id} className="truncate text-red-700">
+                        · {f.id.slice(0, 8)}… — {f.err}
+                      </li>
+                    ))}
+                    {bulkReport.fail.length > 20 && (
+                      <li className="text-muted-foreground">
+                        … y {bulkReport.fail.length - 20} más
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Botón "seleccionar visibles" cuando no hay selección */}
+        {selected.size === 0 && !bulkReport && filtered.some((i) =>
+          ["error", "rejected", "permanent", "retrying", "dead_letter"].includes(
+            (i.status ?? "").toLowerCase(),
+          ),
+        ) && (
+          <button
+            onClick={selectAllRetriable}
+            className="text-[11px] font-semibold text-primary hover:underline"
+          >
+            Seleccionar todas las facturas con error/reintentando visibles para reintento masivo
+          </button>
+        )}
+
+
         {/* Listado */}
         {isError && (
           <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
