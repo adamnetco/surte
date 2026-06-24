@@ -23,6 +23,11 @@ const corsHeaders = {
 const BodySchema = z.object({
   organization_ids: z.array(z.string().uuid()).min(1).max(20),
   dry_run: z.boolean().optional(),
+  // AC6 (UI superadmin): el front envía estos parámetros para que el worker
+  // los respete cuando se implemente POS-optimizar-bulk-retry-timeouts.
+  // Se persisten en el payload del outbox; no afectan el flujo actual.
+  batch_size: z.number().int().min(1).max(500).optional(),
+  max_retries: z.number().int().min(0).max(10).optional(),
 });
 
 function json(status: number, body: unknown) {
