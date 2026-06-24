@@ -144,13 +144,16 @@ export default function CasasDeCambioPage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Divisas registradas ({currencies.length})</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Divisas registradas ({filteredCurrencies.length}/{currencies.length})</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {loadingCur && <p className="text-sm text-muted-foreground">Cargando…</p>}
               {!loadingCur && currencies.length === 0 && (
                 <p className="text-sm text-muted-foreground">Aún no hay divisas. Usa el botón superior para cargar las comunes o agrega manualmente.</p>
               )}
-              {currencies.map(c => (
+              {!loadingCur && currencies.length > 0 && filteredCurrencies.length === 0 && (
+                <p className="text-sm text-muted-foreground">Sin resultados para “{search}”.</p>
+              )}
+              {filteredCurrencies.map(c => (
                 <div key={c.id} className="flex items-center justify-between border rounded-md p-3">
                   <div className="flex items-center gap-3">
                     <Badge variant="outline" className="font-mono">{c.code}</Badge>
