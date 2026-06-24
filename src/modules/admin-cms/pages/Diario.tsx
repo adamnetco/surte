@@ -548,6 +548,11 @@ const Diario = () => {
           </section>
         )}
 
+        {/* Estado de sincronización (colas con backoff) */}
+        <SyncStatusPanel />
+
+
+
         {/* Acciones del día */}
         <section className="space-y-2">
           <div className="flex items-center justify-between gap-2">
