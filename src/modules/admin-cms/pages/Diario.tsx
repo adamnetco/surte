@@ -744,22 +744,59 @@ const Diario = () => {
           </div>
         </section>
 
-        {/* Checklist diaria — persistido en Supabase */}
+        {/* Checklist diaria — plantilla por rol, persistido en Supabase */}
         <section className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Checklist del día
             </h2>
             <span className="text-[11px] text-muted-foreground tabular-nums">
-              {doneCount}/{CHECKLIST_DEFS.length}
+              {doneCount}/{activeTemplate.items.length}
             </span>
           </div>
+
+          {/* Selector de plantilla por rol */}
+          <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+            {CHECKLIST_TEMPLATES.map((t) => {
+              const isActive = t.key === activeTemplate.key;
+              const isSuggested = t.key === suggested.key;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => onPickTemplate(t.key)}
+                  className={cn(
+                    "shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition flex items-center gap-1",
+                    isActive
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-card text-muted-foreground border-border hover:text-foreground",
+                  )}
+                  title={t.description}
+                >
+                  {t.label}
+                  {isSuggested && (
+                    <span
+                      className={cn(
+                        "text-[9px] uppercase font-bold tracking-wide px-1 rounded",
+                        isActive ? "bg-background/20" : "bg-emerald-500/15 text-emerald-700",
+                      )}
+                    >
+                      Tu rol
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-muted-foreground -mt-1">
+            {activeTemplate.description}
+          </p>
+
           <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
             {checklistLoading
-              ? CHECKLIST_DEFS.map((c) => (
+              ? activeTemplate.items.map((c) => (
                   <Skeleton key={c.item_key} className="h-[52px] w-full rounded-none" />
                 ))
-              : CHECKLIST_DEFS.map((c) => (
+              : activeTemplate.items.map((c) => (
                   <ChecklistRow
                     key={c.item_key}
                     item_key={c.item_key}
@@ -772,9 +809,10 @@ const Diario = () => {
                 ))}
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Tu progreso se guarda en la nube y se reinicia cada día.
+            Tu progreso se guarda en la nube y se reinicia cada día. Cada plantilla mantiene su propio avance.
           </p>
         </section>
+
       </main>
 
       <DiarioBulkSheet
