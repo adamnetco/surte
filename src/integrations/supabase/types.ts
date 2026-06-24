@@ -9197,6 +9197,19 @@ export type Database = {
         Args: { _currency_code: string; _delta: number; _session_id: string }
         Returns: undefined
       }
+      fx_customer_monthly_accumulated: {
+        Args: {
+          p_doc_number: string
+          p_month_start?: string
+          p_organization_id: string
+        }
+        Returns: {
+          accumulated: number
+          currency: string
+          exceeds: boolean
+          tx_count: number
+        }[]
+      }
       fx_publish_rate: {
         Args: {
           _base_rate?: number
