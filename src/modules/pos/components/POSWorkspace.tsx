@@ -475,8 +475,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <span>{sync.syncing ? "Sync…" : `${sync.pending}`}</span>
               </button>
             )}
+            <DianHealthIndicator organizationId={organizationId} className="hidden md:inline-flex" />
           </>
         }
+      />
+
+      {/* AC10/AC11 — Banner DIAN offline / contingencia */}
+      <ContingencyBanner
+        health={dianSnap.health}
+        hasContingencyRange={dianSnap.hasContingencyRange}
       />
 
       {/* Tabs de categorías (60%) + Cliente (40%) */}
