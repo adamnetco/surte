@@ -1,6 +1,6 @@
 # POS — Optimizar Bulk Retry: timeouts y lotes
 
-**Estado:** DRAFT
+**Estado:** IN_REVIEW (AC1/AC2/AC3/AC5 entregados — AC4 wallclock pendiente)
 **Módulo:** edge `einvoice-resend` + `einvoice-resend-bulk-admin`
 **Wave:** Follow-up de [POS-einvoice-retry-scoping](./POS-einvoice-retry-scoping.md) (observación #1)
 
