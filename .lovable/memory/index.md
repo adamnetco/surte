@@ -57,3 +57,4 @@
 - [Ola 4 Daily Driver Bulk](mem://features/ola-4-daily-driver-bulk) — Slice 1: DiarioBulkSheet con multi-select para reintentar facturas DIAN (loop einvoice-resend + retry_all_today) y confirmar pedidos pendientes en lote
 - [Ola 4 Daily Driver Share](mem://features/ola-4-daily-driver-share) — Slice 2: DiarioShareDialog genera snapshot del día como texto plano (WhatsApp wa.me) + PNG (html-to-image) + clipboard + Web Share API
 - [Ola 4 Daily Driver Roles](mem://features/ola-4-daily-driver-roles) — Slice 3: Plantillas checklist por rol (admin/cashier/waiter/kitchen/agent), selector con override en localStorage, progreso aislado por item_key prefijado
+- [Ola 4 Daily Driver CmdK](mem://features/ola-4-daily-driver-cmdk) — Slice 4: GlobalCommandPalette extendido con búsqueda de pedidos por order_number y facturas DIAN por full_number/cufe
