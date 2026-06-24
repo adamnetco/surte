@@ -58,3 +58,5 @@
 - [Ola 4 Daily Driver Share](mem://features/ola-4-daily-driver-share) — Slice 2: DiarioShareDialog genera snapshot del día como texto plano (WhatsApp wa.me) + PNG (html-to-image) + clipboard + Web Share API
 - [Ola 4 Daily Driver Roles](mem://features/ola-4-daily-driver-roles) — Slice 3: Plantillas checklist por rol (admin/cashier/waiter/kitchen/agent), selector con override en localStorage, progreso aislado por item_key prefijado
 - [Ola 4 Daily Driver CmdK](mem://features/ola-4-daily-driver-cmdk) — Slice 4: GlobalCommandPalette extendido con búsqueda de pedidos por order_number y facturas DIAN por full_number/cufe
+- [Ola 5 UIAF cross-rate](mem://features/ola-5-fx-uiaf-crossrate) — Slice 1: fx_convert_to_currency + acumulado UIAF cross-rate vía fx_rates publicado
+
