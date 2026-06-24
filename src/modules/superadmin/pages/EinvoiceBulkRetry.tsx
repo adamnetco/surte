@@ -118,7 +118,7 @@ export default function EinvoiceBulkRetry() {
 
   const clearSelection = () => setSelected({});
 
-  const run = async (asDryRun: boolean) => {
+  const run = async (asDryRun: boolean, cursor?: NextCursor) => {
     if (selectedIds.length === 0) {
       toast.error("Selecciona al menos una organización.");
       return;
@@ -127,10 +127,10 @@ export default function EinvoiceBulkRetry() {
       toast.error(`Máximo ${MAX_ORGS_PER_REQUEST} organizaciones por ejecución.`);
       return;
     }
-    if (!asDryRun) {
+    if (!asDryRun && !cursor) {
       const ok = window.confirm(
         `Reencolar facturas pendientes en ${selectedIds.length} organización(es)?\n\n` +
-        `batch_size=${batchSize} · max_retries=${maxRetries}\n` +
+        `batch_size=${batchSize} · max_retries=${maxRetries} · wallclock=${Math.round(wallclockMs / 1000)}s\n` +
         `Esta acción afecta múltiples tenants. Procede solo si el dry-run fue revisado.`,
       );
       if (!ok) return;
@@ -146,6 +146,8 @@ export default function EinvoiceBulkRetry() {
             dry_run: asDryRun,
             batch_size: batchSize,
             max_retries: maxRetries,
+            wallclock_ms: wallclockMs,
+            ...(cursor ? { cursor } : {}),
           },
         },
       );
@@ -163,6 +165,10 @@ export default function EinvoiceBulkRetry() {
       setLastResponse(resp);
       if (asDryRun) {
         toast.success(`Preview: ${resp.total_requeued === 0 ? resp.results.reduce((s, r) => s + r.candidates, 0) : resp.total_requeued} candidatas en ${resp.total_orgs} org(s).`);
+      } else if (resp.truncated) {
+        toast.warning(
+          `Truncado por wallclock: ${resp.total_requeued} reencoladas. Usa "Reanudar" para continuar.`,
+        );
       } else {
         toast.success(`Reencoladas ${resp.total_requeued} facturas en ${resp.total_orgs} org(s).`);
       }
