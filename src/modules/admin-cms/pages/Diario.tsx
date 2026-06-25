@@ -33,7 +33,6 @@ import SyncStatusPanel from "@/modules/admin-cms/components/SyncStatusPanel";
 import DiarioBulkSheet, { type BulkKind } from "@/modules/admin-cms/components/DiarioBulkSheet";
 import DiarioShareDialog from "@/modules/admin-cms/components/DiarioShareDialog";
 import { getTopHotkeys } from "@/components/GlobalHotkeys";
-import { Keyboard } from "lucide-react";
 import {
   CHECKLIST_TEMPLATES,
   templateForRole,
