@@ -158,7 +158,7 @@ const Login = () => {
           options: {
             data: {
               full_name: fullName,
-              business_type: businessType || "casa",
+              business_type: businessType || "detal",
               phone: phone || "",
               organization_slug: sentSlug,
             },
