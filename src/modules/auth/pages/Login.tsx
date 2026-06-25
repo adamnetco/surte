@@ -16,7 +16,6 @@ const AUTH_WAIT_TIMEOUT_MS = 6000;
 
 type BusinessTypeOption = { value: string; label: string; icon: string };
 const BUSINESS_TYPES: BusinessTypeOption[] = [
-  { value: "casa", label: "Casa / Consumidor", icon: "🏠" },
   { value: "detal", label: "Tienda Detal", icon: "🏪" },
   { value: "minimercado", label: "Minimercado", icon: "🛒" },
   { value: "horeca", label: "Restaurante / HORECA", icon: "🍽️" },
@@ -28,7 +27,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [businessType, setBusinessType] = useState("casa");
+  const [businessType, setBusinessType] = useState("detal");
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,7 +51,9 @@ const Login = () => {
     if (isMaster) return "/admin";
     if (currentRole === "superadmin" || currentRole === "admin") return "/admin";
     if (currentRole === "agente") return "/pos";
-    return "/clientes";
+    // Nuevos dueños sin rol asignado entran al wizard de configuración inicial.
+    // Si ya completaron onboarding, /onboarding redirige solo a /pos.
+    return "/onboarding";
   };
 
   // Auto-redirect si ya hay sesión al entrar a /login
@@ -159,7 +160,7 @@ const Login = () => {
           options: {
             data: {
               full_name: fullName,
-              business_type: businessType || "casa",
+              business_type: businessType || "detal",
               phone: phone || "",
               organization_slug: sentSlug,
             },
