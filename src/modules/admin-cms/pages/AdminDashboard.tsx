@@ -63,6 +63,7 @@ const allTabs = [
   { id: "presentations", label: "Presentaciones", icon: Box, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
   { id: "modifiers", label: "Modificadores", icon: Settings, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
   { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
+  { id: "price-lists", label: "Listas de precios", icon: Tag, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
   { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
   { id: "contacts", label: "Contactos", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
   { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
