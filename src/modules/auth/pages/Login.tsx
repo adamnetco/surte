@@ -51,7 +51,9 @@ const Login = () => {
     if (isMaster) return "/admin";
     if (currentRole === "superadmin" || currentRole === "admin") return "/admin";
     if (currentRole === "agente") return "/pos";
-    return "/clientes";
+    // Nuevos dueños sin rol asignado entran al wizard de configuración inicial.
+    // Si ya completaron onboarding, /onboarding redirige solo a /pos.
+    return "/onboarding";
   };
 
   // Auto-redirect si ya hay sesión al entrar a /login
