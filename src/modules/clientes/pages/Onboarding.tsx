@@ -204,9 +204,9 @@ export default function Onboarding() {
           progressPatch.einvoice_done = true;
         }
       } else if (step === 5) {
-        // Persistir plan elegido. organizations.plan es la columna canónica.
-        await supabase.from("organizations").update({ plan: selectedPlan }).eq("id", currentOrg.id);
-        progressPatch.plan_done = true;
+        // El plan elegido queda en estado local; la suscripción se crea al
+        // entrar a Facturación/Checkout. No persistimos aquí porque
+        // organizations no tiene columna plan (la fuente de verdad es subscriptions).
       } else if (step === 6) {
         await supabase.from("onboarding_progress").upsert(
           { organization_id: currentOrg.id, catalog_done: true, completed_at: new Date().toISOString() },
