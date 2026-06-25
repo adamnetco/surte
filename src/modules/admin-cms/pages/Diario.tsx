@@ -391,6 +391,46 @@ function ChecklistRow({
     </div>
   );
 }
+
+function HotkeyFooterHint() {
+  const [top, setTop] = useState<{ combo: string; label: string }[]>([]);
+  useEffect(() => {
+    setTop(getTopHotkeys(3));
+    const onFocus = () => setTop(getTopHotkeys(3));
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+  const openCheat = () => window.dispatchEvent(new CustomEvent("sps:hotkeys:open"));
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 pb-4 pt-2 text-[11px] text-muted-foreground">
+      <button
+        type="button"
+        onClick={openCheat}
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 transition hover:bg-muted"
+        aria-label="Ver atajos de teclado"
+      >
+        <kbd className="font-mono">?</kbd>
+        <span>atajos</span>
+      </button>
+      {top.length > 0 && (
+        <>
+          <span className="opacity-50">·</span>
+          <span className="opacity-75">tus más usados:</span>
+          {top.map((h) => (
+            <kbd
+              key={h.combo}
+              title={h.label}
+              className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]"
+            >
+              {h.combo}
+            </kbd>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 const Diario = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
