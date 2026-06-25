@@ -32,7 +32,7 @@ export async function logWhatsAppEvent(event: WhatsAppEventInput): Promise<void>
     error: event.error ?? null,
     payload: event.payload ?? null,
   };
-  const { error } = await supabase.from("whatsapp_message_events").insert(row);
+  const { error } = await supabase.from("whatsapp_message_events").insert([row]);
   if (error) {
     // eslint-disable-next-line no-console
     console.warn("[whatsapp-events] insert failed", error.message, row);
