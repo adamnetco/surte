@@ -58,6 +58,7 @@
 - [Ola 4 Daily Driver Share](mem://features/ola-4-daily-driver-share) — Slice 2: DiarioShareDialog genera snapshot del día como texto plano (WhatsApp wa.me) + PNG (html-to-image) + clipboard + Web Share API
 - [Ola 4 Daily Driver Roles](mem://features/ola-4-daily-driver-roles) — Slice 3: Plantillas checklist por rol (admin/cashier/waiter/kitchen/agent), selector con override en localStorage, progreso aislado por item_key prefijado
 - [Ola 4 Daily Driver CmdK](mem://features/ola-4-daily-driver-cmdk) — Slice 4: GlobalCommandPalette extendido con búsqueda de pedidos por order_number y facturas DIAN por full_number/cufe
+- [Ola 6 Daily Driver Hotkeys](mem://features/ola-6-daily-driver-hotkeys) — Slice A: GlobalHotkeys con secuencias G+letra (gd/gp/gi/go/gu/gs/ga), atajos n/r/?, cheatsheet Dialog, usage tracking localStorage + footer top-3 en /admin/diario
 - [Ola 5 UIAF cross-rate](mem://features/ola-5-fx-uiaf-crossrate) — Slice 1: fx_convert_to_currency + acumulado UIAF cross-rate vía fx_rates publicado
 - [Ola 5 UIAF XML](mem://features/ola-5-fx-uiaf-xml) — Slice 2: buildUiafXml + botón UIAF XML en /casas-de-cambio/reportes (Res. UIAF 285)
 - [Ola 5 Commission Retry](mem://features/ola-5-fx-commission-retry) — Slice 3: pg_cron `*/10` reintenta facturación comisión FX con backoff 1m→5m→30m→2h→12h, 5 intentos máx
