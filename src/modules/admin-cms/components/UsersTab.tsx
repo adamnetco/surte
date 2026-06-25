@@ -44,7 +44,8 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const [createModal, setCreateModal] = useState(false);
   // B2B POS: la tipología/lista de precio NO se asigna al crear un usuario interno.
   // Vive en el módulo de Clientes (ContactsTab) y se asigna por cliente con su lista de precios.
-  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", role: "user" as AppRole });
+  // Default 'admin' = dueño de tienda (owner del tenant). 'superadmin' es solo plataforma.
+  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", role: "admin" as AppRole });
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -151,7 +152,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
       toast.success(`Usuario ${createForm.full_name} creado exitosamente`);
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setCreateModal(false);
-      setCreateForm({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", role: "user" });
+      setCreateForm({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", role: "admin" });
     } catch (err: any) {
       toast.error(err.message || "Error al crear usuario");
     } finally {
@@ -412,6 +413,8 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
                 {availableRoles.map((r) => <option key={r} value={r}>{roleMeta[r].label}</option>)}
               </select>
               <p className="text-[10px] text-muted-foreground mt-1">
+                <strong>Admin</strong> = dueño de tienda (owner del tenant, podrá crear su tienda en el onboarding).
+                <strong> Superadmin</strong> es solo para personal de la plataforma SistecPOS.
                 La tipología y lista de precios se asigna por <strong>cliente</strong> en la pestaña Clientes / Contactos.
               </p>
             </div>
