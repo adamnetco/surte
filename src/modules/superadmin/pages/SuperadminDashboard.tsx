@@ -31,6 +31,7 @@ const AuditLogViewer = lazy(() => import("@/modules/superadmin/pages/AuditLogVie
 const SitiosTenantRoute = lazy(() => import("@/modules/superadmin/pages/SitiosTenantRoute"));
 const EinvoiceBulkRetry = lazy(() => import("@/modules/superadmin/pages/EinvoiceBulkRetry"));
 const EinvoiceBulkRetryAudit = lazy(() => import("@/modules/superadmin/pages/EinvoiceBulkRetryAudit"));
+const DiagnosticoRLS = lazy(() => import("@/modules/superadmin/pages/DiagnosticoRLS"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -113,6 +114,7 @@ const SuperadminDashboard = () => {
                 <Route path="audit" element={<AuditLogViewer />} />
                 <Route path="einvoice-bulk-retry" element={<EinvoiceBulkRetry />} />
                 <Route path="einvoice-bulk-retry/auditoria" element={<EinvoiceBulkRetryAudit />} />
+                <Route path="diagnostico" element={<DiagnosticoRLS />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />

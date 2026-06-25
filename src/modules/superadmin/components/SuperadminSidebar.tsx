@@ -24,6 +24,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/cloud-tareas", label: "Cloud / Tareas", icon: Zap, desc: "Migraciones, seeds, secrets" },
   { to: "/superadmin/einvoice-bulk-retry", label: "Bulk retry DIAN", icon: FileText, desc: "Reenvío masivo multi-tenant" },
   { to: "/superadmin/einvoice-bulk-retry/auditoria", label: "Bulk retry · Auditoría", icon: History, desc: "Idempotency keys · estado · lotes" },
+  { to: "/superadmin/diagnostico", label: "Diagnóstico RLS", icon: ShieldAlert, desc: "RLS · GRANTs · políticas por tabla" },
 ];
 
 const TENANT_ITEMS = [
