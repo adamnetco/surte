@@ -16,44 +16,33 @@
       // Apply dark theme before paint to avoid FOUC
       (function() {
         try {
-          var p = localStorage.getItem('surteya_theme_pref') || 'system';
+          var p = localStorage.getItem('sistecpos_theme_pref')
+            || localStorage.getItem('surteya_theme_pref') /* legacy fallback */
+            || 'system';
           var isDark = p === 'dark' || (p === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (isDark) document.documentElement.classList.add('dark');
         } catch (e) { /* ignore */ }
       })();
     </script>
-    <title>SURTEYA Distribuidor salsas, Cárnicos y Pulpas al Mayor</title>
-    <meta name="description" content="Salsas artesanales, cárnicos y pulpas de fruta al mayor. Envío gratis en Bucaramanga, Floridablanca, Girón y Piedecuesta. Directo de fábrica a tu negocio.">
-    <meta name="author" content="SURTÉ YA - Conjuguémonos Grupo Empresarial" />
+    <title>SistecPOS · Software POS B2B para Pymes en Colombia</title>
+    <meta name="description" content="SistecPOS Core: plataforma SaaS de punto de venta, inventario, facturación electrónica y omnicanal para pymes de retail, food y servicios en Colombia." />
+    <meta name="author" content="SistecPOS" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-    <link rel="canonical" href="https://surteya.com" />
+    <link rel="canonical" href="https://sistecpos.com" />
 
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_CO" />
-    <meta property="og:site_name" content="SURTÉ YA" />
-    
-    
-    <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/vR7WI2j01KaWHKm5Sgsbdgv0GLI2/social-images/social-1776035355659-1001150834.webp">
-    <meta property="og:url" content="https://surteya.com" />
+    <meta property="og:site_name" content="SistecPOS" />
+    <meta property="og:title" content="SistecPOS · Software POS B2B para Pymes" />
+    <meta property="og:description" content="Plataforma SaaS de punto de venta, inventario y facturación electrónica para pymes en Colombia." />
+    <meta property="og:url" content="https://sistecpos.com" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    
-    
-    <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/vR7WI2j01KaWHKm5Sgsbdgv0GLI2/social-images/social-1776035355659-1001150834.webp">
+    <meta name="twitter:title" content="SistecPOS · Software POS B2B para Pymes" />
+    <meta name="twitter:description" content="Plataforma SaaS de punto de venta, inventario y facturación electrónica para pymes en Colombia." />
 
-    <meta name="geo.region" content="CO-SAN" />
-    <meta name="geo.placename" content="Bucaramanga" />
-    <meta name="geo.position" content="7.1254;-73.1198" />
-    <meta name="ICBM" content="7.1254, -73.1198" />
-    
-  
-  
-  
-  <meta property="og:title" content="SURTEYA Distribuidor salsas, Cárnicos y Pulpas al Mayor">
-  <meta name="twitter:title" content="SURTEYA Distribuidor salsas, Cárnicos y Pulpas al Mayor">
-  <meta property="og:description" content="Salsas artesanales, cárnicos y pulpas de fruta al mayor. Envío gratis en Bucaramanga, Floridablanca, Girón y Piedecuesta. Directo de fábrica a tu negocio.">
-  <meta name="twitter:description" content="Salsas artesanales, cárnicos y pulpas de fruta al mayor. Envío gratis en Bucaramanga, Floridablanca, Girón y Piedecuesta. Directo de fábrica a tu negocio.">
-</head>
+    <meta name="geo.region" content="CO" />
+  </head>
 
   <body>
     <div id="root"></div>
