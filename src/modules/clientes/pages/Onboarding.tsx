@@ -104,7 +104,6 @@ export default function Onboarding() {
             name: tentativeName,
             slug,
             business_type: "retail",
-            plan: "free",
             is_active: true,
           })
           .select("id")
