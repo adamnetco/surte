@@ -1,6 +1,18 @@
 /**
  * Onboarding del Dueño de tienda — conversacional, una pregunta por pantalla.
  * Comparte el WizardShell con el wizard del Superadmin para consistencia visual.
+ *
+ * Flujo (6 pasos):
+ *   1. Nombre del negocio
+ *   2. Primera sucursal (nombre + ciudad)
+ *   3. Tipo de negocio (preselecciona módulos)
+ *   4. Ajuste de módulos
+ *   5. Selección de plan (después de configurar la tienda, como acordó UX)
+ *   6. Celebración → /pos
+ *
+ * Auto-resiliencia: si el usuario llega sin organización (signup nuevo, sin
+ * tenant vinculado por trigger), creamos una org personal con un slug derivado
+ * del email para que el wizard no muestre pantalla en blanco (fix audit H12).
  */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -10,7 +22,8 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Check, PartyPopper } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Check, PartyPopper, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { WizardShell } from "@/modules/onboarding/components/WizardShell";
@@ -18,14 +31,32 @@ import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "
 import { EntitlementsWizardStep } from "@/modules/platform/components/EntitlementsWizardStep";
 import { cn } from "@/lib/utils";
 
-const TOTAL = 5;
+const TOTAL = 6;
+const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
+
+interface PlanRow {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  price_monthly: number;
+  trial_days: number | null;
+  modules: string[] | null;
+  sort_order: number | null;
+}
+
+function slugFromEmail(email: string): string {
+  const base = (email.split("@")[0] || "tienda").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${base || "tienda"}-${suffix}`;
+}
 
 export default function Onboarding() {
   const { user } = useAuth();
-  const { currentOrg, orgs, switchOrg, loading: orgLoading } = useOrganization();
+  const { currentOrg, orgs, switchOrg, refresh, loading: orgLoading } = useOrganization();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const planKey = params.get("plan") ?? "pro";
+  const planParam = params.get("plan");
   const orgParam = params.get("org");
 
   // Permite que superadmin opere sobre cualquier org pasada por ?org=
@@ -35,9 +66,9 @@ export default function Onboarding() {
     }
   }, [orgParam, currentOrg?.id, orgs, switchOrg]);
 
-
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [provisioning, setProvisioning] = useState(false);
 
   const [companyName, setCompanyName] = useState("");
   const [locationName, setLocationName] = useState("Sede principal");
@@ -46,17 +77,81 @@ export default function Onboarding() {
   const [modules, setModules] = useState<string[]>(["pos", "inventario"]);
   const [enableEinvoice, setEnableEinvoice] = useState(true);
 
+  const [plans, setPlans] = useState<PlanRow[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string>(planParam ?? "pro");
+
   const template = useMemo(() => getTemplate(businessKey), [businessKey]);
 
+  // Fix H6/H12: si no hay sesión → login; si hay sesión pero sin org → crearla.
   useEffect(() => {
-    document.title = "Configuremos tu POS · SistecPOS";
+    document.title = "Configura tu POS · SistecPOS";
     if (!orgLoading && !user) navigate("/login?next=/onboarding");
   }, [user, orgLoading, navigate]);
 
   useEffect(() => {
+    if (orgLoading || !user || currentOrg || provisioning) return;
+    if (orgs.length > 0) return;
+    // Crear org personal de arranque — el dueño podrá renombrarla en el paso 1.
+    (async () => {
+      setProvisioning(true);
+      try {
+        const slug = slugFromEmail(user.email ?? "tienda");
+        const tentativeName = (user.user_metadata?.full_name as string | undefined)?.trim() || "Mi negocio";
+        const { data, error } = await supabase
+          .from("organizations")
+          .insert({
+            name: tentativeName,
+            slug,
+            business_type: "retail",
+            plan: "free",
+            is_active: true,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (data?.id) {
+          await supabase.from("organization_members").insert({
+            organization_id: data.id,
+            user_id: user.id,
+            role: "owner",
+            is_active: true,
+          });
+        }
+        await refresh();
+      } catch (e: any) {
+        console.error("[Onboarding] auto-create org failed", e);
+        toast.error("No pudimos crear tu organización. Contacta a soporte.");
+      } finally {
+        setProvisioning(false);
+      }
+    })();
+  }, [orgLoading, user, currentOrg, orgs.length, provisioning, refresh]);
+
+  useEffect(() => {
     if (!currentOrg) return;
-    setCompanyName(currentOrg.name ?? "");
+    setCompanyName((prev) => prev || currentOrg.name || "");
   }, [currentOrg]);
+
+  // Cargar planes públicos cuando llegamos al paso 5
+  useEffect(() => {
+    if (step !== 5 || plans.length > 0) return;
+    setPlansLoading(true);
+    supabase
+      .from("saas_plans")
+      .select("id, key, name, description, price_monthly, trial_days, modules, sort_order")
+      .eq("is_public", true)
+      .order("sort_order")
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[Onboarding] saas_plans fetch failed", error);
+          toast.error("No pudimos cargar los planes.");
+        } else {
+          setPlans((data as PlanRow[]) ?? []);
+        }
+        setPlansLoading(false);
+      });
+  }, [step, plans.length]);
 
   const toggleModule = (k: string) =>
     setModules((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
@@ -69,7 +164,8 @@ export default function Onboarding() {
       case 2: return locationName.trim().length > 1 && city.trim().length > 1;
       case 3: return !!businessKey;
       case 4: return modules.length > 0;
-      case 5: return true;
+      case 5: return !!selectedPlan;
+      case 6: return true;
       default: return false;
     }
   };
@@ -90,12 +186,12 @@ export default function Onboarding() {
         progressPatch.location_done = true;
       } else if (step === 3) {
         setModules(template.modules);
+        await supabase.from("organizations").update({ business_type: businessKey }).eq("id", currentOrg.id);
       } else if (step === 4) {
         // Módulos: el toggling escribe a tenant_module_overrides desde EntitlementsWizardStep.
         // Aquí solo registramos el progreso. NUNCA escribir a organization_modules (DEPRECADA).
         progressPatch.modules_done = true;
         if (enableEinvoice) {
-          // einvoice_innapsis se activa como override (si el plan no lo incluye, el wizard lo bloqueará y redirige a /clientes/planes)
           await supabase.from("tenant_module_overrides" as any).upsert(
             {
               organization_id: currentOrg.id,
@@ -108,6 +204,10 @@ export default function Onboarding() {
           progressPatch.einvoice_done = true;
         }
       } else if (step === 5) {
+        // Persistir plan elegido. organizations.plan es la columna canónica.
+        await supabase.from("organizations").update({ plan: selectedPlan }).eq("id", currentOrg.id);
+        progressPatch.plan_done = true;
+      } else if (step === 6) {
         await supabase.from("onboarding_progress").upsert(
           { organization_id: currentOrg.id, catalog_done: true, completed_at: new Date().toISOString() },
           { onConflict: "organization_id" },
@@ -130,18 +230,25 @@ export default function Onboarding() {
     }
   };
 
-
-  if (orgLoading) {
+  if (orgLoading || provisioning) {
     return (
       <div className="min-h-[100dvh] grid place-items-center">
-        <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        <div className="text-center space-y-3">
+          <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            {provisioning ? "Preparando tu cuenta…" : "Cargando…"}
+          </p>
+        </div>
       </div>
     );
   }
   if (!currentOrg) {
     return (
       <div className="min-h-[100dvh] grid place-items-center p-6 text-center">
-        <p className="text-muted-foreground">Crea o únete a una organización para continuar.</p>
+        <div className="space-y-3 max-w-sm">
+          <p className="text-muted-foreground">No encontramos una organización vinculada a tu cuenta.</p>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
+        </div>
       </div>
     );
   }
@@ -150,14 +257,14 @@ export default function Onboarding() {
     return (
       <WizardShell
         step={1} totalSteps={TOTAL}
-        eyebrow={`Plan ${planKey}`}
+        eyebrow="Empecemos"
         title={`Hola${user?.email ? `, ${user.email.split("@")[0]}` : ""} 👋`}
-        subtitle="Vamos a poner tu POS a vender en menos de 2 minutos. Empecemos por el nombre de tu negocio."
+        subtitle="Vamos a poner tu POS a vender en menos de 2 minutos. ¿Cómo se llama tu negocio?"
         onNext={next} nextDisabled={!canAdvance()} loading={saving}
       >
         <div className="space-y-2">
           <Label htmlFor="company">Nombre del negocio</Label>
-          <Input id="company" autoFocus value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="h-12 text-base" />
+          <Input id="company" autoFocus value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="h-12 text-base" placeholder="Ej: Tienda Don Carlos" />
         </div>
       </WizardShell>
     );
@@ -179,7 +286,7 @@ export default function Onboarding() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="city">Ciudad</Label>
-            <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} className="h-12 text-base" />
+            <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} className="h-12 text-base" placeholder="Ej: Bogotá" />
           </div>
         </div>
       </WizardShell>
@@ -252,10 +359,84 @@ export default function Onboarding() {
     );
   }
 
-  // step 5 — celebración
+  if (step === 5) {
+    return (
+      <WizardShell
+        step={5} totalSteps={TOTAL}
+        eyebrow="Casi listo"
+        title="Elige tu plan"
+        subtitle="Empieza gratis 14 días. Sin tarjeta. Cancela cuando quieras."
+        onBack={back} onNext={next} nextDisabled={!canAdvance()} loading={saving}
+        nextLabel="Continuar"
+      >
+        {plansLoading ? (
+          <div className="grid sm:grid-cols-2 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-40 rounded-xl bg-muted/40 animate-pulse" />
+            ))}
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="rounded-lg border border-warning/40 bg-warning/5 p-4 text-sm">
+            No hay planes publicados todavía. Continúa y elige uno más tarde desde Facturación.
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-3">
+            {plans.map((p) => {
+              const active = selectedPlan === p.key;
+              const isFree = p.price_monthly === 0;
+              const isEnterprise = p.key === "enterprise";
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelectedPlan(p.key)}
+                  className={cn(
+                    "text-left rounded-xl border-2 p-4 transition-all hover:border-primary/50 relative",
+                    active ? "border-primary bg-primary/5 shadow-sm" : "border-border bg-background",
+                  )}
+                >
+                  {p.key === "pro" && (
+                    <Badge className="absolute -top-2 right-3 text-[10px] gap-1">
+                      <Sparkles className="h-3 w-3" /> Recomendado
+                    </Badge>
+                  )}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="font-semibold text-sm">{p.name}</div>
+                    {active && <Check className="h-4 w-4 text-primary" />}
+                  </div>
+                  <div className="text-xl font-bold">
+                    {isEnterprise ? "A la medida" : isFree ? "Gratis" : (
+                      <>
+                        {COP(p.price_monthly)}
+                        <span className="text-xs font-normal text-muted-foreground">/mes</span>
+                      </>
+                    )}
+                  </div>
+                  {!isFree && !isEnterprise && (
+                    <div className="text-[11px] text-success font-medium mt-0.5">
+                      Gratis {p.trial_days ?? 14} días
+                    </div>
+                  )}
+                  {p.description && (
+                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{p.description}</p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <p className="text-[11px] text-muted-foreground px-1 mt-3">
+          Puedes cambiar de plan en cualquier momento desde Configuración.
+        </p>
+      </WizardShell>
+    );
+  }
+
+  // step 6 — celebración
+  const chosenPlan = plans.find((p) => p.key === selectedPlan);
   return (
     <WizardShell
-      step={5} totalSteps={TOTAL}
+      step={6} totalSteps={TOTAL}
       eyebrow="Todo listo"
       title="¡Tu POS está listo para vender!"
       subtitle="Te llevamos al mostrador. Desde ahí controlas todo."
@@ -271,7 +452,7 @@ export default function Onboarding() {
         </div>
         <p className="font-semibold">{companyName} configurado</p>
         <p className="text-sm text-muted-foreground mt-1">
-          {modules.length} módulos activos · Sucursal en {city}
+          Plan {chosenPlan?.name ?? selectedPlan} · {modules.length} módulos · Sucursal en {city}
         </p>
         <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
           {modules.slice(0, 6).map((m) => (
