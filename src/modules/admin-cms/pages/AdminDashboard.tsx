@@ -35,6 +35,7 @@ const ModifiersTab = lazy(() => import("@/modules/admin-cms/components/Modifiers
 const SeoContentTab = lazy(() => import("@/modules/admin-cms/components/SeoContentTab"));
 const CrmLeadsTab = lazy(() => import("@/modules/admin-cms/components/CrmLeadsTab"));
 const ContactsTab = lazy(() => import("@/modules/admin-cms/components/ContactsTab"));
+const PriceListsTab = lazy(() => import("@/modules/admin-cms/components/PriceListsTab"));
 const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersManagerTab").then(m => ({ default: m.PrintersManagerTab })));
 const KitchenRoutingTab = lazy(() => import("@/modules/printing/components/KitchenRoutingTab").then(m => ({ default: m.KitchenRoutingTab })));
 
@@ -62,6 +63,7 @@ const allTabs = [
   { id: "presentations", label: "Presentaciones", icon: Box, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
   { id: "modifiers", label: "Modificadores", icon: Settings, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
   { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
+  { id: "price-lists", label: "Listas de precios", icon: Tag, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
   { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
   { id: "contacts", label: "Contactos", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
   { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
@@ -265,6 +267,7 @@ const AdminDashboard = () => {
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
         {activeTab === "users" && <UsersTab queryClient={queryClient} />}
         {activeTab === "contacts" && <ContactsTab />}
+        {activeTab === "price-lists" && <PriceListsTab />}
         {/* organizations tab removed — vive en /superadmin */}
         {activeTab === "crm" && <CrmLeadsTab />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
