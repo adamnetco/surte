@@ -413,6 +413,8 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
                 {availableRoles.map((r) => <option key={r} value={r}>{roleMeta[r].label}</option>)}
               </select>
               <p className="text-[10px] text-muted-foreground mt-1">
+                <strong>Admin</strong> = dueño de tienda (owner del tenant, podrá crear su tienda en el onboarding).
+                <strong> Superadmin</strong> es solo para personal de la plataforma SistecPOS.
                 La tipología y lista de precios se asigna por <strong>cliente</strong> en la pestaña Clientes / Contactos.
               </p>
             </div>
