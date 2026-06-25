@@ -815,6 +815,7 @@ const Diario = () => {
           </p>
         </section>
 
+        <HotkeyFooterHint />
       </main>
 
       <DiarioBulkSheet
