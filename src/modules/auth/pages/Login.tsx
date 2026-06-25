@@ -16,7 +16,6 @@ const AUTH_WAIT_TIMEOUT_MS = 6000;
 
 type BusinessTypeOption = { value: string; label: string; icon: string };
 const BUSINESS_TYPES: BusinessTypeOption[] = [
-  { value: "casa", label: "Casa / Consumidor", icon: "🏠" },
   { value: "detal", label: "Tienda Detal", icon: "🏪" },
   { value: "minimercado", label: "Minimercado", icon: "🛒" },
   { value: "horeca", label: "Restaurante / HORECA", icon: "🍽️" },
