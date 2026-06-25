@@ -241,6 +241,7 @@ const App = () => (
                 <CartNavigationGuard />
                 <OmnichannelCartListener />
                 <GlobalCommandPalette />
+                <GlobalHotkeys />
                 <AuthHealthMonitor />
                 <Suspense fallback={null}><OnboardingChecklist /></Suspense>
                 <SwipeProvider>
