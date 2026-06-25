@@ -4,7 +4,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import type { AppRole } from "@/modules/auth/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2, Printer, ArrowRightLeft } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2, Printer, ArrowRightLeft, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
@@ -36,6 +36,7 @@ const SeoContentTab = lazy(() => import("@/modules/admin-cms/components/SeoConte
 const CrmLeadsTab = lazy(() => import("@/modules/admin-cms/components/CrmLeadsTab"));
 const ContactsTab = lazy(() => import("@/modules/admin-cms/components/ContactsTab"));
 const PriceListsTab = lazy(() => import("@/modules/admin-cms/components/PriceListsTab"));
+const MembersAuditTab = lazy(() => import("@/modules/admin-cms/components/MembersAuditTab"));
 const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersManagerTab").then(m => ({ default: m.PrintersManagerTab })));
 const KitchenRoutingTab = lazy(() => import("@/modules/printing/components/KitchenRoutingTab").then(m => ({ default: m.KitchenRoutingTab })));
 
@@ -65,6 +66,7 @@ const allTabs = [
   { id: "inventory", label: "Importar", icon: FileUp, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
   { id: "price-lists", label: "Listas de precios", icon: Tag, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "catalogo" as TabGroup },
   { id: "users", label: "Usuarios", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
+  { id: "members-audit", label: "Auditoría miembros", icon: Shield, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
   { id: "contacts", label: "Contactos", icon: Users, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
   { id: "crm", label: "CRM Leads", icon: MessageSquare, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "clientes" as TabGroup },
   { id: "reviews", label: "Comentarios", icon: MessageSquare, roles: ["superadmin", "admin", "editor"] as AppRole[], module: null, group: "clientes" as TabGroup },
@@ -266,6 +268,7 @@ const AdminDashboard = () => {
         {activeTab === "categories" && <CategoriesTab categories={categories} queryClient={queryClient} />}
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
         {activeTab === "users" && <UsersTab queryClient={queryClient} />}
+        {activeTab === "members-audit" && <MembersAuditTab />}
         {activeTab === "contacts" && <ContactsTab />}
         {activeTab === "price-lists" && <PriceListsTab />}
         {/* organizations tab removed — vive en /superadmin */}
