@@ -89,9 +89,18 @@ export default function Onboarding() {
     if (!orgLoading && !user) navigate("/login?next=/onboarding");
   }, [user, orgLoading, navigate]);
 
+  // SuperAdmin = personal de la plataforma. NUNCA debe auto-crear un tenant aquí;
+  // gestiona tiendas existentes desde /superadmin. Si llega sin org, lo redirigimos.
+  const isPlatformSuperadmin = (user?.user_metadata as any)?.role === "superadmin";
+
   useEffect(() => {
     if (orgLoading || !user || currentOrg || provisioning) return;
     if (orgs.length > 0) return;
+    if (isPlatformSuperadmin) {
+      toast.info("Como SuperAdmin no creas tiendas aquí. Vamos al panel de plataforma.");
+      navigate("/superadmin", { replace: true });
+      return;
+    }
     // Crear org personal de arranque — el dueño podrá renombrarla en el paso 1.
     (async () => {
       setProvisioning(true);
@@ -125,7 +134,7 @@ export default function Onboarding() {
         setProvisioning(false);
       }
     })();
-  }, [orgLoading, user, currentOrg, orgs.length, provisioning, refresh]);
+  }, [orgLoading, user, currentOrg, orgs.length, provisioning, refresh, isPlatformSuperadmin, navigate]);
 
   useEffect(() => {
     if (!currentOrg) return;
