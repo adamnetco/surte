@@ -267,6 +267,7 @@ const AdminDashboard = () => {
         {activeTab === "brands" && <BrandsTab queryClient={queryClient} />}
         {activeTab === "users" && <UsersTab queryClient={queryClient} />}
         {activeTab === "contacts" && <ContactsTab />}
+        {activeTab === "price-lists" && <PriceListsTab />}
         {/* organizations tab removed — vive en /superadmin */}
         {activeTab === "crm" && <CrmLeadsTab />}
         {activeTab === "content" && <ContentTab queryClient={queryClient} />}
