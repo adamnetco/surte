@@ -42,7 +42,9 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const [editModal, setEditModal] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", business_name: "", address: "", city: "" });
   const [createModal, setCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", business_type: "detal" as BusinessType, role: "user" as AppRole });
+  // B2B POS: la tipología/lista de precio NO se asigna al crear un usuario interno.
+  // Vive en el módulo de Clientes (ContactsTab) y se asigna por cliente con su lista de precios.
+  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", role: "user" as AppRole });
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
