@@ -46,6 +46,10 @@ jobs:
         run: npx playwright test --config=playwright.config.ci.ts --grep-invert "@flaky"
         env:
           CI: "true"
+          # Necesarios para el suite RLS (e2e/rls-user-roles.spec.ts).
+          # Si no se definen como secrets/vars del repo, el suite RLS se marca como skipped.
+          E2E_SUPABASE_URL: ${{ vars.E2E_SUPABASE_URL || 'https://dimyhjzcwlgfczimqhet.supabase.co' }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
 
       - name: Upload Playwright report
         if: ${{ always() }}
