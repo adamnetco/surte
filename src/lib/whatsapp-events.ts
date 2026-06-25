@@ -30,7 +30,7 @@ export async function logWhatsAppEvent(event: WhatsAppEventInput): Promise<void>
     whatsapp_ref: event.whatsapp_ref ?? null,
     latency_ms: event.latency_ms ?? null,
     error: event.error ?? null,
-    payload: event.payload ?? null,
+    payload: (event.payload ?? null) as never,
   };
   const { error } = await supabase.from("whatsapp_message_events").insert([row]);
   if (error) {
