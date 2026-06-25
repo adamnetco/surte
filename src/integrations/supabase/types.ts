@@ -9138,6 +9138,7 @@ export type Database = {
         Returns: Json
       }
       assert_org_writable: { Args: { _org_id: string }; Returns: undefined }
+      audit_public_rls: { Args: never; Returns: Json }
       auto_renew_subscriptions: {
         Args: never
         Returns: {
