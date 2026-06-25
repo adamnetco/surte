@@ -19,6 +19,7 @@ import {
   Check,
   Zap,
   Share2,
+  Keyboard,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
