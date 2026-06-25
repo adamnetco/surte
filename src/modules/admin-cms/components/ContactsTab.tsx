@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { Search, Users, Truck, Phone, Mail, MapPin, Loader2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search, Users, Truck, Phone, Mail, MapPin, Loader2, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 type TabKind = "customers" | "suppliers";
@@ -11,6 +12,7 @@ type TabKind = "customers" | "suppliers";
 const ContactsTab = () => {
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id;
+  const qc = useQueryClient();
   const [tab, setTab] = useState<TabKind>("customers");
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -21,10 +23,26 @@ const ContactsTab = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,user_id,full_name,phone,city,business_name,business_type,customer_code,created_at")
+        .select("id,user_id,full_name,phone,city,business_name,customer_code,price_list_id,created_at")
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false })
         .limit(500);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: priceLists } = useQuery({
+    queryKey: ["org-price-lists", orgId],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("price_lists")
+        .select("id,name,is_default,is_active")
+        .eq("organization_id", orgId!)
+        .eq("is_active", true)
+        .order("is_default", { ascending: false })
+        .order("name");
       if (error) throw error;
       return data || [];
     },
@@ -57,7 +75,6 @@ const ContactsTab = () => {
     );
   }, [list, q]);
 
-  // History for the selected contact
   const { data: history, isLoading: lh } = useQuery({
     queryKey: ["contact-history", tab, selectedId, orgId],
     enabled: !!selectedId && !!orgId,
@@ -96,10 +113,23 @@ const ContactsTab = () => {
 
   const selected = filtered.find((it: any) => it.id === selectedId);
 
+  const handleAssignPriceList = async (profileId: string, value: string) => {
+    const price_list_id = value === "__none__" ? null : value;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ price_list_id })
+      .eq("id", profileId);
+    if (error) {
+      toast.error("No se pudo asignar la lista de precios");
+      return;
+    }
+    toast.success("Lista de precios actualizada");
+    qc.invalidateQueries({ queryKey: ["admin-customers", orgId] });
+  };
+
   if (!currentOrg) {
     return <div className="p-4 text-sm text-muted-foreground">Selecciona una organización para ver contactos.</div>;
   }
-
 
   return (
     <div className="space-y-4">
@@ -132,7 +162,6 @@ const ContactsTab = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
-        {/* List */}
         <div className="space-y-1.5 max-h-[60vh] overflow-y-auto">
           {isLoading ? (
             [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-14 w-full" />)
@@ -142,8 +171,11 @@ const ContactsTab = () => {
             filtered.map((it: any) => {
               const isSel = selectedId === it.id;
               const name = it.full_name || it.name || "Sin nombre";
+              const plName = tab === "customers"
+                ? (priceLists || []).find((p: any) => p.id === it.price_list_id)?.name
+                : null;
               const sub = tab === "customers"
-                ? [it.customer_code, it.business_type, it.city].filter(Boolean).join(" · ")
+                ? [it.customer_code, plName, it.city].filter(Boolean).join(" · ")
                 : [it.tax_id, it.city, it.contact_name].filter(Boolean).join(" · ");
               return (
                 <button
@@ -160,7 +192,6 @@ const ContactsTab = () => {
           )}
         </div>
 
-        {/* Detail + History */}
         <div className="border border-border rounded-lg p-3 bg-card min-h-[300px]">
           {!selected ? (
             <p className="text-sm text-muted-foreground text-center py-12">Selecciona un contacto para ver su historial.</p>
@@ -174,6 +205,31 @@ const ContactsTab = () => {
                   {(selected as any).city && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{(selected as any).city}</div>}
                 </div>
               </div>
+
+              {tab === "customers" && (
+                <div className="border-t border-border pt-3">
+                  <label className="text-xs font-medium flex items-center gap-1 mb-1">
+                    <Tag className="h-3 w-3" /> Lista de precios
+                  </label>
+                  <select
+                    value={(selected as any).price_list_id || "__none__"}
+                    onChange={(e) => handleAssignPriceList((selected as any).id, e.target.value)}
+                    className="w-full text-sm border border-border rounded-md px-2 py-1.5 bg-background"
+                  >
+                    <option value="__none__">— Usar lista por defecto de la organización —</option>
+                    {(priceLists || []).map((p: any) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}{p.is_default ? " (default)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {(!priceLists || priceLists.length === 0) && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Aún no hay listas de precios. Créalas en Catálogo → Listas de precios.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="border-t border-border pt-3">
                 <h4 className="text-sm font-medium mb-2">
