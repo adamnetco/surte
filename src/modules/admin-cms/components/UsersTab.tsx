@@ -133,7 +133,6 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
         options: {
           data: {
             full_name: createForm.full_name,
-            business_type: createForm.business_type,
             phone: createForm.phone || "",
             organization_slug: currentOrg?.slug || undefined,
           },
@@ -152,7 +151,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
       toast.success(`Usuario ${createForm.full_name} creado exitosamente`);
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setCreateModal(false);
-      setCreateForm({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", business_type: "detal", role: "user" });
+      setCreateForm({ email: "", password: "", full_name: "", phone: "", business_name: "", city: "", role: "user" });
     } catch (err: any) {
       toast.error(err.message || "Error al crear usuario");
     } finally {
@@ -360,7 +359,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
               <UserPlus size={18} className="text-accent" />
               Crear nuevo usuario
             </DialogTitle>
-            <DialogDescription>Registra un nuevo usuario con rol y tipología de precio</DialogDescription>
+            <DialogDescription>Crea un usuario interno (operador, editor, admin). La lista de precios se asigna en Clientes, no aquí.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
             <div>
@@ -406,21 +405,15 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
                 placeholder="Opcional"
                 className="w-full bg-muted rounded-lg px-3 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none" />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Rol</label>
-                <select value={createForm.role} onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as AppRole })}
-                  className="w-full bg-muted rounded-lg px-2.5 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none">
-                  {availableRoles.map((r) => <option key={r} value={r}>{roleMeta[r].label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Tipología de precio</label>
-                <select value={createForm.business_type} onChange={(e) => setCreateForm({ ...createForm, business_type: e.target.value as BusinessType })}
-                  className="w-full bg-muted rounded-lg px-2.5 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none">
-                  {Object.entries(businessMeta).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </select>
-              </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-0.5 block font-medium">Rol</label>
+              <select value={createForm.role} onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as AppRole })}
+                className="w-full bg-muted rounded-lg px-2.5 py-2.5 text-sm border border-transparent focus:border-accent focus:outline-none">
+                {availableRoles.map((r) => <option key={r} value={r}>{roleMeta[r].label}</option>)}
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                La tipología y lista de precios se asigna por <strong>cliente</strong> en la pestaña Clientes / Contactos.
+              </p>
             </div>
           </div>
           <DialogFooter className="gap-2">
