@@ -8917,28 +8917,40 @@ export type Database = {
       whatsapp_message_events: {
         Row: {
           created_at: string
+          direction: string | null
           error: string | null
           id: string
+          latency_ms: number | null
           order_id: string | null
+          organization_id: string | null
           payload: Json | null
+          phone: string | null
           status: string
           whatsapp_ref: string | null
         }
         Insert: {
           created_at?: string
+          direction?: string | null
           error?: string | null
           id?: string
+          latency_ms?: number | null
           order_id?: string | null
+          organization_id?: string | null
           payload?: Json | null
+          phone?: string | null
           status: string
           whatsapp_ref?: string | null
         }
         Update: {
           created_at?: string
+          direction?: string | null
           error?: string | null
           id?: string
+          latency_ms?: number | null
           order_id?: string | null
+          organization_id?: string | null
           payload?: Json | null
+          phone?: string | null
           status?: string
           whatsapp_ref?: string | null
         }
@@ -8949,6 +8961,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
           },
         ]
       }
@@ -9153,6 +9186,7 @@ export type Database = {
         Args: { _action_id: string; _reason?: string }
         Returns: Json
       }
+      check_public_catalog_health: { Args: never; Returns: Json }
       cleanup_sso_tokens: { Args: never; Returns: number }
       close_cash_session_multi_currency: {
         Args: { _counts: Json; _notes?: string; _session_id: string }
@@ -9490,6 +9524,18 @@ export type Database = {
       receive_purchase_order: {
         Args: { _po_id: string; _warehouse_id: string }
         Returns: Json
+      }
+      record_health_event: {
+        Args: {
+          p_correlation_id?: string
+          p_latency_ms?: number
+          p_message?: string
+          p_metadata?: Json
+          p_organization_id?: string
+          p_source: string
+          p_status: string
+        }
+        Returns: string
       }
       redeem_coupon: { Args: { _coupon_id: string }; Returns: boolean }
       register_activation: {

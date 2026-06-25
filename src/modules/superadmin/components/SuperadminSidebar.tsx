@@ -25,6 +25,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/einvoice-bulk-retry", label: "Bulk retry DIAN", icon: FileText, desc: "Reenvío masivo multi-tenant" },
   { to: "/superadmin/einvoice-bulk-retry/auditoria", label: "Bulk retry · Auditoría", icon: History, desc: "Idempotency keys · estado · lotes" },
   { to: "/superadmin/diagnostico", label: "Diagnóstico RLS", icon: ShieldAlert, desc: "RLS · GRANTs · políticas por tabla" },
+  { to: "/superadmin/health", label: "Salud del sistema", icon: HeartPulse, desc: "Health events · WhatsApp traces" },
 ];
 
 const TENANT_ITEMS = [
