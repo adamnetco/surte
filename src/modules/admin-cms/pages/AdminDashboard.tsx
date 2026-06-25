@@ -35,6 +35,7 @@ const ModifiersTab = lazy(() => import("@/modules/admin-cms/components/Modifiers
 const SeoContentTab = lazy(() => import("@/modules/admin-cms/components/SeoContentTab"));
 const CrmLeadsTab = lazy(() => import("@/modules/admin-cms/components/CrmLeadsTab"));
 const ContactsTab = lazy(() => import("@/modules/admin-cms/components/ContactsTab"));
+const PriceListsTab = lazy(() => import("@/modules/admin-cms/components/PriceListsTab"));
 const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersManagerTab").then(m => ({ default: m.PrintersManagerTab })));
 const KitchenRoutingTab = lazy(() => import("@/modules/printing/components/KitchenRoutingTab").then(m => ({ default: m.KitchenRoutingTab })));
 
