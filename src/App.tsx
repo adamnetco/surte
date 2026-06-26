@@ -27,6 +27,8 @@ import QuickActionsFAB from "@/components/QuickActionsFAB";
 import PinLock from "@/components/PinLock";
 import AuthHealthMonitor from "@/components/AuthHealthMonitor";
 const OnboardingChecklist = lazy(() => import("@/modules/onboarding/components/OnboardingChecklist"));
+const FirstLoginTour = lazy(() => import("@/components/FirstLoginTour"));
+
 import DevBypassBanner from "@/components/DevBypassBanner";
 import TenantSuspendedBanner from "@/components/TenantSuspendedBanner";
 import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
