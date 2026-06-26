@@ -49,25 +49,30 @@ export default function OnboardingChecklist() {
     if (!user || !currentOrg || orgLoading) return;
     setLoading(true);
     (async () => {
-      const [{ data: lic }, { data: dom }] = await Promise.all([
+      const [{ data: lic }, { data: dom }, { count: productCount }] = await Promise.all([
         supabase.from("licenses").select("status")
           .eq("organization_id", currentOrg.id)
           .order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("tenant_domains").select("ssl_status")
           .eq("organization_id", currentOrg.id)
           .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("products").select("id", { count: "exact", head: true })
+          .eq("organization_id", currentOrg.id),
       ]);
 
       const enabled = modules.filter((m) => m.enabled).map((m) => m.module_key);
       const hasPos = enabled.includes("pos") || enabled.includes("pos_counter");
+      const hasProduct = (productCount ?? 0) > 0;
 
       const next: Item[] = [
         { id: "account",  label: "Cuenta creada",        done: !!user },
         { id: "tenant",   label: "Tienda configurada",   done: !!currentOrg },
         { id: "license",  label: "Licencia activa",      done: lic?.status === "active" || lic?.status === "trial", to: "/planes" },
         { id: "modules",  label: "Módulo POS activo",    done: hasPos, to: "/activacion" },
+        { id: "product",  label: "Primer producto",      done: hasProduct, to: "/admin?tab=products" },
         { id: "domain",   label: "Subdominio + SSL",     done: dom?.ssl_status === "active", to: "/sitios" },
       ];
+
       if (!cancelled) {
         setItems(next);
         setLoading(false);
