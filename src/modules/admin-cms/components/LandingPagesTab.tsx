@@ -18,6 +18,7 @@ import * as XLSX from "xlsx";
 import TiptapEditor from "./TiptapEditor";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 
 interface LandingPage {
   id: string;
