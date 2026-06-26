@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Plus, ShoppingCart, FileText, Users, Package, X, Command, Calendar, ArrowLeftRight } from "lucide-react";
+import { Plus, ShoppingCart, FileText, Users, Package, X, Command, Calendar, ArrowLeftRight, Lock, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
