@@ -248,6 +248,8 @@ const App = () => (
                 <PinLock />
                 <AuthHealthMonitor />
                 <Suspense fallback={null}><OnboardingChecklist /></Suspense>
+                <Suspense fallback={null}><FirstLoginTour /></Suspense>
+
                 <SwipeProvider>
                   <PageBreadcrumbs />
                   <Suspense fallback={<RouteFallback />}>
