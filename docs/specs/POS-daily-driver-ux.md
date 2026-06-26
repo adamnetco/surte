@@ -38,7 +38,7 @@ SistecPOS tiene features completas pero el flujo diario del operador todavía ti
 - [x] **AC13:** Sonido opcional (WebAudio) configurable desde el dialog, persistido en localStorage
 
 ### Mobile-first admin
-- [ ] **AC14:** Sidebar colapsable en mobile
+- [x] **AC14:** Sidebar colapsable mobile (`AdminMobileDrawer` con Sheet + grupos expandibles persistidos, montado en `AdminHeader`).
 - [x] **AC15:** Tablas → vertical cards en < 768px — primer slice entregado: nueva pantalla `/admin/diario` (Daily Driver) mobile-first con vertical cards para KPIs, acciones del día (pendientes / bajo stock / sync errors), atajos y checklist diaria persistente por día. Sirve como hub diario del admin desde el celular. Audit de tablas legacy queda pendiente como follow-up.
 - [x] **AC16:** Componente `<Fab />` reutilizable en `src/components/ui/fab.tsx`
 
