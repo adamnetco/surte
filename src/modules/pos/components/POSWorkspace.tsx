@@ -441,6 +441,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         setTicket([]);
         setMeta(ticketCacheKey, []).catch(() => {});
         setSaleComplete({ total: snapshotTotal, amountPaid, change });
+        pushAction({ type: "sale_complete", label: `Venta completada · ${COP(snapshotTotal)}`, meta: { orderId: clientUuid } });
       });
 
       // 3) Snapshot para vista previa local del ticket (siempre disponible
