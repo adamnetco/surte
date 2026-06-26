@@ -10,6 +10,7 @@ import { couponSchema, type CouponFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
