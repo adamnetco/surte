@@ -69,18 +69,32 @@ const PriceListsTab = () => {
     qc.invalidateQueries({ queryKey: ["price-lists", orgId] });
   };
 
+  const plKey = ["price-lists", orgId];
+
   const toggleActive = async (id: string, is_active: boolean) => {
+    const previous = qc.getQueryData(plKey);
+    qc.setQueryData(plKey, (old: any[] | undefined) =>
+      old?.map((p: any) => (p.id === id ? { ...p, is_active: !is_active } : p)),
+    );
     const { error } = await supabase.from("price_lists").update({ is_active: !is_active }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    qc.invalidateQueries({ queryKey: ["price-lists", orgId] });
+    if (error) {
+      qc.setQueryData(plKey, previous);
+      toast.error(error.message);
+      return;
+    }
   };
 
   const remove = async (id: string) => {
     if (!window.confirm("¿Eliminar esta lista de precios? Los clientes asignados volverán a la lista por defecto.")) return;
+    const previous = qc.getQueryData(plKey);
+    qc.setQueryData(plKey, (old: any[] | undefined) => old?.filter((p: any) => p.id !== id));
     const { error } = await supabase.from("price_lists").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      qc.setQueryData(plKey, previous);
+      toast.error(error.message);
+      return;
+    }
     toast.success("Lista eliminada");
-    qc.invalidateQueries({ queryKey: ["price-lists", orgId] });
   };
 
   if (!currentOrg) {
