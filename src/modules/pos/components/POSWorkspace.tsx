@@ -225,6 +225,44 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   };
 
   const { recent: recentIds, push: pushRecent } = useRecentProducts(organizationId);
+  const { actions: recentActions, push: pushAction, clear: clearRecentActions } = useRecentActions(
+    organizationId ? `${organizationId}:${userId}` : null,
+  );
+
+  // Handlers re-usables (acciones del rail + replay desde el historial)
+  const handlePark = () => {
+    if (ticket.length === 0) return;
+    setActionMode("park");
+    pushAction({ type: "park", label: `Suspender ticket (${ticket.length} ítems)` });
+  };
+  const handleNotasCredito = () => {
+    pushAction({ type: "nc", label: "Notas crédito / Devolución" });
+    navigate("/admin/devoluciones");
+  };
+  const handleVentasDelDia = () => {
+    pushAction({ type: "ventas", label: "Ventas del día" });
+    navigate("/pos/panel");
+  };
+  const handleCajon = () => {
+    pushAction({ type: "cajon", label: "Abrir cajón monedero" });
+    toast.info("Apertura de cajón: configura la impresora de tirilla para enviar el pulso ESC/POS.");
+  };
+  const handleRefresh = () => {
+    pushAction({ type: "refresh", label: "Sincronizar pendientes" });
+    sync.flushNow();
+  };
+  const replayAction = (a: RecentAction) => {
+    switch (a.type) {
+      case "park": handlePark(); break;
+      case "nc": handleNotasCredito(); break;
+      case "ventas": handleVentasDelDia(); break;
+      case "cajon": handleCajon(); break;
+      case "refresh": handleRefresh(); break;
+      case "sale_complete":
+        toast.info("Última venta completada — abre el panel para reimprimir o emitir factura.");
+        break;
+    }
+  };
 
   const addProduct = (p: Product) => {
     pushRecent(p.id);
