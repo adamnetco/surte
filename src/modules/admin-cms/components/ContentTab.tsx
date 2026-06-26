@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import SortableList from "./SortableList";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 
 const ContentTab = ({ queryClient }: { queryClient: any }) => {
   const [section, setSection] = useState<"banners" | "testimonials" | "gallery">("banners");
