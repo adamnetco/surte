@@ -80,6 +80,15 @@ export default function QuickActionsFAB() {
       list.push({ id: "diario", label: "Diario", icon: Calendar, to: "/admin/diario" });
       list.push({ id: "facturacion", label: "Facturación", icon: FileText, to: "/admin/facturacion" });
       list.push({ id: "inventario", label: "Inventario", icon: Package, to: "/admin/inventario" });
+      const hasPin = !!user && !!localStorage.getItem(`pos:pin:${user.id}`);
+      list.push({
+        id: "lock",
+        label: hasPin ? "Bloquear pantalla" : "Configurar PIN",
+        icon: hasPin ? Lock : ShieldCheck,
+        onClick: () => {
+          window.dispatchEvent(new Event(hasPin ? "pin-lock:lock" : "pin-lock:setup"));
+        },
+      });
       return list;
     }
 
