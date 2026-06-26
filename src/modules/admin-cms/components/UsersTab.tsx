@@ -9,6 +9,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
 type BusinessType = "detal" | "horeca" | "minimercado" | "distribuidor" | "casa";
