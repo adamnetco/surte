@@ -96,18 +96,13 @@ const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
     }
   };
 
-  const del = async (id: string) => {
-    if (!confirm("¿Eliminar slide?")) return;
-    try {
-      const { error } = await supabase.from("hero_slides").delete().eq("id", id);
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
-      queryClient.invalidateQueries({ queryKey: ["hero_slides"] });
-      toast.success("Eliminado");
-    } catch (err) {
-      toast.error(errorToMessage(err));
-    }
-  };
+  const del = useUndoableDelete({
+    queryClient,
+    queryKey: ["admin-hero-slides", currentOrg?.id],
+    table: "hero_slides",
+    label: "Slide eliminado",
+    invalidateOnCommit: [["hero_slides"], ["admin-hero-slides"]],
+  });
 
   const toggleActive = async (id: string, current: boolean) => {
     try {
