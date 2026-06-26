@@ -166,18 +166,16 @@ const ModifiersTab = () => {
 
   const groupsKey = ["modifier-groups", selectedProduct, currentOrg?.id];
 
-  const deleteGroup = async (id: string) => {
-    if (!confirm("¿Eliminar este grupo y todas sus opciones?")) return;
-    const previous = queryClient.getQueryData(groupsKey);
-    queryClient.setQueryData(groupsKey, (old: any[] | undefined) => old?.filter((g: any) => g.id !== id));
+  const undoableDeleteGroup = useUndoableDelete({
+    queryClient,
+    queryKey: groupsKey,
+    table: "modifier_groups",
+    label: "Grupo eliminado",
+  });
+
+  const deleteGroup = (id: string) => {
     if (expandedGroup === id) setExpandedGroup(null);
-    const { error } = await supabase.from("modifier_groups").delete().eq("id", id);
-    if (error) {
-      queryClient.setQueryData(groupsKey, previous);
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Grupo eliminado");
+    undoableDeleteGroup(id);
   };
 
   const toggleGroupActive = async (id: string, current: boolean) => {
