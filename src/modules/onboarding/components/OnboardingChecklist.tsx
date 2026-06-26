@@ -91,7 +91,7 @@ export default function OnboardingChecklist() {
   if (!shouldShow) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 print:hidden">
+    <div data-tour="onboarding-checklist" className="fixed bottom-4 right-4 z-40 print:hidden">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
