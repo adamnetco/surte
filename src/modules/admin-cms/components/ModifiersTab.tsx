@@ -163,19 +163,33 @@ const ModifiersTab = () => {
     }
   };
 
+  const groupsKey = ["modifier-groups", selectedProduct, currentOrg?.id];
+
   const deleteGroup = async (id: string) => {
     if (!confirm("¿Eliminar este grupo y todas sus opciones?")) return;
-    const { error } = await supabase.from("modifier_groups").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Grupo eliminado");
+    const previous = queryClient.getQueryData(groupsKey);
+    queryClient.setQueryData(groupsKey, (old: any[] | undefined) => old?.filter((g: any) => g.id !== id));
     if (expandedGroup === id) setExpandedGroup(null);
-    refetchGroups();
+    const { error } = await supabase.from("modifier_groups").delete().eq("id", id);
+    if (error) {
+      queryClient.setQueryData(groupsKey, previous);
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Grupo eliminado");
   };
 
   const toggleGroupActive = async (id: string, current: boolean) => {
+    const previous = queryClient.getQueryData(groupsKey);
+    queryClient.setQueryData(groupsKey, (old: any[] | undefined) =>
+      old?.map((g: any) => (g.id === id ? { ...g, is_active: !current } : g)),
+    );
     const { error } = await supabase.from("modifier_groups").update({ is_active: !current }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    refetchGroups();
+    if (error) {
+      queryClient.setQueryData(groupsKey, previous);
+      toast.error(error.message);
+      return;
+    }
   };
 
   // ─── Option CRUD ───
@@ -226,18 +240,32 @@ const ModifiersTab = () => {
     }
   };
 
+  const optionsKey = ["modifier-options", expandedGroup, currentOrg?.id];
+
   const deleteOption = async (id: string) => {
     if (!confirm("¿Eliminar esta opción?")) return;
+    const previous = queryClient.getQueryData(optionsKey);
+    queryClient.setQueryData(optionsKey, (old: any[] | undefined) => old?.filter((o: any) => o.id !== id));
     const { error } = await supabase.from("modifier_options").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      queryClient.setQueryData(optionsKey, previous);
+      toast.error(error.message);
+      return;
+    }
     toast.success("Opción eliminada");
-    refetchOptions();
   };
 
   const toggleOptionActive = async (id: string, current: boolean) => {
+    const previous = queryClient.getQueryData(optionsKey);
+    queryClient.setQueryData(optionsKey, (old: any[] | undefined) =>
+      old?.map((o: any) => (o.id === id ? { ...o, is_active: !current } : o)),
+    );
     const { error } = await supabase.from("modifier_options").update({ is_active: !current }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    refetchOptions();
+    if (error) {
+      queryClient.setQueryData(optionsKey, previous);
+      toast.error(error.message);
+      return;
+    }
   };
 
   const getLinkedProduct = (id: string | null) => {
