@@ -37,6 +37,7 @@ export function useUndoableDelete({
   label,
   invalidateOnCommit,
   undoMs = 5000,
+  matchOnDelete,
 }: Options) {
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
@@ -51,7 +52,11 @@ export function useUndoableDelete({
       const commit = async () => {
         timers.current.delete(id);
         if (undone) return;
-        const { error } = await supabase.from(table as any).delete().eq("id", id);
+        let q = supabase.from(table as any).delete().eq("id", id);
+        if (matchOnDelete) {
+          for (const [k, v] of Object.entries(matchOnDelete)) q = q.eq(k, v);
+        }
+        const { error } = await q;
         if (error) {
           queryClient.setQueryData(queryKey, previous);
           toast.error(errorToMessage(error));
