@@ -370,7 +370,12 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
         </div>
       )}
 
-      {isLoading && <p className="text-sm text-muted-foreground text-center py-6">Cargando…</p>}
+      {isLoading && (
+        <div className="space-y-2" aria-live="polite" aria-busy="true">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}
+        </div>
+      )}
+
       <div className="space-y-2">
         {municipalities?.length === 0 && !isLoading && (
           <div className="text-center py-8 space-y-2">
