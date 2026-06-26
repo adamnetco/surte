@@ -374,22 +374,20 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
   const productsKey = ["admin-products"];
 
-  const deleteProduct = async (id: string) => {
-    if (!confirm("¿Eliminar este producto?")) return;
+  const undoableDeleteProduct = useUndoableDelete({
+    queryClient,
+    queryKey: productsKey,
+    table: "products",
+    label: "Producto eliminado",
+    invalidateOnCommit: [["products"]],
+    matchOnDelete: currentOrg?.id ? { organization_id: currentOrg.id } : undefined,
+  });
+
+  const deleteProduct = (id: string) => {
     if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
-    const previous = queryClient.getQueryData(productsKey);
-    queryClient.setQueryData(productsKey, (old: any[] | undefined) =>
-      old?.filter((p: any) => p.id !== id),
-    );
-    const { error } = await supabase.from("products").delete().eq("id", id).eq("organization_id", currentOrg.id);
-    if (error) {
-      queryClient.setQueryData(productsKey, previous);
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Producto eliminado");
-    queryClient.invalidateQueries({ queryKey: ["products"] });
+    undoableDeleteProduct(id);
   };
+
 
   const toggleVisibility = async (id: string, currentActive: boolean) => {
     if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
