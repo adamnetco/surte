@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, Save, X, MapPin, Pencil, ExternalLink, Link as LinkIcon, AlertCircle, Search, Image as ImageIcon, Upload, Loader2, Eye, BarChart3 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+
 import { toast } from "sonner";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
