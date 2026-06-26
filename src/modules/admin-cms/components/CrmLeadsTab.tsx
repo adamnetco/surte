@@ -26,7 +26,34 @@ export default function CrmLeadsTab() {
     },
   });
 
-  if (isLoading) return <p className="text-muted-foreground p-4">Cargando leads…</p>;
+  if (isLoading) {
+    return (
+      <div className="space-y-4" aria-busy="true" aria-label="Cargando leads">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-64" />
+          <Skeleton className="h-5 w-16" />
+        </div>
+        <div className="grid gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="p-4 rounded-lg border bg-card space-y-2">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1.5">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              <div className="flex gap-3">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+              <Skeleton className="h-3 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
