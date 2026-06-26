@@ -19,6 +19,8 @@ import {
   Wallet,
   RefreshCw,
 } from "lucide-react";
+import RecentActionsPopover from "./RecentActionsPopover";
+import type { RecentAction } from "../hooks/useRecentActions";
 
 interface Props {
   onCloseShift: () => void;
@@ -31,6 +33,9 @@ interface Props {
   parkDisabled?: boolean;
   syncing?: boolean;
   pendingCount?: number;
+  recentActions?: RecentAction[];
+  onReplayAction?: (action: RecentAction) => void;
+  onClearRecent?: () => void;
 }
 
 interface Item {
@@ -54,6 +59,9 @@ export default function POSRightRail({
   parkDisabled,
   syncing,
   pendingCount = 0,
+  recentActions = [],
+  onReplayAction,
+  onClearRecent,
 }: Props) {
   const items: Item[] = [
     { key: "park", label: "Suspender ticket (F8)", icon: Pause, onClick: onPark, disabled: parkDisabled },
@@ -97,6 +105,15 @@ export default function POSRightRail({
           </Button>
         );
       })}
+      {onReplayAction && (
+        <div className="mt-auto pt-1 border-t w-full flex justify-center">
+          <RecentActionsPopover
+            actions={recentActions}
+            onReplay={onReplayAction}
+            onClear={onClearRecent ?? (() => {})}
+          />
+        </div>
+      )}
     </aside>
   );
 }

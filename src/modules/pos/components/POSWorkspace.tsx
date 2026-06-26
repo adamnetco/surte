@@ -34,6 +34,7 @@ import {
 import { setMeta, getMeta } from "@/modules/offline/lib/db";
 import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
 import { useRecentProducts } from "@/modules/pos/hooks/useRecentProducts";
+import { useRecentActions, type RecentAction } from "@/modules/pos/hooks/useRecentActions";
 import { useSyncService } from "@/modules/integrations/sync/useSyncService";
 import { enqueue } from "@/modules/offline/lib/outbox";
 import { useEinvoiceAutoEmit } from "@/modules/pos/hooks/useEinvoiceAutoEmit";
@@ -224,6 +225,44 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   };
 
   const { recent: recentIds, push: pushRecent } = useRecentProducts(organizationId);
+  const { actions: recentActions, push: pushAction, clear: clearRecentActions } = useRecentActions(
+    organizationId ? `${organizationId}:${userId}` : null,
+  );
+
+  // Handlers re-usables (acciones del rail + replay desde el historial)
+  const handlePark = () => {
+    if (ticket.length === 0) return;
+    setActionMode("park");
+    pushAction({ type: "park", label: `Suspender ticket (${ticket.length} ítems)` });
+  };
+  const handleNotasCredito = () => {
+    pushAction({ type: "nc", label: "Notas crédito / Devolución" });
+    navigate("/admin/devoluciones");
+  };
+  const handleVentasDelDia = () => {
+    pushAction({ type: "ventas", label: "Ventas del día" });
+    navigate("/pos/panel");
+  };
+  const handleCajon = () => {
+    pushAction({ type: "cajon", label: "Abrir cajón monedero" });
+    toast.info("Apertura de cajón: configura la impresora de tirilla para enviar el pulso ESC/POS.");
+  };
+  const handleRefresh = () => {
+    pushAction({ type: "refresh", label: "Sincronizar pendientes" });
+    sync.flushNow();
+  };
+  const replayAction = (a: RecentAction) => {
+    switch (a.type) {
+      case "park": handlePark(); break;
+      case "nc": handleNotasCredito(); break;
+      case "ventas": handleVentasDelDia(); break;
+      case "cajon": handleCajon(); break;
+      case "refresh": handleRefresh(); break;
+      case "sale_complete":
+        toast.info("Última venta completada — abre el panel para reimprimir o emitir factura.");
+        break;
+    }
+  };
 
   const addProduct = (p: Product) => {
     pushRecent(p.id);
@@ -402,6 +441,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         setTicket([]);
         setMeta(ticketCacheKey, []).catch(() => {});
         setSaleComplete({ total: snapshotTotal, amountPaid, change });
+        pushAction({ type: "sale_complete", label: `Venta completada · ${COP(snapshotTotal)}`, meta: { orderId: clientUuid } });
       });
 
       // 3) Snapshot para vista previa local del ticket (siempre disponible
@@ -467,15 +507,19 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       <POSRightRail
         onCloseShift={() => setCloseOpen(true)}
         onOpenShortcuts={() => setHelpOpen(true)}
-        onPark={() => { if (ticket.length > 0) setActionMode("park"); }}
-        onNotasCredito={() => navigate("/admin/devoluciones")}
-        onVentasDelDia={() => navigate("/pos/panel")}
-        onCajon={() => toast.info("Apertura de cajón: configura la impresora de tirilla para enviar el pulso ESC/POS.")}
-        onRefresh={() => sync.flushNow()}
+        onPark={handlePark}
+        onNotasCredito={handleNotasCredito}
+        onVentasDelDia={handleVentasDelDia}
+        onCajon={handleCajon}
+        onRefresh={handleRefresh}
         parkDisabled={ticket.length === 0}
         syncing={sync.syncing}
         pendingCount={sync.pending}
+        recentActions={recentActions}
+        onReplayAction={replayAction}
+        onClearRecent={clearRecentActions}
       />
+
 
       {/* TopBar 48px + ModeBar */}
       <POSTopBar
