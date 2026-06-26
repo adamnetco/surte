@@ -12,6 +12,7 @@ import { brandSchema, type BrandFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 
 const slugify = (v: string) =>
   v.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -114,23 +115,13 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
 
   const brandsKey = ["admin-brands", currentOrg?.id];
 
-  const del = async (id: string) => {
-    if (!confirm("¿Eliminar esta marca?")) return;
-    const previous = queryClient.getQueryData(brandsKey);
-    // Optimistic remove
-    queryClient.setQueryData(brandsKey, (old: any[] | undefined) =>
-      old?.filter((b: any) => b.id !== id),
-    );
-    try {
-      const { error } = await supabase.from("brands").delete().eq("id", id);
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
-      toast.success("Marca eliminada");
-    } catch (err) {
-      queryClient.setQueryData(brandsKey, previous);
-      toast.error(errorToMessage(err));
-    }
-  };
+  const del = useUndoableDelete({
+    queryClient,
+    queryKey: brandsKey,
+    table: "brands",
+    label: "Marca eliminada",
+    invalidateOnCommit: [["brands"]],
+  });
 
   const toggleActive = async (id: string, current: boolean) => {
     const previous = queryClient.getQueryData(brandsKey);

@@ -11,6 +11,7 @@ import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { categorySchema, type CategoryFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 
 const DEFAULTS: CategoryFormValues = {
   name: "",
@@ -83,21 +84,13 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
 
   const catsKey = ["admin-categories", currentOrg?.id];
 
-  const deleteCategory = async (id: string) => {
-    if (!confirm("¿Eliminar esta categoría?")) return;
-    const previous = queryClient.getQueryData(catsKey);
-    // Optimistic remove
-    queryClient.setQueryData(catsKey, (old: any[] | undefined) =>
-      old?.filter((c: any) => c.id !== id)
-    );
-    const { error } = await supabase.from("categories").delete().eq("id", id);
-    if (error) {
-      queryClient.setQueryData(catsKey, previous);
-      return toast.error(errorToMessage(error));
-    }
-    queryClient.invalidateQueries({ queryKey: ["categories"] });
-    toast.success("Categoría eliminada");
-  };
+  const deleteCategory = useUndoableDelete({
+    queryClient,
+    queryKey: catsKey,
+    table: "categories",
+    label: "Categoría eliminada",
+    invalidateOnCommit: [["categories"]],
+  });
 
   const toggleActive = async (id: string, current: boolean) => {
     const previous = queryClient.getQueryData(catsKey);
