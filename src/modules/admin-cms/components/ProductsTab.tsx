@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { useQuery, useQueryClient as useQC } from "@tanstack/react-query";
 import { useInactiveBrands } from "@/modules/storefront/hooks/useStore";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy, Ban, Star, Clock, AlertCircle } from "lucide-react";
 
 /** Returns scheduling status for a product: null | 'scheduled' | 'out_of_window' */
