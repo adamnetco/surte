@@ -163,19 +163,33 @@ const ModifiersTab = () => {
     }
   };
 
+  const groupsKey = ["modifier-groups", selectedProduct, currentOrg?.id];
+
   const deleteGroup = async (id: string) => {
     if (!confirm("¿Eliminar este grupo y todas sus opciones?")) return;
-    const { error } = await supabase.from("modifier_groups").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Grupo eliminado");
+    const previous = queryClient.getQueryData(groupsKey);
+    queryClient.setQueryData(groupsKey, (old: any[] | undefined) => old?.filter((g: any) => g.id !== id));
     if (expandedGroup === id) setExpandedGroup(null);
-    refetchGroups();
+    const { error } = await supabase.from("modifier_groups").delete().eq("id", id);
+    if (error) {
+      queryClient.setQueryData(groupsKey, previous);
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Grupo eliminado");
   };
 
   const toggleGroupActive = async (id: string, current: boolean) => {
+    const previous = queryClient.getQueryData(groupsKey);
+    queryClient.setQueryData(groupsKey, (old: any[] | undefined) =>
+      old?.map((g: any) => (g.id === id ? { ...g, is_active: !current } : g)),
+    );
     const { error } = await supabase.from("modifier_groups").update({ is_active: !current }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    refetchGroups();
+    if (error) {
+      queryClient.setQueryData(groupsKey, previous);
+      toast.error(error.message);
+      return;
+    }
   };
 
   // ─── Option CRUD ───
