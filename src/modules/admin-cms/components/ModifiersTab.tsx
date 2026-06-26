@@ -241,18 +241,12 @@ const ModifiersTab = () => {
 
   const optionsKey = ["modifier-options", expandedGroup, currentOrg?.id];
 
-  const deleteOption = async (id: string) => {
-    if (!confirm("¿Eliminar esta opción?")) return;
-    const previous = queryClient.getQueryData(optionsKey);
-    queryClient.setQueryData(optionsKey, (old: any[] | undefined) => old?.filter((o: any) => o.id !== id));
-    const { error } = await supabase.from("modifier_options").delete().eq("id", id);
-    if (error) {
-      queryClient.setQueryData(optionsKey, previous);
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Opción eliminada");
-  };
+  const deleteOption = useUndoableDelete({
+    queryClient,
+    queryKey: optionsKey,
+    table: "modifier_options",
+    label: "Opción eliminada",
+  });
 
   const toggleOptionActive = async (id: string, current: boolean) => {
     const previous = queryClient.getQueryData(optionsKey);
