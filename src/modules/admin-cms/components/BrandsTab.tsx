@@ -112,21 +112,29 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
     }
   };
 
+  const brandsKey = ["admin-brands", currentOrg?.id];
+
   const del = async (id: string) => {
     if (!confirm("¿Eliminar esta marca?")) return;
+    const previous = queryClient.getQueryData(brandsKey);
+    // Optimistic remove
+    queryClient.setQueryData(brandsKey, (old: any[] | undefined) =>
+      old?.filter((b: any) => b.id !== id),
+    );
     try {
       const { error } = await supabase.from("brands").delete().eq("id", id);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["admin-brands"] });
       queryClient.invalidateQueries({ queryKey: ["brands"] });
       toast.success("Marca eliminada");
     } catch (err) {
+      queryClient.setQueryData(brandsKey, previous);
       toast.error(errorToMessage(err));
     }
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    queryClient.setQueryData(["admin-brands"], (old: any[] | undefined) =>
+    const previous = queryClient.getQueryData(brandsKey);
+    queryClient.setQueryData(brandsKey, (old: any[] | undefined) =>
       old?.map((b: any) => (b.id === id ? { ...b, is_active: !current } : b)),
     );
     try {
@@ -135,8 +143,8 @@ const BrandsTab = ({ queryClient }: { queryClient: any }) => {
       toast.success(!current ? "Marca visible" : "Marca oculta");
       queryClient.invalidateQueries({ queryKey: ["brands"] });
     } catch (err) {
+      queryClient.setQueryData(brandsKey, previous);
       toast.error(errorToMessage(err));
-      queryClient.invalidateQueries({ queryKey: ["admin-brands"] });
     }
   };
 

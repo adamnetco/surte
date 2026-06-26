@@ -81,20 +81,34 @@ const CategoriesTab = ({ categories, queryClient }: { categories: any[]; queryCl
     }
   });
 
+  const catsKey = ["admin-categories", currentOrg?.id];
+
   const deleteCategory = async (id: string) => {
     if (!confirm("¿Eliminar esta categoría?")) return;
+    const previous = queryClient.getQueryData(catsKey);
+    // Optimistic remove
+    queryClient.setQueryData(catsKey, (old: any[] | undefined) =>
+      old?.filter((c: any) => c.id !== id)
+    );
     const { error } = await supabase.from("categories").delete().eq("id", id);
-    if (error) return toast.error(errorToMessage(error));
-    queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+    if (error) {
+      queryClient.setQueryData(catsKey, previous);
+      return toast.error(errorToMessage(error));
+    }
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
     toast.success("Categoría eliminada");
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    queryClient.setQueryData(["admin-categories"], (old: any[] | undefined) =>
+    const previous = queryClient.getQueryData(catsKey);
+    queryClient.setQueryData(catsKey, (old: any[] | undefined) =>
       old?.map((c: any) => (c.id === id ? { ...c, is_active: !current } : c))
     );
     const { error } = await supabase.from("categories").update({ is_active: !current }).eq("id", id);
-    if (error) return toast.error(errorToMessage(error));
+    if (error) {
+      queryClient.setQueryData(catsKey, previous);
+      return toast.error(errorToMessage(error));
+    }
     toast.success(!current ? "Categoría visible" : "Categoría oculta");
     queryClient.invalidateQueries({ queryKey: ["categories"] });
   };
