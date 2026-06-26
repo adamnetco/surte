@@ -72,7 +72,28 @@ export default function MembersAuditTab() {
     );
   }
   if (!currentOrg) return <p className="text-sm text-muted-foreground p-4">Selecciona una organización.</p>;
-  if (isLoading) return <div className="p-6 flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Cargando miembros…</div>;
+  if (isLoading) {
+    return (
+      <div className="space-y-4" aria-busy="true" aria-label="Cargando miembros">
+        <div className="space-y-1.5">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-3 w-72" />
+        </div>
+        <div className="grid gap-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3.5 w-40" />
+                <Skeleton className="h-2.5 w-28" />
+              </div>
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (error) return <p className="text-sm text-destructive p-4">Error: {(error as Error).message}</p>;
 
   const members = data ?? [];
