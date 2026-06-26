@@ -150,7 +150,7 @@ const TestimonialsSection = ({ queryClient }: { queryClient: any }) => {
       if (error) { toast.error(error.message); return; }
     } else {
       if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
-      const { error } = await supabase.from("testimonials").insert({ ...payload, organization_id: currentOrg.id });
+      const { error } = await supabase.from("testimonials").insert({ ...payload, organization_id: currentOrg.id } as any);
       if (error) { toast.error(error.message); return; }
     }
     toast.success("Testimonio guardado");
