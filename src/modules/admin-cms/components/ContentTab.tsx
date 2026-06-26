@@ -163,12 +163,15 @@ const TestimonialsSection = ({ queryClient }: { queryClient: any }) => {
     setEditing(null);
   };
 
-  const del = async (id: string) => {
-    if (!confirm("¿Eliminar?")) return;
-    await supabase.from("testimonials").delete().eq("id", id);
-    queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
-    toast.success("Eliminado");
-  };
+  const undoableDel = useUndoableDelete({
+    queryClient,
+    queryKey: ["admin-testimonials", currentOrg?.id],
+    table: "testimonials",
+    label: "Testimonio eliminado",
+    invalidateOnCommit: [["admin-testimonials"], ["testimonials"]],
+    matchOnDelete: currentOrg?.id ? { organization_id: currentOrg.id } : undefined,
+  });
+  const del = (id: string) => undoableDel(id);
 
   return (
     <div>
