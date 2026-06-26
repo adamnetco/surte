@@ -256,13 +256,15 @@ const GallerySection = ({ queryClient }: { queryClient: any }) => {
     toast.success("Descripción actualizada");
   };
 
-  const del = async (id: string) => {
-    if (!confirm("¿Eliminar imagen?")) return;
-    await supabase.from("gallery").delete().eq("id", id);
-    queryClient.invalidateQueries({ queryKey: ["admin-gallery"] });
-    queryClient.invalidateQueries({ queryKey: ["gallery"] });
-    toast.success("Eliminada");
-  };
+  const undoableDel = useUndoableDelete({
+    queryClient,
+    queryKey: ["admin-gallery", currentOrg?.id],
+    table: "gallery",
+    label: "Imagen eliminada",
+    invalidateOnCommit: [["admin-gallery"], ["gallery"]],
+    matchOnDelete: currentOrg?.id ? { organization_id: currentOrg.id } : undefined,
+  });
+  const del = (id: string) => undoableDel(id);
 
   return (
     <div>
