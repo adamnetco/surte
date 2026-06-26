@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Star, Check, X, MessageCircle, Eye, EyeOff, Loader2, Search } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const CustomerReviewsTab = ({ queryClient }: { queryClient: any }) => {
