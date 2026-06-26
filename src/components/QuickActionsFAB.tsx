@@ -96,7 +96,7 @@ export default function QuickActionsFAB() {
     list.push({ id: "pedidos", label: "Mis pedidos", icon: ShoppingCart, to: "/mis-pedidos" });
     list.push({ id: "perfil", label: "Perfil", icon: Users, to: "/perfil" });
     return list;
-  }, [path, role]);
+  }, [path, role, user]);
 
   if (hidden) return null;
 
