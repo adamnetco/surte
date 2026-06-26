@@ -33,6 +33,7 @@ import {
 } from "@/modules/offline/lib/catalog";
 import { setMeta, getMeta } from "@/modules/offline/lib/db";
 import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
+import { useRecentProducts } from "@/modules/pos/hooks/useRecentProducts";
 import { useSyncService } from "@/modules/integrations/sync/useSyncService";
 import { enqueue } from "@/modules/offline/lib/outbox";
 import { useEinvoiceAutoEmit } from "@/modules/pos/hooks/useEinvoiceAutoEmit";
