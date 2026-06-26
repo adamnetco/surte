@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Plus, ShoppingCart, FileText, Users, Package, X, Command, Calendar, ArrowLeftRight } from "lucide-react";
+import { Plus, ShoppingCart, FileText, Users, Package, X, Command, Calendar, ArrowLeftRight, Lock, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
@@ -80,6 +80,15 @@ export default function QuickActionsFAB() {
       list.push({ id: "diario", label: "Diario", icon: Calendar, to: "/admin/diario" });
       list.push({ id: "facturacion", label: "Facturación", icon: FileText, to: "/admin/facturacion" });
       list.push({ id: "inventario", label: "Inventario", icon: Package, to: "/admin/inventario" });
+      const hasPin = !!user && !!localStorage.getItem(`pos:pin:${user.id}`);
+      list.push({
+        id: "lock",
+        label: hasPin ? "Bloquear pantalla" : "Configurar PIN",
+        icon: hasPin ? Lock : ShieldCheck,
+        onClick: () => {
+          window.dispatchEvent(new Event(hasPin ? "pin-lock:lock" : "pin-lock:setup"));
+        },
+      });
       return list;
     }
 
@@ -87,7 +96,7 @@ export default function QuickActionsFAB() {
     list.push({ id: "pedidos", label: "Mis pedidos", icon: ShoppingCart, to: "/mis-pedidos" });
     list.push({ id: "perfil", label: "Perfil", icon: Users, to: "/perfil" });
     return list;
-  }, [path, role]);
+  }, [path, role, user]);
 
   if (hidden) return null;
 
