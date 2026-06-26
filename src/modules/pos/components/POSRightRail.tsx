@@ -19,6 +19,8 @@ import {
   Wallet,
   RefreshCw,
 } from "lucide-react";
+import RecentActionsPopover from "./RecentActionsPopover";
+import type { RecentAction } from "../hooks/useRecentActions";
 
 interface Props {
   onCloseShift: () => void;
@@ -31,6 +33,9 @@ interface Props {
   parkDisabled?: boolean;
   syncing?: boolean;
   pendingCount?: number;
+  recentActions?: RecentAction[];
+  onReplayAction?: (action: RecentAction) => void;
+  onClearRecent?: () => void;
 }
 
 interface Item {
