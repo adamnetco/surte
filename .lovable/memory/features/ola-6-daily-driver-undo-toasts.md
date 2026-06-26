@@ -19,8 +19,11 @@ Si el usuario hace Undo: clearTimeout + restaura snapshot + toast.info.
 - `ProductsTab.tsx` — table `products`, `matchOnDelete: { organization_id }`, invalida `["products"]`.
 - `ModifiersTab.tsx` — `modifier_groups` + `modifier_options`.
 - `HeroSlidesTab.tsx` — table `hero_slides`, invalida `["hero_slides","admin-hero-slides"]`.
+- `CouponsTab.tsx` — table `coupons`, scoped por `organization_id`.
+- `LandingPagesTab.tsx` — table `landing_pages`, scoped por `organization_id`.
+- `ContentTab.tsx` — banners, testimonials y gallery (3 secciones), todas scoped por `organization_id`.
 
 Hook ahora acepta `matchOnDelete` (filtros `.eq()` extra para scoping por org).
 
 ## Pendiente para próxima iteración
-ContentTab, LandingPagesTab, CouponsTab.
+SeoContentTab; resto de tabs son baja frecuencia.
