@@ -240,18 +240,32 @@ const ModifiersTab = () => {
     }
   };
 
+  const optionsKey = ["modifier-options", expandedGroup, currentOrg?.id];
+
   const deleteOption = async (id: string) => {
     if (!confirm("¿Eliminar esta opción?")) return;
+    const previous = queryClient.getQueryData(optionsKey);
+    queryClient.setQueryData(optionsKey, (old: any[] | undefined) => old?.filter((o: any) => o.id !== id));
     const { error } = await supabase.from("modifier_options").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      queryClient.setQueryData(optionsKey, previous);
+      toast.error(error.message);
+      return;
+    }
     toast.success("Opción eliminada");
-    refetchOptions();
   };
 
   const toggleOptionActive = async (id: string, current: boolean) => {
+    const previous = queryClient.getQueryData(optionsKey);
+    queryClient.setQueryData(optionsKey, (old: any[] | undefined) =>
+      old?.map((o: any) => (o.id === id ? { ...o, is_active: !current } : o)),
+    );
     const { error } = await supabase.from("modifier_options").update({ is_active: !current }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    refetchOptions();
+    if (error) {
+      queryClient.setQueryData(optionsKey, previous);
+      toast.error(error.message);
+      return;
+    }
   };
 
   const getLinkedProduct = (id: string | null) => {
