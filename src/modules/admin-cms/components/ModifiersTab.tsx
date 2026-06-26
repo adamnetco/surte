@@ -8,6 +8,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -165,18 +166,16 @@ const ModifiersTab = () => {
 
   const groupsKey = ["modifier-groups", selectedProduct, currentOrg?.id];
 
-  const deleteGroup = async (id: string) => {
-    if (!confirm("¿Eliminar este grupo y todas sus opciones?")) return;
-    const previous = queryClient.getQueryData(groupsKey);
-    queryClient.setQueryData(groupsKey, (old: any[] | undefined) => old?.filter((g: any) => g.id !== id));
+  const undoableDeleteGroup = useUndoableDelete({
+    queryClient,
+    queryKey: groupsKey,
+    table: "modifier_groups",
+    label: "Grupo eliminado",
+  });
+
+  const deleteGroup = (id: string) => {
     if (expandedGroup === id) setExpandedGroup(null);
-    const { error } = await supabase.from("modifier_groups").delete().eq("id", id);
-    if (error) {
-      queryClient.setQueryData(groupsKey, previous);
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Grupo eliminado");
+    undoableDeleteGroup(id);
   };
 
   const toggleGroupActive = async (id: string, current: boolean) => {
@@ -242,18 +241,12 @@ const ModifiersTab = () => {
 
   const optionsKey = ["modifier-options", expandedGroup, currentOrg?.id];
 
-  const deleteOption = async (id: string) => {
-    if (!confirm("¿Eliminar esta opción?")) return;
-    const previous = queryClient.getQueryData(optionsKey);
-    queryClient.setQueryData(optionsKey, (old: any[] | undefined) => old?.filter((o: any) => o.id !== id));
-    const { error } = await supabase.from("modifier_options").delete().eq("id", id);
-    if (error) {
-      queryClient.setQueryData(optionsKey, previous);
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Opción eliminada");
-  };
+  const deleteOption = useUndoableDelete({
+    queryClient,
+    queryKey: optionsKey,
+    table: "modifier_options",
+    label: "Opción eliminada",
+  });
 
   const toggleOptionActive = async (id: string, current: boolean) => {
     const previous = queryClient.getQueryData(optionsKey);

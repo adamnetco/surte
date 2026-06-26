@@ -16,6 +16,11 @@ Si el usuario hace Undo: clearTimeout + restaura snapshot + toast.info.
 - `BrandsTab.tsx` — table `brands`, invalida `["brands"]` al commit.
 - `CategoriesTab.tsx` — table `categories`, invalida `["categories"]` al commit.
 - `PriceListsTab.tsx` — table `price_lists`.
+- `ProductsTab.tsx` — table `products`, `matchOnDelete: { organization_id }`, invalida `["products"]`.
+- `ModifiersTab.tsx` — `modifier_groups` + `modifier_options`.
+- `HeroSlidesTab.tsx` — table `hero_slides`, invalida `["hero_slides","admin-hero-slides"]`.
+
+Hook ahora acepta `matchOnDelete` (filtros `.eq()` extra para scoping por org).
 
 ## Pendiente para próxima iteración
-ModifiersTab (group/option), ProductsTab (delete producto), HeroSlidesTab, ContentTab.
+ContentTab, LandingPagesTab, CouponsTab.

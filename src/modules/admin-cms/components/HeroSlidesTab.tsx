@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 import { Plus, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Pencil, Globe, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -95,18 +96,13 @@ const HeroSlidesTab = ({ queryClient }: { queryClient: any }) => {
     }
   };
 
-  const del = async (id: string) => {
-    if (!confirm("¿Eliminar slide?")) return;
-    try {
-      const { error } = await supabase.from("hero_slides").delete().eq("id", id);
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
-      queryClient.invalidateQueries({ queryKey: ["hero_slides"] });
-      toast.success("Eliminado");
-    } catch (err) {
-      toast.error(errorToMessage(err));
-    }
-  };
+  const del = useUndoableDelete({
+    queryClient,
+    queryKey: ["admin-hero-slides", currentOrg?.id],
+    table: "hero_slides",
+    label: "Slide eliminado",
+    invalidateOnCommit: [["hero_slides"], ["admin-hero-slides"]],
+  });
 
   const toggleActive = async (id: string, current: boolean) => {
     try {

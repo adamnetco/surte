@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { useQuery, useQueryClient as useQC } from "@tanstack/react-query";
 import { useInactiveBrands } from "@/modules/storefront/hooks/useStore";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 import { Plus, Pencil, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Search, Eye, EyeOff, Filter, GripVertical, Images, Copy, Ban, Star, Clock, AlertCircle } from "lucide-react";
 
 /** Returns scheduling status for a product: null | 'scheduled' | 'out_of_window' */
@@ -373,22 +374,20 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
 
   const productsKey = ["admin-products"];
 
-  const deleteProduct = async (id: string) => {
-    if (!confirm("¿Eliminar este producto?")) return;
+  const undoableDeleteProduct = useUndoableDelete({
+    queryClient,
+    queryKey: productsKey,
+    table: "products",
+    label: "Producto eliminado",
+    invalidateOnCommit: [["products"]],
+    matchOnDelete: currentOrg?.id ? { organization_id: currentOrg.id } : undefined,
+  });
+
+  const deleteProduct = (id: string) => {
     if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
-    const previous = queryClient.getQueryData(productsKey);
-    queryClient.setQueryData(productsKey, (old: any[] | undefined) =>
-      old?.filter((p: any) => p.id !== id),
-    );
-    const { error } = await supabase.from("products").delete().eq("id", id).eq("organization_id", currentOrg.id);
-    if (error) {
-      queryClient.setQueryData(productsKey, previous);
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Producto eliminado");
-    queryClient.invalidateQueries({ queryKey: ["products"] });
+    undoableDeleteProduct(id);
   };
+
 
   const toggleVisibility = async (id: string, currentActive: boolean) => {
     if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
