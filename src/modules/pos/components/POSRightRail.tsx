@@ -59,6 +59,9 @@ export default function POSRightRail({
   parkDisabled,
   syncing,
   pendingCount = 0,
+  recentActions = [],
+  onReplayAction,
+  onClearRecent,
 }: Props) {
   const items: Item[] = [
     { key: "park", label: "Suspender ticket (F8)", icon: Pause, onClick: onPark, disabled: parkDisabled },
