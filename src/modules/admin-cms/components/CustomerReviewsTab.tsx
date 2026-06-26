@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Star, Check, X, MessageCircle, Eye, EyeOff, Loader2, Search } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 const CustomerReviewsTab = ({ queryClient }: { queryClient: any }) => {
@@ -75,7 +76,23 @@ const CustomerReviewsTab = ({ queryClient }: { queryClient: any }) => {
         ))}
       </div>
 
-      {isLoading && <div className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></div>}
+      {isLoading && (
+        <div className="space-y-3" aria-busy="true" aria-label="Cargando reseñas">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="p-3 rounded-xl border border-border bg-card space-y-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3 w-32" />
+                  <Skeleton className="h-2.5 w-20" />
+                </div>
+              </div>
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-3">
         {filtered?.map((review: any) => (
