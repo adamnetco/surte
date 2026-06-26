@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const roleBadge: Record<string, { label: string; cls: string; Icon: typeof Shield }> = {
   owner:   { label: "Owner (Dueño)", cls: "bg-primary/15 text-primary",            Icon: Crown },
