@@ -506,15 +506,19 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       <POSRightRail
         onCloseShift={() => setCloseOpen(true)}
         onOpenShortcuts={() => setHelpOpen(true)}
-        onPark={() => { if (ticket.length > 0) setActionMode("park"); }}
-        onNotasCredito={() => navigate("/admin/devoluciones")}
-        onVentasDelDia={() => navigate("/pos/panel")}
-        onCajon={() => toast.info("Apertura de cajón: configura la impresora de tirilla para enviar el pulso ESC/POS.")}
-        onRefresh={() => sync.flushNow()}
+        onPark={handlePark}
+        onNotasCredito={handleNotasCredito}
+        onVentasDelDia={handleVentasDelDia}
+        onCajon={handleCajon}
+        onRefresh={handleRefresh}
         parkDisabled={ticket.length === 0}
         syncing={sync.syncing}
         pendingCount={sync.pending}
+        recentActions={recentActions}
+        onReplayAction={replayAction}
+        onClearRecent={clearRecentActions}
       />
+
 
       {/* TopBar 48px + ModeBar */}
       <POSTopBar
