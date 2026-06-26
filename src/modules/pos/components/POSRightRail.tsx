@@ -105,6 +105,15 @@ export default function POSRightRail({
           </Button>
         );
       })}
+      {onReplayAction && (
+        <div className="mt-auto pt-1 border-t w-full flex justify-center">
+          <RecentActionsPopover
+            actions={recentActions}
+            onReplay={onReplayAction}
+            onClear={onClearRecent ?? (() => {})}
+          />
+        </div>
+      )}
     </aside>
   );
 }
