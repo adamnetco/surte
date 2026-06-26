@@ -243,6 +243,7 @@ const App = () => (
                 <OmnichannelCartListener />
                 <GlobalCommandPalette />
                 <GlobalHotkeys />
+                <QuickActionsFAB />
                 <AuthHealthMonitor />
                 <Suspense fallback={null}><OnboardingChecklist /></Suspense>
                 <SwipeProvider>
