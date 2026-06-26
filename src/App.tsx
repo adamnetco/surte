@@ -245,6 +245,7 @@ const App = () => (
                 <GlobalCommandPalette />
                 <GlobalHotkeys />
                 <QuickActionsFAB />
+                <PinLock />
                 <AuthHealthMonitor />
                 <Suspense fallback={null}><OnboardingChecklist /></Suspense>
                 <SwipeProvider>
