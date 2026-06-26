@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 import { Plus, Trash2, Save, X, Upload, Loader2, Image as ImageIcon, Pencil, Globe, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
