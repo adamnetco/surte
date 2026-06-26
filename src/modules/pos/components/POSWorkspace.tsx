@@ -223,7 +223,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     addProduct(p);
   };
 
+  const { recent: recentIds, push: pushRecent } = useRecentProducts(organizationId);
+
   const addProduct = (p: Product) => {
+    pushRecent(p.id);
     setTicket((prev) => {
       const i = prev.findIndex((l) => l.productId === p.id);
       if (i >= 0) {
@@ -245,6 +248,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       ];
     });
   };
+
+  const recentProducts = useMemo(
+    () => recentIds.map((id) => products.find((p) => p.id === id)).filter(Boolean) as Product[],
+    [recentIds, products],
+  );
 
   const updateQty = (productId: string, delta: number) => {
     setTicket((prev) =>
