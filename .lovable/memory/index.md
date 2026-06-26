@@ -65,3 +65,4 @@
 
 
 
+- [Ola 6 First Login Tour](mem://features/ola-6-first-login-tour) — FirstLoginTour casero (sin driver.js) con spotlight + tooltip portal, anclajes data-tour, dispara una vez por user+org en /admin

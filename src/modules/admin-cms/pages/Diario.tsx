@@ -562,9 +562,13 @@ const Diario = () => {
               <HelloIcon size={14} />
               <span>{hello}{firstName ? `, ${firstName}` : ""}</span>
             </div>
-            <h1 className="font-heading font-bold text-xl text-foreground tracking-tight">
+            <h1
+              data-tour="diario"
+              className="font-heading font-bold text-xl text-foreground tracking-tight"
+            >
               Tu día en {currentOrg?.name ?? "la tienda"}
             </h1>
+
             <p className="text-xs text-muted-foreground">
               {new Date().toLocaleDateString("es-CO", {
                 weekday: "long",
