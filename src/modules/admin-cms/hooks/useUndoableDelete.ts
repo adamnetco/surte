@@ -85,6 +85,6 @@ export function useUndoableDelete({
         },
       });
     },
-    [queryClient, queryKey, table, label, invalidateOnCommit, undoMs],
+    [queryClient, queryKey, table, label, invalidateOnCommit, undoMs, matchOnDelete],
   );
 }
