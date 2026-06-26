@@ -139,7 +139,23 @@ const GoogleReviewsTab = ({ queryClient }: { queryClient: any }) => {
 
         {/* Reviews list */}
         <div className="space-y-3 max-h-[70vh] overflow-y-auto">
-          {isLoading && <div className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></div>}
+          {isLoading && (
+            <div className="space-y-3" aria-busy="true" aria-label="Cargando reseñas de Google">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-card rounded-xl p-3 border border-border space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3 w-32" />
+                      <Skeleton className="h-2.5 w-20" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-2/3" />
+                </div>
+              ))}
+            </div>
+          )}
           {reviews?.map((r: any) => (
             <div key={r.id} className={`bg-card rounded-xl p-3 border border-border space-y-2 ${!r.is_active ? "opacity-50" : ""}`}>
               <div className="flex justify-between items-start">
