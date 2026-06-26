@@ -18,6 +18,7 @@ import * as XLSX from "xlsx";
 import TiptapEditor from "./TiptapEditor";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 
 interface LandingPage {
   id: string;
@@ -273,15 +274,15 @@ const LandingPagesTab = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Eliminar esta pagina?")) return;
-    const { error } = await supabase.from("landing_pages").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Pagina eliminada");
-      queryClient.invalidateQueries({ queryKey: ["landing_pages"] });
-    }
-  };
+  const undoableDeletePage = useUndoableDelete({
+    queryClient,
+    queryKey: ["landing_pages", currentOrg?.id],
+    table: "landing_pages",
+    label: "Página eliminada",
+    invalidateOnCommit: [["landing_pages"]],
+    matchOnDelete: currentOrg?.id ? { organization_id: currentOrg.id } : undefined,
+  });
+  const handleDelete = (id: string) => undoableDeletePage(id);
 
   const handleToggleActive = async (page: LandingPage) => {
     const { error } = await supabase.from("landing_pages").update({ is_active: !page.is_active }).eq("id", page.id);

@@ -10,6 +10,7 @@ import { couponSchema, type CouponFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -100,17 +101,15 @@ const CouponsTab = ({ queryClient }: { queryClient: any }) => {
     }
   };
 
-  const deleteCoupon = async (id: string) => {
-    if (!confirm("¿Eliminar este cupón?")) return;
-    try {
-      const { error } = await supabase.from("coupons").delete().eq("id", id);
-      if (error) throw error;
-      toast.success("Cupón eliminado");
-      queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
-    } catch (err) {
-      toast.error(errorToMessage(err));
-    }
-  };
+  const undoableDelete = useUndoableDelete({
+    queryClient,
+    queryKey: ["admin-coupons", currentOrg?.id],
+    table: "coupons",
+    label: "Cupón eliminado",
+    invalidateOnCommit: [["admin-coupons"]],
+    matchOnDelete: currentOrg?.id ? { organization_id: currentOrg.id } : undefined,
+  });
+  const deleteCoupon = (id: string) => undoableDelete(id);
 
   const fieldCls = (hasError: boolean, extra = "") =>
     `w-full bg-muted rounded-lg px-3 py-2 text-sm outline-none border focus:ring-2 focus:ring-ring ${
