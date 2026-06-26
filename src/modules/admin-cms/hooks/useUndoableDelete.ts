@@ -26,6 +26,8 @@ interface Options {
   invalidateOnCommit?: QueryKey[];
   /** Ventana para deshacer en ms. Default 5000. */
   undoMs?: number;
+  /** Filtros .eq() adicionales aplicados al DELETE (ej. organization_id). */
+  matchOnDelete?: Record<string, string | number>;
 }
 
 export function useUndoableDelete({
