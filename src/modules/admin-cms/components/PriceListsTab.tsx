@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useUndoableDelete } from "@/modules/admin-cms/hooks/useUndoableDelete";
 
 const PriceListsTab = () => {
   const { currentOrg } = useOrganization();
@@ -84,18 +85,12 @@ const PriceListsTab = () => {
     }
   };
 
-  const remove = async (id: string) => {
-    if (!window.confirm("¿Eliminar esta lista de precios? Los clientes asignados volverán a la lista por defecto.")) return;
-    const previous = qc.getQueryData(plKey);
-    qc.setQueryData(plKey, (old: any[] | undefined) => old?.filter((p: any) => p.id !== id));
-    const { error } = await supabase.from("price_lists").delete().eq("id", id);
-    if (error) {
-      qc.setQueryData(plKey, previous);
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Lista eliminada");
-  };
+  const remove = useUndoableDelete({
+    queryClient: qc,
+    queryKey: plKey,
+    table: "price_lists",
+    label: "Lista eliminada",
+  });
 
   if (!currentOrg) {
     return <div className="p-4 text-sm text-muted-foreground">Selecciona una organización.</div>;
