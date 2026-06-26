@@ -371,21 +371,38 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
     resetForm();
   };
 
+  const productsKey = ["admin-products"];
+
   const deleteProduct = async (id: string) => {
     if (!confirm("¿Eliminar este producto?")) return;
     if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+    const previous = queryClient.getQueryData(productsKey);
+    queryClient.setQueryData(productsKey, (old: any[] | undefined) =>
+      old?.filter((p: any) => p.id !== id),
+    );
     const { error } = await supabase.from("products").delete().eq("id", id).eq("organization_id", currentOrg.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      queryClient.setQueryData(productsKey, previous);
+      toast.error(error.message);
+      return;
+    }
     toast.success("Producto eliminado");
-    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
   };
 
   const toggleVisibility = async (id: string, currentActive: boolean) => {
     if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+    const previous = queryClient.getQueryData(productsKey);
+    queryClient.setQueryData(productsKey, (old: any[] | undefined) =>
+      old?.map((p: any) => (p.id === id ? { ...p, is_active: !currentActive } : p)),
+    );
     const { error } = await supabase.from("products").update({ is_active: !currentActive }).eq("id", id).eq("organization_id", currentOrg.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      queryClient.setQueryData(productsKey, previous);
+      toast.error(error.message);
+      return;
+    }
     toast.success(!currentActive ? "Producto visible" : "Producto oculto");
-    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
     queryClient.invalidateQueries({ queryKey: ["products"] });
   };
 
