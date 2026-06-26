@@ -581,6 +581,37 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             </button>
           </div>
 
+          {recentProducts.length > 0 && !loading && (
+            <div className="px-3 pt-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground">Recientes</p>
+                <span className="text-[10px] text-muted-foreground">Tap para añadir</span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth">
+                {recentProducts.map((p) => (
+                  <button
+                    key={`recent-${p.id}`}
+                    onClick={() => addProduct(p)}
+                    className="shrink-0 w-28 bg-card rounded-md border hover:border-primary hover:shadow-sm transition text-left overflow-hidden active:scale-95"
+                    title={`+ ${p.name}`}
+                  >
+                    <div className="aspect-square bg-muted overflow-hidden">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full grid place-items-center text-[10px] text-muted-foreground">Sin imagen</div>
+                      )}
+                    </div>
+                    <div className="p-1.5">
+                      <p className="text-[11px] font-medium line-clamp-1">{p.name}</p>
+                      <p className="text-xs font-bold text-primary">{COP(Number(p.price))}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto p-3">
             {loading ? (
               <div
