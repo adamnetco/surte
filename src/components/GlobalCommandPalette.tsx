@@ -141,8 +141,13 @@ export default function GlobalCommandPalette() {
         setOpen((v) => !v);
       }
     };
+    const onOpenEvent = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("open-command-palette", onOpenEvent as EventListener);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("open-command-palette", onOpenEvent as EventListener);
+    };
   }, []);
 
   // Reset query al cerrar y refrescar recientes al abrir.
