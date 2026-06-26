@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { CalendarDays, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 interface ServiceRow { id: string; name: string; duration_minutes: number; price: number; category: string | null; is_active: boolean; }
 interface ResourceRow { id: string; name: string; kind: string; color: string | null; is_active: boolean; }
