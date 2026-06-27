@@ -131,6 +131,9 @@ export default function HealthEvents() {
 
       {err && <Card className="p-3 border-destructive/40 bg-destructive/5 text-sm text-destructive">{err}</Card>}
 
+      <GateDenialsPanel />
+
+
       <section>
         <h2 className="text-sm font-semibold mb-2 flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Health events</h2>
         <div className="space-y-2">
