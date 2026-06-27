@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
-import { exportSiigoCSV, exportAlegraCSV, printFinancialStatements, exportEInvoicesXLSX, exportVatSummaryXLSX, exportAccountLedgerXLSX, type EInvoiceRow, type VatRow, type LedgerRow } from "@/modules/admin-cms/lib/accountingExports";
+import { exportSiigoCSV, exportAlegraCSV, printFinancialStatements, exportEInvoicesXLSX, exportVatSummaryXLSX, exportAccountLedgerXLSX, docSign, type EInvoiceRow, type VatRow, type LedgerRow } from "@/modules/admin-cms/lib/accountingExports";
 import { FileText, Receipt, Search } from "lucide-react";
 
 type Account = {
@@ -593,8 +593,19 @@ function AccountantReports(props: {
   });
 
   const einvTotals = (einvQ.data ?? []).reduce(
-    (a, r) => ({ sub: a.sub + Number(r.subtotal || 0), tax: a.tax + Number(r.tax_total || 0), tot: a.tot + Number(r.total || 0) }),
-    { sub: 0, tax: 0, tot: 0 }
+    (a, r) => {
+      const s = docSign(r.document_type);
+      return {
+        sub: a.sub + Number(r.subtotal || 0),
+        tax: a.tax + Number(r.tax_total || 0),
+        tot: a.tot + Number(r.total || 0),
+        subNet: a.subNet + s * Number(r.subtotal || 0),
+        taxNet: a.taxNet + s * Number(r.tax_total || 0),
+        totNet: a.totNet + s * Number(r.total || 0),
+        notes: a.notes + (r.document_type === "credit_note" ? Number(r.total || 0) : 0),
+      };
+    },
+    { sub: 0, tax: 0, tot: 0, subNet: 0, taxNet: 0, totNet: 0, notes: 0 }
   );
   const vatTotals = (vatQ.data ?? []).reduce(
     (a, r) => ({ base: a.base + Number(r.base_amount || 0), iva: a.iva + Number(r.tax_amount || 0) }),
@@ -652,20 +663,31 @@ function AccountantReports(props: {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mb-3 text-xs">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3 text-xs">
           <div className="rounded-lg border border-gray-100 p-2">
-            <div className="text-muted-foreground">Subtotal</div>
+            <div className="text-muted-foreground">Subtotal bruto</div>
             <div className="font-mono font-semibold">{fmt(einvTotals.sub)}</div>
           </div>
           <div className="rounded-lg border border-gray-100 p-2">
-            <div className="text-muted-foreground">IVA</div>
+            <div className="text-muted-foreground">IVA bruto</div>
             <div className="font-mono font-semibold">{fmt(einvTotals.tax)}</div>
           </div>
           <div className="rounded-lg border border-gray-100 p-2">
-            <div className="text-muted-foreground">Total</div>
-            <div className="font-mono font-semibold text-primary">{fmt(einvTotals.tot)}</div>
+            <div className="text-muted-foreground">Total bruto</div>
+            <div className="font-mono font-semibold">{fmt(einvTotals.tot)}</div>
+          </div>
+          <div className="rounded-lg border border-red-100 bg-red-50/40 p-2">
+            <div className="text-red-700">− Notas crédito</div>
+            <div className="font-mono font-semibold text-red-700">{fmt(einvTotals.notes)}</div>
+          </div>
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
+            <div className="text-primary">Total neto</div>
+            <div className="font-mono font-semibold text-primary">{fmt(einvTotals.totNet)}</div>
           </div>
         </div>
+        <p className="text-[11px] text-muted-foreground mb-2">
+          El <strong>Total neto</strong> resta las Notas Crédito aceptadas. Las Notas Débito suman. Este es el valor que conciliará tu contador con la declaración de IVA.
+        </p>
 
         {einvQ.isLoading ? (
           <Skeleton className="h-40 w-full" />
@@ -677,6 +699,7 @@ function AccountantReports(props: {
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Número</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>NIT/CC</TableHead>
@@ -688,15 +711,32 @@ function AccountantReports(props: {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {einvQ.data!.slice(0, 200).map((r, i) => (
-                  <TableRow key={`${r.full_number}-${i}`}>
+                {einvQ.data!.slice(0, 200).map((r, i) => {
+                  const isNC = r.document_type === "credit_note";
+                  const isND = r.document_type === "debit_note";
+                  const sign = docSign(r.document_type);
+                  return (
+                  <TableRow key={`${r.full_number}-${i}`} className={isNC ? "bg-red-50/30" : isND ? "bg-amber-50/30" : ""}>
                     <TableCell className="text-xs whitespace-nowrap">{r.issue_date}</TableCell>
-                    <TableCell className="font-mono text-xs">{r.full_number}</TableCell>
+                    <TableCell>
+                      {isNC ? <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">NC</Badge>
+                        : isND ? <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">ND</Badge>
+                        : <Badge variant="outline">FV</Badge>}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      <div>{r.full_number}</div>
+                      {r.reference_full_number && (
+                        <div className="text-[10px] text-muted-foreground">
+                          ↳ Ref: {r.reference_full_number}
+                          {r.note_concept_code && <span className="ml-1">· cod {r.note_concept_code}</span>}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm max-w-[180px] truncate">{r.customer_name ?? "—"}</TableCell>
                     <TableCell className="font-mono text-xs">{r.customer_identification ?? "—"}</TableCell>
-                    <TableCell className="text-right font-mono text-xs">{fmt(Number(r.subtotal))}</TableCell>
-                    <TableCell className="text-right font-mono text-xs">{fmt(Number(r.tax_total))}</TableCell>
-                    <TableCell className="text-right font-mono text-xs font-medium">{fmt(Number(r.total))}</TableCell>
+                    <TableCell className="text-right font-mono text-xs">{sign < 0 ? "−" : ""}{fmt(Number(r.subtotal))}</TableCell>
+                    <TableCell className="text-right font-mono text-xs">{sign < 0 ? "−" : ""}{fmt(Number(r.tax_total))}</TableCell>
+                    <TableCell className="text-right font-mono text-xs font-medium">{sign < 0 ? "−" : ""}{fmt(Number(r.total))}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={STATUS_TONE[r.status] ?? ""}>{r.status}</Badge>
                     </TableCell>
@@ -704,7 +744,8 @@ function AccountantReports(props: {
                       {r.cufe ? r.cufe.slice(0, 16) + "…" : "—"}
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
             {einvQ.data!.length > 200 && (
