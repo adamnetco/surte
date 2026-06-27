@@ -8350,12 +8350,16 @@ export type Database = {
         Row: {
           amount: number
           attempt_count: number
+          checkout_url: string | null
           created_at: string
           currency: string
           due_date: string
           external_id: string | null
           id: string
           last_error: string | null
+          last_retry_at: string | null
+          max_attempts: number
+          next_retry_at: string | null
           organization_id: string
           paid_at: string | null
           payment_method: Json | null
@@ -8370,12 +8374,16 @@ export type Database = {
         Insert: {
           amount?: number
           attempt_count?: number
+          checkout_url?: string | null
           created_at?: string
           currency?: string
           due_date: string
           external_id?: string | null
           id?: string
           last_error?: string | null
+          last_retry_at?: string | null
+          max_attempts?: number
+          next_retry_at?: string | null
           organization_id: string
           paid_at?: string | null
           payment_method?: Json | null
@@ -8390,12 +8398,16 @@ export type Database = {
         Update: {
           amount?: number
           attempt_count?: number
+          checkout_url?: string | null
           created_at?: string
           currency?: string
           due_date?: string
           external_id?: string | null
           id?: string
           last_error?: string | null
+          last_retry_at?: string | null
+          max_attempts?: number
+          next_retry_at?: string | null
           organization_id?: string
           paid_at?: string | null
           payment_method?: Json | null
