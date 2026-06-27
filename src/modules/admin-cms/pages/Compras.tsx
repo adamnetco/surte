@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Truck, FileText, Link2, Star, Trash2, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
+import PurchaseSuggestionsSheet from "@/modules/admin-cms/components/PurchaseSuggestionsSheet";
 
 export default function Compras() {
   const { user, role, loading } = useAuth();
@@ -311,10 +312,12 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
 
   return (
     <Card className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-sm text-muted-foreground">{pos?.length ?? 0} órdenes recientes</p>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Nueva OC</Button></DialogTrigger>
+        <div className="flex items-center gap-2">
+          <PurchaseSuggestionsSheet orgId={orgId} warehouseId={warehouses?.[0]?.id} />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Nueva OC</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Nueva orden de compra</DialogTitle></DialogHeader>
             <div className="space-y-3">
@@ -329,8 +332,9 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
               <div><Label>Notas</Label><Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
               <Button onClick={create} className="w-full">Crear borrador</Button>
             </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Table>

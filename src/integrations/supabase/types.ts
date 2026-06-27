@@ -9795,6 +9795,27 @@ export type Database = {
         Args: { p_domain_id: string }
         Returns: undefined
       }
+      suggest_purchase_orders: {
+        Args: {
+          _coverage_days?: number
+          _lookback_days?: number
+          _organization_id: string
+        }
+        Returns: {
+          avg_daily_sales: number
+          current_stock: number
+          estimated_total: number
+          pack_size: number
+          product_id: string
+          product_name: string
+          product_sku: string
+          reorder_point: number
+          suggested_qty: number
+          supplier_id: string
+          supplier_name: string
+          unit_cost: number
+        }[]
+      }
       superadmin_purge_obsolete_overrides: {
         Args: { _organization_id: string }
         Returns: {
