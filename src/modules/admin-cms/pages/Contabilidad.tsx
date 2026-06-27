@@ -9,7 +9,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookOpen, Layers, Calendar, RefreshCw } from "lucide-react";
+import { BookOpen, Layers, Calendar, RefreshCw, BarChart3 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 
@@ -47,6 +49,47 @@ export default function Contabilidad() {
   const orgId = currentOrg?.id ?? "";
   const navigate = useNavigate();
   const [tab, setTab] = useState("accounts");
+  const today = new Date().toISOString().slice(0, 10);
+  const firstOfMonth = today.slice(0, 8) + "01";
+  const [from, setFrom] = useState(firstOfMonth);
+  const [to, setTo] = useState(today);
+  const fmt = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
+
+  const trialQ = useQuery({
+    queryKey: ["trial_balance", orgId, from, to],
+    enabled: !!orgId && tab === "reports",
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("report_trial_balance" as any, {
+        _org: orgId, _from: from, _to: to,
+      });
+      if (error) throw error;
+      return (data ?? []) as Array<{ code: string; name: string; type: string; debit_total: number; credit_total: number; balance: number }>;
+    },
+  });
+
+  const plQ = useQuery({
+    queryKey: ["pl", orgId, from, to],
+    enabled: !!orgId && tab === "reports",
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("report_income_statement" as any, {
+        _org: orgId, _from: from, _to: to,
+      });
+      if (error) throw error;
+      return data as { revenue: number; cogs: number; gross_profit: number; expenses: number; net_income: number };
+    },
+  });
+
+  const bsQ = useQuery({
+    queryKey: ["bs", orgId, to],
+    enabled: !!orgId && tab === "reports",
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("report_balance_sheet" as any, {
+        _org: orgId, _as_of: to,
+      });
+      if (error) throw error;
+      return data as { assets: number; liabilities: number; equity: number; net_income: number; balanced: boolean };
+    },
+  });
 
   useEffect(() => {
     if (!loading && !user) { toast.error("Acceso denegado"); navigate("/login"); }
@@ -131,6 +174,7 @@ export default function Contabilidad() {
           <TabsList>
             <TabsTrigger value="accounts"><Layers className="w-4 h-4 mr-1" />Plan de cuentas</TabsTrigger>
             <TabsTrigger value="journal"><BookOpen className="w-4 h-4 mr-1" />Libro diario</TabsTrigger>
+            <TabsTrigger value="reports"><BarChart3 className="w-4 h-4 mr-1" />Reportes</TabsTrigger>
             <TabsTrigger value="periods"><Calendar className="w-4 h-4 mr-1" />Períodos</TabsTrigger>
           </TabsList>
 
@@ -219,6 +263,100 @@ export default function Contabilidad() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+            </Card>
+          </TabsContent>
+
+          {/* Reportes financieros */}
+          <TabsContent value="reports" className="space-y-3 mt-4">
+            <Card className="p-4">
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Desde</label>
+                  <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Hasta / Corte</label>
+                  <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
+                </div>
+                <Button variant="outline" size="sm" onClick={() => { trialQ.refetch(); plQ.refetch(); bsQ.refetch(); }}>
+                  <RefreshCw className="w-3 h-3 mr-1" />Recalcular
+                </Button>
+              </div>
+            </Card>
+
+            {/* P&L + Balance Sheet KPI cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />Estado de Resultados
+                </h3>
+                {plQ.isLoading || !plQ.data ? <Skeleton className="h-32 w-full" /> : (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span>Ingresos</span><span className="font-mono text-green-700">{fmt(plQ.data.revenue)}</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>(−) Costo de ventas</span><span className="font-mono">{fmt(plQ.data.cogs)}</span></div>
+                    <div className="flex justify-between border-t pt-1 font-medium"><span>Utilidad bruta</span><span className="font-mono">{fmt(plQ.data.gross_profit)}</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>(−) Gastos</span><span className="font-mono">{fmt(plQ.data.expenses)}</span></div>
+                    <div className={`flex justify-between border-t pt-2 font-bold ${plQ.data.net_income >= 0 ? "text-green-700" : "text-red-700"}`}>
+                      <span>Utilidad neta</span><span className="font-mono">{fmt(plQ.data.net_income)}</span>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Layers className="w-4 h-4" />Balance General (al {to})
+                </h3>
+                {bsQ.isLoading || !bsQ.data ? <Skeleton className="h-32 w-full" /> : (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span>Activos</span><span className="font-mono text-blue-700">{fmt(bsQ.data.assets)}</span></div>
+                    <div className="flex justify-between"><span>Pasivos</span><span className="font-mono text-amber-700">{fmt(bsQ.data.liabilities)}</span></div>
+                    <div className="flex justify-between"><span>Patrimonio</span><span className="font-mono text-purple-700">{fmt(bsQ.data.equity)}</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>Utilidad del ejercicio</span><span className="font-mono">{fmt(bsQ.data.net_income)}</span></div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span>Ecuación contable</span>
+                      <Badge variant={bsQ.data.balanced ? "default" : "destructive"}>
+                        {bsQ.data.balanced ? "Cuadra ✓" : "Descuadrada"}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+
+            {/* Trial Balance */}
+            <Card className="p-4">
+              <h3 className="font-semibold mb-3">Balance de Comprobación</h3>
+              {trialQ.isLoading ? (
+                <Skeleton className="h-40 w-full" />
+              ) : (trialQ.data?.length ?? 0) === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Sin movimientos en el rango seleccionado.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Cuenta</TableHead>
+                        <TableHead className="text-right">Débitos</TableHead>
+                        <TableHead className="text-right">Créditos</TableHead>
+                        <TableHead className="text-right">Saldo</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {trialQ.data!.filter((r) => Number(r.debit_total) + Number(r.credit_total) > 0).map((r) => (
+                        <TableRow key={r.code}>
+                          <TableCell className="font-mono text-xs">{r.code}</TableCell>
+                          <TableCell className="text-sm">{r.name}</TableCell>
+                          <TableCell className="text-right font-mono text-xs">{fmt(Number(r.debit_total))}</TableCell>
+                          <TableCell className="text-right font-mono text-xs">{fmt(Number(r.credit_total))}</TableCell>
+                          <TableCell className="text-right font-mono text-xs font-medium">{fmt(Number(r.balance))}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </Card>
           </TabsContent>
