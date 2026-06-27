@@ -270,7 +270,7 @@ function SupplierCatalogTab({ orgId, qc }: { orgId: string; qc: any }) {
 function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>({ supplier_id: "", po_code: "", expected_at: "", notes: "" });
-  const [selected, setSelected] = useState<any | null>(null);
+  const [receivePoId, setReceivePoId] = useState<string | null>(null);
 
   const { data: pos } = useQuery({
     queryKey: ["purchase-orders", orgId],
@@ -302,14 +302,6 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
     qc.invalidateQueries({ queryKey: ["purchase-orders", orgId] });
   };
 
-  const receive = async (po: any) => {
-    const wh = warehouses?.[0]?.id;
-    if (!wh) return toast.error("Crea una bodega primero");
-    const { data, error } = await supabase.rpc("receive_purchase_order", { _po_id: po.id, _warehouse_id: wh });
-    if (error) return toast.error(error.message);
-    toast.success(`Recibido: ${(data as any)?.applied ?? 0} líneas`);
-    qc.invalidateQueries({ queryKey: ["purchase-orders", orgId] });
-  };
 
   return (
     <Card className="p-4 space-y-4">
