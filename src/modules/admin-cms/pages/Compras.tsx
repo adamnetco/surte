@@ -17,6 +17,7 @@ import { Plus, Truck, FileText, Link2, Star, Trash2, PackageCheck } from "lucide
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import PurchaseSuggestionsSheet from "@/modules/admin-cms/components/PurchaseSuggestionsSheet";
+import ReceivePOSheet from "@/modules/admin-cms/components/ReceivePOSheet";
 
 export default function Compras() {
   const { user, role, loading } = useAuth();
@@ -269,7 +270,7 @@ function SupplierCatalogTab({ orgId, qc }: { orgId: string; qc: any }) {
 function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>({ supplier_id: "", po_code: "", expected_at: "", notes: "" });
-  const [selected, setSelected] = useState<any | null>(null);
+  const [receivePoId, setReceivePoId] = useState<string | null>(null);
 
   const { data: pos } = useQuery({
     queryKey: ["purchase-orders", orgId],
@@ -301,14 +302,6 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
     qc.invalidateQueries({ queryKey: ["purchase-orders", orgId] });
   };
 
-  const receive = async (po: any) => {
-    const wh = warehouses?.[0]?.id;
-    if (!wh) return toast.error("Crea una bodega primero");
-    const { data, error } = await supabase.rpc("receive_purchase_order", { _po_id: po.id, _warehouse_id: wh });
-    if (error) return toast.error(error.message);
-    toast.success(`Recibido: ${(data as any)?.applied ?? 0} líneas`);
-    qc.invalidateQueries({ queryKey: ["purchase-orders", orgId] });
-  };
 
   return (
     <Card className="p-4 space-y-4">
@@ -353,7 +346,7 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
               <TableCell><Badge variant={p.status === "received" ? "default" : "secondary"}>{p.status}</Badge></TableCell>
               <TableCell>
                 {p.status !== "received" && (
-                  <Button size="sm" variant="outline" onClick={() => receive(p)}><PackageCheck className="w-4 h-4 mr-1" />Recibir</Button>
+                  <Button size="sm" variant="outline" onClick={() => setReceivePoId(p.id)}><PackageCheck className="w-4 h-4 mr-1" />Recibir</Button>
                 )}
               </TableCell>
             </TableRow>
@@ -361,6 +354,14 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
           {!pos?.length && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aún no hay órdenes de compra.</TableCell></TableRow>}
         </TableBody>
       </Table>
+
+      <ReceivePOSheet
+        open={!!receivePoId}
+        onOpenChange={(o) => !o && setReceivePoId(null)}
+        poId={receivePoId}
+        orgId={orgId}
+        warehouseId={warehouses?.[0]?.id}
+      />
     </Card>
   );
 }
