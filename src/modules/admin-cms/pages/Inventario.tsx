@@ -35,6 +35,7 @@ export default function Inventario() {
   const [kardex, setKardex] = useState<{ productId: string; name: string } | null>(null);
   const [criticalOpen, setCriticalOpen] = useState(false);
   const [countOpen, setCountOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
 
   useEffect(() => {
     if (!currentOrg) return;
