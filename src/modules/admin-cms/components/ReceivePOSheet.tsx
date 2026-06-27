@@ -462,8 +462,30 @@ export default function ReceivePOSheet({ open, onOpenChange, poId, orgId, wareho
           })}
         </div>
 
-        <div className="sticky bottom-0 bg-background border-t p-4">
-          <div className="flex justify-between text-sm mb-2">
+        <div className="sticky bottom-0 bg-background border-t p-4 space-y-3">
+          {poMeta?.ds_required && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="font-semibold text-amber-900">Documento Soporte DIAN requerido</div>
+                  <div className="text-xs text-amber-800">
+                    {poMeta.ds_invoice_id
+                      ? `Emitido ${poMeta.ds_emitted_at ? new Date(poMeta.ds_emitted_at).toLocaleString() : ""}`
+                      : "Proveedor no obligado a facturar electrónicamente."}
+                  </div>
+                </div>
+                {!poMeta.ds_invoice_id && (
+                  <Button size="sm" variant="default" onClick={emitDs} disabled={emittingDs}>
+                    {emittingDs ? "Emitiendo…" : "Emitir DS"}
+                  </Button>
+                )}
+                {poMeta.ds_invoice_id && (
+                  <Badge variant="secondary">DS emitido</Badge>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Unidades a recibir</span>
             <strong>{totalSelected}</strong>
           </div>
