@@ -2,6 +2,7 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AdminMobileDrawer from "./AdminMobileDrawer";
 import SmartAlertsBell from "./SmartAlertsBell";
+import { LocationSwitcher } from "@/modules/platform/components/LocationSwitcher";
 
 const AdminHeader = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const AdminHeader = () => {
         </h1>
         <p className="text-[10px] text-white/60 font-medium">Panel de Administración</p>
       </div>
+      <LocationSwitcher compact />
       <SmartAlertsBell />
       <button
         onClick={() => window.location.reload()}
