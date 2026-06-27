@@ -200,13 +200,20 @@ const ContactsTab = () => {
             <p className="text-sm text-muted-foreground text-center py-12">Selecciona un contacto para ver su historial.</p>
           ) : (
             <div className="space-y-3">
-              <div>
-                <h3 className="font-semibold">{(selected as any).full_name || (selected as any).name}</h3>
-                <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
-                  {(selected as any).phone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{(selected as any).phone}</div>}
-                  {(selected as any).email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{(selected as any).email}</div>}
-                  {(selected as any).city && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{(selected as any).city}</div>}
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="font-semibold">{(selected as any).full_name || (selected as any).name}</h3>
+                  <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
+                    {(selected as any).phone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{(selected as any).phone}</div>}
+                    {(selected as any).email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{(selected as any).email}</div>}
+                    {(selected as any).city && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{(selected as any).city}</div>}
+                  </div>
                 </div>
+                {tab === "customers" && (
+                  <Button size="sm" variant="outline" onClick={() => setOpen360(true)} className="gap-1 shrink-0">
+                    <BarChart3 className="h-3.5 w-3.5" /> Ficha 360°
+                  </Button>
+                )}
               </div>
 
               {tab === "customers" && (
