@@ -540,3 +540,59 @@ const Reportes = () => {
 };
 
 export default Reportes;
+
+function LocationsSection({ orgId, from, to }: { orgId?: string | null; from: Date; to: Date }) {
+  const { data, isLoading } = useSalesByLocation({ orgId, from, to });
+  const rows = data ?? [];
+  const total = rows.reduce((s, r) => s + r.gross, 0);
+
+  if (!isLoading && rows.length <= 1) return null;
+
+  return (
+    <section aria-label="Ventas por sucursal">
+      <Card className="p-4 border-border/60">
+        <div className="flex items-center gap-2 mb-3">
+          <Store className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">Comparativo por sucursal</h2>
+          <span className="ml-auto text-xs text-muted-foreground">
+            {rows.length} sucursales
+          </span>
+        </div>
+        {isLoading ? (
+          <Skeleton className="h-40 w-full" />
+        ) : (
+          <div className="space-y-2">
+            {rows.map((r) => {
+              const share = total > 0 ? (r.gross / total) * 100 : 0;
+              return (
+                <div
+                  key={r.location_id ?? "none"}
+                  className="rounded-lg border border-border/60 p-3 hover:bg-muted/40 transition"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm truncate">{r.location_name}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {r.tickets.toLocaleString("es-CO")} tickets · Tkt prom {cop(r.avg_ticket)}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-sm tabular-nums">{cop(r.gross)}</div>
+                      <div className="text-[11px] text-muted-foreground">{share.toFixed(1)}% del total</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-primary"
+                      style={{ width: `${Math.min(100, share)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+    </section>
+  );
+}
