@@ -241,7 +241,6 @@ const App = () => (
             <DevBypassBanner />
             <TenantSuspendedBanner />
             <SubscriptionStatusBanner />
-            <ApproachingLimitBanner />
 
             <GlobalErrorListeners />
             <Suspense fallback={null}><SSOErrorScreen /></Suspense>
