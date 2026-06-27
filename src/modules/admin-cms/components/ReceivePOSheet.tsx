@@ -361,6 +361,42 @@ export default function ReceivePOSheet({ open, onOpenChange, poId, orgId, wareho
                   </div>
                 </div>
 
+                {it.product_id && warehouseId && (
+                  <div className="mt-2 rounded-md border border-dashed border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-2">
+                    <div className="flex items-center justify-between text-[11px] mb-1">
+                      <span className="flex items-center gap-1 text-amber-700 dark:text-amber-300">
+                        <Scale className="w-3 h-3" /> Stock actual en bodega
+                      </span>
+                      <strong className="text-amber-900 dark:text-amber-200">
+                        {stockMap?.[it.product_id] ?? 0}
+                      </strong>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="any"
+                        placeholder="Conteo real ahora…"
+                        value={adjustTo[it.id] ?? ""}
+                        onChange={(e) => setAdjustTo((p) => ({ ...p, [it.id]: e.target.value }))}
+                        className="h-8 text-xs"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs whitespace-nowrap"
+                        disabled={adjustingId === it.id || !adjustTo[it.id]}
+                        onClick={() => applyPreAdjust(it)}
+                      >
+                        {adjustingId === it.id ? "…" : "Ajustar"}
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Corrige merma/faltantes antes de sumar la factura.
+                    </p>
+                  </div>
+                )}
+
                 {!fullyReceived && (
                   <div className="flex items-center gap-2 mt-3">
                     <Button size="icon" variant="outline" onClick={() => incrementItem(it.id, -1)} className="h-9 w-9">
