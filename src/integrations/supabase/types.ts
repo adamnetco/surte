@@ -1809,6 +1809,80 @@ export type Database = {
           },
         ]
       }
+      customer_segments: {
+        Row: {
+          computed_at: string
+          f_score: number | null
+          frequency: number
+          id: string
+          last_purchase_at: string | null
+          m_score: number | null
+          monetary: number
+          organization_id: string
+          profile_id: string
+          r_score: number | null
+          recency_days: number | null
+          segment: string
+        }
+        Insert: {
+          computed_at?: string
+          f_score?: number | null
+          frequency?: number
+          id?: string
+          last_purchase_at?: string | null
+          m_score?: number | null
+          monetary?: number
+          organization_id: string
+          profile_id: string
+          r_score?: number | null
+          recency_days?: number | null
+          segment: string
+        }
+        Update: {
+          computed_at?: string
+          f_score?: number | null
+          frequency?: number
+          id?: string
+          last_purchase_at?: string | null
+          m_score?: number | null
+          monetary?: number
+          organization_id?: string
+          profile_id?: string
+          r_score?: number | null
+          recency_days?: number | null
+          segment?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_segments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_segments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "customer_segments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "customer_segments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_checklist: {
         Row: {
           created_at: string
@@ -9706,6 +9780,7 @@ export type Database = {
         Args: { _lines: Json; _po_id: string; _warehouse_id: string }
         Returns: Json
       }
+      recompute_rfm: { Args: { p_organization_id: string }; Returns: Json }
       record_health_event: {
         Args: {
           p_correlation_id?: string
