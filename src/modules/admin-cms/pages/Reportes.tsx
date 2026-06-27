@@ -459,8 +459,9 @@ const Reportes = () => {
         <ReportesDetail orgId={currentOrg?.id} from={range.from} to={range.to} />
 
         <p className="text-[11px] text-muted-foreground text-center">
-          Próximo slice: exportación CSV / XLSX.
+          Exportaciones disponibles en Excel y CSV · Datos del rango seleccionado.
         </p>
+
       </div>
     </main>
   );
