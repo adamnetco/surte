@@ -663,20 +663,31 @@ function AccountantReports(props: {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mb-3 text-xs">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3 text-xs">
           <div className="rounded-lg border border-gray-100 p-2">
-            <div className="text-muted-foreground">Subtotal</div>
+            <div className="text-muted-foreground">Subtotal bruto</div>
             <div className="font-mono font-semibold">{fmt(einvTotals.sub)}</div>
           </div>
           <div className="rounded-lg border border-gray-100 p-2">
-            <div className="text-muted-foreground">IVA</div>
+            <div className="text-muted-foreground">IVA bruto</div>
             <div className="font-mono font-semibold">{fmt(einvTotals.tax)}</div>
           </div>
           <div className="rounded-lg border border-gray-100 p-2">
-            <div className="text-muted-foreground">Total</div>
-            <div className="font-mono font-semibold text-primary">{fmt(einvTotals.tot)}</div>
+            <div className="text-muted-foreground">Total bruto</div>
+            <div className="font-mono font-semibold">{fmt(einvTotals.tot)}</div>
+          </div>
+          <div className="rounded-lg border border-red-100 bg-red-50/40 p-2">
+            <div className="text-red-700">− Notas crédito</div>
+            <div className="font-mono font-semibold text-red-700">{fmt(einvTotals.notes)}</div>
+          </div>
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
+            <div className="text-primary">Total neto</div>
+            <div className="font-mono font-semibold text-primary">{fmt(einvTotals.totNet)}</div>
           </div>
         </div>
+        <p className="text-[11px] text-muted-foreground mb-2">
+          El <strong>Total neto</strong> resta las Notas Crédito aceptadas. Las Notas Débito suman. Este es el valor que conciliará tu contador con la declaración de IVA.
+        </p>
 
         {einvQ.isLoading ? (
           <Skeleton className="h-40 w-full" />
