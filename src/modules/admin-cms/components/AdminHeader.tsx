@@ -1,6 +1,7 @@
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AdminMobileDrawer from "./AdminMobileDrawer";
+import SmartAlertsBell from "./SmartAlertsBell";
 
 const AdminHeader = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ const AdminHeader = () => {
         </h1>
         <p className="text-[10px] text-white/60 font-medium">Panel de Administración</p>
       </div>
+      <SmartAlertsBell />
       <button
         onClick={() => window.location.reload()}
         className="text-white/60 hover:text-white transition-colors p-1"
