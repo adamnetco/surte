@@ -360,7 +360,16 @@ export default function FxFraudPage() {
             </Button>
           </div>
 
-          {rulesQ.isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
+          {rulesQ.isLoading && (
+            <div className="space-y-2" aria-busy="true" aria-live="polite">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={`sk-r-${i}`}><CardContent className="p-4 flex items-center justify-between gap-3">
+                  <div className="space-y-2 flex-1"><Skeleton className="h-4 w-48" /><Skeleton className="h-3 w-72 max-w-full" /></div>
+                  <Skeleton className="h-6 w-11 rounded-full" />
+                </CardContent></Card>
+              ))}
+            </div>
+          )}
           {!rulesQ.isLoading && rules.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
