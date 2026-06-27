@@ -49,6 +49,47 @@ export default function Contabilidad() {
   const orgId = currentOrg?.id ?? "";
   const navigate = useNavigate();
   const [tab, setTab] = useState("accounts");
+  const today = new Date().toISOString().slice(0, 10);
+  const firstOfMonth = today.slice(0, 8) + "01";
+  const [from, setFrom] = useState(firstOfMonth);
+  const [to, setTo] = useState(today);
+  const fmt = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
+
+  const trialQ = useQuery({
+    queryKey: ["trial_balance", orgId, from, to],
+    enabled: !!orgId && tab === "reports",
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("report_trial_balance" as any, {
+        _org: orgId, _from: from, _to: to,
+      });
+      if (error) throw error;
+      return (data ?? []) as Array<{ code: string; name: string; type: string; debit_total: number; credit_total: number; balance: number }>;
+    },
+  });
+
+  const plQ = useQuery({
+    queryKey: ["pl", orgId, from, to],
+    enabled: !!orgId && tab === "reports",
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("report_income_statement" as any, {
+        _org: orgId, _from: from, _to: to,
+      });
+      if (error) throw error;
+      return data as { revenue: number; cogs: number; gross_profit: number; expenses: number; net_income: number };
+    },
+  });
+
+  const bsQ = useQuery({
+    queryKey: ["bs", orgId, to],
+    enabled: !!orgId && tab === "reports",
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("report_balance_sheet" as any, {
+        _org: orgId, _as_of: to,
+      });
+      if (error) throw error;
+      return data as { assets: number; liabilities: number; equity: number; net_income: number; balanced: boolean };
+    },
+  });
 
   useEffect(() => {
     if (!loading && !user) { toast.error("Acceso denegado"); navigate("/login"); }
