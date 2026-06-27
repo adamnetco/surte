@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Truck, FileText, Link2, Star, Trash2, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
+import PurchaseSuggestionsSheet from "@/modules/admin-cms/components/PurchaseSuggestionsSheet";
 
 export default function Compras() {
   const { user, role, loading } = useAuth();
