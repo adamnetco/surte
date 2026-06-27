@@ -10366,6 +10366,24 @@ export type Database = {
       }
       rematch_invoice_scan: { Args: { _scan_id: string }; Returns: Json }
       reopen_fiscal_period: { Args: { _id: string }; Returns: undefined }
+      report_account_ledger: {
+        Args: {
+          _account_code: string
+          _from: string
+          _org_id: string
+          _to: string
+        }
+        Returns: {
+          credit: number
+          debit: number
+          entry_date: string
+          entry_id: string
+          narration: string
+          reference_id: string
+          reference_type: string
+          running_balance: number
+        }[]
+      }
       report_balance_sheet: {
         Args: { _as_of: string; _org: string }
         Returns: Json
@@ -10378,6 +10396,32 @@ export type Database = {
           cashier_name: string
           gross: number
           tickets: number
+        }[]
+      }
+      report_einvoices_for_accountant: {
+        Args: {
+          _doc_type?: string
+          _from: string
+          _org_id: string
+          _to: string
+        }
+        Returns: {
+          cufe: string
+          customer_email: string
+          customer_identification: string
+          customer_name: string
+          document_type: string
+          environment: string
+          full_number: string
+          is_contingency: boolean
+          issue_date: string
+          pdf_url: string
+          status: string
+          subtotal: number
+          tax_total: number
+          total: number
+          track_id: string
+          xml_url: string
         }[]
       }
       report_income_statement: {
@@ -10446,6 +10490,16 @@ export type Database = {
           name: string
           nature: string
           type: string
+        }[]
+      }
+      report_vat_summary: {
+        Args: { _from: string; _org_id: string; _to: string }
+        Returns: {
+          base_amount: number
+          tax_amount: number
+          tax_rate: number
+          ticket_count: number
+          total_amount: number
         }[]
       }
       request_critical_action: {

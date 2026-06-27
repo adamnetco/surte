@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
-import { exportSiigoCSV, exportAlegraCSV, printFinancialStatements } from "@/modules/admin-cms/lib/accountingExports";
+import { exportSiigoCSV, exportAlegraCSV, printFinancialStatements, exportEInvoicesXLSX, exportVatSummaryXLSX, exportAccountLedgerXLSX, type EInvoiceRow, type VatRow, type LedgerRow } from "@/modules/admin-cms/lib/accountingExports";
+import { FileText, Receipt, Search } from "lucide-react";
 
 type Account = {
   id: string;
@@ -177,6 +178,7 @@ export default function Contabilidad() {
             <TabsTrigger value="journal"><BookOpen className="w-4 h-4 mr-1" />Libro diario</TabsTrigger>
             <TabsTrigger value="reports"><BarChart3 className="w-4 h-4 mr-1" />Reportes</TabsTrigger>
             <TabsTrigger value="periods"><Calendar className="w-4 h-4 mr-1" />Períodos</TabsTrigger>
+            <TabsTrigger value="accountant"><FileText className="w-4 h-4 mr-1" />Para contador</TabsTrigger>
           </TabsList>
 
           {/* Plan de cuentas */}
@@ -436,6 +438,20 @@ export default function Contabilidad() {
               )}
             </Card>
           </TabsContent>
+
+          {/* Reportes para el contador (DIAN / IVA / Libro auxiliar) */}
+          <TabsContent value="accountant" className="space-y-3 mt-4">
+            <AccountantReports
+              orgId={orgId}
+              orgName={currentOrg?.name ?? "Organización"}
+              from={from}
+              to={to}
+              setFrom={setFrom}
+              setTo={setTo}
+              accounts={accounts}
+              fmt={fmt}
+            />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -514,4 +530,309 @@ function YearCloseButton({ orgId, onDone }: { orgId: string; onDone: () => void 
     onDone();
   };
   return <Button size="sm" variant="outline" onClick={run} disabled={loading}>Cierre de ejercicio…</Button>;
+}
+
+// ============ Reportes para el contador ============
+const STATUS_TONE: Record<string, string> = {
+  accepted: "bg-green-50 text-green-700 border-green-200",
+  sent: "bg-blue-50 text-blue-700 border-blue-200",
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  sending: "bg-amber-50 text-amber-700 border-amber-200",
+  retrying: "bg-amber-50 text-amber-700 border-amber-200",
+  rejected: "bg-red-50 text-red-700 border-red-200",
+  error: "bg-red-50 text-red-700 border-red-200",
+  dead_letter: "bg-red-100 text-red-800 border-red-300",
+  void: "bg-gray-100 text-gray-700 border-gray-200",
+};
+
+function AccountantReports(props: {
+  orgId: string; orgName: string;
+  from: string; to: string;
+  setFrom: (s: string) => void; setTo: (s: string) => void;
+  accounts: Account[];
+  fmt: (n: number) => string;
+}) {
+  const { orgId, orgName, from, to, setFrom, setTo, accounts, fmt } = props;
+  const [docType, setDocType] = useState<string>("");
+  const [accountCode, setAccountCode] = useState<string>(accounts[0]?.code ?? "");
+
+  const einvQ = useQuery({
+    queryKey: ["acc_einv", orgId, from, to, docType],
+    enabled: !!orgId,
+    queryFn: async (): Promise<EInvoiceRow[]> => {
+      const { data, error } = await supabase.rpc("report_einvoices_for_accountant" as any, {
+        _org_id: orgId, _from: from, _to: to, _doc_type: docType || null,
+      });
+      if (error) throw error;
+      return (data ?? []) as EInvoiceRow[];
+    },
+  });
+
+  const vatQ = useQuery({
+    queryKey: ["acc_vat", orgId, from, to],
+    enabled: !!orgId,
+    queryFn: async (): Promise<VatRow[]> => {
+      const { data, error } = await supabase.rpc("report_vat_summary" as any, {
+        _org_id: orgId, _from: from, _to: to,
+      });
+      if (error) throw error;
+      return (data ?? []) as VatRow[];
+    },
+  });
+
+  const ledgerQ = useQuery({
+    queryKey: ["acc_ledger", orgId, accountCode, from, to],
+    enabled: !!orgId && !!accountCode,
+    queryFn: async (): Promise<LedgerRow[]> => {
+      const { data, error } = await supabase.rpc("report_account_ledger" as any, {
+        _org_id: orgId, _account_code: accountCode, _from: from, _to: to,
+      });
+      if (error) throw error;
+      return (data ?? []) as LedgerRow[];
+    },
+  });
+
+  const einvTotals = (einvQ.data ?? []).reduce(
+    (a, r) => ({ sub: a.sub + Number(r.subtotal || 0), tax: a.tax + Number(r.tax_total || 0), tot: a.tot + Number(r.total || 0) }),
+    { sub: 0, tax: 0, tot: 0 }
+  );
+  const vatTotals = (vatQ.data ?? []).reduce(
+    (a, r) => ({ base: a.base + Number(r.base_amount || 0), iva: a.iva + Number(r.tax_amount || 0) }),
+    { base: 0, iva: 0 }
+  );
+  const accName = accounts.find((a) => a.code === accountCode)?.name ?? "";
+
+  return (
+    <div className="space-y-3">
+      {/* Filtros globales */}
+      <Card className="p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Desde</label>
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Hasta</label>
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
+          </div>
+          <Button variant="outline" size="sm" onClick={() => { einvQ.refetch(); vatQ.refetch(); ledgerQ.refetch(); }}>
+            <RefreshCw className="w-3 h-3 mr-1" />Actualizar
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Estos reportes son los que tu contador necesita para presentar la declaración del IVA y conciliar las facturas emitidas a la DIAN.
+        </p>
+      </Card>
+
+      {/* Facturas DIAN */}
+      <Card className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Receipt className="w-4 h-4" />Facturas Electrónicas DIAN
+            <Badge variant="outline">{einvQ.data?.length ?? 0}</Badge>
+          </h3>
+          <div className="flex items-center gap-2">
+            <select
+              value={docType}
+              onChange={(e) => setDocType(e.target.value)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              <option value="">Todos los documentos</option>
+              <option value="invoice">Facturas</option>
+              <option value="credit_note">Notas crédito</option>
+              <option value="debit_note">Notas débito</option>
+              <option value="support_document">Doc. soporte</option>
+            </select>
+            <Button size="sm" variant="outline" disabled={!einvQ.data?.length} onClick={() => {
+              exportEInvoicesXLSX({ orgName, from, to, rows: einvQ.data ?? [] });
+              toast.success("Excel descargado");
+            }}>
+              <FileDown className="w-3 h-3 mr-1" />Excel
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mb-3 text-xs">
+          <div className="rounded-lg border border-gray-100 p-2">
+            <div className="text-muted-foreground">Subtotal</div>
+            <div className="font-mono font-semibold">{fmt(einvTotals.sub)}</div>
+          </div>
+          <div className="rounded-lg border border-gray-100 p-2">
+            <div className="text-muted-foreground">IVA</div>
+            <div className="font-mono font-semibold">{fmt(einvTotals.tax)}</div>
+          </div>
+          <div className="rounded-lg border border-gray-100 p-2">
+            <div className="text-muted-foreground">Total</div>
+            <div className="font-mono font-semibold text-primary">{fmt(einvTotals.tot)}</div>
+          </div>
+        </div>
+
+        {einvQ.isLoading ? (
+          <Skeleton className="h-40 w-full" />
+        ) : (einvQ.data?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">Sin facturas emitidas en el rango.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Número</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>NIT/CC</TableHead>
+                  <TableHead className="text-right">Base</TableHead>
+                  <TableHead className="text-right">IVA</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>CUFE</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {einvQ.data!.slice(0, 200).map((r, i) => (
+                  <TableRow key={`${r.full_number}-${i}`}>
+                    <TableCell className="text-xs whitespace-nowrap">{r.issue_date}</TableCell>
+                    <TableCell className="font-mono text-xs">{r.full_number}</TableCell>
+                    <TableCell className="text-sm max-w-[180px] truncate">{r.customer_name ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{r.customer_identification ?? "—"}</TableCell>
+                    <TableCell className="text-right font-mono text-xs">{fmt(Number(r.subtotal))}</TableCell>
+                    <TableCell className="text-right font-mono text-xs">{fmt(Number(r.tax_total))}</TableCell>
+                    <TableCell className="text-right font-mono text-xs font-medium">{fmt(Number(r.total))}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={STATUS_TONE[r.status] ?? ""}>{r.status}</Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-[10px] max-w-[120px] truncate" title={r.cufe ?? ""}>
+                      {r.cufe ? r.cufe.slice(0, 16) + "…" : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {einvQ.data!.length > 200 && (
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Mostrando 200 de {einvQ.data!.length}. Descarga el Excel para el listado completo.
+              </p>
+            )}
+          </div>
+        )}
+      </Card>
+
+      {/* Resumen de IVA */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />Resumen de IVA por tarifa
+          </h3>
+          <Button size="sm" variant="outline" disabled={!vatQ.data?.length} onClick={() => {
+            exportVatSummaryXLSX({ orgName, from, to, rows: vatQ.data ?? [] });
+            toast.success("Excel descargado");
+          }}>
+            <FileDown className="w-3 h-3 mr-1" />Excel
+          </Button>
+        </div>
+        {vatQ.isLoading ? (
+          <Skeleton className="h-24 w-full" />
+        ) : (vatQ.data?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">Sin ventas en el rango.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tarifa</TableHead>
+                <TableHead className="text-right">Base gravable</TableHead>
+                <TableHead className="text-right">IVA</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-right">Tickets</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {vatQ.data!.map((r) => (
+                <TableRow key={String(r.tax_rate)}>
+                  <TableCell>
+                    <Badge variant="outline">{Number(r.tax_rate)}%</Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm">{fmt(Number(r.base_amount))}</TableCell>
+                  <TableCell className="text-right font-mono text-sm">{fmt(Number(r.tax_amount))}</TableCell>
+                  <TableCell className="text-right font-mono text-sm font-medium">{fmt(Number(r.total_amount))}</TableCell>
+                  <TableCell className="text-right text-xs">{r.ticket_count}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="bg-muted/40">
+                <TableCell className="font-semibold">Totales</TableCell>
+                <TableCell className="text-right font-mono font-semibold">{fmt(vatTotals.base)}</TableCell>
+                <TableCell className="text-right font-mono font-semibold">{fmt(vatTotals.iva)}</TableCell>
+                <TableCell className="text-right font-mono font-semibold">{fmt(vatTotals.base + vatTotals.iva)}</TableCell>
+                <TableCell />
+              </TableRow>
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+
+      {/* Libro auxiliar por cuenta */}
+      <Card className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Search className="w-4 h-4" />Libro auxiliar
+          </h3>
+          <div className="flex items-center gap-2">
+            <select
+              value={accountCode}
+              onChange={(e) => setAccountCode(e.target.value)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs min-w-[220px]"
+            >
+              <option value="">Selecciona una cuenta…</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.code}>{a.code} — {a.name}</option>
+              ))}
+            </select>
+            <Button size="sm" variant="outline" disabled={!ledgerQ.data?.length} onClick={() => {
+              exportAccountLedgerXLSX({
+                orgName, from, to,
+                accountCode, accountName: accName,
+                rows: ledgerQ.data ?? [],
+              });
+              toast.success("Excel descargado");
+            }}>
+              <FileDown className="w-3 h-3 mr-1" />Excel
+            </Button>
+          </div>
+        </div>
+
+        {!accountCode ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">Selecciona una cuenta para ver sus movimientos.</p>
+        ) : ledgerQ.isLoading ? (
+          <Skeleton className="h-40 w-full" />
+        ) : (ledgerQ.data?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">Sin movimientos para {accountCode} en el rango.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Concepto</TableHead>
+                  <TableHead>Origen</TableHead>
+                  <TableHead className="text-right">Débito</TableHead>
+                  <TableHead className="text-right">Crédito</TableHead>
+                  <TableHead className="text-right">Saldo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ledgerQ.data!.slice(0, 300).map((r) => (
+                  <TableRow key={r.entry_id}>
+                    <TableCell className="text-xs whitespace-nowrap">{r.entry_date}</TableCell>
+                    <TableCell className="text-sm max-w-[280px] truncate">{r.narration ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{r.reference_type ?? "—"}</TableCell>
+                    <TableCell className="text-right font-mono text-xs">{Number(r.debit) ? fmt(Number(r.debit)) : ""}</TableCell>
+                    <TableCell className="text-right font-mono text-xs">{Number(r.credit) ? fmt(Number(r.credit)) : ""}</TableCell>
+                    <TableCell className="text-right font-mono text-xs font-medium">{fmt(Number(r.running_balance))}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
 }
