@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ShieldAlert, ShieldCheck, Trash2, Plus, RefreshCcw, Download, Search, Radio } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -272,7 +273,16 @@ export default function FxFraudPage() {
             </CardContent>
           </Card>
 
-          {alertsQ.isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
+          {alertsQ.isLoading && (
+            <div className="space-y-2" aria-busy="true" aria-live="polite">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={`sk-a-${i}`}><CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2"><Skeleton className="h-5 w-16" /><Skeleton className="h-5 w-20" /><Skeleton className="h-4 w-40" /></div>
+                  <Skeleton className="h-12 w-full" />
+                </CardContent></Card>
+              ))}
+            </div>
+          )}
           {!alertsQ.isLoading && filteredAlerts.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground flex flex-col items-center gap-2">
@@ -350,7 +360,16 @@ export default function FxFraudPage() {
             </Button>
           </div>
 
-          {rulesQ.isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
+          {rulesQ.isLoading && (
+            <div className="space-y-2" aria-busy="true" aria-live="polite">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={`sk-r-${i}`}><CardContent className="p-4 flex items-center justify-between gap-3">
+                  <div className="space-y-2 flex-1"><Skeleton className="h-4 w-48" /><Skeleton className="h-3 w-72 max-w-full" /></div>
+                  <Skeleton className="h-6 w-11 rounded-full" />
+                </CardContent></Card>
+              ))}
+            </div>
+          )}
           {!rulesQ.isLoading && rules.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
@@ -438,7 +457,16 @@ export default function FxFraudPage() {
             </CardContent>
           </Card>
 
-          {watchQ.isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
+          {watchQ.isLoading && (
+            <div className="space-y-2" aria-busy="true" aria-live="polite">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={`sk-w-${i}`}><CardContent className="p-3 flex items-center justify-between gap-2">
+                  <div className="space-y-1.5"><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-56" /></div>
+                  <Skeleton className="h-7 w-16 rounded-md" />
+                </CardContent></Card>
+              ))}
+            </div>
+          )}
           {!watchQ.isLoading && watch.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">

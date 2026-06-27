@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Printer, Usb, Wifi, Bluetooth, ServerCog, TestTube2, Trash2, CheckCircle2, Search } from "lucide-react";
@@ -229,7 +230,15 @@ export function PrintersManagerTab({ organizationId }: { organizationId: string 
       </div>
 
       {loading ? (
-        <div className="text-sm text-muted-foreground">Cargando…</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3" aria-busy="true" aria-live="polite">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={`sk-${i}`} className="p-4 flex items-start gap-3">
+              <Skeleton className="h-9 w-9 rounded-lg" />
+              <div className="flex-1 space-y-2"><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-56 max-w-full" /><Skeleton className="h-3 w-32" /></div>
+              <Skeleton className="h-8 w-16 rounded-md" />
+            </Card>
+          ))}
+        </div>
       ) : items.length === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">
           Aún no hay impresoras. Conecta una vía USB con "Detectar" o agrega una de red.

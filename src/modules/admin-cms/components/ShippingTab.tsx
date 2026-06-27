@@ -9,6 +9,7 @@ import { shippingZoneSchema, type ShippingZoneFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const useCities = (orgId?: string | null) => useQuery({
   queryKey: ["admin-municipality-cities", orgId],
@@ -244,7 +245,18 @@ const ShippingTab = ({ queryClient }: { queryClient: any }) => {
       </div>
 
       {/* Zones list */}
-      {isLoading && <p className="text-sm text-muted-foreground text-center py-6">Cargando zonas...</p>}
+      {isLoading && (
+        <div className="space-y-2" aria-busy="true" aria-live="polite" aria-label="Cargando zonas">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={`sk-${i}`} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border">
+              <Skeleton className="h-4 w-4 rounded shrink-0" />
+              <div className="flex-1 space-y-1.5"><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-24" /></div>
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-5 w-5 rounded" />
+            </div>
+          ))}
+        </div>
+      )}
       <div className="space-y-2">
         {filtered?.length === 0 && !isLoading && <p className="text-sm text-muted-foreground text-center py-6">No hay zonas configuradas</p>}
         {filtered?.map((z: any) => (
