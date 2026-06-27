@@ -171,7 +171,11 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
         <TableBody>
           {suppliers?.map((s: any) => (
             <TableRow key={s.id}>
-              <TableCell className="font-medium">{s.name}<div className="text-xs text-muted-foreground">{s.city ?? "—"}</div></TableCell>
+              <TableCell className="font-medium">
+                {s.name}
+                {s.requires_support_doc && <Badge variant="outline" className="ml-2 text-[10px] border-amber-500 text-amber-700">DS DIAN</Badge>}
+                <div className="text-xs text-muted-foreground">{s.city ?? "—"}</div>
+              </TableCell>
               <TableCell>{s.tax_id ?? "—"}</TableCell>
               <TableCell className="text-sm">{s.contact_name ?? "—"}<div className="text-xs text-muted-foreground">{s.phone ?? s.email ?? ""}</div></TableCell>
               <TableCell>{s.lead_time_days ?? 0}d</TableCell>
