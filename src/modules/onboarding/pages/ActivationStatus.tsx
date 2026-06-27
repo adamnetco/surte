@@ -33,6 +33,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import AppBreadcrumb from "@/components/AppBreadcrumb";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type StepState = "done" | "pending" | "warning" | "loading";
 
