@@ -10470,7 +10470,12 @@ export type Database = {
         Args: { _lines: Json; _po_id: string; _warehouse_id: string }
         Returns: Json
       }
+      recompute_all_usage_counters: { Args: never; Returns: number }
       recompute_rfm: { Args: { p_organization_id: string }; Returns: Json }
+      recompute_usage_counter: {
+        Args: { p_limit_key: string; p_org_id: string }
+        Returns: number
+      }
       record_health_event: {
         Args: {
           p_correlation_id?: string
