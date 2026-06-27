@@ -25,6 +25,20 @@ const Customer360Sheet = ({ profileId, open, onOpenChange }: Props) => {
     },
   });
 
+  const { data: loyalty } = useQuery({
+    queryKey: ["customer-loyalty", profileId],
+    enabled: !!profileId && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("loyalty_accounts")
+        .select("balance,points_earned,points_redeemed")
+        .eq("profile_id", profileId!)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+  });
+
   const summary = data?.summary || {};
   const profile = data?.profile || {};
   const top = (data?.top_products || []) as Array<any>;
@@ -78,6 +92,18 @@ const Customer360Sheet = ({ profileId, open, onOpenChange }: Props) => {
                 <div>{summary.last_purchase ? new Date(summary.last_purchase).toLocaleDateString("es-CO") : "—"}</div>
               </div>
             </div>
+
+            {loyalty && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                <div className="text-xs font-medium text-muted-foreground">Saldo de fidelización</div>
+                <div className="text-2xl font-semibold text-primary mt-0.5">
+                  {Number(loyalty.balance || 0).toLocaleString("es-CO")} pts
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Acumulados: {Number(loyalty.points_earned || 0).toLocaleString("es-CO")} · Redimidos: {Number(loyalty.points_redeemed || 0).toLocaleString("es-CO")}
+                </div>
+              </div>
+            )}
 
             <div>
               <h4 className="text-sm font-semibold flex items-center gap-1 mb-2">
