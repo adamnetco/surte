@@ -93,6 +93,18 @@ const Customer360Sheet = ({ profileId, open, onOpenChange }: Props) => {
               </div>
             </div>
 
+            {loyalty && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                <div className="text-xs font-medium text-muted-foreground">Saldo de fidelización</div>
+                <div className="text-2xl font-semibold text-primary mt-0.5">
+                  {Number(loyalty.balance || 0).toLocaleString("es-CO")} pts
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Acumulados: {Number(loyalty.points_earned || 0).toLocaleString("es-CO")} · Redimidos: {Number(loyalty.points_redeemed || 0).toLocaleString("es-CO")}
+                </div>
+              </div>
+            )}
+
             <div>
               <h4 className="text-sm font-semibold flex items-center gap-1 mb-2">
                 <Package className="h-4 w-4" /> Top 5 productos
