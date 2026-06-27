@@ -1,87 +1,74 @@
+# Ola 7 — Reportes & Analítica POS
 
-# Plan maestro — Onboarding SaaS, diagnóstico y trazas
+**Objetivo:** Dashboard de ventas robusto y exportable que compita con Vendty/Loyverse/Alegra. Mobile-first, scoped por organization, sin tablas anchas.
 
-Trabajo encolado en **5 fases secuenciales**. Cada fase es un turno independiente; al terminar te muestro resultado y pides la siguiente.
-
----
-
-## Fase 1 — Auditoría UX end-to-end (informe, sin código)
-
-**Entregable:** `docs/audit/onboarding-2026-06.md`
-
-- Recorro con Playwright en preview el flujo real: signup → crear tenant → seleccionar plan → primer ingreso a `/pos`.
-- Capturo screenshots por paso (mobile 390px + desktop 1280px).
-- Para cada pantalla documento: qué pasa, fricción detectada, qué hace la industria (Stripe Atlas, Linear, Vercel, Square, Toast, Shopify), propuesta concreta.
-- Matriz priorizada (Impact × Effort) de los 10-15 hallazgos.
-- Wireframes ASCII del nuevo flujo propuesto en 4-5 pasos guiados.
-
-**Verificación:** screenshots en `/mnt/documents/audit/` + informe legible.
+Cada slice se entrega completo en su propio turno. Verificación = typecheck verde + screenshot Playwright.
 
 ---
 
-## Fase 2 — Rediseño onboarding (implementación)
+## Slice 1 — Backend de agregación (RPC + índices)
 
-**Entregable:** wizard guiado nuevo en `src/modules/onboarding/`
+Crear una sola fuente de verdad para los reportes.
 
-Estructura propuesta (sujeta a hallazgos Fase 1):
-
-```text
-/onboarding
-  step-1-business     → nombre, tipo (retail/food/hybrid/services), ciudad
-  step-2-branding     → logo, color, subdomain (con validación live)
-  step-3-plan         → grid 4 planes con highlight "Recomendado"
-  step-4-team         → invitar (opcional, skip)
-  step-5-ready        → checklist primer uso + CTA "Ir al POS"
-```
-
-- Progress bar persistente, "Guardar y continuar" en cada paso.
-- Estado en `onboarding_progress` (tabla ya existe).
-- Redirect inteligente: si onboarding incompleto → reanuda en último paso.
-- Empty states ilustrados, microcopys cálidos, atajos de teclado.
-- Mobile-first 390px, desktop split 50/50 (form + preview live).
-
-**Verificación:** Playwright recorre los 5 pasos sin errores; smoke test crea tenant + plan + entra al POS.
+**Migración:**
+- `report_sales_summary(org_id uuid, from_date date, to_date date, granularity text)` → SECURITY DEFINER, devuelve `bucket, gross, net, tax, discount, refunds, tickets, units`. Granularity: `hour|day|week|month`.
+- `report_top_products(org_id, from, to, limit)` → top N por `units` y `gross`, con `product_id, name, sku, units, gross, margin_pct`.
+- `report_payment_mix(org_id, from, to)` → suma por método.
+- `report_cashier_performance(org_id, from, to)` → por `cashier_id`: tickets, gross, avg_ticket.
+- Índices: `idx_pos_orders_org_closed_at`, `idx_pos_order_items_order` (si no existen).
+- GRANT EXECUTE a `authenticated` + check `has_org_access(org_id)` dentro.
 
 ---
 
-## Fase 3 — Smoke tests + diagnóstico RLS
+## Slice 2 — Página `/admin/reportes` (KPIs + gráficos)
 
-**Entregables:**
-1. `tests/e2e/planes-smoke.spec.ts` — verifica que `/planes` muestra los 4 planes públicos (Free, Pro, Business, Enterprise) en Live.
-2. `src/modules/superadmin/pages/DiagnosticoRLS.tsx` — nueva ruta `/superadmin/diagnostico` que muestra:
-   - Tabla con: nombre tabla, RLS habilitado (sí/no), GRANTs por rol (anon/authenticated/service_role), nº de policies.
-   - Filtro rápido "solo tablas con problemas".
-   - Botón "Re-verificar" que ejecuta query contra `information_schema`.
-   - Edge function `rls-audit` que retorna JSON con el diagnóstico (service_role).
-
-**Verificación:** smoke test pasa en CI; página `/superadmin/diagnostico` lista correctamente `saas_plans` con GRANTs OK.
+**Layout mobile-first:**
+- Header: range picker (Hoy / 7d / 30d / Mes / Custom) + comparador (vs período anterior).
+- 4 KPI cards: Ventas netas, Tickets, Ticket promedio, Margen. Cada uno con delta % vs período anterior + sparkline.
+- Gráfico principal: serie temporal (recharts) con toggle gross/net/units.
+- Skeleton presets durante carga.
+- Hook `useSalesReport({ from, to, granularity })` con React Query, key `["report-sales", orgId, from, to, granularity]`.
 
 ---
 
-## Fase 4 — Trazas WhatsApp + alertas RLS
+## Slice 3 — Vertical cards de detalle
 
-**Entregables:**
-1. Logs estructurados en `whatsapp-inbound` y outbound:
-   - Cada evento: `{ org_id, phone, message_id, direction, status, latency_ms, error? }`.
-   - Persiste en `whatsapp_message_events` (ya existe).
-   - Helper `logWhatsAppEvent()` reutilizable.
-2. Alertas:
-   - Trigger DB que inserta en `health_events` si una query a `saas_plans` retorna 0 filas con `is_public=true` (señal de GRANT/RLS roto).
-   - Vista `/superadmin/health` muestra los `health_events` recientes.
+Tres secciones tipo card-stack (NO tablas anchas):
+- **Top productos** — card por producto con nombre, sku, units, gross, barra de progreso del % sobre total.
+- **Mix de pagos** — donut + leyenda con %.
+- **Performance por cajero** — card por cajero con avatar, tickets, gross, avg.
 
-**Verificación:** enviar mensaje de prueba → aparece en `whatsapp_message_events`; revocar GRANT temporal en Test → alerta se dispara.
+Cada card es tap-target ≥56px en mobile. En desktop, grid de 3 columnas.
 
 ---
 
-## Fase 5 — Consolidación RLS `saas_plans` + cierre
+## Slice 4 — Exportación CSV / XLSX
 
-- Review de las policies actuales de `saas_plans` (ya hay `plans_public_read` + `plans_superadmin_write`).
-- Migración idempotente que garantiza: solo SELECT público si `is_public=true`, sin INSERT/UPDATE/DELETE para anon/authenticated.
-- Test de regresión: usuario anon puede leer planes públicos, no puede escribir.
-- Resumen final con todo lo entregado y siguientes pasos sugeridos.
+- Botón "Exportar" en header con menú: CSV (rápido) / XLSX (con formato).
+- CSV client-side con `Papa.unparse`.
+- XLSX con `xlsx` lib (ya en deps si no, `bun add xlsx`). Hojas: Resumen, Productos, Pagos, Cajeros.
+- Filename: `sistecpos-reporte-{orgSlug}-{from}-{to}.xlsx`.
+- Toast con progreso si > 1000 filas.
 
 ---
 
-## Para arrancar
+## Slice 5 — Comparativas + persistencia + QA
 
-Apruebo este plan y empiezo **Fase 1 (auditoría con Playwright)** en el siguiente turno. Cada fase la entrego completa antes de pasar a la siguiente — tú confirmas y avanzo.
+- Toggle "Comparar con período anterior" persiste en localStorage por org.
+- Saved views: usuario guarda combinaciones (rango + granularity + comparador) en `app_settings.user_report_views`.
+- Atajo Cmd+K: "Ir a Reportes" + búsqueda "ventas hoy/ayer/semana".
+- Playwright E2E: range picker → KPIs cargan → export descarga archivo.
+- Typecheck verde, security scan, publish a producción.
+
+---
+
+## Decisiones técnicas
+
+- **Sin recharts nuevo**: ya está en el stack (`src/components/ui/chart.tsx`).
+- **Sin tablas legacy**: solo vertical cards.
+- **Realtime opcional**: por ahora pull-on-focus; realtime para "Hoy" en slice futuro si lo pides.
+- **No tocar pos_orders schema**: todas las agregaciones se hacen en RPC sobre lo que ya existe.
+
+---
+
+¿Apruebo el plan y arranco **Slice 1 (RPCs + índices)** en el siguiente turno?
