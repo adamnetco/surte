@@ -1,6 +1,7 @@
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AdminMobileDrawer from "./AdminMobileDrawer";
+import SmartAlertsBell from "./SmartAlertsBell";
 
 const AdminHeader = () => {
   const navigate = useNavigate();
