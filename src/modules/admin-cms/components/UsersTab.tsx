@@ -131,6 +131,8 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
     }
     setCreating(true);
     try {
+      const gate = await consume("max_users", 1);
+      if (!gate.allowed) { setCreating(false); return; }
       // Sign up the user via Supabase Auth
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: createForm.email,
