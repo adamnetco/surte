@@ -33,6 +33,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import AppBreadcrumb from "@/components/AppBreadcrumb";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type StepState = "done" | "pending" | "warning" | "loading";
 
@@ -209,9 +210,24 @@ export default function ActivationStatus() {
         </header>
 
         {checking && steps.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
+          <ol className="space-y-3" role="list" aria-busy="true" aria-live="polite">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <li key={`sk-${i}`}>
+                <Card className="border-border">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-3 w-72 max-w-full" />
+                      </div>
+                      <Skeleton className="h-5 w-20 rounded-md" />
+                    </div>
+                  </CardHeader>
+                </Card>
+              </li>
+            ))}
+          </ol>
         ) : (
           <ol className="space-y-3" role="list">
             {steps.map((s, idx) => {
