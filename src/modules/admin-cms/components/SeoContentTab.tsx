@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Save, X, Loader2, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, FileText } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import TiptapEditor from "@/modules/admin-cms/components/TiptapEditor";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
