@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, Save, X, MapPin, Pencil, ExternalLink, Link as LinkIcon, AlertCircle, Search, Image as ImageIcon, Upload, Loader2, Eye, BarChart3 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+
 import { toast } from "sonner";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -368,7 +370,12 @@ const MunicipalitiesTab = ({ queryClient }: { queryClient: any }) => {
         </div>
       )}
 
-      {isLoading && <p className="text-sm text-muted-foreground text-center py-6">Cargando…</p>}
+      {isLoading && (
+        <div className="space-y-2" aria-live="polite" aria-busy="true">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}
+        </div>
+      )}
+
       <div className="space-y-2">
         {municipalities?.length === 0 && !isLoading && (
           <div className="text-center py-8 space-y-2">

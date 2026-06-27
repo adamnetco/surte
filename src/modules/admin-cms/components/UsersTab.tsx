@@ -9,6 +9,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 type AppRole = "superadmin" | "admin" | "editor" | "agente" | "user";
 type BusinessType = "detal" | "horeca" | "minimercado" | "distribuidor" | "casa";
@@ -214,7 +216,14 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
         </select>
       </div>
 
-      {isLoading && <div className="text-center py-12"><p className="text-sm text-muted-foreground">Cargando usuarios...</p></div>}
+      {isLoading && (
+        <div className="space-y-2" aria-live="polite" aria-busy="true">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-lg" />
+          ))}
+        </div>
+      )}
+
 
       <div className="space-y-2">
         {filtered?.map((u: any) => {
