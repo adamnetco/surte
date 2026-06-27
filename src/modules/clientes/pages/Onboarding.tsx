@@ -226,10 +226,24 @@ export default function Onboarding() {
           progressPatch.einvoice_done = true;
         }
       } else if (step === 5) {
+        // Primer producto — opcional. Si no se ingresa nombre, se salta.
+        if (productName.trim()) {
+          const price = Number(productPrice) || 0;
+          const { error: prodErr } = await supabase.from("products").insert({
+            organization_id: currentOrg.id,
+            name: productName.trim(),
+            sku: productSku.trim() || null,
+            price,
+            is_active: true,
+          } as any);
+          if (prodErr) throw prodErr;
+          progressPatch.first_product_done = true;
+        }
+      } else if (step === 6) {
         // El plan elegido queda en estado local; la suscripción se crea al
         // entrar a Facturación/Checkout. No persistimos aquí porque
         // organizations no tiene columna plan (la fuente de verdad es subscriptions).
-      } else if (step === 6) {
+      } else if (step === 7) {
         await supabase.from("onboarding_progress").upsert(
           { organization_id: currentOrg.id, catalog_done: true, completed_at: new Date().toISOString() },
           { onConflict: "organization_id" },
@@ -238,6 +252,7 @@ export default function Onboarding() {
         navigate("/pos");
         return;
       }
+
       if (Object.keys(progressPatch).length > 0) {
         await supabase.from("onboarding_progress").upsert(
           { organization_id: currentOrg.id, ...progressPatch },
