@@ -366,6 +366,7 @@ const Reportes = () => {
             label="Ventas netas"
             value={cop(currTotals.net)}
             delta={deltaPct(currTotals.net, prevTotals.net)}
+            compareLabel={compareLabel}
             loading={loading}
           />
           <KpiCard
@@ -373,6 +374,7 @@ const Reportes = () => {
             label="Tickets"
             value={currTotals.tickets.toLocaleString("es-CO")}
             delta={deltaPct(currTotals.tickets, prevTotals.tickets)}
+            compareLabel={compareLabel}
             loading={loading}
           />
           <KpiCard
@@ -380,6 +382,7 @@ const Reportes = () => {
             label="Ticket promedio"
             value={cop(avgTicket)}
             delta={deltaPct(avgTicket, prevAvgTicket)}
+            compareLabel={compareLabel}
             loading={loading}
           />
           <KpiCard
@@ -387,8 +390,10 @@ const Reportes = () => {
             label="Impuestos"
             value={`${taxPct.toFixed(1)}%`}
             delta={deltaPct(taxPct, prevTaxPct)}
+            compareLabel={compareLabel}
             loading={loading}
           />
+
         </section>
 
         {/* Chart */}
