@@ -10,12 +10,15 @@
  * No hace mutaciones — es de solo lectura, pensado para SuperAdmin/Admin para
  * detectar regresiones de RLS o tenants huérfanos.
  */
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import MemberLocationsPopover from "./MemberLocationsPopover";
+
 
 const roleBadge: Record<string, { label: string; cls: string; Icon: typeof Shield }> = {
   owner:   { label: "Owner (Dueño)", cls: "bg-primary/15 text-primary",            Icon: Crown },
