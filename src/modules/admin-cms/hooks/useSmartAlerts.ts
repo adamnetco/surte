@@ -8,7 +8,7 @@ export type SmartAlert = {
   description?: string;
   href?: string;
   count?: number;
-  group: "stock" | "transfers" | "fx" | "einvoice" | "health" | "purchases";
+  group: "stock" | "transfers" | "fx" | "einvoice" | "health" | "purchases" | "crm";
 };
 
 export function useSmartAlerts(orgId: string | undefined) {
