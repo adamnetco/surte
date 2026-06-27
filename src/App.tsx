@@ -228,6 +228,7 @@ const App = () => (
       <TooltipProvider>
         <AuthProvider>
           <OrganizationProvider>
+          <LocationProvider>
           <AgentProvider>
           <CartProvider>
             <Toaster />
