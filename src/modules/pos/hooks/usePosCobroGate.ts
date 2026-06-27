@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 import { useDianHealth } from "./useDianHealth";
 
 /**
@@ -78,24 +79,29 @@ export function usePosCobroGate(
       setLoading(false);
     })();
 
-    const channel = supabase
-      .channel(`hard-block-${organizationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "einvoice_configs",
-          filter: `organization_id=eq.${organizationId}`,
-        },
-        (payload) =>
-          setHardBlock(!!(payload.new as any)?.hard_block_when_dian_down),
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(uniqueTopic(`hard-block-${organizationId}`))
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "einvoice_configs",
+            filter: `organization_id=eq.${organizationId}`,
+          },
+          (payload) =>
+            setHardBlock(!!(payload.new as any)?.hard_block_when_dian_down),
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("[usePosCobroGate] realtime subscribe failed", err);
+    }
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      safeRemoveChannel(channel);
     };
   }, [organizationId]);
 
