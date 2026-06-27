@@ -9,11 +9,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookOpen, Layers, Calendar, RefreshCw, BarChart3 } from "lucide-react";
+import { BookOpen, Layers, Calendar, RefreshCw, BarChart3, FileDown, Printer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
+import { exportSiigoCSV, exportAlegraCSV, printFinancialStatements } from "@/modules/admin-cms/lib/accountingExports";
 
 type Account = {
   id: string;
@@ -282,6 +283,32 @@ export default function Contabilidad() {
                 <Button variant="outline" size="sm" onClick={() => { trialQ.refetch(); plQ.refetch(); bsQ.refetch(); }}>
                   <RefreshCw className="w-3 h-3 mr-1" />Recalcular
                 </Button>
+                <div className="ml-auto flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={async () => {
+                    try { await exportSiigoCSV(orgId, from, to); toast.success("CSV Siigo descargado"); }
+                    catch (e: any) { toast.error(e.message ?? "Error exportando"); }
+                  }}>
+                    <FileDown className="w-3 h-3 mr-1" />Siigo CSV
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={async () => {
+                    try { await exportAlegraCSV(orgId, from, to); toast.success("CSV Alegra descargado"); }
+                    catch (e: any) { toast.error(e.message ?? "Error exportando"); }
+                  }}>
+                    <FileDown className="w-3 h-3 mr-1" />Alegra CSV
+                  </Button>
+                  <Button variant="default" size="sm" disabled={!plQ.data || !bsQ.data} onClick={() => {
+                    if (!plQ.data || !bsQ.data) return;
+                    printFinancialStatements({
+                      orgName: currentOrg?.name ?? "Organización",
+                      from, to,
+                      pl: plQ.data,
+                      bs: bsQ.data,
+                      tb: (trialQ.data ?? []) as any,
+                    });
+                  }}>
+                    <Printer className="w-3 h-3 mr-1" />PDF Estados
+                  </Button>
+                </div>
               </div>
             </Card>
 
