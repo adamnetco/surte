@@ -174,6 +174,7 @@ export default function Contabilidad() {
           <TabsList>
             <TabsTrigger value="accounts"><Layers className="w-4 h-4 mr-1" />Plan de cuentas</TabsTrigger>
             <TabsTrigger value="journal"><BookOpen className="w-4 h-4 mr-1" />Libro diario</TabsTrigger>
+            <TabsTrigger value="reports"><BarChart3 className="w-4 h-4 mr-1" />Reportes</TabsTrigger>
             <TabsTrigger value="periods"><Calendar className="w-4 h-4 mr-1" />Períodos</TabsTrigger>
           </TabsList>
 
