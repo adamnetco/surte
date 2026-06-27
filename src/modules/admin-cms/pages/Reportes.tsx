@@ -295,15 +295,35 @@ const Reportes = () => {
               </div>
             )}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => current.refetch()}
-              disabled={loading}
-              className="ml-auto"
-            >
-              Actualizar
-            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={!exportReady} className="gap-1.5">
+                    <Download className="h-3.5 w-3.5" />
+                    Exportar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport("xlsx")} className="gap-2">
+                    <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                    Excel (.xlsx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("csv")} className="gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => current.refetch()}
+                disabled={loading}
+              >
+                Actualizar
+              </Button>
+            </div>
+
           </div>
         </header>
 
