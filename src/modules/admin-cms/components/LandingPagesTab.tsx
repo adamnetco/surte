@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import TiptapEditor from "./TiptapEditor";
@@ -700,7 +701,25 @@ const LandingPagesTab = () => {
 
       {/* List */}
       {isLoading ? (
-        <div className="text-center py-8"><Loader2 className="animate-spin mx-auto text-muted-foreground" /></div>
+        <div className="space-y-2" aria-busy="true" aria-live="polite" aria-label="Cargando páginas SEO">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center gap-2 p-3 bg-card rounded-xl border border-border">
+              <Skeleton className="h-4 w-4 rounded" />
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-3.5 w-44 rounded" />
+                  <Skeleton className="h-4 w-10 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-56 rounded" />
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {[0, 1, 2, 3, 4].map((j) => (
+                  <Skeleton key={j} className="h-7 w-7 rounded-lg" />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="space-y-2">
           {filtered?.map((p) => {
@@ -928,7 +947,11 @@ const LandingPagesTab = () => {
                   />
                 </div>
                 {loadingProducts ? (
-                  <div className="text-center py-3"><Loader2 size={16} className="animate-spin mx-auto text-muted-foreground" /></div>
+                  <div className="space-y-1.5" aria-busy="true" aria-label="Cargando productos">
+                    {[0, 1, 2].map((i) => (
+                      <Skeleton key={i} className="h-8 w-full rounded-lg" />
+                    ))}
+                  </div>
                 ) : (
                   <>
                     {/* Selected products */}

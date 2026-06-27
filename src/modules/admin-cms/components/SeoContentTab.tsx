@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Save, X, Loader2, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, FileText } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import TiptapEditor from "@/modules/admin-cms/components/TiptapEditor";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -130,7 +131,21 @@ const SeoContentTab = ({ queryClient }: { queryClient: any }) => {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground" /></div>
+        <div className="space-y-2" aria-busy="true" aria-live="polite" aria-label="Cargando bloques SEO">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-3.5 w-16 rounded" />
+                  <Skeleton className="h-3.5 w-40 rounded" />
+                </div>
+                <Skeleton className="h-3 w-2/3 rounded" />
+              </div>
+              <Skeleton className="h-7 w-7 rounded" />
+              <Skeleton className="h-7 w-7 rounded" />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="space-y-2">
           {filtered.length === 0 && (
