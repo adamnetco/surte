@@ -179,11 +179,18 @@ export default function Onboarding() {
       case 2: return locationName.trim().length > 1 && city.trim().length > 1;
       case 3: return !!businessKey;
       case 4: return modules.length > 0;
-      case 5: return !!selectedPlan;
-      case 6: return true;
+      case 5: {
+        // Producto opcional: sin nombre se salta; con nombre exige precio válido.
+        if (!productName.trim()) return true;
+        const n = Number(productPrice);
+        return Number.isFinite(n) && n >= 0;
+      }
+      case 6: return !!selectedPlan;
+      case 7: return true;
       default: return false;
     }
   };
+
 
   const next = async () => {
     if (!canAdvance() || !currentOrg) return;
