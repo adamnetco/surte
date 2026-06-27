@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2, History } from "lucide-react";
 import KardexSheet from "../components/KardexSheet";
+import CriticalStockSheet from "../components/CriticalStockSheet";
 import { toast } from "sonner";
 
 type Warehouse = { id: string; name: string; code: string | null; is_default: boolean; location_id: string; warehouse_type: string };
@@ -30,6 +31,7 @@ export default function Inventario() {
   const [loading, setLoading] = useState(false);
   const [movement, setMovement] = useState<{ row: StockRow | null; type: "in" | "out" | "adjustment" } | null>(null);
   const [kardex, setKardex] = useState<{ productId: string; name: string } | null>(null);
+  const [criticalOpen, setCriticalOpen] = useState(false);
 
   useEffect(() => {
     if (!currentOrg) return;
@@ -108,11 +110,18 @@ export default function Inventario() {
             className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-background border border-border text-sm"
           />
         </div>
-        {lowStock.length > 0 && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">
-            <AlertTriangle size={14} /> {lowStock.length} producto(s) en o bajo punto de reorden
-          </div>
-        )}
+        <button
+          onClick={() => setCriticalOpen(true)}
+          className="mt-2 w-full flex items-center justify-between gap-2 text-xs text-destructive bg-destructive/10 hover:bg-destructive/15 rounded-lg px-3 py-2 transition"
+        >
+          <span className="flex items-center gap-2">
+            <AlertTriangle size={14} />
+            {lowStock.length > 0
+              ? <>{lowStock.length} producto(s) en o bajo punto de reorden <span className="opacity-70">(esta bodega)</span></>
+              : <>Revisar stock crítico org-wide</>}
+          </span>
+          <span className="font-semibold">Ver →</span>
+        </button>
       </div>
 
       {/* Stock list */}
@@ -194,6 +203,12 @@ export default function Inventario() {
         productId={kardex?.productId ?? null}
         productName={kardex?.name}
         warehouseId={warehouseId}
+      />
+
+      <CriticalStockSheet
+        open={criticalOpen}
+        onClose={() => setCriticalOpen(false)}
+        orgId={currentOrg.id}
       />
     </div>
   );

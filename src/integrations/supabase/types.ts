@@ -9568,6 +9568,25 @@ export type Database = {
         Args: { _overwrite?: boolean; _payload: Json }
         Returns: Json
       }
+      inventory_critical_summary: {
+        Args: { _org_id: string }
+        Returns: {
+          avg_cost: number
+          image_url: string
+          max_stock: number
+          min_stock: number
+          product_id: string
+          product_name: string
+          quantity: number
+          reorder_point: number
+          severity: string
+          sku: string
+          stock_id: string
+          suggested_qty: number
+          warehouse_id: string
+          warehouse_name: string
+        }[]
+      }
       inventory_kardex: {
         Args: {
           _from?: string
