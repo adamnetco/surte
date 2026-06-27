@@ -8,6 +8,7 @@ import { Check, Sparkles, ArrowUpRight, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
+import AddonsCatalogSection from "@/components/addons/AddonsCatalogSection";
 
 interface Plan {
   id: string; key: string; name: string; description: string;
@@ -212,6 +213,19 @@ export default function Planes() {
           );
         })}
       </section>
+
+      {canSubscribeInline && (
+        <section className="max-w-7xl mx-auto px-4 pb-20">
+          <div className="mb-6 text-center">
+            <Badge variant="secondary" className="mb-2">Complementos</Badge>
+            <h2 className="text-2xl md:text-3xl font-bold">Add-ons para crecer sin cambiar de plan</h2>
+            <p className="text-muted-foreground mt-2 text-sm max-w-2xl mx-auto">
+              Suma capacidad puntual cuando la necesites: más productos, usuarios, facturas DIAN o sucursales.
+            </p>
+          </div>
+          <AddonsCatalogSection />
+        </section>
+      )}
     </div>
   );
 }
