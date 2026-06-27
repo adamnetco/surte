@@ -9,6 +9,7 @@ export { default as FacturacionPage } from "./pages/Facturacion";
 export { default as ReportesPage } from "./pages/Reportes";
 export { default as ComprasPage } from "./pages/Compras";
 export { default as HealthLogsPage } from "./pages/HealthLogs";
+export { default as ContabilidadPage } from "./pages/Contabilidad";
 export { default as InnapsisPage } from "./pages/Innapsis";
 export { default as InnapsisDetailPage } from "./pages/InnapsisDetail";
 export { default as InnapsisResumenPage } from "./pages/InnapsisResumen";
