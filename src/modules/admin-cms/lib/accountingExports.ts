@@ -62,32 +62,47 @@ export function exportEInvoicesXLSX(opts: {
   orgName: string; from: string; to: string; rows: EInvoiceRow[];
 }) {
   const { orgName, from, to, rows } = opts;
-  const data = rows.map((r) => ({
-    Fecha: r.issue_date,
-    Numero: r.full_number ?? "",
-    Tipo: DOC_LABEL[r.document_type] ?? r.document_type,
-    Estado: r.status,
-    NIT_CC: r.customer_identification ?? "",
-    Cliente: r.customer_name ?? "",
-    Email: r.customer_email ?? "",
-    Subtotal: Number(r.subtotal || 0),
-    IVA: Number(r.tax_total || 0),
-    Total: Number(r.total || 0),
-    CUFE: r.cufe ?? "",
-    TrackId: r.track_id ?? "",
-    Ambiente: r.environment,
-    Contingencia: r.is_contingency ? "SI" : "",
-    PDF: r.pdf_url ?? "",
-    XML: r.xml_url ?? "",
-  }));
+  const data = rows.map((r) => {
+    const s = docSign(r.document_type);
+    return {
+      Fecha: r.issue_date,
+      Numero: r.full_number ?? "",
+      Tipo: DOC_LABEL[r.document_type] ?? r.document_type,
+      Ref_Origen: r.reference_full_number ?? "",
+      Concepto_DIAN: r.note_concept_code ?? "",
+      Estado: r.status,
+      NIT_CC: r.customer_identification ?? "",
+      Cliente: r.customer_name ?? "",
+      Email: r.customer_email ?? "",
+      Subtotal: Number(r.subtotal || 0),
+      IVA: Number(r.tax_total || 0),
+      Total: Number(r.total || 0),
+      Subtotal_Neto: s * Number(r.subtotal || 0),
+      IVA_Neto: s * Number(r.tax_total || 0),
+      Total_Neto: s * Number(r.total || 0),
+      CUFE: r.cufe ?? "",
+      CUFE_Ref: r.reference_cufe ?? "",
+      TrackId: r.track_id ?? "",
+      Ambiente: r.environment,
+      Contingencia: r.is_contingency ? "SI" : "",
+      PDF: r.pdf_url ?? "",
+      XML: r.xml_url ?? "",
+    };
+  });
 
   const totals = rows.reduce(
-    (a, r) => ({
-      sub: a.sub + Number(r.subtotal || 0),
-      tax: a.tax + Number(r.tax_total || 0),
-      tot: a.tot + Number(r.total || 0),
-    }),
-    { sub: 0, tax: 0, tot: 0 }
+    (a, r) => {
+      const s = docSign(r.document_type);
+      return {
+        sub: a.sub + Number(r.subtotal || 0),
+        tax: a.tax + Number(r.tax_total || 0),
+        tot: a.tot + Number(r.total || 0),
+        subNet: a.subNet + s * Number(r.subtotal || 0),
+        taxNet: a.taxNet + s * Number(r.tax_total || 0),
+        totNet: a.totNet + s * Number(r.total || 0),
+      };
+    },
+    { sub: 0, tax: 0, tot: 0, subNet: 0, taxNet: 0, totNet: 0 }
   );
 
   const wb = XLSX.utils.book_new();
@@ -95,10 +110,13 @@ export function exportEInvoicesXLSX(opts: {
     ["Organización", orgName],
     ["Reporte", "Facturas Electrónicas DIAN"],
     ["Desde", from], ["Hasta", to],
-    ["Total facturas", rows.length],
-    ["Subtotal", totals.sub],
-    ["IVA", totals.tax],
-    ["Total", totals.tot],
+    ["Total documentos", rows.length],
+    ["Subtotal bruto", totals.sub],
+    ["IVA bruto", totals.tax],
+    ["Total bruto", totals.tot],
+    ["Subtotal neto (— NC)", totals.subNet],
+    ["IVA neto (— NC)", totals.taxNet],
+    ["Total neto (— NC)", totals.totNet],
     ["Generado", new Date().toISOString()],
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), "Resumen");
