@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,11 +66,16 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
         .eq("is_active", true).order("name").limit(120);
       setProducts((data as Product[]) ?? []);
     })();
-    const ch = supabase
-      .channel(`table-${tableId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "table_order_items", filter: `organization_id=eq.${organizationId}` }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      ch = supabase
+        .channel(uniqueTopic(`table-${tableId}`))
+        .on("postgres_changes", { event: "*", schema: "public", table: "table_order_items", filter: `organization_id=eq.${organizationId}` }, () => load())
+        .subscribe();
+    } catch (err) {
+      console.warn("[TableOrderDrawer] realtime subscribe failed", err);
+    }
+    return () => { safeRemoveChannel(ch); };
     // eslint-disable-next-line
   }, [tableId, organizationId]);
 
