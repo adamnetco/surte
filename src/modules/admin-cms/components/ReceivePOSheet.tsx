@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Camera, CameraOff, Plus, Minus, Search, PackageCheck } from "lucide-react";
+import { Camera, CameraOff, Plus, Minus, Search, PackageCheck, Scale } from "lucide-react";
 import { toast } from "sonner";
 
 interface POItem {
