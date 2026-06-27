@@ -4,7 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Sparkles, ArrowUpRight } from "lucide-react";
+import { Check, Sparkles, ArrowUpRight, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 
 interface Plan {
   id: string; key: string; name: string; description: string;
@@ -52,6 +55,32 @@ export default function Planes() {
     })();
   }, []);
 
+  const { user } = useAuth();
+  const { currentOrg } = useOrganization();
+  const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
+
+  const canSubscribeInline = !!user && !!currentOrg?.id;
+
+  async function startWompiCheckout(planKey: string) {
+    if (!currentOrg?.id) return;
+    setCheckoutPlan(planKey);
+    try {
+      const { data, error: e } = await supabase.functions.invoke("wompi-create-subscription", {
+        body: {
+          organization_id: currentOrg.id,
+          plan_key: planKey,
+          billing_cycle: cycle,
+          return_url: `${window.location.origin}/billing?from=wompi`,
+        },
+      });
+      if (e) throw e;
+      if (!data?.checkout_url) throw new Error("Sin URL de checkout");
+      window.location.href = data.checkout_url;
+    } catch (err: any) {
+      toast({ title: "No se pudo iniciar el pago", description: err.message ?? String(err), variant: "destructive" });
+      setCheckoutPlan(null);
+    }
+  }
 
   const reasonLabel = useMemo(() => (reason ? MODULE_LABELS[reason] ?? reason : null), [reason]);
 
@@ -151,11 +180,30 @@ export default function Planes() {
                   </li>
                 )}
               </ul>
-              <Button asChild className="mt-5 w-full" variant={isHighlighted || isPro ? "default" : "outline"}>
-                <Link to={p.key === "enterprise" ? "/ayuda" : `/onboarding?plan=${p.key}${returnTo ? `&return_to=${encodeURIComponent(returnTo)}` : ""}`}>
-                  {p.price_monthly === 0 ? "Empezar gratis" : `Probar ${p.trial_days} días`}
-                </Link>
-              </Button>
+              {(() => {
+                const isPaid = p.price_monthly > 0 && p.key !== "enterprise";
+                const inlineCheckout = canSubscribeInline && isPaid;
+                const busy = checkoutPlan === p.key;
+                if (inlineCheckout) {
+                  return (
+                    <Button
+                      className="mt-5 w-full"
+                      variant={isHighlighted || isPro ? "default" : "outline"}
+                      disabled={busy}
+                      onClick={() => startWompiCheckout(p.key)}
+                    >
+                      {busy ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirigiendo…</> : `Suscribirme — ${COP(price)}/mes`}
+                    </Button>
+                  );
+                }
+                return (
+                  <Button asChild className="mt-5 w-full" variant={isHighlighted || isPro ? "default" : "outline"}>
+                    <Link to={p.key === "enterprise" ? "/ayuda" : `/onboarding?plan=${p.key}${returnTo ? `&return_to=${encodeURIComponent(returnTo)}` : ""}`}>
+                      {p.price_monthly === 0 ? "Empezar gratis" : `Probar ${p.trial_days} días`}
+                    </Link>
+                  </Button>
+                );
+              })()}
             </Card>
           );
         })}
