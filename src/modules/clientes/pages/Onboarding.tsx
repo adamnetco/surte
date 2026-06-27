@@ -81,6 +81,12 @@ export default function Onboarding() {
   const [plansLoading, setPlansLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>(planParam ?? "pro");
 
+  // Step 5: primer producto (opcional)
+  const [productName, setProductName] = useState("");
+  const [productPrice, setProductPrice] = useState("");
+  const [productSku, setProductSku] = useState("");
+
+
   const template = useMemo(() => getTemplate(businessKey), [businessKey]);
 
   // Fix H6/H12: si no hay sesión → login; si hay sesión pero sin org → crearla.
