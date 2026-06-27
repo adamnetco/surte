@@ -397,15 +397,64 @@ export default function Onboarding() {
   }
 
   if (step === 5) {
+    const willCreate = productName.trim().length > 0;
     return (
       <WizardShell
         step={5} totalSteps={TOTAL}
+        eyebrow="Tu catálogo"
+        title="Carga tu primer producto"
+        subtitle="Para arrancar el POS necesitas al menos uno. Puedes saltarlo y agregarlo luego desde Admin → Productos."
+        onBack={back} onNext={next} nextDisabled={!canAdvance()} loading={saving}
+        nextLabel={willCreate ? "Crear producto y continuar" : "Saltar por ahora"}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="prod-name">Nombre del producto</Label>
+            <Input
+              id="prod-name" autoFocus value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              className="h-12 text-base" placeholder="Ej: Cerveza Águila 330ml"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="prod-price">Precio (COP)</Label>
+              <Input
+                id="prod-price" type="number" inputMode="numeric" min="0"
+                value={productPrice} onChange={(e) => setProductPrice(e.target.value)}
+                className="h-12 text-base" placeholder="0"
+                disabled={!willCreate}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="prod-sku">SKU (opcional)</Label>
+              <Input
+                id="prod-sku" value={productSku}
+                onChange={(e) => setProductSku(e.target.value)}
+                className="h-12 text-base" placeholder="SKU-001"
+                disabled={!willCreate}
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground px-1">
+            Sin SKU usaremos el ID generado automáticamente. Podrás editarlo y agregar fotos, presentaciones y stock desde Admin → Productos.
+          </p>
+        </div>
+      </WizardShell>
+    );
+  }
+
+  if (step === 6) {
+    return (
+      <WizardShell
+        step={6} totalSteps={TOTAL}
         eyebrow="Casi listo"
         title="Elige tu plan"
         subtitle="Empieza gratis 14 días. Sin tarjeta. Cancela cuando quieras."
         onBack={back} onNext={next} nextDisabled={!canAdvance()} loading={saving}
         nextLabel="Continuar"
       >
+
         {plansLoading ? (
           <div className="grid sm:grid-cols-2 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
