@@ -117,8 +117,8 @@ Deno.serve(async (req) => {
       .update({
         status: invoiceStatus,
         wompi_transaction_id: wompiTxId,
-        wompi_payment_method: paymentMethodType ?? null,
-        wompi_status_message: statusMessage ?? null,
+        payment_method: paymentMethodType ?? null,
+        last_error: status !== "APPROVED" ? (statusMessage ?? null) : null,
         paid_at: status === "APPROVED" ? new Date().toISOString() : null,
       })
       .eq("id", invoice.id);
