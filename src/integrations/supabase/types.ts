@@ -4491,6 +4491,210 @@ export type Database = {
         }
         Relationships: []
       }
+      loyalty_accounts: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          last_activity_at: string | null
+          organization_id: string
+          points_earned: number
+          points_redeemed: number
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          last_activity_at?: string | null
+          organization_id: string
+          points_earned?: number
+          points_redeemed?: number
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          last_activity_at?: string | null
+          organization_id?: string
+          points_earned?: number
+          points_redeemed?: number
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "loyalty_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "loyalty_accounts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_movements: {
+        Row: {
+          account_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          movement_type: string
+          notes: string | null
+          order_id: string | null
+          organization_id: string
+          points: number
+          profile_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          movement_type: string
+          notes?: string | null
+          order_id?: string | null
+          organization_id: string
+          points: number
+          profile_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          movement_type?: string
+          notes?: string | null
+          order_id?: string | null
+          organization_id?: string
+          points?: number
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_movements_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_movements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_movements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "loyalty_movements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "loyalty_movements_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_programs: {
+        Row: {
+          accrual_rate: number
+          created_at: string
+          expiration_days: number | null
+          id: string
+          is_active: boolean
+          min_redemption: number
+          mode: string
+          organization_id: string
+          redemption_rate: number
+          updated_at: string
+        }
+        Insert: {
+          accrual_rate?: number
+          created_at?: string
+          expiration_days?: number | null
+          id?: string
+          is_active?: boolean
+          min_redemption?: number
+          mode?: string
+          organization_id: string
+          redemption_rate?: number
+          updated_at?: string
+        }
+        Update: {
+          accrual_rate?: number
+          created_at?: string
+          expiration_days?: number | null
+          id?: string
+          is_active?: boolean
+          min_redemption?: number
+          mode?: string
+          organization_id?: string
+          redemption_rate?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_programs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_programs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "loyalty_programs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       modifier_groups: {
         Row: {
           created_at: string
@@ -9724,6 +9928,24 @@ export type Database = {
           _qty?: number
         }
         Returns: string
+      }
+      loyalty_accrue: {
+        Args: {
+          p_amount: number
+          p_order_id: string
+          p_organization_id: string
+          p_profile_id: string
+        }
+        Returns: number
+      }
+      loyalty_redeem: {
+        Args: {
+          p_order_id?: string
+          p_organization_id: string
+          p_points: number
+          p_profile_id: string
+        }
+        Returns: number
       }
       mark_critical_action_executed: {
         Args: { _action_id: string; _result?: Json }
