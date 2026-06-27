@@ -410,22 +410,41 @@ const Reportes = () => {
                       : "Por día"}
                 </p>
               </div>
-              <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
-                {(["gross", "net", "units"] as Metric[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMetric(m)}
-                    className={`px-2.5 py-1 rounded transition ${
-                      metric === m
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {m === "gross" ? "Bruto" : m === "net" ? "Neto" : "Unidades"}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+                  {(["prev", "yoy"] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setCompareMode(m)}
+                      className={`px-2.5 py-1 rounded transition ${
+                        compareMode === m
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                      title={m === "prev" ? "Comparar con período anterior" : "Comparar con año anterior"}
+                    >
+                      {m === "prev" ? "vs Anterior" : "vs Año"}
+                    </button>
+                  ))}
+                </div>
+                <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+                  {(["gross", "net", "units"] as Metric[]).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setMetric(m)}
+                      className={`px-2.5 py-1 rounded transition ${
+                        metric === m
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {m === "gross" ? "Bruto" : m === "net" ? "Neto" : "Unidades"}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
+
 
             {loading ? (
               <Skeleton className="h-64 w-full" />
