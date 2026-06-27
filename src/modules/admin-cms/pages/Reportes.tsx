@@ -19,6 +19,7 @@ import {
   type Granularity,
   type SalesBucket,
 } from "../hooks/useSalesReport";
+import ReportesDetail from "../components/ReportesDetail";
 
 type RangeKey = "today" | "7d" | "30d" | "month" | "custom";
 
