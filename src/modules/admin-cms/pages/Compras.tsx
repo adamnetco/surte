@@ -346,7 +346,7 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
               <TableCell><Badge variant={p.status === "received" ? "default" : "secondary"}>{p.status}</Badge></TableCell>
               <TableCell>
                 {p.status !== "received" && (
-                  <Button size="sm" variant="outline" onClick={() => receive(p)}><PackageCheck className="w-4 h-4 mr-1" />Recibir</Button>
+                  <Button size="sm" variant="outline" onClick={() => setReceivePoId(p.id)}><PackageCheck className="w-4 h-4 mr-1" />Recibir</Button>
                 )}
               </TableCell>
             </TableRow>
@@ -354,6 +354,14 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
           {!pos?.length && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aún no hay órdenes de compra.</TableCell></TableRow>}
         </TableBody>
       </Table>
+
+      <ReceivePOSheet
+        open={!!receivePoId}
+        onOpenChange={(o) => !o && setReceivePoId(null)}
+        poId={receivePoId}
+        orgId={orgId}
+        warehouseId={warehouses?.[0]?.id}
+      />
     </Card>
   );
 }
