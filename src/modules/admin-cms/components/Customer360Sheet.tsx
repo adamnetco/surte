@@ -25,6 +25,20 @@ const Customer360Sheet = ({ profileId, open, onOpenChange }: Props) => {
     },
   });
 
+  const { data: loyalty } = useQuery({
+    queryKey: ["customer-loyalty", profileId],
+    enabled: !!profileId && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("loyalty_accounts")
+        .select("balance,points_earned,points_redeemed")
+        .eq("profile_id", profileId!)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+  });
+
   const summary = data?.summary || {};
   const profile = data?.profile || {};
   const top = (data?.top_products || []) as Array<any>;
