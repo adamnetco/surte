@@ -291,13 +291,31 @@ export default function Facturacion() {
 
         <TabsContent value="invoices">
           <Card className="p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <h2 className="font-semibold">Últimos 50 documentos</h2>
-              <Button variant="outline" size="sm" onClick={loadAll}><RefreshCw className="h-4 w-4 mr-1" /> Refrescar</Button>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex rounded-md border border-input p-0.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceFilter("all")}
+                    className={`px-2 py-1 rounded ${invoiceFilter === "all" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                  >Todos</button>
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceFilter("notes")}
+                    className={`px-2 py-1 rounded inline-flex items-center gap-1 ${invoiceFilter === "notes" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                  ><FileMinus className="h-3 w-3" />Mis notas NC/ND</button>
+                </div>
+                <Button variant="outline" size="sm" onClick={loadAll}><RefreshCw className="h-4 w-4 mr-1" /> Refrescar</Button>
+              </div>
             </div>
             <div className="space-y-2">
-              {invoices.length === 0 && <p className="text-sm text-muted-foreground">Sin documentos aún.</p>}
-              {invoices.map((i) => (
+              {(() => {
+                const list = invoiceFilter === "notes"
+                  ? invoices.filter((i) => i.document_type === "credit_note" || i.document_type === "debit_note")
+                  : invoices;
+                if (list.length === 0) return <p className="text-sm text-muted-foreground">{invoiceFilter === "notes" ? "Aún no has emitido Notas Crédito/Débito." : "Sin documentos aún."}</p>;
+                return list.map((i) => (
                 <div key={i.id} className="flex items-center justify-between border rounded-md p-3 text-sm">
                   <div>
                     <div className="font-medium">{i.full_number ?? "—"} · {i.document_type}</div>
