@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2, History } from "lucide-react";
+import KardexSheet from "../components/KardexSheet";
 import { toast } from "sonner";
 
 type Warehouse = { id: string; name: string; code: string | null; is_default: boolean; location_id: string; warehouse_type: string };
@@ -28,6 +29,7 @@ export default function Inventario() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [movement, setMovement] = useState<{ row: StockRow | null; type: "in" | "out" | "adjustment" } | null>(null);
+  const [kardex, setKardex] = useState<{ productId: string; name: string } | null>(null);
 
   useEffect(() => {
     if (!currentOrg) return;
@@ -153,6 +155,7 @@ export default function Inventario() {
                 <button onClick={() => setMovement({ row, type: "in" })} className="p-2 rounded-lg bg-secondary text-secondary-foreground" title="Entrada"><Plus size={14} /></button>
                 <button onClick={() => setMovement({ row, type: "out" })} className="p-2 rounded-lg bg-accent text-accent-foreground" title="Salida"><Minus size={14} /></button>
                 <button onClick={() => setMovement({ row, type: "adjustment" })} className="p-2 rounded-lg bg-muted text-muted-foreground" title="Ajuste"><RotateCcw size={14} /></button>
+                <button onClick={() => setKardex({ productId: row.product_id, name: row.product?.name || "Producto" })} className="p-2 rounded-lg bg-primary/10 text-primary" title="Ver kárdex"><History size={14} /></button>
               </div>
             </div>
           );
@@ -184,6 +187,14 @@ export default function Inventario() {
           onSaved={() => { setMovement(null); loadStock(); }}
         />
       )}
+
+      <KardexSheet
+        open={!!kardex}
+        onClose={() => setKardex(null)}
+        productId={kardex?.productId ?? null}
+        productName={kardex?.name}
+        warehouseId={warehouseId}
+      />
     </div>
   );
 }

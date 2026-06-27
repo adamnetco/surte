@@ -9568,6 +9568,27 @@ export type Database = {
         Args: { _overwrite?: boolean; _payload: Json }
         Returns: Json
       }
+      inventory_kardex: {
+        Args: {
+          _from?: string
+          _product_id: string
+          _to?: string
+          _warehouse_id?: string
+        }
+        Returns: {
+          balance_after: number
+          movement_at: string
+          movement_type: string
+          notes: string
+          quantity: number
+          reference_id: string
+          reference_type: string
+          running_balance: number
+          unit_cost: number
+          warehouse_id: string
+          warehouse_name: string
+        }[]
+      }
       is_feature_enabled: {
         Args: { _key: string; _tenant_id?: string }
         Returns: boolean
