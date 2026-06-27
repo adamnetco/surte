@@ -103,10 +103,12 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
 
   return (
     <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <p className="text-sm text-muted-foreground">{suppliers?.length ?? 0} proveedores</p>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Nuevo</Button></DialogTrigger>
+        <div className="flex items-center gap-2">
+          <SupplierPerformanceSheet orgId={orgId} />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Nuevo</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Nuevo proveedor</DialogTitle></DialogHeader>
             <div className="grid grid-cols-2 gap-3">
