@@ -90,7 +90,10 @@ export function ApproachingLimitBanner() {
       </div>
       <button
         type="button"
-        onClick={() => navigate(upgradeUrl)}
+        onClick={() => {
+          void logUpgradeClick(currentOrg?.id, { kind: "limit", key: candidate.key, from: "banner" });
+          navigate(upgradeUrl);
+        }}
         className={`inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-semibold shrink-0 ${
           isCritical
             ? "bg-red-600 text-white hover:bg-red-700"
