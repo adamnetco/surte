@@ -18,6 +18,7 @@ const ContactsTab = () => {
   const [tab, setTab] = useState<TabKind>("customers");
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [open360, setOpen360] = useState(false);
 
   const { data: customers, isLoading: lc } = useQuery({
     queryKey: ["admin-customers", orgId],
