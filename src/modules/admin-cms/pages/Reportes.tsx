@@ -486,7 +486,10 @@ const Reportes = () => {
                       width={56}
                     />
                     <Tooltip
-                      formatter={(v: number) => (metric === "units" ? v : cop(v))}
+                      formatter={(v: number, name: string) => [
+                        metric === "units" ? v : cop(v),
+                        name === `${metric}_prev` ? compareLabel : "Actual",
+                      ]}
                       contentStyle={{
                         background: "hsl(var(--card))",
                         border: "1px solid hsl(var(--border))",
@@ -496,11 +499,22 @@ const Reportes = () => {
                     />
                     <Area
                       type="monotone"
+                      dataKey={`${metric}_prev`}
+                      stroke="hsl(var(--muted-foreground))"
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                      fill="transparent"
+                      name={compareLabel}
+                    />
+                    <Area
+                      type="monotone"
                       dataKey={metric}
                       stroke="hsl(var(--primary))"
                       strokeWidth={2}
                       fill="url(#g-metric)"
+                      name="Actual"
                     />
+
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
