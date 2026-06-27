@@ -249,6 +249,7 @@ const App = () => (
             <CustomScriptInjector />
                 <AgentBar />
               <BrowserRouter>
+                <ApproachingLimitBanner />
                 <CityPickerModal />
                 <Analytics />
                 <CartNavigationGuard />
