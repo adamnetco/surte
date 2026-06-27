@@ -17,6 +17,7 @@ import { Plus, Truck, FileText, Link2, Star, Trash2, PackageCheck } from "lucide
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import PurchaseSuggestionsSheet from "@/modules/admin-cms/components/PurchaseSuggestionsSheet";
+import ReceivePOSheet from "@/modules/admin-cms/components/ReceivePOSheet";
 
 export default function Compras() {
   const { user, role, loading } = useAuth();
