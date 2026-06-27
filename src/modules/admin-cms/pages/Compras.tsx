@@ -312,10 +312,12 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
 
   return (
     <Card className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-sm text-muted-foreground">{pos?.length ?? 0} órdenes recientes</p>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Nueva OC</Button></DialogTrigger>
+        <div className="flex items-center gap-2">
+          <PurchaseSuggestionsSheet orgId={orgId} warehouseId={warehouses?.[0]?.id} />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Nueva OC</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Nueva orden de compra</DialogTitle></DialogHeader>
             <div className="space-y-3">
