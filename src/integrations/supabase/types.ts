@@ -88,6 +88,100 @@ export type Database = {
           },
         ]
       }
+      addon_features: {
+        Row: {
+          addon_code: string
+          module_key: string
+        }
+        Insert: {
+          addon_code: string
+          module_key: string
+        }
+        Update: {
+          addon_code?: string
+          module_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addon_features_addon_code_fkey"
+            columns: ["addon_code"]
+            isOneToOne: false
+            referencedRelation: "addons"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      addon_limits: {
+        Row: {
+          addon_code: string
+          limit_key: string
+          value_delta: number
+        }
+        Insert: {
+          addon_code: string
+          limit_key: string
+          value_delta: number
+        }
+        Update: {
+          addon_code?: string
+          limit_key?: string
+          value_delta?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addon_limits_addon_code_fkey"
+            columns: ["addon_code"]
+            isOneToOne: false
+            referencedRelation: "addons"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      addons: {
+        Row: {
+          billing_period: string
+          code: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          name: string
+          price_cop: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          billing_period?: string
+          code: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name: string
+          price_cop?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_period?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name?: string
+          price_cop?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_section_access: {
         Row: {
           allowed_roles: Database["public"]["Enums"]["app_role"][]
@@ -9030,6 +9124,83 @@ export type Database = {
           },
         ]
       }
+      tenant_addons: {
+        Row: {
+          addon_code: string
+          amount_paid_cop: number | null
+          created_at: string
+          ends_at: string | null
+          id: string
+          metadata: Json
+          organization_id: string
+          quantity: number
+          starts_at: string
+          status: string
+          updated_at: string
+          wompi_reference: string | null
+          wompi_transaction_id: string | null
+        }
+        Insert: {
+          addon_code: string
+          amount_paid_cop?: number | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          metadata?: Json
+          organization_id: string
+          quantity?: number
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          wompi_reference?: string | null
+          wompi_transaction_id?: string | null
+        }
+        Update: {
+          addon_code?: string
+          amount_paid_cop?: number | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          quantity?: number
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          wompi_reference?: string | null
+          wompi_transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_addons_addon_code_fkey"
+            columns: ["addon_code"]
+            isOneToOne: false
+            referencedRelation: "addons"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "tenant_addons_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_addons_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "tenant_addons_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       tenant_audit_log: {
         Row: {
           action: string
@@ -10687,6 +10858,15 @@ export type Database = {
       resolve_limit: {
         Args: { _limit_key: string; _org_id: string }
         Returns: number
+      }
+      resolve_tenant_addons: {
+        Args: { p_org_id: string }
+        Returns: {
+          addon_code: string
+          limits: Json
+          modules: string[]
+          quantity: number
+        }[]
       }
       resolve_tenant_by_host: { Args: { _host: string }; Returns: Json }
       restore_tenant: { Args: { _org_id: string }; Returns: Json }
