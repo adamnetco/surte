@@ -26,6 +26,7 @@ const SegmentsTab = () => {
   const orgId = currentOrg?.id;
   const qc = useQueryClient();
   const [active, setActive] = useState<string>("Champions");
+  const [campaignOpen, setCampaignOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["customer-segments", orgId],
