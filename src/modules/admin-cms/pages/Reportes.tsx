@@ -169,6 +169,7 @@ const Reportes = () => {
     to: new Date().toISOString().slice(0, 10),
   });
   const [metric, setMetric] = useState<Metric>("gross");
+  const [compareMode, setCompareMode] = useState<"prev" | "yoy">("prev");
 
   const range = useMemo(() => {
     if (rangeKey === "custom") {
@@ -180,7 +181,10 @@ const Reportes = () => {
     return buildRange(rangeKey);
   }, [rangeKey, customRange]);
 
-  const prevRange = useMemo(() => prevRangeOf(range), [range]);
+  const compareRange = useMemo(
+    () => (compareMode === "yoy" ? yoyRangeOf(range) : prevRangeOf(range)),
+    [range, compareMode],
+  );
 
   const current = useSalesSummary({
     orgId: currentOrg?.id,
@@ -190,9 +194,9 @@ const Reportes = () => {
   });
   const previous = useSalesSummary({
     orgId: currentOrg?.id,
-    from: prevRange.from,
-    to: prevRange.to,
-    granularity: prevRange.granularity,
+    from: compareRange.from,
+    to: compareRange.to,
+    granularity: compareRange.granularity,
   });
 
   const topProducts = useTopProducts({ orgId: currentOrg?.id, from: range.from, to: range.to, limit: 25 });
@@ -207,16 +211,28 @@ const Reportes = () => {
   const taxPct = currTotals.gross > 0 ? (currTotals.tax / currTotals.gross) * 100 : 0;
   const prevTaxPct = prevTotals.gross > 0 ? (prevTotals.tax / prevTotals.gross) * 100 : 0;
 
-  const chartData = useMemo(
-    () =>
-      (current.data ?? []).map((b: SalesBucket) => ({
-        bucket: fmtBucket(b.bucket, range.granularity),
-        gross: b.gross,
-        net: b.net,
-        units: b.units,
-      })),
-    [current.data, range.granularity],
-  );
+  const compareLabel = compareMode === "yoy" ? "año anterior" : "período anterior";
+
+  const chartData = useMemo(() => {
+    const curr = current.data ?? [];
+    const prev = previous.data ?? [];
+    const len = Math.max(curr.length, prev.length);
+    return Array.from({ length: len }, (_, i) => {
+      const c = curr[i];
+      const p = prev[i];
+      return {
+        bucket: c ? fmtBucket(c.bucket, range.granularity) : p ? fmtBucket(p.bucket, range.granularity) : "",
+        gross: c?.gross ?? 0,
+        net: c?.net ?? 0,
+        units: c?.units ?? 0,
+        gross_prev: p?.gross ?? 0,
+        net_prev: p?.net ?? 0,
+        units_prev: p?.units ?? 0,
+      };
+    });
+  }, [current.data, previous.data, range.granularity]);
+
+
 
   const loading = current.isLoading;
 
