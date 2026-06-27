@@ -11,6 +11,7 @@ import { CartProvider } from "@/modules/cart/context/CartContext";
 import { AuthProvider } from "@/modules/auth/context/AuthContext";
 import { AgentProvider } from "@/modules/pos/context/AgentContext";
 import { OrganizationProvider } from "@/modules/platform/context/OrganizationContext";
+import { LocationProvider } from "@/modules/platform/context/LocationContext";
 import { ThemeProvider } from "@/modules/platform/context/ThemeContext";
 import { SwipeProvider } from "@/modules/storefront/context/SwipeContext";
 import FloatingWhatsApp from "@/modules/storefront/components/FloatingWhatsApp";
@@ -345,6 +346,7 @@ const App = () => (
               </BrowserRouter>
           </CartProvider>
           </AgentProvider>
+          </LocationProvider>
           </OrganizationProvider>
         </AuthProvider>
       </TooltipProvider>
