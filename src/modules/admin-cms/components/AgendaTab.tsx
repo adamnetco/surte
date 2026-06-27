@@ -89,7 +89,12 @@ export default function AgendaTab() {
 
         <TabsContent value="agenda" className="space-y-3">
           <AppointmentDialog orgId={orgId!} services={services} resources={resources} onSaved={load} />
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+          {loading ? (
+            <div className="space-y-2" aria-busy="true">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
+            </div>
+          ) : (
+
             <div className="space-y-2">
               {appointments.length === 0 && <p className="text-sm text-muted-foreground">Sin citas próximas (14 días).</p>}
               {appointments.map((a) => (
