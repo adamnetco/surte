@@ -10,12 +10,15 @@
  * No hace mutaciones — es de solo lectura, pensado para SuperAdmin/Admin para
  * detectar regresiones de RLS o tenants huérfanos.
  */
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import MemberLocationsPopover from "./MemberLocationsPopover";
+
 
 const roleBadge: Record<string, { label: string; cls: string; Icon: typeof Shield }> = {
   owner:   { label: "Owner (Dueño)", cls: "bg-primary/15 text-primary",            Icon: Crown },
@@ -39,7 +42,7 @@ export default function MembersAuditTab() {
     queryFn: async () => {
       const { data: members, error } = await supabase
         .from("organization_members")
-        .select("id, user_id, role, is_active, created_at")
+        .select("id, user_id, role, is_active, created_at, location_ids")
         .eq("organization_id", currentOrg!.id)
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -56,6 +59,11 @@ export default function MembersAuditTab() {
       return (members ?? []).map((m: any) => ({ ...m, profile: profilesById[m.user_id] ?? null }));
     },
   });
+
+  const [locOverrides, setLocOverrides] = useState<Record<string, string[]>>({});
+  useEffect(() => { setLocOverrides({}); }, [currentOrg?.id]);
+  const canEditLocations = currentRole === "superadmin" || currentRole === "admin";
+
 
   if (!canSee) {
     return (
@@ -160,9 +168,10 @@ export default function MembersAuditTab() {
       {/* Tabla */}
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-muted text-[10px] uppercase font-semibold text-muted-foreground">
-          <div className="col-span-5">Usuario</div>
-          <div className="col-span-3">Rol</div>
-          <div className="col-span-2">Activo</div>
+          <div className="col-span-4">Usuario</div>
+          <div className="col-span-2">Rol</div>
+          <div className="col-span-3">Sucursales</div>
+          <div className="col-span-1">Activo</div>
           <div className="col-span-2">Alta</div>
         </div>
         {members.length === 0 ? (
@@ -170,18 +179,28 @@ export default function MembersAuditTab() {
         ) : members.map((m: any) => {
           const meta = roleBadge[m.role] ?? roleBadge.member;
           const Icon = meta.Icon;
+          const effectiveLocs = locOverrides[m.id] ?? m.location_ids ?? [];
           return (
             <div key={m.id} className="grid grid-cols-12 gap-2 px-3 py-2.5 border-t border-border text-sm items-center">
-              <div className="col-span-5 min-w-0">
+              <div className="col-span-4 min-w-0">
                 <p className="font-medium truncate">{m.profile?.full_name || m.profile?.business_name || "—"}</p>
                 <p className="text-[10px] text-muted-foreground truncate font-mono">{m.user_id}</p>
               </div>
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium ${meta.cls}`}>
                   <Icon size={11} /> {meta.label}
                 </span>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-3">
+                <MemberLocationsPopover
+                  memberId={m.id}
+                  role={m.role}
+                  value={effectiveLocs}
+                  disabled={!canEditLocations}
+                  onChange={(next) => setLocOverrides((prev) => ({ ...prev, [m.id]: next }))}
+                />
+              </div>
+              <div className="col-span-1">
                 {m.is_active
                   ? <span className="text-[11px] text-success font-medium">Activo</span>
                   : <span className="text-[11px] text-muted-foreground">Inactivo</span>}
@@ -193,6 +212,7 @@ export default function MembersAuditTab() {
           );
         })}
       </div>
+
     </div>
   );
 }
