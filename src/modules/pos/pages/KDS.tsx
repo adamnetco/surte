@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Loader2, LockKeyhole, ChefHat, Check, Play, BellRing } from "lucide-react";
@@ -61,12 +62,17 @@ export default function KDS() {
 
   useEffect(() => {
     if (!orgId) return;
-    const ch = supabase
-      .channel(`kds:${orgId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "kds_tickets", filter: `organization_id=eq.${orgId}` },
-        () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      ch = supabase
+        .channel(uniqueTopic(`kds-${orgId}`))
+        .on("postgres_changes", { event: "*", schema: "public", table: "kds_tickets", filter: `organization_id=eq.${orgId}` },
+          () => load())
+        .subscribe();
+    } catch (err) {
+      console.warn("[KDS] realtime subscribe failed", err);
+    }
+    return () => { safeRemoveChannel(ch); };
   }, [orgId, load]);
 
   const filtered = useMemo(

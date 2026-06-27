@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 
 export type DianHealth = "online" | "degraded" | "offline" | "unknown";
 
@@ -64,11 +65,10 @@ export function useDianHealth(organizationId: string | null | undefined): DianHe
     // Topic único por mount: evita "cannot add postgres_changes callbacks"
     // cuando StrictMode/HMR remontan el hook y supabase.channel(name) devuelve
     // una referencia ya joined.
-    const topic = `dian-health-${organizationId}-${Math.random().toString(36).slice(2, 8)}`;
     let channel: ReturnType<typeof supabase.channel> | null = null;
     try {
       channel = supabase
-        .channel(topic)
+        .channel(uniqueTopic(`dian-health-${organizationId}`))
         .on(
           "postgres_changes",
           {
@@ -91,9 +91,7 @@ export function useDianHealth(organizationId: string | null | undefined): DianHe
 
     return () => {
       cancelled = true;
-      if (channel) {
-        try { supabase.removeChannel(channel); } catch { /* noop */ }
-      }
+      safeRemoveChannel(channel);
     };
   }, [organizationId]);
 

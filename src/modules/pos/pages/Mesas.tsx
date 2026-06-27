@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Loader2, LockKeyhole, Users, Plus } from "lucide-react";
@@ -62,12 +63,17 @@ export default function Mesas() {
   // Realtime
   useEffect(() => {
     if (!orgId) return;
-    const ch = supabase
-      .channel(`mesas:${orgId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "table_orders", filter: `organization_id=eq.${orgId}` }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${orgId}` }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      ch = supabase
+        .channel(uniqueTopic(`mesas-${orgId}`))
+        .on("postgres_changes", { event: "*", schema: "public", table: "table_orders", filter: `organization_id=eq.${orgId}` }, () => load())
+        .on("postgres_changes", { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${orgId}` }, () => load())
+        .subscribe();
+    } catch (err) {
+      console.warn("[Mesas] realtime subscribe failed", err);
+    }
+    return () => { safeRemoveChannel(ch); };
   }, [orgId, load]);
 
   const filtered = useMemo(

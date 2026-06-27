@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 
 export type ResolutionStatus =
   | "ok"            // todo configurado y dentro de rango
@@ -65,16 +66,21 @@ export function useEinvoiceResolutionStatus(organizationId: string | null | unde
       if (!cancelled) setSnap(parse(data));
     })();
 
-    const channel = supabase
-      .channel(`einvoice-cfg-${organizationId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "einvoice_configs", filter: `organization_id=eq.${organizationId}` },
-        (payload) => setSnap(parse(payload.new)),
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(uniqueTopic(`einvoice-cfg-${organizationId}`))
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "einvoice_configs", filter: `organization_id=eq.${organizationId}` },
+          (payload) => setSnap(parse(payload.new)),
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("[useEinvoiceResolutionStatus] realtime subscribe failed", err);
+    }
 
-    return () => { cancelled = true; supabase.removeChannel(channel); };
+    return () => { cancelled = true; safeRemoveChannel(channel); };
   }, [organizationId]);
 
   return snap;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 
 export interface ShiftDocsStats {
   ok: number;        // sent | accepted
@@ -56,19 +57,24 @@ export function useShiftDocsStats(organizationId: string | null | undefined): Sh
 
     reload();
 
-    const channel = supabase
-      .channel(`shift-docs-${organizationId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "electronic_invoices", filter: `organization_id=eq.${organizationId}` },
-        () => { reload(); },
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(uniqueTopic(`shift-docs-${organizationId}`))
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "electronic_invoices", filter: `organization_id=eq.${organizationId}` },
+          () => { reload(); },
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("[useShiftDocsStats] realtime subscribe failed", err);
+    }
 
     // Refresco defensivo cada 2 min por si Realtime se desconecta.
     const id = setInterval(reload, 120_000);
 
-    return () => { cancelled = true; clearInterval(id); supabase.removeChannel(channel); };
+    return () => { cancelled = true; clearInterval(id); safeRemoveChannel(channel); };
   }, [organizationId]);
 
   return stats;
