@@ -161,7 +161,17 @@ export default function CatalogosBase() {
   };
 
   if (loading || isSuper === null) {
-    return <div className="min-h-[100dvh] grid place-items-center"><Loader2 className="animate-spin" /></div>;
+    return (
+      <div className="min-h-[100dvh] p-6 space-y-4 max-w-5xl mx-auto" aria-busy="true" aria-live="polite">
+        <div className="h-8 w-64 rounded-md bg-muted animate-pulse" />
+        <div className="h-4 w-96 rounded-md bg-muted animate-pulse" />
+        <div className="grid gap-3 mt-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (!isSuper) {
