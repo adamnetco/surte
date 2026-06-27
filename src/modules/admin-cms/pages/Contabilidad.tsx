@@ -593,8 +593,19 @@ function AccountantReports(props: {
   });
 
   const einvTotals = (einvQ.data ?? []).reduce(
-    (a, r) => ({ sub: a.sub + Number(r.subtotal || 0), tax: a.tax + Number(r.tax_total || 0), tot: a.tot + Number(r.total || 0) }),
-    { sub: 0, tax: 0, tot: 0 }
+    (a, r) => {
+      const s = docSign(r.document_type);
+      return {
+        sub: a.sub + Number(r.subtotal || 0),
+        tax: a.tax + Number(r.tax_total || 0),
+        tot: a.tot + Number(r.total || 0),
+        subNet: a.subNet + s * Number(r.subtotal || 0),
+        taxNet: a.taxNet + s * Number(r.tax_total || 0),
+        totNet: a.totNet + s * Number(r.total || 0),
+        notes: a.notes + (r.document_type === "credit_note" ? Number(r.total || 0) : 0),
+      };
+    },
+    { sub: 0, tax: 0, tot: 0, subNet: 0, taxNet: 0, totNet: 0, notes: 0 }
   );
   const vatTotals = (vatQ.data ?? []).reduce(
     (a, r) => ({ base: a.base + Number(r.base_amount || 0), iva: a.iva + Number(r.tax_amount || 0) }),
