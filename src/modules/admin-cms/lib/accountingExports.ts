@@ -22,7 +22,14 @@ export type EInvoiceRow = {
   is_contingency: boolean;
   pdf_url: string | null;
   xml_url: string | null;
+  reference_full_number?: string | null;
+  reference_cufe?: string | null;
+  note_concept_code?: string | null;
 };
+
+/** Signo contable: NC resta, ND y factura suman. Útil para netos en reportes. */
+export const docSign = (docType: string): 1 | -1 =>
+  docType === "credit_note" ? -1 : 1;
 
 export type VatRow = {
   tax_rate: number;
