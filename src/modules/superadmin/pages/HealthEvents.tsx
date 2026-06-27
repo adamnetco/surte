@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, HeartPulse, RefreshCw, ShieldAlert, Activity, MessageCircle } from "lucide-react";
+import { GateDenialsPanel } from "@/modules/superadmin/components/GateDenialsPanel";
 
 type HealthRow = {
   id: string;
@@ -130,6 +131,9 @@ export default function HealthEvents() {
       </div>
 
       {err && <Card className="p-3 border-destructive/40 bg-destructive/5 text-sm text-destructive">{err}</Card>}
+
+      <GateDenialsPanel />
+
 
       <section>
         <h2 className="text-sm font-semibold mb-2 flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Health events</h2>

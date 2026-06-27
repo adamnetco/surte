@@ -9884,6 +9884,40 @@ export type Database = {
           },
         ]
       }
+      v_gate_denials_daily: {
+        Row: {
+          day: string | null
+          denials: number | null
+          distinct_users: number | null
+          key: string | null
+          last_denial_at: string | null
+          metric: string | null
+          organization_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usage_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "usage_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       v_tenant_entitlements_limits: {
         Row: {
           effective_value: number | null
@@ -10004,15 +10038,25 @@ export type Database = {
         Args: { _cart_token: string }
         Returns: boolean
       }
-      consume_limit: {
-        Args: {
-          _delta?: number
-          _limit_key: string
-          _org_id: string
-          _period?: string
-        }
-        Returns: Json
-      }
+      consume_limit:
+        | {
+            Args: {
+              _delta?: number
+              _limit_key: string
+              _org_id: string
+              _period?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_amount?: number
+              p_limit_key: string
+              p_org_id: string
+              p_period_key?: string
+            }
+            Returns: Json
+          }
       cosign_critical_action: {
         Args: { _action_id: string; _decision: string; _reason?: string }
         Returns: Json
@@ -10109,6 +10153,16 @@ export type Database = {
           _source?: string
         }
         Returns: string
+      }
+      gate_denial: {
+        Args: {
+          p_context?: Json
+          p_key: string
+          p_kind: string
+          p_org_id: string
+          p_reason?: string
+        }
+        Returns: undefined
       }
       get_admin_products_secure: {
         Args: {
