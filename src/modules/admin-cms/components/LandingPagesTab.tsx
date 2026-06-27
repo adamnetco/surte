@@ -947,7 +947,11 @@ const LandingPagesTab = () => {
                   />
                 </div>
                 {loadingProducts ? (
-                  <div className="text-center py-3"><Loader2 size={16} className="animate-spin mx-auto text-muted-foreground" /></div>
+                  <div className="space-y-1.5" aria-busy="true" aria-label="Cargando productos">
+                    {[0, 1, 2].map((i) => (
+                      <Skeleton key={i} className="h-8 w-full rounded-lg" />
+                    ))}
+                  </div>
                 ) : (
                   <>
                     {/* Selected products */}
