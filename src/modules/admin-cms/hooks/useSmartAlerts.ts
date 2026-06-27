@@ -189,7 +189,7 @@ export function useSmartAlerts(orgId: string | undefined) {
           severity: "info",
           title: `${newLeads} lead(s) nuevo(s) por gestionar`,
           description: "Asigna responsable y contacta hoy",
-          href: "/admin?tab=leads",
+          href: "/admin?tab=crm",
           count: newLeads ?? 0,
           group: "crm",
         });
