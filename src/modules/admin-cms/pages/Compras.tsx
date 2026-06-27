@@ -332,8 +332,9 @@ function PurchaseOrdersTab({ orgId, qc }: { orgId: string; qc: any }) {
               <div><Label>Notas</Label><Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
               <Button onClick={create} className="w-full">Crear borrador</Button>
             </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Table>
