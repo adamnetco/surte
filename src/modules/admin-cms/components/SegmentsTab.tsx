@@ -5,8 +5,9 @@ import { useOrganization } from "@/modules/platform/context/OrganizationContext"
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Award, Heart, AlertTriangle, Moon, Sparkles, RefreshCw, Download, Users2 } from "lucide-react";
+import { Award, Heart, AlertTriangle, Moon, Sparkles, RefreshCw, Download, Users2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import RfmCampaignSheet from "./RfmCampaignSheet";
 
 const SEGMENTS = [
   { key: "Champions", icon: Award, color: "bg-emerald-500/10 text-emerald-700 border-emerald-300" },
@@ -25,6 +26,7 @@ const SegmentsTab = () => {
   const orgId = currentOrg?.id;
   const qc = useQueryClient();
   const [active, setActive] = useState<string>("Champions");
+  const [campaignOpen, setCampaignOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["customer-segments", orgId],
@@ -101,10 +103,17 @@ const SegmentsTab = () => {
             Recency · Frequency · Monetary — clasificación automática para campañas.
           </p>
         </div>
-        <Button onClick={() => recompute.mutate()} disabled={recompute.isPending} size="sm" className="gap-1">
-          <RefreshCw className={`h-4 w-4 ${recompute.isPending ? "animate-spin" : ""}`} /> Recalcular
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setCampaignOpen(true)} variant="outline" size="sm" className="gap-1">
+            <MessageCircle className="h-4 w-4" /> Campaña WhatsApp
+          </Button>
+          <Button onClick={() => recompute.mutate()} disabled={recompute.isPending} size="sm" className="gap-1">
+            <RefreshCw className={`h-4 w-4 ${recompute.isPending ? "animate-spin" : ""}`} /> Recalcular
+          </Button>
+        </div>
       </div>
+
+      <RfmCampaignSheet open={campaignOpen} onOpenChange={setCampaignOpen} />
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
         {SEGMENTS.map((s) => {
