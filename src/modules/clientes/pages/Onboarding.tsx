@@ -147,9 +147,9 @@ export default function Onboarding() {
     setCompanyName((prev) => prev || currentOrg.name || "");
   }, [currentOrg]);
 
-  // Cargar planes públicos cuando llegamos al paso 5
+  // Cargar planes públicos cuando llegamos al paso de planes (6)
   useEffect(() => {
-    if (step !== 5 || plans.length > 0) return;
+    if (step !== 6 || plans.length > 0) return;
     setPlansLoading(true);
     supabase
       .from("saas_plans")
@@ -166,6 +166,7 @@ export default function Onboarding() {
         setPlansLoading(false);
       });
   }, [step, plans.length]);
+
 
   const toggleModule = (k: string) =>
     setModules((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
