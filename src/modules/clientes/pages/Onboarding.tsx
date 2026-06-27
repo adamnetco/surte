@@ -518,11 +518,12 @@ export default function Onboarding() {
     );
   }
 
-  // step 6 — celebración
+  // step 7 — celebración
   const chosenPlan = plans.find((p) => p.key === selectedPlan);
   return (
     <WizardShell
-      step={6} totalSteps={TOTAL}
+      step={7} totalSteps={TOTAL}
+
       eyebrow="Todo listo"
       title="¡Tu POS está listo para vender!"
       subtitle="Te llevamos al mostrador. Desde ahí controlas todo."
