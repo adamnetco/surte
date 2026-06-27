@@ -13,13 +13,12 @@ import { Send, Eye, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const SEGMENT_LABELS: Record<string, { label: string; color: string }> = {
-  champions: { label: "Champions", color: "bg-emerald-500" },
-  loyal: { label: "Loyal", color: "bg-blue-500" },
-  potential: { label: "Potential", color: "bg-indigo-500" },
-  new: { label: "New", color: "bg-teal-500" },
-  at_risk: { label: "At Risk", color: "bg-amber-500" },
-  hibernating: { label: "Hibernating", color: "bg-gray-500" },
-  lost: { label: "Lost", color: "bg-red-500" },
+  "Champions": { label: "Champions", color: "bg-emerald-500" },
+  "Loyal": { label: "Loyal", color: "bg-blue-500" },
+  "Potential": { label: "Potential", color: "bg-indigo-500" },
+  "New": { label: "New", color: "bg-teal-500" },
+  "At Risk": { label: "At Risk", color: "bg-amber-500" },
+  "Hibernating": { label: "Hibernating", color: "bg-gray-500" },
 };
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
