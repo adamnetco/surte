@@ -220,6 +220,7 @@ const FeaturedTagsPicker = ({ tags, onTagsChange, orgId }: { tags: string; onTag
 
 const ProductsTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
   const { currentOrg } = useOrganization();
+  const { consume } = useLimitGuard();
   const { data: inactiveBrands } = useInactiveBrands(currentOrg?.id);
   const isBrandHidden = (p: any) => !!p.brand && !!inactiveBrands && inactiveBrands.has(p.brand.toLowerCase());
   const [editing, setEditing] = useState<string | null>(null);
