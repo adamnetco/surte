@@ -8,7 +8,7 @@ export type SmartAlert = {
   description?: string;
   href?: string;
   count?: number;
-  group: "stock" | "transfers" | "fx" | "einvoice" | "health" | "purchases";
+  group: "stock" | "transfers" | "fx" | "einvoice" | "health" | "purchases" | "crm";
 };
 
 export function useSmartAlerts(orgId: string | undefined) {
@@ -155,6 +155,43 @@ export function useSmartAlerts(orgId: string | undefined) {
           href: "/admin/compras",
           count: stalePO ?? 0,
           group: "purchases",
+        });
+      }
+
+      // 8) CRM — clientes At Risk + Hibernating según RFM
+      const { data: atRisk } = await supabase
+        .from("customer_segments")
+        .select("segment")
+        .eq("organization_id", orgId)
+        .in("segment", ["At Risk", "Hibernating"]);
+      const atRiskCount = (atRisk ?? []).length;
+      if (atRiskCount > 0) {
+        out.push({
+          id: "crm-at-risk",
+          severity: atRiskCount >= 20 ? "warning" : "info",
+          title: `${atRiskCount} cliente(s) en riesgo de fuga`,
+          description: "Lanza una campaña WhatsApp segmentada para reactivarlos",
+          href: "/admin?tab=segments",
+          count: atRiskCount,
+          group: "crm",
+        });
+      }
+
+      // 9) CRM — leads nuevos sin asignar
+      const { count: newLeads } = await supabase
+        .from("crm_leads")
+        .select("id", { head: true, count: "exact" })
+        .eq("organization_id", orgId)
+        .eq("status", "new");
+      if ((newLeads ?? 0) > 0) {
+        out.push({
+          id: "crm-new-leads",
+          severity: "info",
+          title: `${newLeads} lead(s) nuevo(s) por gestionar`,
+          description: "Asigna responsable y contacta hoy",
+          href: "/admin?tab=crm",
+          count: newLeads ?? 0,
+          group: "crm",
         });
       }
     } catch (e) {
