@@ -9940,6 +9940,40 @@ export type Database = {
         }
         Relationships: []
       }
+      v_usage_counter_divergence: {
+        Row: {
+          counter_used: number | null
+          drift: number | null
+          limit_key: string | null
+          organization_id: string | null
+          organization_name: string | null
+          real_used: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_usage_counters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_usage_counters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "tenant_usage_counters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
     }
     Functions: {
       _attach_tenant_writable_guard: {
