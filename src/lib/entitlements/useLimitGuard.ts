@@ -5,6 +5,7 @@ import { useOrganization } from "@/modules/platform/context/OrganizationContext"
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import { buildUpgradeUrl, recommendPlanFor, type GateContext } from "./upgradeRecommendation";
+import { logUpgradeClick } from "./logUpgradeClick";
 
 
 export type LimitDecision = {
@@ -53,7 +54,13 @@ export function useLimitGuard() {
           {
             duration: 8000,
             action: d.reason === "limit_exceeded"
-              ? { label: `Ver plan ${recommended.toUpperCase()}`, onClick: () => navigate(upgradeUrl) }
+              ? {
+                  label: `Ver plan ${recommended.toUpperCase()}`,
+                  onClick: () => {
+                    void logUpgradeClick(currentOrg?.id, { kind: "limit", key: limitKey, from: "toast" });
+                    navigate(upgradeUrl);
+                  },
+                }
               : undefined,
           }
         );

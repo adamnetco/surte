@@ -4,6 +4,7 @@ import { AlertTriangle, X, TrendingUp } from "lucide-react";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useApproachingLimits, type LimitWarning } from "@/lib/entitlements/useApproachingLimits";
 import { buildUpgradeUrl, recommendPlanFor } from "@/lib/entitlements/upgradeRecommendation";
+import { logUpgradeClick } from "@/lib/entitlements/logUpgradeClick";
 
 const LIMIT_LABELS: Record<string, string> = {
   max_products: "productos",
