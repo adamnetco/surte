@@ -9827,6 +9827,35 @@ export type Database = {
           reason: string
         }[]
       }
+      supplier_performance: {
+        Args: { p_days?: number; p_org: string }
+        Returns: {
+          avg_lead_time_real: number
+          city: string
+          fill_rate: number
+          last_order_at: string
+          lead_time_target: number
+          on_time_rate: number
+          po_count: number
+          supplier_id: string
+          supplier_name: string
+          total_value: number
+        }[]
+      }
+      supplier_price_variations: {
+        Args: { p_days?: number; p_org: string; p_supplier_id: string }
+        Returns: {
+          avg_cost: number
+          buys: number
+          last_cost: number
+          max_cost: number
+          min_cost: number
+          product_id: string
+          product_name: string
+          sku: string
+          variation_pct: number
+        }[]
+      }
       transition_tenant_lifecycle: {
         Args: {
           _new_state: Database["public"]["Enums"]["tenant_lifecycle_state"]

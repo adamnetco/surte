@@ -19,6 +19,7 @@ import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import PurchaseSuggestionsSheet from "@/modules/admin-cms/components/PurchaseSuggestionsSheet";
 import ReceivePOSheet from "@/modules/admin-cms/components/ReceivePOSheet";
 import InvoiceOcrSheet from "@/modules/admin-cms/components/InvoiceOcrSheet";
+import SupplierPerformanceSheet from "@/modules/admin-cms/components/SupplierPerformanceSheet";
 
 export default function Compras() {
   const { user, role, loading } = useAuth();
@@ -102,10 +103,12 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
 
   return (
     <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <p className="text-sm text-muted-foreground">{suppliers?.length ?? 0} proveedores</p>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Nuevo</Button></DialogTrigger>
+        <div className="flex items-center gap-2">
+          <SupplierPerformanceSheet orgId={orgId} />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Nuevo</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Nuevo proveedor</DialogTitle></DialogHeader>
             <div className="grid grid-cols-2 gap-3">
@@ -120,7 +123,8 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
             </div>
             <Button onClick={save}>Guardar</Button>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <Table>
