@@ -8,7 +8,7 @@ export type SmartAlert = {
   description?: string;
   href?: string;
   count?: number;
-  group: "stock" | "transfers" | "fx" | "einvoice" | "health";
+  group: "stock" | "transfers" | "fx" | "einvoice" | "health" | "purchases";
 };
 
 export function useSmartAlerts(orgId: string | undefined) {
@@ -111,6 +111,50 @@ export function useSmartAlerts(orgId: string | undefined) {
           description: h.message ?? undefined,
           href: "/superadmin/health",
           group: "health",
+        });
+      }
+
+      // 6) Órdenes de compra vencidas (expected_at < hoy y no recibidas)
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: overduePOs } = await supabase
+        .from("purchase_orders")
+        .select("id, po_code, po_number, expected_at, suppliers(name)")
+        .eq("organization_id", orgId)
+        .lt("expected_at", today)
+        .in("status", ["draft", "sent", "partial"])
+        .order("expected_at", { ascending: true })
+        .limit(5);
+      const overdueCount = (overduePOs ?? []).length;
+      if (overdueCount > 0) {
+        const oldest = overduePOs![0] as any;
+        out.push({
+          id: "purchases-overdue",
+          severity: "warning",
+          title: `${overdueCount} OC vencida(s)`,
+          description: `La más antigua: ${oldest.po_code ?? oldest.po_number ?? oldest.id.slice(0,8)} de ${oldest.suppliers?.name ?? "—"}`,
+          href: "/admin/compras",
+          count: overdueCount,
+          group: "purchases",
+        });
+      }
+
+      // 7) OCs en estado "sent" pendientes de recibir > 7 días
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: stalePO } = await supabase
+        .from("purchase_orders")
+        .select("id", { head: true, count: "exact" })
+        .eq("organization_id", orgId)
+        .eq("status", "sent")
+        .lt("created_at", weekAgo);
+      if ((stalePO ?? 0) > 0) {
+        out.push({
+          id: "purchases-stale",
+          severity: "info",
+          title: `${stalePO} OC enviada(s) hace +7 días`,
+          description: "Confirma entrega o reclama al proveedor",
+          href: "/admin/compras",
+          count: stalePO ?? 0,
+          group: "purchases",
         });
       }
     } catch (e) {
