@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 
 export type EinvoiceLiveStatus =
   | "idle"
@@ -83,36 +84,41 @@ export function useEinvoiceLiveStatus(posOrderId: string | null | undefined): Ei
     }, 3000);
 
     // Realtime sub
-    const channel = supabase
-      .channel(`einvoice-pos-${posOrderId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "electronic_invoices",
-          filter: `pos_order_id=eq.${posOrderId}`,
-        },
-        (payload) => {
-          const row = (payload.new ?? payload.old) as any;
-          if (!row) return;
-          setSnap({
-            status: STATUS_MAP[row.status] ?? "queued",
-            cufe: row.cufe ?? null,
-            errorMessage: row.last_error ?? null,
-            retryAttempt: row.retry_count ?? null,
-            nextRetryAt: row.next_retry_at ?? null,
-            invoiceId: row.id,
-            docType: row.document_type ?? null,
-          });
-        },
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(uniqueTopic(`einvoice-pos-${posOrderId}`))
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "electronic_invoices",
+            filter: `pos_order_id=eq.${posOrderId}`,
+          },
+          (payload) => {
+            const row = (payload.new ?? payload.old) as any;
+            if (!row) return;
+            setSnap({
+              status: STATUS_MAP[row.status] ?? "queued",
+              cufe: row.cufe ?? null,
+              errorMessage: row.last_error ?? null,
+              retryAttempt: row.retry_count ?? null,
+              nextRetryAt: row.next_retry_at ?? null,
+              invoiceId: row.id,
+              docType: row.document_type ?? null,
+            });
+          },
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("[useEinvoiceLiveStatus] realtime subscribe failed", err);
+    }
 
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
-      supabase.removeChannel(channel);
+      safeRemoveChannel(channel);
     };
   }, [posOrderId]);
 
