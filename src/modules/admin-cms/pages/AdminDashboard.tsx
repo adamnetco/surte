@@ -275,6 +275,7 @@ const AdminDashboard = () => {
         {activeTab === "members-audit" && <MembersAuditTab />}
         {activeTab === "contacts" && <ContactsTab />}
         {activeTab === "segments" && <SegmentsTab />}
+        {activeTab === "loyalty" && <LoyaltyTab />}
         {activeTab === "price-lists" && <PriceListsTab />}
         {/* organizations tab removed — vive en /superadmin */}
         {activeTab === "crm" && <CrmLeadsTab />}
