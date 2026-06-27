@@ -9966,6 +9966,11 @@ export type Database = {
         Args: { _action_id: string; _result?: Json }
         Returns: Json
       }
+      member_allowed_locations: { Args: { _org_id: string }; Returns: string[] }
+      member_can_access_location: {
+        Args: { _location_id: string; _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
