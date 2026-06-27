@@ -30,6 +30,54 @@ export default function Billing() {
 
   useEffect(() => { load(); document.title = "Facturación SaaS · SURTÉ YA POS"; /* eslint-disable-next-line */ }, [currentOrg]);
 
+  // === Slice 4: retorno desde Wompi ===
+  const [searchParams, setSearchParams] = useSearchParams();
+  const fromWompi = searchParams.get("from") === "wompi";
+  const [wompiState, setWompiState] = useState<"polling" | "approved" | "failed" | "timeout" | null>(
+    fromWompi ? "polling" : null,
+  );
+
+  useEffect(() => {
+    if (!fromWompi || !currentOrg) return;
+    let cancelled = false;
+    const started = Date.now();
+    const tick = async () => {
+      if (cancelled) return;
+      const { data: latest } = await supabase
+        .from("subscription_invoices")
+        .select("status, wompi_reference, created_at")
+        .eq("organization_id", currentOrg.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latest?.status === "paid") {
+        setWompiState("approved");
+        load();
+        return;
+      }
+      if (latest?.status === "failed" || latest?.status === "voided") {
+        setWompiState("failed");
+        load();
+        return;
+      }
+      if (Date.now() - started > 45_000) {
+        setWompiState("timeout");
+        return;
+      }
+      setTimeout(tick, 3000);
+    };
+    tick();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromWompi, currentOrg]);
+
+  const dismissWompiBanner = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("from");
+    setSearchParams(next, { replace: true });
+    setWompiState(null);
+  };
+
   const changePlan = async (planId: string) => {
     if (!sub) return;
     setLoading(true);
