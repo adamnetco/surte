@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
       const now = new Date();
       const { data: sub } = await admin
         .from("subscriptions")
-        .select("billing_cycle, organization_id, plan_key")
+        .select("billing_cycle, organization_id, plan")
         .eq("id", invoice.subscription_id)
         .maybeSingle();
 
@@ -145,15 +145,16 @@ Deno.serve(async (req) => {
           status: "active",
           current_period_start: now.toISOString(),
           current_period_end: periodEnd.toISOString(),
-          last_payment_at: now.toISOString(),
-          wompi_last_transaction_id: wompiTxId,
+          retry_count: 0,
+          last_payment_error: null,
+          external_id: wompiTxId,
         })
         .eq("id", invoice.subscription_id);
 
       console.log("[wompi-events] subscription activated", {
         subscription_id: invoice.subscription_id,
         org: sub?.organization_id,
-        plan: sub?.plan_key,
+        plan: sub?.plan,
         periodEnd: periodEnd.toISOString(),
       });
     } else if (status !== "APPROVED") {
