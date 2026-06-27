@@ -13,11 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Truck, FileText, Link2, Star, Trash2, PackageCheck } from "lucide-react";
+import { Plus, Truck, FileText, Link2, Star, Trash2, PackageCheck, Scan } from "lucide-react";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import PurchaseSuggestionsSheet from "@/modules/admin-cms/components/PurchaseSuggestionsSheet";
 import ReceivePOSheet from "@/modules/admin-cms/components/ReceivePOSheet";
+import InvoiceOcrSheet from "@/modules/admin-cms/components/InvoiceOcrSheet";
 
 export default function Compras() {
   const { user, role, loading } = useAuth();
