@@ -3,7 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { buildUpgradeUrl, recommendPlanFor, type GateContext } from "./upgradeRecommendation";
+
 
 export type LimitDecision = {
   allowed: boolean;
