@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useLimitGuard } from "@/lib/entitlements/useLimitGuard";
 import { Search, Shield, ShieldCheck, ShieldAlert, User, Pencil, Save, Briefcase, UserPlus, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -35,6 +36,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const { user: currentUser, role: currentRole } = useAuth();
   const { currentOrg } = useOrganization();
   const canManageRoles = currentRole === "admin" || currentRole === "superadmin";
+  const { consume } = useLimitGuard();
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | AppRole>("all");
   const [filterBiz, setFilterBiz] = useState<"all" | BusinessType>("all");
@@ -129,6 +131,8 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
     }
     setCreating(true);
     try {
+      const gate = await consume("max_users", 1);
+      if (!gate.allowed) { setCreating(false); return; }
       // Sign up the user via Supabase Auth
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: createForm.email,

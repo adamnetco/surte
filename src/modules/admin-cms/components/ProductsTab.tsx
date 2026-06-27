@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import { productSchema, firstZodMessage } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useLimitGuard } from "@/lib/entitlements/useLimitGuard";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(price);
@@ -219,6 +220,7 @@ const FeaturedTagsPicker = ({ tags, onTagsChange, orgId }: { tags: string; onTag
 
 const ProductsTab = ({ products, categories, queryClient }: { products: any[]; categories: any[]; queryClient: any }) => {
   const { currentOrg } = useOrganization();
+  const { consume } = useLimitGuard();
   const { data: inactiveBrands } = useInactiveBrands(currentOrg?.id);
   const isBrandHidden = (p: any) => !!p.brand && !!inactiveBrands && inactiveBrands.has(p.brand.toLowerCase());
   const [editing, setEditing] = useState<string | null>(null);
@@ -360,6 +362,8 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
       toast.success("Producto actualizado");
     } else {
       if (!currentOrg?.id) { toast.error("Selecciona una organización"); return; }
+      const gate = await consume("max_products", 1);
+      if (!gate.allowed) return;
       const { data: newProduct, error } = await supabase.from("products").insert({ ...payload, organization_id: currentOrg.id }).select("id, name, price, base_unit").single();
       if (error) { toast.error(errorToMessage(error)); return; }
       // Base presentation is auto-created by the DB trigger (trg_auto_base_presentation)
