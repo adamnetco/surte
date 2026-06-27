@@ -135,9 +135,13 @@ Deno.serve(async (req) => {
       await admin.from("dunning_events").insert({
         organization_id: inv.organization_id,
         subscription_id: inv.subscription_id,
-        event_type: "retry_scheduled",
-        metadata: { invoice_id: inv.id, attempt, next_retry_at: nextRetryAt, reference, checkout_url: checkoutUrl },
+        invoice_id: inv.id,
+        attempt,
+        status: "retry_scheduled",
+        reason: `Reintento ${attempt} programado para ${nextRetryAt} (ref ${reference})`,
+        next_retry_at: nextRetryAt,
       }).then(() => {}).catch(() => {});
+
 
       results.push({ invoice_id: inv.id, action: "retry_scheduled", attempt, next_retry_at: nextRetryAt });
     }
