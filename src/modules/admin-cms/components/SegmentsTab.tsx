@@ -103,10 +103,17 @@ const SegmentsTab = () => {
             Recency · Frequency · Monetary — clasificación automática para campañas.
           </p>
         </div>
-        <Button onClick={() => recompute.mutate()} disabled={recompute.isPending} size="sm" className="gap-1">
-          <RefreshCw className={`h-4 w-4 ${recompute.isPending ? "animate-spin" : ""}`} /> Recalcular
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setCampaignOpen(true)} variant="outline" size="sm" className="gap-1">
+            <MessageCircle className="h-4 w-4" /> Campaña WhatsApp
+          </Button>
+          <Button onClick={() => recompute.mutate()} disabled={recompute.isPending} size="sm" className="gap-1">
+            <RefreshCw className={`h-4 w-4 ${recompute.isPending ? "animate-spin" : ""}`} /> Recalcular
+          </Button>
+        </div>
       </div>
+
+      <RfmCampaignSheet open={campaignOpen} onOpenChange={setCampaignOpen} />
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
         {SEGMENTS.map((s) => {
