@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,7 +115,24 @@ export default function Inventario() {
 
       {/* Stock list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {loading && <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>}
+        {loading && (
+          <div className="space-y-2" aria-busy="true" aria-live="polite" aria-label="Cargando inventario">
+            {[0,1,2,3,4].map((i) => (
+              <div key={i} className="bg-card rounded-xl p-3 border border-border flex gap-3 items-center">
+                <Skeleton className="w-12 h-12 rounded-lg" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-2/3" />
+                  <Skeleton className="h-2.5 w-1/2" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {!loading && filtered.length === 0 && (
           <div className="text-center py-12 text-muted-foreground text-sm">
             Sin existencias registradas en esta bodega.
