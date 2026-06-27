@@ -61,27 +61,39 @@ export function useDianHealth(organizationId: string | null | undefined): DianHe
       setSnap(v);
     })();
 
-    const channel = supabase
-      .channel(`dian-health-${organizationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "einvoice_configs",
-          filter: `organization_id=eq.${organizationId}`,
-        },
-        (payload) => {
-          const v = parseRow(payload.new);
-          cache.set(organizationId, { value: v, at: Date.now() });
-          setSnap(v);
-        },
-      )
-      .subscribe();
+    // Topic único por mount: evita "cannot add postgres_changes callbacks"
+    // cuando StrictMode/HMR remontan el hook y supabase.channel(name) devuelve
+    // una referencia ya joined.
+    const topic = `dian-health-${organizationId}-${Math.random().toString(36).slice(2, 8)}`;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(topic)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "einvoice_configs",
+            filter: `organization_id=eq.${organizationId}`,
+          },
+          (payload) => {
+            const v = parseRow(payload.new);
+            cache.set(organizationId, { value: v, at: Date.now() });
+            setSnap(v);
+          },
+        )
+        .subscribe();
+    } catch (err) {
+      // Realtime no es crítico: el cache + fetch inicial cubren el caso.
+      console.warn("[useDianHealth] realtime subscribe failed", err);
+    }
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch { /* noop */ }
+      }
     };
   }, [organizationId]);
 
