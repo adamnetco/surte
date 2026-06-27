@@ -134,7 +134,6 @@ export default function HealthEvents() {
 
       {err && <Card className="p-3 border-destructive/40 bg-destructive/5 text-sm text-destructive">{err}</Card>}
 
-      <div className="grid gap-3 md:grid-cols-2">
       <ConversionFunnelPanel />
 
       <div className="grid gap-3 md:grid-cols-2">
