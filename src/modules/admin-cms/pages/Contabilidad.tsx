@@ -363,13 +363,21 @@ export default function Contabilidad() {
 
           {/* Períodos */}
           <TabsContent value="periods" className="space-y-3 mt-4">
+            <Card className="p-4 space-y-3">
+              <h3 className="font-semibold">Abrir nuevo período</h3>
+              <PeriodOpener orgId={orgId} onDone={() => periodsQ.refetch()} />
+            </Card>
+
             <Card className="p-4">
-              <h3 className="font-semibold mb-3">Períodos fiscales</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold">Períodos fiscales</h3>
+                <YearCloseButton orgId={orgId} onDone={() => { periodsQ.refetch(); entriesQ.refetch(); }} />
+              </div>
               {periodsQ.isLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : (periodsQ.data?.length ?? 0) === 0 ? (
                 <p className="text-sm text-muted-foreground py-6 text-center">
-                  Aún no se han abierto períodos. Slice 4 incluirá apertura/cierre mensual y bloqueo de posting.
+                  Aún no se han abierto períodos. Crea el primero arriba.
                 </p>
               ) : (
                 <Table>
@@ -379,6 +387,7 @@ export default function Contabilidad() {
                       <TableHead>Desde</TableHead>
                       <TableHead>Hasta</TableHead>
                       <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -389,6 +398,9 @@ export default function Contabilidad() {
                         <TableCell className="font-mono text-xs">{p.end_date}</TableCell>
                         <TableCell>
                           <Badge variant={p.status === "open" ? "default" : "secondary"}>{p.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <PeriodActions period={p} role={role} onDone={() => periodsQ.refetch()} />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -401,4 +413,78 @@ export default function Contabilidad() {
       </main>
     </div>
   );
+}
+
+// ============ Period subcomponents ============
+function PeriodOpener({ orgId, onDone }: { orgId: string; onDone: () => void }) {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth() + 1;
+  const start = `${y}-${String(m).padStart(2, "0")}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const end = `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  const [name, setName] = useState(`${y}-${String(m).padStart(2, "0")}`);
+  const [s, setS] = useState(start);
+  const [e, setE] = useState(end);
+  const [loading, setLoading] = useState(false);
+
+  const open = async () => {
+    if (!name.trim()) return toast.error("Falta el nombre del período");
+    setLoading(true);
+    const { error } = await supabase.rpc("open_fiscal_period" as any, { _org: orgId, _name: name, _start: s, _end: e });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Período abierto");
+    onDone();
+  };
+
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <div><label className="text-xs text-muted-foreground block mb-1">Nombre</label><Input value={name} onChange={(ev) => setName(ev.target.value)} className="w-32" /></div>
+      <div><label className="text-xs text-muted-foreground block mb-1">Desde</label><Input type="date" value={s} onChange={(ev) => setS(ev.target.value)} className="w-40" /></div>
+      <div><label className="text-xs text-muted-foreground block mb-1">Hasta</label><Input type="date" value={e} onChange={(ev) => setE(ev.target.value)} className="w-40" /></div>
+      <Button size="sm" onClick={open} disabled={loading}>Abrir período</Button>
+    </div>
+  );
+}
+
+function PeriodActions({ period, role, onDone }: { period: any; role: string; onDone: () => void }) {
+  const close = async () => {
+    if (!window.confirm(`Cerrar el período ${period.name}? Ya no se podrán registrar asientos en sus fechas.`)) return;
+    const { error } = await supabase.rpc("close_fiscal_period" as any, { _id: period.id });
+    if (error) return toast.error(error.message);
+    toast.success("Período cerrado");
+    onDone();
+  };
+  const reopen = async () => {
+    const { error } = await supabase.rpc("reopen_fiscal_period" as any, { _id: period.id });
+    if (error) return toast.error(error.message);
+    toast.success("Período reabierto");
+    onDone();
+  };
+  if (period.status === "open") {
+    return <Button size="sm" variant="outline" onClick={close}>Cerrar</Button>;
+  }
+  if (role === "superadmin") {
+    return <Button size="sm" variant="ghost" onClick={reopen}>Reabrir</Button>;
+  }
+  return <span className="text-xs text-muted-foreground">—</span>;
+}
+
+function YearCloseButton({ orgId, onDone }: { orgId: string; onDone: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const run = async () => {
+    const yr = prompt("¿Qué año cerrar? (ej. " + new Date().getFullYear() + ")");
+    if (!yr) return;
+    const year = parseInt(yr, 10);
+    if (!year || year < 2000) return toast.error("Año inválido");
+    if (!window.confirm(`Generar asiento de cierre del año ${year}? Transfiere ingresos/costos/gastos a Utilidades Retenidas.`)) return;
+    setLoading(true);
+    const { error } = await supabase.rpc("close_fiscal_year" as any, { _org: orgId, _year: year });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Cierre de ejercicio ${year} generado`);
+    onDone();
+  };
+  return <Button size="sm" variant="outline" onClick={run} disabled={loading}>Cierre de ejercicio…</Button>;
 }

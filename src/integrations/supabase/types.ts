@@ -9919,6 +9919,11 @@ export type Database = {
         Args: { _counts: Json; _session_id: string }
         Returns: Json
       }
+      close_fiscal_period: { Args: { _id: string }; Returns: undefined }
+      close_fiscal_year: {
+        Args: { _org: string; _year: number }
+        Returns: string
+      }
       complete_persistent_cart: {
         Args: { _cart_token: string }
         Returns: boolean
@@ -10278,6 +10283,10 @@ export type Database = {
         }
         Returns: number
       }
+      open_fiscal_period: {
+        Args: { _end: string; _name: string; _org: string; _start: string }
+        Returns: string
+      }
       org_role: { Args: { _org_id: string }; Returns: string }
       peek_limit: {
         Args: { _limit_key: string; _org_id: string; _period?: string }
@@ -10356,6 +10365,7 @@ export type Database = {
         Returns: Json
       }
       rematch_invoice_scan: { Args: { _scan_id: string }; Returns: Json }
+      reopen_fiscal_period: { Args: { _id: string }; Returns: undefined }
       report_balance_sheet: {
         Args: { _as_of: string; _org: string }
         Returns: Json
