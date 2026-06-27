@@ -180,11 +180,30 @@ export default function Planes() {
                   </li>
                 )}
               </ul>
-              <Button asChild className="mt-5 w-full" variant={isHighlighted || isPro ? "default" : "outline"}>
-                <Link to={p.key === "enterprise" ? "/ayuda" : `/onboarding?plan=${p.key}${returnTo ? `&return_to=${encodeURIComponent(returnTo)}` : ""}`}>
-                  {p.price_monthly === 0 ? "Empezar gratis" : `Probar ${p.trial_days} días`}
-                </Link>
-              </Button>
+              {(() => {
+                const isPaid = p.price_monthly > 0 && p.key !== "enterprise";
+                const inlineCheckout = canSubscribeInline && isPaid;
+                const busy = checkoutPlan === p.key;
+                if (inlineCheckout) {
+                  return (
+                    <Button
+                      className="mt-5 w-full"
+                      variant={isHighlighted || isPro ? "default" : "outline"}
+                      disabled={busy}
+                      onClick={() => startWompiCheckout(p.key)}
+                    >
+                      {busy ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirigiendo…</> : `Suscribirme — ${COP(price)}/mes`}
+                    </Button>
+                  );
+                }
+                return (
+                  <Button asChild className="mt-5 w-full" variant={isHighlighted || isPro ? "default" : "outline"}>
+                    <Link to={p.key === "enterprise" ? "/ayuda" : `/onboarding?plan=${p.key}${returnTo ? `&return_to=${encodeURIComponent(returnTo)}` : ""}`}>
+                      {p.price_monthly === 0 ? "Empezar gratis" : `Probar ${p.trial_days} días`}
+                    </Link>
+                  </Button>
+                );
+              })()}
             </Card>
           );
         })}
