@@ -36,6 +36,7 @@ const UsersTab = ({ queryClient }: { queryClient: any }) => {
   const { user: currentUser, role: currentRole } = useAuth();
   const { currentOrg } = useOrganization();
   const canManageRoles = currentRole === "admin" || currentRole === "superadmin";
+  const { consume } = useLimitGuard();
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | AppRole>("all");
   const [filterBiz, setFilterBiz] = useState<"all" | BusinessType>("all");
