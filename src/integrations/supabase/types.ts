@@ -9363,6 +9363,7 @@ export type Database = {
         Returns: Json
       }
       current_org_id: { Args: never; Returns: string }
+      customer_360: { Args: { p_profile_id: string }; Returns: Json }
       default_org_id: { Args: never; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
