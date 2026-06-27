@@ -75,7 +75,7 @@ export default function Compras() {
 // ─── PROVEEDORES ────────────────────────────────────────────
 function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<any>({ name: "", tax_id: "", contact_name: "", phone: "", email: "", city: "", payment_terms_days: 30, lead_time_days: 3 });
+  const [form, setForm] = useState<any>({ name: "", tax_id: "", contact_name: "", phone: "", email: "", city: "", payment_terms_days: 30, lead_time_days: 3, requires_support_doc: false, is_natural_person: true, document_type_code: "CC", regimen: "no_responsable_iva" });
 
   const { data: suppliers } = useQuery({
     queryKey: ["suppliers", orgId],
@@ -91,7 +91,7 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
     if (error) return toast.error(error.message);
     toast.success("Proveedor creado");
     setOpen(false);
-    setForm({ name: "", tax_id: "", contact_name: "", phone: "", email: "", city: "", payment_terms_days: 30, lead_time_days: 3 });
+    setForm({ name: "", tax_id: "", contact_name: "", phone: "", email: "", city: "", payment_terms_days: 30, lead_time_days: 3, requires_support_doc: false, is_natural_person: true, document_type_code: "CC", regimen: "no_responsable_iva" });
     qc.invalidateQueries({ queryKey: ["suppliers", orgId] });
   };
 
@@ -120,6 +120,42 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
               <div><Label>Ciudad</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
               <div><Label>Plazo de pago (días)</Label><Input type="number" value={form.payment_terms_days} onChange={(e) => setForm({ ...form, payment_terms_days: +e.target.value })} /></div>
               <div><Label>Lead time (días)</Label><Input type="number" value={form.lead_time_days} onChange={(e) => setForm({ ...form, lead_time_days: +e.target.value })} /></div>
+
+              <div className="col-span-2 border-t pt-3 mt-1">
+                <Label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="h-4 w-4" checked={form.requires_support_doc} onChange={(e) => setForm({ ...form, requires_support_doc: e.target.checked })} />
+                  <span>Requiere Documento Soporte DIAN</span>
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">Marca si el proveedor NO está obligado a facturar electrónicamente (Res. 167/2021). Generaremos el DS por él al recibir la compra.</p>
+              </div>
+              {form.requires_support_doc && (
+                <>
+                  <div>
+                    <Label>Tipo de documento</Label>
+                    <Select value={form.document_type_code} onValueChange={(v) => setForm({ ...form, document_type_code: v, is_natural_person: v !== "NIT" })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CC">CC — Cédula</SelectItem>
+                        <SelectItem value="CE">CE — Cédula Extranjería</SelectItem>
+                        <SelectItem value="PA">PA — Pasaporte</SelectItem>
+                        <SelectItem value="TI">TI — Tarjeta de Identidad</SelectItem>
+                        <SelectItem value="NIT">NIT — Persona Jurídica</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Régimen tributario</Label>
+                    <Select value={form.regimen} onValueChange={(v) => setForm({ ...form, regimen: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no_responsable_iva">No responsable de IVA</SelectItem>
+                        <SelectItem value="regimen_simple">Régimen Simple</SelectItem>
+                        <SelectItem value="responsable_iva">Responsable de IVA</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
             </div>
             <Button onClick={save}>Guardar</Button>
           </DialogContent>
@@ -135,7 +171,11 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
         <TableBody>
           {suppliers?.map((s: any) => (
             <TableRow key={s.id}>
-              <TableCell className="font-medium">{s.name}<div className="text-xs text-muted-foreground">{s.city ?? "—"}</div></TableCell>
+              <TableCell className="font-medium">
+                {s.name}
+                {s.requires_support_doc && <Badge variant="outline" className="ml-2 text-[10px] border-amber-500 text-amber-700">DS DIAN</Badge>}
+                <div className="text-xs text-muted-foreground">{s.city ?? "—"}</div>
+              </TableCell>
               <TableCell>{s.tax_id ?? "—"}</TableCell>
               <TableCell className="text-sm">{s.contact_name ?? "—"}<div className="text-xs text-muted-foreground">{s.phone ?? s.email ?? ""}</div></TableCell>
               <TableCell>{s.lead_time_days ?? 0}d</TableCell>

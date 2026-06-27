@@ -7610,6 +7610,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string | null
+          ds_emitted_at: string | null
+          ds_invoice_id: string | null
+          ds_required: boolean
           expected_at: string | null
           id: string
           invoice_scan_id: string | null
@@ -7631,6 +7634,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string | null
+          ds_emitted_at?: string | null
+          ds_invoice_id?: string | null
+          ds_required?: boolean
           expected_at?: string | null
           id?: string
           invoice_scan_id?: string | null
@@ -7652,6 +7658,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string | null
+          ds_emitted_at?: string | null
+          ds_invoice_id?: string | null
+          ds_required?: boolean
           expected_at?: string | null
           id?: string
           invoice_scan_id?: string | null
@@ -7670,6 +7679,13 @@ export type Database = {
           warehouse_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "purchase_orders_ds_invoice_id_fkey"
+            columns: ["ds_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "electronic_invoices"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchase_orders_invoice_scan_id_fkey"
             columns: ["invoice_scan_id"]
@@ -8571,15 +8587,19 @@ export type Database = {
           contact_name: string | null
           created_at: string
           created_by: string | null
+          document_type_code: string
           email: string | null
           id: string
           is_active: boolean
+          is_natural_person: boolean
           lead_time_days: number | null
           name: string
           notes: string | null
           organization_id: string
           payment_terms_days: number | null
           phone: string | null
+          regimen: string
+          requires_support_doc: boolean
           tax_id: string | null
           updated_at: string
         }
@@ -8589,15 +8609,19 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           created_by?: string | null
+          document_type_code?: string
           email?: string | null
           id?: string
           is_active?: boolean
+          is_natural_person?: boolean
           lead_time_days?: number | null
           name: string
           notes?: string | null
           organization_id: string
           payment_terms_days?: number | null
           phone?: string | null
+          regimen?: string
+          requires_support_doc?: boolean
           tax_id?: string | null
           updated_at?: string
         }
@@ -8607,15 +8631,19 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           created_by?: string | null
+          document_type_code?: string
           email?: string | null
           id?: string
           is_active?: boolean
+          is_natural_person?: boolean
           lead_time_days?: number | null
           name?: string
           notes?: string | null
           organization_id?: string
           payment_terms_days?: number | null
           phone?: string | null
+          regimen?: string
+          requires_support_doc?: boolean
           tax_id?: string | null
           updated_at?: string
         }
