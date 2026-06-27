@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Users, Truck, Phone, Mail, MapPin, Loader2, Tag } from "lucide-react";
+import { Search, Users, Truck, Phone, Mail, MapPin, Loader2, Tag, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import Customer360Sheet from "./Customer360Sheet";
 
 type TabKind = "customers" | "suppliers";
 
@@ -16,6 +18,7 @@ const ContactsTab = () => {
   const [tab, setTab] = useState<TabKind>("customers");
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [open360, setOpen360] = useState(false);
 
   const { data: customers, isLoading: lc } = useQuery({
     queryKey: ["admin-customers", orgId],
@@ -197,13 +200,20 @@ const ContactsTab = () => {
             <p className="text-sm text-muted-foreground text-center py-12">Selecciona un contacto para ver su historial.</p>
           ) : (
             <div className="space-y-3">
-              <div>
-                <h3 className="font-semibold">{(selected as any).full_name || (selected as any).name}</h3>
-                <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
-                  {(selected as any).phone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{(selected as any).phone}</div>}
-                  {(selected as any).email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{(selected as any).email}</div>}
-                  {(selected as any).city && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{(selected as any).city}</div>}
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="font-semibold">{(selected as any).full_name || (selected as any).name}</h3>
+                  <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
+                    {(selected as any).phone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{(selected as any).phone}</div>}
+                    {(selected as any).email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{(selected as any).email}</div>}
+                    {(selected as any).city && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{(selected as any).city}</div>}
+                  </div>
                 </div>
+                {tab === "customers" && (
+                  <Button size="sm" variant="outline" onClick={() => setOpen360(true)} className="gap-1 shrink-0">
+                    <BarChart3 className="h-3.5 w-3.5" /> Ficha 360°
+                  </Button>
+                )}
               </div>
 
               {tab === "customers" && (
@@ -260,6 +270,12 @@ const ContactsTab = () => {
           )}
         </div>
       </div>
+
+      <Customer360Sheet
+        profileId={tab === "customers" ? selectedId : null}
+        open={open360}
+        onOpenChange={setOpen360}
+      />
     </div>
   );
 };
