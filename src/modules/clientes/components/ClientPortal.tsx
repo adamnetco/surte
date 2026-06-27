@@ -41,9 +41,17 @@ export function ClientPortal() {
 
   if (loading) {
     return (
-      <div className="min-h-[60dvh] flex items-center justify-center text-sm text-muted-foreground">
-        Cargando…
-      </div>
+      <section className="py-8 md:py-12" aria-busy="true" aria-live="polite">
+        <div className="container max-w-7xl mx-auto px-4 space-y-4">
+          <div className="h-8 w-48 rounded-md bg-muted animate-pulse" />
+          <div className="h-4 w-64 rounded-md bg-muted animate-pulse" />
+          <div className="grid gap-3 mt-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-32 rounded-xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </section>
     );
   }
   if (!user) return <Navigate to="/user/login?redirect=/clientes" replace />;

@@ -85,7 +85,16 @@ export default function KDS() {
   };
 
   if (authLoading || orgLoading || loading) {
-    return <div className="min-h-[100dvh] grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+    return (
+      <div className="min-h-[100dvh] p-4" aria-busy="true" aria-live="polite">
+        <div className="h-8 w-48 rounded-md bg-muted animate-pulse mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
   }
   if (!currentOrg) return <div className="min-h-[100dvh] grid place-items-center text-muted-foreground">Sin organización</div>;
   if (!hasModule("kds")) {
