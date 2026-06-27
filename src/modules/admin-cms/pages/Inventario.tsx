@@ -7,6 +7,7 @@ import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTri
 import KardexSheet from "../components/KardexSheet";
 import CriticalStockSheet from "../components/CriticalStockSheet";
 import ConteoFisicoSheet from "../components/ConteoFisicoSheet";
+import TrasladoSheet from "../components/TrasladoSheet";
 import { toast } from "sonner";
 
 type Warehouse = { id: string; name: string; code: string | null; is_default: boolean; location_id: string; warehouse_type: string };
