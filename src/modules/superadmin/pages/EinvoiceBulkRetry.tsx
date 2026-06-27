@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 /**
  * POS-einvoice-bulk-retry-admin · AC6 — UI Superadmin
  * Permite seleccionar N organizaciones (máx 20), parametrizar batch_size y

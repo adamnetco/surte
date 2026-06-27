@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 /**
  * HealthLogs — panel admin de eventos de salud (printer/core/wp/sites).
  *

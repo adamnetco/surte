@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 /**
  * POS-einvoice-bulk-retry-hardening · Audit UI
  *
