@@ -6,6 +6,7 @@ import { Activity, Loader2, AlertTriangle, History, ShieldAlert } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { auditedMutation } from "@/lib/audit/auditedMutation";
 import { handleAuditError } from "@/lib/audit/handleCosign";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type LifecycleState =
   | "pending" | "trial" | "active" | "past_due" | "suspended" | "archived";
