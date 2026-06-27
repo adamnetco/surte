@@ -1,5 +1,178 @@
-// Slice 5 — Exports contables (Siigo / Alegra CSV + PDF estados financieros)
+// Slice 5/6 — Exports contables (Siigo / Alegra CSV + PDF estados financieros + Reportes contador)
+import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
+
+// ------------------------------ Reportes para el contador ------------------------------
+const safe = (s: string) => s.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+
+export type EInvoiceRow = {
+  issue_date: string;
+  full_number: string | null;
+  document_type: string;
+  status: string;
+  customer_identification: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  subtotal: number;
+  tax_total: number;
+  total: number;
+  cufe: string | null;
+  track_id: string | null;
+  environment: string;
+  is_contingency: boolean;
+  pdf_url: string | null;
+  xml_url: string | null;
+};
+
+export type VatRow = {
+  tax_rate: number;
+  base_amount: number;
+  tax_amount: number;
+  total_amount: number;
+  ticket_count: number;
+};
+
+export type LedgerRow = {
+  entry_date: string;
+  entry_id: string;
+  narration: string | null;
+  reference_type: string | null;
+  debit: number;
+  credit: number;
+  running_balance: number;
+};
+
+const DOC_LABEL: Record<string,string> = {
+  invoice: "Factura",
+  credit_note: "Nota crédito",
+  debit_note: "Nota débito",
+  support_document: "Doc. soporte",
+  payroll: "Nómina",
+};
+
+/** Excel — Listado de Facturas Electrónicas para DIAN / contador. */
+export function exportEInvoicesXLSX(opts: {
+  orgName: string; from: string; to: string; rows: EInvoiceRow[];
+}) {
+  const { orgName, from, to, rows } = opts;
+  const data = rows.map((r) => ({
+    Fecha: r.issue_date,
+    Numero: r.full_number ?? "",
+    Tipo: DOC_LABEL[r.document_type] ?? r.document_type,
+    Estado: r.status,
+    NIT_CC: r.customer_identification ?? "",
+    Cliente: r.customer_name ?? "",
+    Email: r.customer_email ?? "",
+    Subtotal: Number(r.subtotal || 0),
+    IVA: Number(r.tax_total || 0),
+    Total: Number(r.total || 0),
+    CUFE: r.cufe ?? "",
+    TrackId: r.track_id ?? "",
+    Ambiente: r.environment,
+    Contingencia: r.is_contingency ? "SI" : "",
+    PDF: r.pdf_url ?? "",
+    XML: r.xml_url ?? "",
+  }));
+
+  const totals = rows.reduce(
+    (a, r) => ({
+      sub: a.sub + Number(r.subtotal || 0),
+      tax: a.tax + Number(r.tax_total || 0),
+      tot: a.tot + Number(r.total || 0),
+    }),
+    { sub: 0, tax: 0, tot: 0 }
+  );
+
+  const wb = XLSX.utils.book_new();
+  const meta = [
+    ["Organización", orgName],
+    ["Reporte", "Facturas Electrónicas DIAN"],
+    ["Desde", from], ["Hasta", to],
+    ["Total facturas", rows.length],
+    ["Subtotal", totals.sub],
+    ["IVA", totals.tax],
+    ["Total", totals.tot],
+    ["Generado", new Date().toISOString()],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), "Resumen");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Facturas DIAN");
+  XLSX.writeFile(wb, `facturas-dian-${safe(orgName)}-${from}_${to}.xlsx`);
+}
+
+/** Excel — Resumen de IVA por tarifa (para declaración). */
+export function exportVatSummaryXLSX(opts: {
+  orgName: string; from: string; to: string; rows: VatRow[];
+}) {
+  const { orgName, from, to, rows } = opts;
+  const data = rows.map((r) => ({
+    "Tarifa (%)": Number(r.tax_rate),
+    "Base gravable": Number(r.base_amount),
+    "IVA": Number(r.tax_amount),
+    "Total": Number(r.total_amount),
+    "Tickets": Number(r.ticket_count),
+  }));
+  const totals = rows.reduce(
+    (a, r) => ({
+      base: a.base + Number(r.base_amount || 0),
+      iva: a.iva + Number(r.tax_amount || 0),
+      tot: a.tot + Number(r.total_amount || 0),
+    }),
+    { base: 0, iva: 0, tot: 0 }
+  );
+  data.push({
+    "Tarifa (%)": NaN as any,
+    "Base gravable": totals.base,
+    "IVA": totals.iva,
+    "Total": totals.tot,
+    "Tickets": rows.reduce((s, r) => s + Number(r.ticket_count || 0), 0),
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet([
+      ["Organización", orgName],
+      ["Reporte", "Resumen de IVA generado en ventas"],
+      ["Desde", from], ["Hasta", to],
+      ["Generado", new Date().toISOString()],
+    ]),
+    "Resumen"
+  );
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "IVA por tarifa");
+  XLSX.writeFile(wb, `resumen-iva-${safe(orgName)}-${from}_${to}.xlsx`);
+}
+
+/** Excel — Libro auxiliar de una cuenta contable. */
+export function exportAccountLedgerXLSX(opts: {
+  orgName: string; from: string; to: string;
+  accountCode: string; accountName: string; rows: LedgerRow[];
+}) {
+  const { orgName, from, to, accountCode, accountName, rows } = opts;
+  const data = rows.map((r) => ({
+    Fecha: r.entry_date,
+    Asiento: r.entry_id.slice(0, 8),
+    Concepto: r.narration ?? "",
+    Origen: r.reference_type ?? "",
+    Debito: Number(r.debit || 0),
+    Credito: Number(r.credit || 0),
+    Saldo: Number(r.running_balance || 0),
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet([
+      ["Organización", orgName],
+      ["Reporte", "Libro auxiliar"],
+      ["Cuenta", `${accountCode} — ${accountName}`],
+      ["Desde", from], ["Hasta", to],
+      ["Movimientos", rows.length],
+      ["Generado", new Date().toISOString()],
+    ]),
+    "Resumen"
+  );
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Libro auxiliar");
+  XLSX.writeFile(wb, `libro-auxiliar-${accountCode}-${safe(orgName)}-${from}_${to}.xlsx`);
+}
+// ---------------------------------------------------------------------------------------
 
 const csvEscape = (v: unknown) => {
   const s = v == null ? "" : String(v);
