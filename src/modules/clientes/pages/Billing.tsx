@@ -5,8 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { CreditCard, Calendar, ArrowUpRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { CreditCard, Calendar, ArrowUpRight, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 
