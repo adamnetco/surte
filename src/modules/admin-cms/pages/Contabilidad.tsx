@@ -9,11 +9,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookOpen, Layers, Calendar, RefreshCw, BarChart3 } from "lucide-react";
+import { BookOpen, Layers, Calendar, RefreshCw, BarChart3, FileDown, Printer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
+import { exportSiigoCSV, exportAlegraCSV, printFinancialStatements } from "@/modules/admin-cms/lib/accountingExports";
 
 type Account = {
   id: string;
