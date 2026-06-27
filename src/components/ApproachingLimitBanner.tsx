@@ -117,6 +117,7 @@ export function ApproachingLimitBanner() {
 
 /** Variante compacta (inline) para mostrar dentro de pantallas específicas. */
 export function ApproachingLimitInline({ warning }: { warning: LimitWarning }) {
+  const { currentOrg } = useOrganization();
   const navigate = useNavigate();
   const location = useLocation();
   const upgradeUrl = buildUpgradeUrl(
@@ -137,7 +138,10 @@ export function ApproachingLimitInline({ warning }: { warning: LimitWarning }) {
       </span>
       <button
         type="button"
-        onClick={() => navigate(upgradeUrl)}
+        onClick={() => {
+          void logUpgradeClick(currentOrg?.id, { kind: "limit", key: warning.key, from: "inline" });
+          navigate(upgradeUrl);
+        }}
         className="underline font-semibold"
       >
         Mejorar
