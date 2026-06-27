@@ -261,7 +261,11 @@ const TenantEntitlements = () => {
         </div>
 
         {loading ? (
-          <div className="p-6 text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
+          <div className="space-y-2" aria-busy="true" aria-live="polite">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />
+            ))}
+          </div>
         ) : (
           Object.entries(grouped).map(([cat, rows]) => (
             <div key={cat} className="rounded-lg border border-border bg-card overflow-hidden">

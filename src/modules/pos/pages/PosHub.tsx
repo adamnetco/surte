@@ -111,7 +111,16 @@ export default function PosHub() {
   };
 
   if (authLoading || orgLoading) {
-    return <div className="min-h-[100dvh] grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+    return (
+      <div className="min-h-[100dvh] p-6" aria-busy="true" aria-live="polite">
+        <div className="h-10 w-64 rounded-md bg-muted animate-pulse mb-6" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
   }
   if (!currentOrg) {
     return (
