@@ -4,7 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Sparkles, ArrowUpRight } from "lucide-react";
+import { Check, Sparkles, ArrowUpRight, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useAuth } from "@/modules/auth/context/AuthContext";
 
 interface Plan {
   id: string; key: string; name: string; description: string;
