@@ -10415,7 +10415,10 @@ export type Database = {
           full_number: string
           is_contingency: boolean
           issue_date: string
+          note_concept_code: string
           pdf_url: string
+          reference_cufe: string
+          reference_full_number: string
           status: string
           subtotal: number
           tax_total: number
