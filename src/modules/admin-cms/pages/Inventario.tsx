@@ -232,6 +232,16 @@ export default function Inventario() {
         warehouseName={warehouses.find((w) => w.id === warehouseId)?.name}
         onApplied={loadStock}
       />
+
+      <TrasladoSheet
+        open={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        orgId={currentOrg.id}
+        fromWarehouseId={warehouseId}
+        fromWarehouseName={warehouses.find((w) => w.id === warehouseId)?.name}
+        warehouses={warehouses}
+        onApplied={loadStock}
+      />
     </div>
   );
 }
