@@ -15,7 +15,7 @@ SistecPOS tiene features completas pero el flujo diario del operador todavía ti
 ## Outcomes
 
 ### Onboarding
-- [ ] **AC1:** Wizard de 5 pasos para nuevo tenant: datos empresa → ubicación → primer producto → primer usuario → tour rápido (`Onboarding.tsx` cubre 4/5; falta primer producto)
+- [x] **AC1:** Wizard de 7 pasos (datos empresa → ubicación → tipo negocio → módulos → **primer producto** → plan → celebración). Producto es opcional con skip explícito; al ingresarse se inserta en `products` scoped por org y marca `first_product_done` en `onboarding_progress`.
 - [x] **AC2:** Checklist persistente — implementado como chip flotante `OnboardingChecklist` con popover (3/5, dismiss 12h, oculto en POS/KDS/print). Admin no tiene sidebar desktop, por eso es chip global.
 - [x] **AC3:** Tour interactivo casero `FirstLoginTour.tsx` (sin driver.js): spotlight con clip-path + tooltip portal. Steps: Diario, ⌘K, FAB, Checklist. Persiste `sistecpos:tour:v1:<user>:<org>`. Anclajes `data-tour` añadidos.
 
