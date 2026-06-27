@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, HeartPulse, RefreshCw, ShieldAlert, Activity, MessageCircle } from "lucide-react";
+import { GateDenialsPanel } from "@/modules/superadmin/components/GateDenialsPanel";
 
 type HealthRow = {
   id: string;
