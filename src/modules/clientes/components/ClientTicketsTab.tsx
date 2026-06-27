@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState, useMemo, useRef, Suspense, lazy } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";

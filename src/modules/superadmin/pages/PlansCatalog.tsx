@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 /**
  * /superadmin/planes — Editor único Plan × Módulos × Límites.
  * Fuente de verdad: tablas plan_modules + plan_limits.
