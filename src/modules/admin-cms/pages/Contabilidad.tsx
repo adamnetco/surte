@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
-import { exportSiigoCSV, exportAlegraCSV, printFinancialStatements } from "@/modules/admin-cms/lib/accountingExports";
+import { exportSiigoCSV, exportAlegraCSV, printFinancialStatements, exportEInvoicesXLSX, exportVatSummaryXLSX, exportAccountLedgerXLSX, type EInvoiceRow, type VatRow, type LedgerRow } from "@/modules/admin-cms/lib/accountingExports";
+import { FileText, Receipt, Search } from "lucide-react";
 
 type Account = {
   id: string;
