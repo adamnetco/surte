@@ -10045,6 +10045,20 @@ export type Database = {
           method: string
         }[]
       }
+      report_sales_by_location: {
+        Args: { _from: string; _org_id: string; _to: string }
+        Returns: {
+          avg_ticket: number
+          discount: number
+          gross: number
+          location_id: string
+          location_name: string
+          net: number
+          refunds: number
+          tax: number
+          tickets: number
+        }[]
+      }
       report_sales_summary: {
         Args: {
           _from: string
