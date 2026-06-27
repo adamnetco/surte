@@ -448,7 +448,16 @@ export default function FxFraudPage() {
             </CardContent>
           </Card>
 
-          {watchQ.isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
+          {watchQ.isLoading && (
+            <div className="space-y-2" aria-busy="true" aria-live="polite">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={`sk-w-${i}`}><CardContent className="p-3 flex items-center justify-between gap-2">
+                  <div className="space-y-1.5"><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-56" /></div>
+                  <Skeleton className="h-7 w-16 rounded-md" />
+                </CardContent></Card>
+              ))}
+            </div>
+          )}
           {!watchQ.isLoading && watch.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
