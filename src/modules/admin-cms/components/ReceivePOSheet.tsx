@@ -42,6 +42,8 @@ declare global {
 export default function ReceivePOSheet({ open, onOpenChange, poId, orgId, warehouseId, onReceived }: Props) {
   const qc = useQueryClient();
   const [received, setReceived] = useState<Record<string, number>>({});
+  const [adjustTo, setAdjustTo] = useState<Record<string, string>>({});
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
