@@ -10590,6 +10590,7 @@ export type Database = {
         }
         Returns: Json
       }
+      resolve_entitlements: { Args: { p_org_id: string }; Returns: Json }
       resolve_limit: {
         Args: { _limit_key: string; _org_id: string }
         Returns: number
