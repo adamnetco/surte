@@ -75,7 +75,7 @@ export default function Compras() {
 // ─── PROVEEDORES ────────────────────────────────────────────
 function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<any>({ name: "", tax_id: "", contact_name: "", phone: "", email: "", city: "", payment_terms_days: 30, lead_time_days: 3 });
+  const [form, setForm] = useState<any>({ name: "", tax_id: "", contact_name: "", phone: "", email: "", city: "", payment_terms_days: 30, lead_time_days: 3, requires_support_doc: false, is_natural_person: true, document_type_code: "CC", regimen: "no_responsable_iva" });
 
   const { data: suppliers } = useQuery({
     queryKey: ["suppliers", orgId],
