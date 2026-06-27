@@ -77,6 +77,66 @@ export default function ReceivePOSheet({ open, onOpenChange, poId, orgId, wareho
     enabled: !!poId && open,
   });
 
+  // Stock actual por producto en la bodega de recepción (para pre-ajuste)
+  const productIds = (items ?? []).map((i) => i.product_id).filter(Boolean) as string[];
+  const { data: stockMap } = useQuery({
+    queryKey: ["po-stock", warehouseId, productIds.sort().join(",")],
+    queryFn: async () => {
+      if (!warehouseId || !productIds.length) return {} as Record<string, number>;
+      const { data, error } = await supabase
+        .from("product_stock")
+        .select("product_id, quantity")
+        .eq("organization_id", orgId)
+        .eq("warehouse_id", warehouseId)
+        .in("product_id", productIds);
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((r: any) => {
+        map[r.product_id] = (map[r.product_id] ?? 0) + Number(r.quantity ?? 0);
+      });
+      return map;
+    },
+    enabled: !!warehouseId && productIds.length > 0 && open,
+  });
+
+  const applyPreAdjust = async (it: POItem) => {
+    if (!it.product_id || !warehouseId) return;
+    const target = Number(adjustTo[it.id]);
+    if (Number.isNaN(target) || target < 0) {
+      toast.error("Cantidad real inválida");
+      return;
+    }
+    const current = stockMap?.[it.product_id] ?? 0;
+    const diff = target - current;
+    if (diff === 0) {
+      toast.info("El stock ya coincide");
+      return;
+    }
+    setAdjustingId(it.id);
+    try {
+      const { error } = await supabase.rpc("apply_stock_movement", {
+        _org_id: orgId,
+        _warehouse_id: warehouseId,
+        _product_id: it.product_id,
+        _presentation_id: null,
+        _movement_type: diff > 0 ? "adjustment" : "out",
+        _quantity: Math.abs(diff),
+        _unit_cost: 0,
+        _reference_type: "pre_receive_adjustment",
+        _reference_id: poId,
+        _notes: `Ajuste previo a recepción OC. Conteo físico: ${target} (antes ${current})`,
+      });
+      if (error) throw error;
+      toast.success(`Stock ajustado a ${target}`);
+      setAdjustTo((p) => ({ ...p, [it.id]: "" }));
+      qc.invalidateQueries({ queryKey: ["po-stock", warehouseId] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al ajustar");
+    } finally {
+      setAdjustingId(null);
+    }
+  };
+
   // Reset state on open change
   useEffect(() => {
     if (!open) {
