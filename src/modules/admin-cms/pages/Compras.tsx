@@ -45,15 +45,26 @@ export default function Compras() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid grid-cols-3 w-full lg:w-auto">
+          <TabsList className="grid grid-cols-4 w-full lg:w-auto">
             <TabsTrigger value="suppliers"><Truck className="w-4 h-4 mr-1" />Proveedores</TabsTrigger>
             <TabsTrigger value="catalog"><Link2 className="w-4 h-4 mr-1" />Catálogo</TabsTrigger>
-            <TabsTrigger value="po"><FileText className="w-4 h-4 mr-1" />Órdenes de compra</TabsTrigger>
+            <TabsTrigger value="po"><FileText className="w-4 h-4 mr-1" />Órdenes</TabsTrigger>
+            <TabsTrigger value="ocr"><Scan className="w-4 h-4 mr-1" />OCR Facturas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="suppliers"><SuppliersTab orgId={organizationId} qc={qc} /></TabsContent>
           <TabsContent value="catalog"><SupplierCatalogTab orgId={organizationId} qc={qc} /></TabsContent>
           <TabsContent value="po"><PurchaseOrdersTab orgId={organizationId} qc={qc} /></TabsContent>
+          <TabsContent value="ocr">
+            <Card className="p-6 text-center space-y-3">
+              <Scan className="w-12 h-12 mx-auto text-primary" />
+              <h3 className="text-lg font-heading font-semibold">Escanea facturas de proveedor</h3>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Captura la factura con la cámara o sube una imagen. La IA extrae proveedor, items, costos y los matchea con tu inventario para aplicar el ingreso.
+              </p>
+              <InvoiceOcrSheet orgId={organizationId} trigger={<Button size="lg"><Scan className="w-4 h-4 mr-2" />Iniciar escaneo</Button>} />
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
     </div>
