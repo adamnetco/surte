@@ -24,10 +24,12 @@ import {
   useTopProducts,
   usePaymentMix,
   useCashierPerformance,
+  useSalesByLocation,
   aggregate,
   type Granularity,
   type SalesBucket,
 } from "../hooks/useSalesReport";
+import { Store } from "lucide-react";
 import ReportesDetail from "../components/ReportesDetail";
 import { exportReportsCsv, exportReportsXlsx } from "../lib/exportReports";
 import { toast } from "@/hooks/use-toast";
