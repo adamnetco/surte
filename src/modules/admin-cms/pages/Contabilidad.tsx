@@ -699,6 +699,7 @@ function AccountantReports(props: {
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Número</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>NIT/CC</TableHead>
@@ -710,15 +711,32 @@ function AccountantReports(props: {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {einvQ.data!.slice(0, 200).map((r, i) => (
-                  <TableRow key={`${r.full_number}-${i}`}>
+                {einvQ.data!.slice(0, 200).map((r, i) => {
+                  const isNC = r.document_type === "credit_note";
+                  const isND = r.document_type === "debit_note";
+                  const sign = docSign(r.document_type);
+                  return (
+                  <TableRow key={`${r.full_number}-${i}`} className={isNC ? "bg-red-50/30" : isND ? "bg-amber-50/30" : ""}>
                     <TableCell className="text-xs whitespace-nowrap">{r.issue_date}</TableCell>
-                    <TableCell className="font-mono text-xs">{r.full_number}</TableCell>
+                    <TableCell>
+                      {isNC ? <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">NC</Badge>
+                        : isND ? <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">ND</Badge>
+                        : <Badge variant="outline">FV</Badge>}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      <div>{r.full_number}</div>
+                      {r.reference_full_number && (
+                        <div className="text-[10px] text-muted-foreground">
+                          ↳ Ref: {r.reference_full_number}
+                          {r.note_concept_code && <span className="ml-1">· cod {r.note_concept_code}</span>}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm max-w-[180px] truncate">{r.customer_name ?? "—"}</TableCell>
                     <TableCell className="font-mono text-xs">{r.customer_identification ?? "—"}</TableCell>
-                    <TableCell className="text-right font-mono text-xs">{fmt(Number(r.subtotal))}</TableCell>
-                    <TableCell className="text-right font-mono text-xs">{fmt(Number(r.tax_total))}</TableCell>
-                    <TableCell className="text-right font-mono text-xs font-medium">{fmt(Number(r.total))}</TableCell>
+                    <TableCell className="text-right font-mono text-xs">{sign < 0 ? "−" : ""}{fmt(Number(r.subtotal))}</TableCell>
+                    <TableCell className="text-right font-mono text-xs">{sign < 0 ? "−" : ""}{fmt(Number(r.tax_total))}</TableCell>
+                    <TableCell className="text-right font-mono text-xs font-medium">{sign < 0 ? "−" : ""}{fmt(Number(r.total))}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={STATUS_TONE[r.status] ?? ""}>{r.status}</Badge>
                     </TableCell>
@@ -726,7 +744,8 @@ function AccountantReports(props: {
                       {r.cufe ? r.cufe.slice(0, 16) + "…" : "—"}
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
             {einvQ.data!.length > 200 && (
