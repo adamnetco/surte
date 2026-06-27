@@ -33,6 +33,7 @@ const FirstLoginTour = lazy(() => import("@/components/FirstLoginTour"));
 import DevBypassBanner from "@/components/DevBypassBanner";
 import TenantSuspendedBanner from "@/components/TenantSuspendedBanner";
 import { SubscriptionStatusBanner } from "@/components/SubscriptionStatusBanner";
+import { SubscriptionGate } from "@/lib/entitlements/SubscriptionGate";
 import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
@@ -304,12 +305,12 @@ const App = () => (
                         Accesible tanto desde admin.sistecpos.com (panel SaaS) como
                         desde <slug>.sistecpos.com (subdominio del tenant). El acceso
                         real lo controlan RoleGuard / módulos, no el host. */}
-                    <Route path="/admin" element={<RoleGuard section="admin"><AdminDashboard /></RoleGuard>} />
-                    <Route path="/admin/diario" element={<RoleGuard section="admin"><Diario /></RoleGuard>} />
-                    <Route path="/admin/reportes" element={<RoleGuard section="admin"><Reportes /></RoleGuard>} />
-                    <Route path="/admin/innapsis" element={<RoleGuard section="admin"><Innapsis /></RoleGuard>} />
-                    <Route path="/admin/innapsis/resumen" element={<RoleGuard section="admin"><InnapsisResumen /></RoleGuard>} />
-                    <Route path="/admin/innapsis/:id" element={<RoleGuard section="admin"><InnapsisDetail /></RoleGuard>} />
+                    <Route path="/admin" element={<RoleGuard section="admin"><SubscriptionGate><AdminDashboard /></SubscriptionGate></RoleGuard>} />
+                    <Route path="/admin/diario" element={<RoleGuard section="admin"><SubscriptionGate><Diario /></SubscriptionGate></RoleGuard>} />
+                    <Route path="/admin/reportes" element={<RoleGuard section="admin"><SubscriptionGate><Reportes /></SubscriptionGate></RoleGuard>} />
+                    <Route path="/admin/innapsis" element={<RoleGuard section="admin"><SubscriptionGate><Innapsis /></SubscriptionGate></RoleGuard>} />
+                    <Route path="/admin/innapsis/resumen" element={<RoleGuard section="admin"><SubscriptionGate><InnapsisResumen /></SubscriptionGate></RoleGuard>} />
+                    <Route path="/admin/innapsis/:id" element={<RoleGuard section="admin"><SubscriptionGate><InnapsisDetail /></SubscriptionGate></RoleGuard>} />
 
                     <Route path="/pos" element={<PosHub />} />
                     <Route path="/pos/vender" element={<POS />} />
@@ -324,8 +325,8 @@ const App = () => (
                     <Route path="/casas-de-cambio/pricing" element={<RoleGuard section="admin"><FxPricing /></RoleGuard>} />
                     <Route path="/casas-de-cambio/tablero" element={<FxPublicBoard />} />
                     <Route path="/compras" element={<Compras />} />
-                    <Route path="/admin/health-logs" element={<RoleGuard section="admin"><HealthLogs /></RoleGuard>} />
-                    <Route path="/admin/contabilidad" element={<RoleGuard section="admin"><Contabilidad /></RoleGuard>} />
+                    <Route path="/admin/health-logs" element={<RoleGuard section="admin"><SubscriptionGate><HealthLogs /></SubscriptionGate></RoleGuard>} />
+                    <Route path="/admin/contabilidad" element={<RoleGuard section="admin"><SubscriptionGate><Contabilidad /></SubscriptionGate></RoleGuard>} />
                     <Route path="/gerente-ia" element={<GerenteIA />} />
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/activacion" element={<ActivationStatus />} />
