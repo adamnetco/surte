@@ -19,6 +19,7 @@ import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
 import PurchaseSuggestionsSheet from "@/modules/admin-cms/components/PurchaseSuggestionsSheet";
 import ReceivePOSheet from "@/modules/admin-cms/components/ReceivePOSheet";
 import InvoiceOcrSheet from "@/modules/admin-cms/components/InvoiceOcrSheet";
+import SupplierPerformanceSheet from "@/modules/admin-cms/components/SupplierPerformanceSheet";
 
 export default function Compras() {
   const { user, role, loading } = useAuth();
