@@ -85,6 +85,14 @@ export function usePurchaseAddon() {
       if (error) throw error;
       if (!data?.checkout_url) throw new Error("No se obtuvo checkout_url de Wompi");
 
+      // Telemetría de conversión PLG
+      try {
+        await supabase.rpc("log_upgrade_click" as any, {
+          p_org_id: input.organization_id,
+          p_context: { kind: "addon", key: input.addon.code, from: "addon_purchase" } as any,
+        });
+      } catch { /* no-op */ }
+
       // Abre el checkout (nueva pestaña para no perder estado de la app)
       window.open(data.checkout_url, "_blank", "noopener,noreferrer");
       return data as { reference: string; tenant_addon_id: string; checkout_url: string };

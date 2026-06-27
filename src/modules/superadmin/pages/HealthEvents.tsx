@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, HeartPulse, RefreshCw, ShieldAlert, Activity, MessageCircle } from "lucide-react";
 import { GateDenialsPanel } from "@/modules/superadmin/components/GateDenialsPanel";
+import { ConversionFunnelPanel } from "@/modules/superadmin/components/ConversionFunnelPanel";
 import { UsageDivergencePanel } from "@/modules/superadmin/components/UsageDivergencePanel";
 
 type HealthRow = {
@@ -132,6 +133,8 @@ export default function HealthEvents() {
       </div>
 
       {err && <Card className="p-3 border-destructive/40 bg-destructive/5 text-sm text-destructive">{err}</Card>}
+
+      <ConversionFunnelPanel />
 
       <div className="grid gap-3 md:grid-cols-2">
         <GateDenialsPanel />

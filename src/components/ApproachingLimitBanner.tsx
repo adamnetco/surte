@@ -4,6 +4,7 @@ import { AlertTriangle, X, TrendingUp } from "lucide-react";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useApproachingLimits, type LimitWarning } from "@/lib/entitlements/useApproachingLimits";
 import { buildUpgradeUrl, recommendPlanFor } from "@/lib/entitlements/upgradeRecommendation";
+import { logUpgradeClick } from "@/lib/entitlements/logUpgradeClick";
 
 const LIMIT_LABELS: Record<string, string> = {
   max_products: "productos",
@@ -89,7 +90,10 @@ export function ApproachingLimitBanner() {
       </div>
       <button
         type="button"
-        onClick={() => navigate(upgradeUrl)}
+        onClick={() => {
+          void logUpgradeClick(currentOrg?.id, { kind: "limit", key: candidate.key, from: "banner" });
+          navigate(upgradeUrl);
+        }}
         className={`inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-semibold shrink-0 ${
           isCritical
             ? "bg-red-600 text-white hover:bg-red-700"
@@ -113,6 +117,7 @@ export function ApproachingLimitBanner() {
 
 /** Variante compacta (inline) para mostrar dentro de pantallas específicas. */
 export function ApproachingLimitInline({ warning }: { warning: LimitWarning }) {
+  const { currentOrg } = useOrganization();
   const navigate = useNavigate();
   const location = useLocation();
   const upgradeUrl = buildUpgradeUrl(
@@ -133,7 +138,10 @@ export function ApproachingLimitInline({ warning }: { warning: LimitWarning }) {
       </span>
       <button
         type="button"
-        onClick={() => navigate(upgradeUrl)}
+        onClick={() => {
+          void logUpgradeClick(currentOrg?.id, { kind: "limit", key: warning.key, from: "inline" });
+          navigate(upgradeUrl);
+        }}
         className="underline font-semibold"
       >
         Mejorar
