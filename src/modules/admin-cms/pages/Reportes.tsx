@@ -116,8 +116,10 @@ interface KpiCardProps {
   label: string;
   value: string;
   delta?: number;
+  compareLabel?: string;
   loading?: boolean;
 }
+
 
 function KpiCard({ icon: Icon, label, value, delta, compareLabel, loading }: KpiCardProps) {
   const up = (delta ?? 0) >= 0;
