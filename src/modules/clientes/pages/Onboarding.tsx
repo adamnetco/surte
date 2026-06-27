@@ -31,7 +31,7 @@ import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "
 import { EntitlementsWizardStep } from "@/modules/platform/components/EntitlementsWizardStep";
 import { cn } from "@/lib/utils";
 
-const TOTAL = 6;
+const TOTAL = 7;
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 
 interface PlanRow {
