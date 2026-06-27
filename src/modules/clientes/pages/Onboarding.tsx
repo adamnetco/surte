@@ -31,7 +31,7 @@ import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "
 import { EntitlementsWizardStep } from "@/modules/platform/components/EntitlementsWizardStep";
 import { cn } from "@/lib/utils";
 
-const TOTAL = 6;
+const TOTAL = 7;
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 
 interface PlanRow {
@@ -80,6 +80,12 @@ export default function Onboarding() {
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>(planParam ?? "pro");
+
+  // Step 5: primer producto (opcional)
+  const [productName, setProductName] = useState("");
+  const [productPrice, setProductPrice] = useState("");
+  const [productSku, setProductSku] = useState("");
+
 
   const template = useMemo(() => getTemplate(businessKey), [businessKey]);
 
@@ -141,9 +147,9 @@ export default function Onboarding() {
     setCompanyName((prev) => prev || currentOrg.name || "");
   }, [currentOrg]);
 
-  // Cargar planes públicos cuando llegamos al paso 5
+  // Cargar planes públicos cuando llegamos al paso de planes (6)
   useEffect(() => {
-    if (step !== 5 || plans.length > 0) return;
+    if (step !== 6 || plans.length > 0) return;
     setPlansLoading(true);
     supabase
       .from("saas_plans")
@@ -161,6 +167,7 @@ export default function Onboarding() {
       });
   }, [step, plans.length]);
 
+
   const toggleModule = (k: string) =>
     setModules((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
 
@@ -172,11 +179,18 @@ export default function Onboarding() {
       case 2: return locationName.trim().length > 1 && city.trim().length > 1;
       case 3: return !!businessKey;
       case 4: return modules.length > 0;
-      case 5: return !!selectedPlan;
-      case 6: return true;
+      case 5: {
+        // Producto opcional: sin nombre se salta; con nombre exige precio válido.
+        if (!productName.trim()) return true;
+        const n = Number(productPrice);
+        return Number.isFinite(n) && n >= 0;
+      }
+      case 6: return !!selectedPlan;
+      case 7: return true;
       default: return false;
     }
   };
+
 
   const next = async () => {
     if (!canAdvance() || !currentOrg) return;
@@ -212,10 +226,24 @@ export default function Onboarding() {
           progressPatch.einvoice_done = true;
         }
       } else if (step === 5) {
+        // Primer producto — opcional. Si no se ingresa nombre, se salta.
+        if (productName.trim()) {
+          const price = Number(productPrice) || 0;
+          const { error: prodErr } = await supabase.from("products").insert({
+            organization_id: currentOrg.id,
+            name: productName.trim(),
+            sku: productSku.trim() || null,
+            price,
+            is_active: true,
+          } as any);
+          if (prodErr) throw prodErr;
+          progressPatch.first_product_done = true;
+        }
+      } else if (step === 6) {
         // El plan elegido queda en estado local; la suscripción se crea al
         // entrar a Facturación/Checkout. No persistimos aquí porque
         // organizations no tiene columna plan (la fuente de verdad es subscriptions).
-      } else if (step === 6) {
+      } else if (step === 7) {
         await supabase.from("onboarding_progress").upsert(
           { organization_id: currentOrg.id, catalog_done: true, completed_at: new Date().toISOString() },
           { onConflict: "organization_id" },
@@ -224,6 +252,7 @@ export default function Onboarding() {
         navigate("/pos");
         return;
       }
+
       if (Object.keys(progressPatch).length > 0) {
         await supabase.from("onboarding_progress").upsert(
           { organization_id: currentOrg.id, ...progressPatch },
@@ -368,15 +397,64 @@ export default function Onboarding() {
   }
 
   if (step === 5) {
+    const willCreate = productName.trim().length > 0;
     return (
       <WizardShell
         step={5} totalSteps={TOTAL}
+        eyebrow="Tu catálogo"
+        title="Carga tu primer producto"
+        subtitle="Para arrancar el POS necesitas al menos uno. Puedes saltarlo y agregarlo luego desde Admin → Productos."
+        onBack={back} onNext={next} nextDisabled={!canAdvance()} loading={saving}
+        nextLabel={willCreate ? "Crear producto y continuar" : "Saltar por ahora"}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="prod-name">Nombre del producto</Label>
+            <Input
+              id="prod-name" autoFocus value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              className="h-12 text-base" placeholder="Ej: Cerveza Águila 330ml"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="prod-price">Precio (COP)</Label>
+              <Input
+                id="prod-price" type="number" inputMode="numeric" min="0"
+                value={productPrice} onChange={(e) => setProductPrice(e.target.value)}
+                className="h-12 text-base" placeholder="0"
+                disabled={!willCreate}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="prod-sku">SKU (opcional)</Label>
+              <Input
+                id="prod-sku" value={productSku}
+                onChange={(e) => setProductSku(e.target.value)}
+                className="h-12 text-base" placeholder="SKU-001"
+                disabled={!willCreate}
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground px-1">
+            Sin SKU usaremos el ID generado automáticamente. Podrás editarlo y agregar fotos, presentaciones y stock desde Admin → Productos.
+          </p>
+        </div>
+      </WizardShell>
+    );
+  }
+
+  if (step === 6) {
+    return (
+      <WizardShell
+        step={6} totalSteps={TOTAL}
         eyebrow="Casi listo"
         title="Elige tu plan"
         subtitle="Empieza gratis 14 días. Sin tarjeta. Cancela cuando quieras."
         onBack={back} onNext={next} nextDisabled={!canAdvance()} loading={saving}
         nextLabel="Continuar"
       >
+
         {plansLoading ? (
           <div className="grid sm:grid-cols-2 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -440,11 +518,12 @@ export default function Onboarding() {
     );
   }
 
-  // step 6 — celebración
+  // step 7 — celebración
   const chosenPlan = plans.find((p) => p.key === selectedPlan);
   return (
     <WizardShell
-      step={6} totalSteps={TOTAL}
+      step={7} totalSteps={TOTAL}
+
       eyebrow="Todo listo"
       title="¡Tu POS está listo para vender!"
       subtitle="Te llevamos al mostrador. Desde ahí controlas todo."
