@@ -85,9 +85,19 @@ function prevRangeOf(r: Range): Range {
     from: new Date(r.from.getTime() - span - 1),
     to: new Date(r.from.getTime() - 1),
     granularity: r.granularity,
-    label: "Anterior",
+    label: "Período anterior",
   };
 }
+
+function yoyRangeOf(r: Range): Range {
+  const shift = (d: Date) => {
+    const x = new Date(d);
+    x.setFullYear(x.getFullYear() - 1);
+    return x;
+  };
+  return { from: shift(r.from), to: shift(r.to), granularity: r.granularity, label: "Año anterior" };
+}
+
 
 const cop = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
@@ -106,10 +116,12 @@ interface KpiCardProps {
   label: string;
   value: string;
   delta?: number;
+  compareLabel?: string;
   loading?: boolean;
 }
 
-function KpiCard({ icon: Icon, label, value, delta, loading }: KpiCardProps) {
+
+function KpiCard({ icon: Icon, label, value, delta, compareLabel, loading }: KpiCardProps) {
   const up = (delta ?? 0) >= 0;
   return (
     <Card className="p-4 border-border/60">
@@ -129,12 +141,13 @@ function KpiCard({ icon: Icon, label, value, delta, loading }: KpiCardProps) {
           }`}
         >
           {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-          {Math.abs(delta).toFixed(1)}% vs período anterior
+          {Math.abs(delta).toFixed(1)}% vs {compareLabel ?? "anterior"}
         </div>
       )}
     </Card>
   );
 }
+
 
 function deltaPct(curr: number, prev: number): number | undefined {
   if (!prev) return curr > 0 ? 100 : undefined;
@@ -156,6 +169,7 @@ const Reportes = () => {
     to: new Date().toISOString().slice(0, 10),
   });
   const [metric, setMetric] = useState<Metric>("gross");
+  const [compareMode, setCompareMode] = useState<"prev" | "yoy">("prev");
 
   const range = useMemo(() => {
     if (rangeKey === "custom") {
@@ -167,7 +181,10 @@ const Reportes = () => {
     return buildRange(rangeKey);
   }, [rangeKey, customRange]);
 
-  const prevRange = useMemo(() => prevRangeOf(range), [range]);
+  const compareRange = useMemo(
+    () => (compareMode === "yoy" ? yoyRangeOf(range) : prevRangeOf(range)),
+    [range, compareMode],
+  );
 
   const current = useSalesSummary({
     orgId: currentOrg?.id,
@@ -177,9 +194,9 @@ const Reportes = () => {
   });
   const previous = useSalesSummary({
     orgId: currentOrg?.id,
-    from: prevRange.from,
-    to: prevRange.to,
-    granularity: prevRange.granularity,
+    from: compareRange.from,
+    to: compareRange.to,
+    granularity: compareRange.granularity,
   });
 
   const topProducts = useTopProducts({ orgId: currentOrg?.id, from: range.from, to: range.to, limit: 25 });
@@ -194,16 +211,28 @@ const Reportes = () => {
   const taxPct = currTotals.gross > 0 ? (currTotals.tax / currTotals.gross) * 100 : 0;
   const prevTaxPct = prevTotals.gross > 0 ? (prevTotals.tax / prevTotals.gross) * 100 : 0;
 
-  const chartData = useMemo(
-    () =>
-      (current.data ?? []).map((b: SalesBucket) => ({
-        bucket: fmtBucket(b.bucket, range.granularity),
-        gross: b.gross,
-        net: b.net,
-        units: b.units,
-      })),
-    [current.data, range.granularity],
-  );
+  const compareLabel = compareMode === "yoy" ? "año anterior" : "período anterior";
+
+  const chartData = useMemo(() => {
+    const curr = current.data ?? [];
+    const prev = previous.data ?? [];
+    const len = Math.max(curr.length, prev.length);
+    return Array.from({ length: len }, (_, i) => {
+      const c = curr[i];
+      const p = prev[i];
+      return {
+        bucket: c ? fmtBucket(c.bucket, range.granularity) : p ? fmtBucket(p.bucket, range.granularity) : "",
+        gross: c?.gross ?? 0,
+        net: c?.net ?? 0,
+        units: c?.units ?? 0,
+        gross_prev: p?.gross ?? 0,
+        net_prev: p?.net ?? 0,
+        units_prev: p?.units ?? 0,
+      };
+    });
+  }, [current.data, previous.data, range.granularity]);
+
+
 
   const loading = current.isLoading;
 
@@ -337,6 +366,7 @@ const Reportes = () => {
             label="Ventas netas"
             value={cop(currTotals.net)}
             delta={deltaPct(currTotals.net, prevTotals.net)}
+            compareLabel={compareLabel}
             loading={loading}
           />
           <KpiCard
@@ -344,6 +374,7 @@ const Reportes = () => {
             label="Tickets"
             value={currTotals.tickets.toLocaleString("es-CO")}
             delta={deltaPct(currTotals.tickets, prevTotals.tickets)}
+            compareLabel={compareLabel}
             loading={loading}
           />
           <KpiCard
@@ -351,6 +382,7 @@ const Reportes = () => {
             label="Ticket promedio"
             value={cop(avgTicket)}
             delta={deltaPct(avgTicket, prevAvgTicket)}
+            compareLabel={compareLabel}
             loading={loading}
           />
           <KpiCard
@@ -358,8 +390,10 @@ const Reportes = () => {
             label="Impuestos"
             value={`${taxPct.toFixed(1)}%`}
             delta={deltaPct(taxPct, prevTaxPct)}
+            compareLabel={compareLabel}
             loading={loading}
           />
+
         </section>
 
         {/* Chart */}
@@ -376,22 +410,41 @@ const Reportes = () => {
                       : "Por día"}
                 </p>
               </div>
-              <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
-                {(["gross", "net", "units"] as Metric[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMetric(m)}
-                    className={`px-2.5 py-1 rounded transition ${
-                      metric === m
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {m === "gross" ? "Bruto" : m === "net" ? "Neto" : "Unidades"}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+                  {(["prev", "yoy"] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setCompareMode(m)}
+                      className={`px-2.5 py-1 rounded transition ${
+                        compareMode === m
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                      title={m === "prev" ? "Comparar con período anterior" : "Comparar con año anterior"}
+                    >
+                      {m === "prev" ? "vs Anterior" : "vs Año"}
+                    </button>
+                  ))}
+                </div>
+                <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+                  {(["gross", "net", "units"] as Metric[]).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setMetric(m)}
+                      className={`px-2.5 py-1 rounded transition ${
+                        metric === m
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {m === "gross" ? "Bruto" : m === "net" ? "Neto" : "Unidades"}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
+
 
             {loading ? (
               <Skeleton className="h-64 w-full" />
@@ -433,7 +486,10 @@ const Reportes = () => {
                       width={56}
                     />
                     <Tooltip
-                      formatter={(v: number) => (metric === "units" ? v : cop(v))}
+                      formatter={(v: number, name: string) => [
+                        metric === "units" ? v : cop(v),
+                        name === `${metric}_prev` ? compareLabel : "Actual",
+                      ]}
                       contentStyle={{
                         background: "hsl(var(--card))",
                         border: "1px solid hsl(var(--border))",
@@ -443,11 +499,22 @@ const Reportes = () => {
                     />
                     <Area
                       type="monotone"
+                      dataKey={`${metric}_prev`}
+                      stroke="hsl(var(--muted-foreground))"
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                      fill="transparent"
+                      name={compareLabel}
+                    />
+                    <Area
+                      type="monotone"
                       dataKey={metric}
                       stroke="hsl(var(--primary))"
                       strokeWidth={2}
                       fill="url(#g-metric)"
+                      name="Actual"
                     />
+
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
