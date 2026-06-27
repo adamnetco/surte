@@ -238,6 +238,7 @@ const App = () => (
             <Sonner />
             <DevBypassBanner />
             <TenantSuspendedBanner />
+            <SubscriptionStatusBanner />
             <GlobalErrorListeners />
             <Suspense fallback={null}><SSOErrorScreen /></Suspense>
 
