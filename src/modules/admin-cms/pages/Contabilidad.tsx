@@ -438,6 +438,20 @@ export default function Contabilidad() {
               )}
             </Card>
           </TabsContent>
+
+          {/* Reportes para el contador (DIAN / IVA / Libro auxiliar) */}
+          <TabsContent value="accountant" className="space-y-3 mt-4">
+            <AccountantReports
+              orgId={orgId}
+              orgName={currentOrg?.name ?? "Organización"}
+              from={from}
+              to={to}
+              setFrom={setFrom}
+              setTo={setTo}
+              accounts={accounts}
+              fmt={fmt}
+            />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
