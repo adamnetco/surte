@@ -56,6 +56,7 @@ export default function Facturacion() {
   });
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
+  const [invoiceFilter, setInvoiceFilter] = useState<"all" | "notes">("all");
   const [noteInvoice, setNoteInvoice] = useState<Invoice | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewText, setPreviewText] = useState<string>("");
