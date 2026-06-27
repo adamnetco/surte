@@ -7,6 +7,7 @@ import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTri
 import KardexSheet from "../components/KardexSheet";
 import CriticalStockSheet from "../components/CriticalStockSheet";
 import ConteoFisicoSheet from "../components/ConteoFisicoSheet";
+import TrasladoSheet from "../components/TrasladoSheet";
 import { toast } from "sonner";
 
 type Warehouse = { id: string; name: string; code: string | null; is_default: boolean; location_id: string; warehouse_type: string };
@@ -34,6 +35,7 @@ export default function Inventario() {
   const [kardex, setKardex] = useState<{ productId: string; name: string } | null>(null);
   const [criticalOpen, setCriticalOpen] = useState(false);
   const [countOpen, setCountOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
 
   useEffect(() => {
     if (!currentOrg) return;
@@ -183,8 +185,10 @@ export default function Inventario() {
           <ClipboardList size={16} /> Conteo físico
         </button>
         <button
-          onClick={() => toast.info("Próximamente: traslados entre bodegas")}
-          className="flex-1 bg-secondary text-secondary-foreground rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
+          onClick={() => setTransferOpen(true)}
+          disabled={!warehouseId || warehouses.length < 2}
+          className="flex-1 bg-secondary text-secondary-foreground rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+          title={warehouses.length < 2 ? "Necesitas 2+ bodegas activas" : "Traslados entre bodegas"}
         >
           <ArrowRightLeft size={16} /> Traslado
         </button>
@@ -226,6 +230,16 @@ export default function Inventario() {
         orgId={currentOrg.id}
         warehouseId={warehouseId}
         warehouseName={warehouses.find((w) => w.id === warehouseId)?.name}
+        onApplied={loadStock}
+      />
+
+      <TrasladoSheet
+        open={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        orgId={currentOrg.id}
+        fromWarehouseId={warehouseId}
+        fromWarehouseName={warehouses.find((w) => w.id === warehouseId)?.name}
+        warehouses={warehouses}
         onApplied={loadStock}
       />
     </div>
