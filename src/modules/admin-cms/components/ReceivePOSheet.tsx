@@ -77,6 +77,40 @@ export default function ReceivePOSheet({ open, onOpenChange, poId, orgId, wareho
     enabled: !!poId && open,
   });
 
+  // PO metadata for DS button
+  const { data: poMeta } = useQuery({
+    queryKey: ["po-meta", poId],
+    queryFn: async () => {
+      if (!poId) return null;
+      const { data } = await supabase
+        .from("purchase_orders")
+        .select("id, status, ds_required, ds_invoice_id, ds_emitted_at")
+        .eq("id", poId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!poId && open,
+  });
+  const [emittingDs, setEmittingDs] = useState(false);
+  const emitDs = async () => {
+    if (!poId) return;
+    setEmittingDs(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("innapsis-emit-ds", {
+        body: { purchase_order_id: poId },
+      });
+      if (error) throw error;
+      if (!(data as any)?.ok) throw new Error((data as any)?.innapsis?.message ?? "Innapsis rechazó el DS");
+      toast.success(`Documento Soporte emitido: ${(data as any).full_number}`);
+      qc.invalidateQueries({ queryKey: ["po-meta", poId] });
+      qc.invalidateQueries({ queryKey: ["purchase-orders", orgId] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al emitir DS");
+    } finally {
+      setEmittingDs(false);
+    }
+  };
+
   // Stock actual por producto en la bodega de recepción (para pre-ajuste)
   const productIds = (items ?? []).map((i) => i.product_id).filter(Boolean) as string[];
   const { data: stockMap } = useQuery({
