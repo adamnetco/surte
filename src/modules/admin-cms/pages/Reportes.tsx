@@ -119,7 +119,7 @@ interface KpiCardProps {
   loading?: boolean;
 }
 
-function KpiCard({ icon: Icon, label, value, delta, loading }: KpiCardProps) {
+function KpiCard({ icon: Icon, label, value, delta, compareLabel, loading }: KpiCardProps) {
   const up = (delta ?? 0) >= 0;
   return (
     <Card className="p-4 border-border/60">
@@ -139,12 +139,13 @@ function KpiCard({ icon: Icon, label, value, delta, loading }: KpiCardProps) {
           }`}
         >
           {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-          {Math.abs(delta).toFixed(1)}% vs período anterior
+          {Math.abs(delta).toFixed(1)}% vs {compareLabel ?? "anterior"}
         </div>
       )}
     </Card>
   );
 }
+
 
 function deltaPct(curr: number, prev: number): number | undefined {
   if (!prev) return curr > 0 ? 100 : undefined;
