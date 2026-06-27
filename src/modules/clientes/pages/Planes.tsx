@@ -55,6 +55,32 @@ export default function Planes() {
     })();
   }, []);
 
+  const { user } = useAuth();
+  const { currentOrg } = useOrganization();
+  const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
+
+  const canSubscribeInline = !!user && !!currentOrg?.id;
+
+  async function startWompiCheckout(planKey: string) {
+    if (!currentOrg?.id) return;
+    setCheckoutPlan(planKey);
+    try {
+      const { data, error: e } = await supabase.functions.invoke("wompi-create-subscription", {
+        body: {
+          organization_id: currentOrg.id,
+          plan_key: planKey,
+          billing_cycle: cycle,
+          return_url: `${window.location.origin}/billing?from=wompi`,
+        },
+      });
+      if (e) throw e;
+      if (!data?.checkout_url) throw new Error("Sin URL de checkout");
+      window.location.href = data.checkout_url;
+    } catch (err: any) {
+      toast({ title: "No se pudo iniciar el pago", description: err.message ?? String(err), variant: "destructive" });
+      setCheckoutPlan(null);
+    }
+  }
 
   const reasonLabel = useMemo(() => (reason ? MODULE_LABELS[reason] ?? reason : null), [reason]);
 
