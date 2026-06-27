@@ -8349,48 +8349,63 @@ export type Database = {
       subscription_invoices: {
         Row: {
           amount: number
+          attempt_count: number
           created_at: string
           currency: string
           due_date: string
           external_id: string | null
           id: string
+          last_error: string | null
           organization_id: string
           paid_at: string | null
+          payment_method: Json | null
           pdf_url: string | null
           period_end: string
           period_start: string
           status: string
           subscription_id: string
+          wompi_reference: string | null
+          wompi_transaction_id: string | null
         }
         Insert: {
           amount?: number
+          attempt_count?: number
           created_at?: string
           currency?: string
           due_date: string
           external_id?: string | null
           id?: string
+          last_error?: string | null
           organization_id: string
           paid_at?: string | null
+          payment_method?: Json | null
           pdf_url?: string | null
           period_end: string
           period_start: string
           status?: string
           subscription_id: string
+          wompi_reference?: string | null
+          wompi_transaction_id?: string | null
         }
         Update: {
           amount?: number
+          attempt_count?: number
           created_at?: string
           currency?: string
           due_date?: string
           external_id?: string | null
           id?: string
+          last_error?: string | null
           organization_id?: string
           paid_at?: string | null
+          payment_method?: Json | null
           pdf_url?: string | null
           period_end?: string
           period_start?: string
           status?: string
           subscription_id?: string
+          wompi_reference?: string | null
+          wompi_transaction_id?: string | null
         }
         Relationships: [
           {
@@ -8427,18 +8442,25 @@ export type Database = {
         Row: {
           billing_cycle: string
           cancel_at_period_end: boolean
+          canceled_at: string | null
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
           external_id: string | null
           external_provider: string | null
           id: string
+          last_payment_error: string | null
           metadata: Json
+          next_retry_at: string | null
           organization_id: string
+          payment_method_brand: string | null
+          payment_method_last4: string | null
+          payment_source_id: string | null
           plan: string
           plan_id: string | null
           provider: string | null
           provider_subscription_id: string | null
+          retry_count: number
           status: string
           trial_ends_at: string | null
           updated_at: string
@@ -8446,18 +8468,25 @@ export type Database = {
         Insert: {
           billing_cycle?: string
           cancel_at_period_end?: boolean
+          canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           external_id?: string | null
           external_provider?: string | null
           id?: string
+          last_payment_error?: string | null
           metadata?: Json
+          next_retry_at?: string | null
           organization_id: string
+          payment_method_brand?: string | null
+          payment_method_last4?: string | null
+          payment_source_id?: string | null
           plan?: string
           plan_id?: string | null
           provider?: string | null
           provider_subscription_id?: string | null
+          retry_count?: number
           status?: string
           trial_ends_at?: string | null
           updated_at?: string
@@ -8465,18 +8494,25 @@ export type Database = {
         Update: {
           billing_cycle?: string
           cancel_at_period_end?: boolean
+          canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           external_id?: string | null
           external_provider?: string | null
           id?: string
+          last_payment_error?: string | null
           metadata?: Json
+          next_retry_at?: string | null
           organization_id?: string
+          payment_method_brand?: string | null
+          payment_method_last4?: string | null
+          payment_source_id?: string | null
           plan?: string
           plan_id?: string | null
           provider?: string | null
           provider_subscription_id?: string | null
+          retry_count?: number
           status?: string
           trial_ends_at?: string | null
           updated_at?: string
