@@ -32,6 +32,7 @@ const FirstLoginTour = lazy(() => import("@/components/FirstLoginTour"));
 
 import DevBypassBanner from "@/components/DevBypassBanner";
 import TenantSuspendedBanner from "@/components/TenantSuspendedBanner";
+import { SubscriptionStatusBanner } from "@/components/SubscriptionStatusBanner";
 import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 
 // Eager: only the home page (LCP-critical) — everything else is code-split.
@@ -237,6 +238,7 @@ const App = () => (
             <Sonner />
             <DevBypassBanner />
             <TenantSuspendedBanner />
+            <SubscriptionStatusBanner />
             <GlobalErrorListeners />
             <Suspense fallback={null}><SSOErrorScreen /></Suspense>
 
