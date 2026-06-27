@@ -42,7 +42,7 @@ export default function MembersAuditTab() {
     queryFn: async () => {
       const { data: members, error } = await supabase
         .from("organization_members")
-        .select("id, user_id, role, is_active, created_at")
+        .select("id, user_id, role, is_active, created_at, location_ids")
         .eq("organization_id", currentOrg!.id)
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -59,6 +59,11 @@ export default function MembersAuditTab() {
       return (members ?? []).map((m: any) => ({ ...m, profile: profilesById[m.user_id] ?? null }));
     },
   });
+
+  const [locOverrides, setLocOverrides] = useState<Record<string, string[]>>({});
+  useEffect(() => { setLocOverrides({}); }, [currentOrg?.id]);
+  const canEditLocations = currentRole === "superadmin" || currentRole === "admin";
+
 
   if (!canSee) {
     return (
