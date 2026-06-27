@@ -26,7 +26,7 @@ type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 export const RfmCampaignSheet = ({ open, onOpenChange }: Props) => {
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id;
-  const [segment, setSegment] = useState<string>("champions");
+  const [segment, setSegment] = useState<string>("Champions");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [previewing, setPreviewing] = useState(false);
