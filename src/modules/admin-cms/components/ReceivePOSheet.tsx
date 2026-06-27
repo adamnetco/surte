@@ -54,14 +54,23 @@ export default function ReceivePOSheet({ open, onOpenChange, poId, orgId, wareho
     queryKey: ["po-items", poId],
     queryFn: async () => {
       if (!poId) return [];
-      const { data, error } = await supabase
+      const { data: rows, error } = await supabase
         .from("purchase_order_items")
-        .select("*, products(name, sku, gtin, image_url)")
+        .select("*")
         .eq("organization_id", orgId)
         .eq("purchase_order_id", poId)
         .order("description");
       if (error) throw error;
-      return (data ?? []) as POItem[];
+      const productIds = (rows ?? []).map((r: any) => r.product_id).filter(Boolean);
+      let prodMap: Record<string, any> = {};
+      if (productIds.length) {
+        const { data: prods } = await supabase
+          .from("products")
+          .select("id,name,sku,gtin,image_url")
+          .in("id", productIds);
+        (prods ?? []).forEach((p: any) => { prodMap[p.id] = p; });
+      }
+      return (rows ?? []).map((r: any) => ({ ...r, products: r.product_id ? prodMap[r.product_id] ?? null : null })) as POItem[];
     },
     enabled: !!poId && open,
   });
