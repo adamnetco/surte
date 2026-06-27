@@ -33,7 +33,10 @@ export default function Billing() {
 
   // === Slice 4: retorno desde Wompi ===
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const fromWompi = searchParams.get("from") === "wompi";
+  const returnTo = searchParams.get("return_to");
+
   const [wompiState, setWompiState] = useState<"polling" | "approved" | "failed" | "timeout" | null>(
     fromWompi ? "polling" : null,
   );
