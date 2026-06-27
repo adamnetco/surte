@@ -33,6 +33,7 @@ const FirstLoginTour = lazy(() => import("@/components/FirstLoginTour"));
 import DevBypassBanner from "@/components/DevBypassBanner";
 import TenantSuspendedBanner from "@/components/TenantSuspendedBanner";
 import { SubscriptionStatusBanner } from "@/components/SubscriptionStatusBanner";
+import { ApproachingLimitBanner } from "@/components/ApproachingLimitBanner";
 import { SubscriptionGate } from "@/lib/entitlements/SubscriptionGate";
 import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
 
@@ -240,6 +241,7 @@ const App = () => (
             <DevBypassBanner />
             <TenantSuspendedBanner />
             <SubscriptionStatusBanner />
+
             <GlobalErrorListeners />
             <Suspense fallback={null}><SSOErrorScreen /></Suspense>
 
@@ -247,6 +249,7 @@ const App = () => (
             <CustomScriptInjector />
                 <AgentBar />
               <BrowserRouter>
+                <ApproachingLimitBanner />
                 <CityPickerModal />
                 <Analytics />
                 <CartNavigationGuard />
