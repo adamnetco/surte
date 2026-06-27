@@ -524,6 +524,9 @@ const Reportes = () => {
           </Card>
         </section>
 
+        {/* Comparativo por sucursal */}
+        <LocationsSection orgId={currentOrg?.id} from={range.from} to={range.to} />
+
         {/* Detalle: top productos, mix de pagos, cajeros */}
         <ReportesDetail orgId={currentOrg?.id} from={range.from} to={range.to} />
 
