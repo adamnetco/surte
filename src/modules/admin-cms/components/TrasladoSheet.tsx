@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRightLeft, Search, Loader2, Plus, Minus, Trash2, PackageCheck, Truck, X } from "lucide-react";
+import { ArrowRightLeft, Search, Loader2, Plus, Minus, Trash2, PackageCheck, Truck, X, ShieldCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 type Warehouse = { id: string; name: string; is_default: boolean };
@@ -27,6 +27,7 @@ type PendingTransfer = {
   to_warehouse_id: string;
   status: string;
   sent_at: string | null;
+  requested_at: string | null;
   notes: string | null;
 };
 
@@ -40,10 +41,14 @@ interface Props {
   onApplied?: () => void;
 }
 
+type Tab = "crear" | "aprobar" | "recibir";
+type SendMode = "direct" | "request";
+
 export default function TrasladoSheet({
   open, onClose, orgId, fromWarehouseId, fromWarehouseName, warehouses, onApplied,
 }: Props) {
-  const [tab, setTab] = useState<"crear" | "recibir">("crear");
+  const [tab, setTab] = useState<Tab>("crear");
+  const [sendMode, setSendMode] = useState<SendMode>("direct");
   const [toWarehouseId, setToWarehouseId] = useState<string>("");
   const [stock, setStock] = useState<StockRow[]>([]);
   const [loadingStock, setLoadingStock] = useState(false);
@@ -52,6 +57,7 @@ export default function TrasladoSheet({
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [pending, setPending] = useState<PendingTransfer[]>([]);
+  const [requested, setRequested] = useState<PendingTransfer[]>([]);
   const [loadingPending, setLoadingPending] = useState(false);
 
   const destinations = useMemo(
@@ -88,17 +94,29 @@ export default function TrasladoSheet({
   }, [open, tab, fromWarehouseId, orgId]);
 
   useEffect(() => {
-    if (!open || tab !== "recibir") return;
+    if (!open) return;
+    if (tab !== "recibir" && tab !== "aprobar") return;
     (async () => {
       setLoadingPending(true);
-      const { data } = await supabase
-        .from("stock_transfers")
-        .select("id, transfer_number, from_warehouse_id, to_warehouse_id, status, sent_at, notes")
-        .eq("organization_id", orgId)
-        .eq("status", "in_transit")
-        .order("sent_at", { ascending: false })
-        .limit(50);
-      setPending((data ?? []) as PendingTransfer[]);
+      if (tab === "recibir") {
+        const { data } = await supabase
+          .from("stock_transfers")
+          .select("id, transfer_number, from_warehouse_id, to_warehouse_id, status, sent_at, requested_at, notes")
+          .eq("organization_id", orgId)
+          .eq("status", "in_transit")
+          .order("sent_at", { ascending: false })
+          .limit(50);
+        setPending((data ?? []) as PendingTransfer[]);
+      } else {
+        const { data } = await supabase
+          .from("stock_transfers")
+          .select("id, transfer_number, from_warehouse_id, to_warehouse_id, status, sent_at, requested_at, notes")
+          .eq("organization_id", orgId)
+          .eq("status", "requested")
+          .order("requested_at", { ascending: false })
+          .limit(50);
+        setRequested((data ?? []) as PendingTransfer[]);
+      }
       setLoadingPending(false);
     })();
   }, [open, tab, orgId]);
@@ -145,16 +163,20 @@ export default function TrasladoSheet({
     if (!validLines.length) { toast.error("Agrega al menos un producto"); return; }
     setSubmitting(true);
 
+    const isRequest = sendMode === "request";
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: tr, error: trErr } = await supabase
         .from("stock_transfers")
         .insert({
           organization_id: orgId,
           from_warehouse_id: fromWarehouseId,
           to_warehouse_id: toWarehouseId,
-          status: "in_transit",
+          status: isRequest ? "requested" : "in_transit",
           notes: notes || null,
-          sent_at: new Date().toISOString(),
+          sent_at: isRequest ? null : new Date().toISOString(),
+          requested_at: isRequest ? new Date().toISOString() : null,
+          requested_by: isRequest ? user?.id ?? null : null,
         })
         .select("id, transfer_number")
         .single();
@@ -170,31 +192,106 @@ export default function TrasladoSheet({
       const { error: itErr } = await supabase.from("stock_transfer_items").insert(itemsPayload);
       if (itErr) throw itErr;
 
+      if (!isRequest) {
+        let fail = 0;
+        for (const l of validLines) {
+          const { error } = await supabase.rpc("apply_stock_movement", {
+            _org_id: orgId,
+            _warehouse_id: fromWarehouseId,
+            _product_id: l.product_id,
+            _presentation_id: l.presentation_id,
+            _movement_type: "out",
+            _quantity: l.qty,
+            _unit_cost: 0,
+            _reference_type: "transfer_out",
+            _reference_id: tr.id,
+            _notes: `Traslado #${tr.transfer_number} → bodega destino`,
+          });
+          if (error) fail++;
+        }
+        if (fail > 0) toast.warning(`Traslado #${tr.transfer_number} creado, ${fail} salida(s) fallaron`);
+        else toast.success(`Traslado #${tr.transfer_number} enviado`);
+      } else {
+        toast.success(`Solicitud #${tr.transfer_number} creada · pendiente de aprobación`);
+      }
+
+      setLines([]); setNotes("");
+      onApplied?.();
+      setTab(isRequest ? "aprobar" : "recibir");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo crear el traslado");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const approve = async (t: PendingTransfer) => {
+    setSubmitting(true);
+    try {
+      const { data: items, error: iErr } = await supabase
+        .from("stock_transfer_items")
+        .select("id, product_id, presentation_id, quantity_sent")
+        .eq("transfer_id", t.id);
+      if (iErr) throw iErr;
+
       let fail = 0;
-      for (const l of validLines) {
+      for (const it of items ?? []) {
         const { error } = await supabase.rpc("apply_stock_movement", {
           _org_id: orgId,
-          _warehouse_id: fromWarehouseId,
-          _product_id: l.product_id,
-          _presentation_id: l.presentation_id,
+          _warehouse_id: t.from_warehouse_id,
+          _product_id: it.product_id,
+          _presentation_id: it.presentation_id,
           _movement_type: "out",
-          _quantity: l.qty,
+          _quantity: Number(it.quantity_sent),
           _unit_cost: 0,
           _reference_type: "transfer_out",
-          _reference_id: tr.id,
-          _notes: `Traslado #${tr.transfer_number} → bodega destino`,
+          _reference_id: t.id,
+          _notes: `Traslado #${t.transfer_number} aprobado · salida origen`,
         });
         if (error) fail++;
       }
 
-      if (fail > 0) toast.warning(`Traslado #${tr.transfer_number} creado, ${fail} salida(s) fallaron`);
-      else toast.success(`Traslado #${tr.transfer_number} enviado`);
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase
+        .from("stock_transfers")
+        .update({
+          status: "in_transit",
+          sent_at: new Date().toISOString(),
+          approved_at: new Date().toISOString(),
+          approved_by: user?.id ?? null,
+        })
+        .eq("id", t.id);
 
-      setLines([]); setNotes("");
+      if (fail === 0) toast.success(`Traslado #${t.transfer_number} aprobado y en tránsito`);
+      else toast.warning(`Aprobado con ${fail} error(es) de stock`);
+
+      setRequested((prev) => prev.filter((p) => p.id !== t.id));
       onApplied?.();
-      setTab("recibir");
     } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo crear el traslado");
+      toast.error(e?.message ?? "No se pudo aprobar");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const reject = async (t: PendingTransfer) => {
+    const reason = window.prompt(`Motivo del rechazo de #${t.transfer_number}:`, "");
+    if (reason === null) return;
+    setSubmitting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase
+        .from("stock_transfers")
+        .update({
+          status: "rejected",
+          rejected_reason: reason || "Sin motivo",
+          approved_by: user?.id ?? null,
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", t.id);
+      toast.success(`Traslado #${t.transfer_number} rechazado`);
+      setRequested((prev) => prev.filter((p) => p.id !== t.id));
+      onApplied?.();
     } finally {
       setSubmitting(false);
     }
@@ -296,29 +393,46 @@ export default function TrasladoSheet({
           <SheetDescription className="text-xs">
             Mueve stock entre {fromWarehouseName ?? "bodega origen"} y otras bodegas activas.
           </SheetDescription>
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={() => setTab("crear")}
-              className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition ${
-                tab === "crear" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              Crear envío
-            </button>
-            <button
-              onClick={() => setTab("recibir")}
-              className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition ${
-                tab === "recibir" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              Pendientes <span className="ml-1 opacity-70">({pending.length || "·"})</span>
-            </button>
+          <div className="flex gap-1.5 pt-2">
+            {([
+              { k: "crear", label: "Crear" },
+              { k: "aprobar", label: `Aprobar (${requested.length || "·"})` },
+              { k: "recibir", label: `Recibir (${pending.length || "·"})` },
+            ] as { k: Tab; label: string }[]).map(({ k, label }) => (
+              <button
+                key={k}
+                onClick={() => setTab(k)}
+                className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold transition ${
+                  tab === k ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </SheetHeader>
 
         {tab === "crear" && (
           <div className="flex-1 flex flex-col min-h-0">
             <div className="p-3 border-b border-border bg-card space-y-2">
+              <div className="flex gap-1.5">
+                {([
+                  { v: "direct" as const, label: "Envío directo", icon: Truck },
+                  { v: "request" as const, label: "Solicitar aprobación", icon: ShieldCheck },
+                ]).map(({ v, label, icon: Icon }) => (
+                  <button
+                    key={v}
+                    onClick={() => setSendMode(v)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
+                      sendMode === v
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    <Icon size={12} /> {label}
+                  </button>
+                ))}
+              </div>
               <div>
                 <label className="text-[11px] font-semibold text-muted-foreground">Bodega destino</label>
                 <select
@@ -408,10 +522,53 @@ export default function TrasladoSheet({
                 disabled={submitting || !validLines.length || !toWarehouseId}
                 className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
-                Enviar traslado
+                {submitting ? <Loader2 size={14} className="animate-spin" /> : sendMode === "request" ? <ShieldCheck size={14} /> : <Truck size={14} />}
+                {sendMode === "request" ? "Crear solicitud" : "Enviar traslado"}
               </button>
             </div>
+          </div>
+        )}
+
+        {tab === "aprobar" && (
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {loadingPending && (
+              <div className="text-xs text-muted-foreground flex items-center gap-2"><Loader2 size={12} className="animate-spin"/>Cargando solicitudes…</div>
+            )}
+            {!loadingPending && requested.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                Sin solicitudes pendientes de aprobación.
+              </div>
+            )}
+            {requested.map((t) => (
+              <div key={t.id} className="bg-card rounded-xl p-3 border border-border space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold">Solicitud #{t.transfer_number}</p>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 font-semibold flex items-center gap-1">
+                    <Clock size={10} /> PENDIENTE
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {warehouseName(t.from_warehouse_id)} → <strong>{warehouseName(t.to_warehouse_id)}</strong>
+                </p>
+                {t.notes && <p className="text-[11px] italic text-muted-foreground">"{t.notes}"</p>}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => approve(t)}
+                    disabled={submitting}
+                    className="flex-1 bg-primary text-primary-foreground rounded-lg py-2 text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <ShieldCheck size={13} /> Aprobar
+                  </button>
+                  <button
+                    onClick={() => reject(t)}
+                    disabled={submitting}
+                    className="px-3 rounded-lg border border-border text-xs font-semibold text-destructive flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <X size={13} /> Rechazar
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

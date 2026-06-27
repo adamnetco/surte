@@ -7975,6 +7975,8 @@ export type Database = {
       }
       stock_transfers: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           created_by: string | null
           from_warehouse_id: string
@@ -7983,6 +7985,9 @@ export type Database = {
           organization_id: string
           received_at: string | null
           received_by: string | null
+          rejected_reason: string | null
+          requested_at: string | null
+          requested_by: string | null
           sent_at: string | null
           status: string
           to_warehouse_id: string
@@ -7990,6 +7995,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by?: string | null
           from_warehouse_id: string
@@ -7998,6 +8005,9 @@ export type Database = {
           organization_id: string
           received_at?: string | null
           received_by?: string | null
+          rejected_reason?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
           sent_at?: string | null
           status?: string
           to_warehouse_id: string
@@ -8005,6 +8015,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by?: string | null
           from_warehouse_id?: string
@@ -8013,6 +8025,9 @@ export type Database = {
           organization_id?: string
           received_at?: string | null
           received_by?: string | null
+          rejected_reason?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
           sent_at?: string | null
           status?: string
           to_warehouse_id?: string
