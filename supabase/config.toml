@@ -85,3 +85,6 @@ project_id = "dimyhjzcwlgfczimqhet"
 
   [functions.einvoice-resend-bulk-admin]
     verify_jwt = true
+
+  [functions.wompi-events]
+    verify_jwt = false
