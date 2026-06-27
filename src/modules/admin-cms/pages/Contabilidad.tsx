@@ -65,7 +65,7 @@ export default function Contabilidad() {
         .eq("organization_id", orgId)
         .order("code");
       if (error) throw error;
-      return (data ?? []) as Account[];
+      return ((data ?? []) as unknown) as Account[];
     },
   });
 
