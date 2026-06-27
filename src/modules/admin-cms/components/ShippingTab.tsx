@@ -9,6 +9,7 @@ import { shippingZoneSchema, type ShippingZoneFormValues } from "@/lib/schemas";
 import { errorToMessage } from "@/lib/errors";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { scopedFrom } from "@/modules/tenant/lib/tenantScope";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const useCities = (orgId?: string | null) => useQuery({
   queryKey: ["admin-municipality-cities", orgId],
