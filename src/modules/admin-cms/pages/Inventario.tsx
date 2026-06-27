@@ -185,8 +185,10 @@ export default function Inventario() {
           <ClipboardList size={16} /> Conteo físico
         </button>
         <button
-          onClick={() => toast.info("Próximamente: traslados entre bodegas")}
-          className="flex-1 bg-secondary text-secondary-foreground rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
+          onClick={() => setTransferOpen(true)}
+          disabled={!warehouseId || warehouses.length < 2}
+          className="flex-1 bg-secondary text-secondary-foreground rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+          title={warehouses.length < 2 ? "Necesitas 2+ bodegas activas" : "Traslados entre bodegas"}
         >
           <ArrowRightLeft size={16} /> Traslado
         </button>
