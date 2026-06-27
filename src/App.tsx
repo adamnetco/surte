@@ -97,6 +97,7 @@ const Licencias = lazy(() => import("./modules/superadmin").then((m) => ({ defau
 const GerenteIA = lazy(() => import("./pages/GerenteIA"));
 const Compras = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.ComprasPage })));
 const HealthLogs = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.HealthLogsPage })));
+const Contabilidad = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.ContabilidadPage })));
 const SitiosLegacyRedirect = lazy(() => import("./modules/superadmin/pages/SitiosLegacyRedirect"));
 const SuperadminDashboard = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.SuperadminDashboardPage })));
 const TenantWorkspace = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.TenantWorkspacePage })));
@@ -322,6 +323,7 @@ const App = () => (
                     <Route path="/casas-de-cambio/tablero" element={<FxPublicBoard />} />
                     <Route path="/compras" element={<Compras />} />
                     <Route path="/admin/health-logs" element={<RoleGuard section="admin"><HealthLogs /></RoleGuard>} />
+                    <Route path="/admin/contabilidad" element={<RoleGuard section="admin"><Contabilidad /></RoleGuard>} />
                     <Route path="/gerente-ia" element={<GerenteIA />} />
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/activacion" element={<ActivationStatus />} />

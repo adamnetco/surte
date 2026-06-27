@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_accounts: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          nature: Database["public"]["Enums"]["account_nature"]
+          organization_id: string
+          parent_id: string | null
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          nature: Database["public"]["Enums"]["account_nature"]
+          organization_id: string
+          parent_id?: string | null
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          nature?: Database["public"]["Enums"]["account_nature"]
+          organization_id?: string
+          parent_id?: string | null
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "accounting_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "accounting_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_section_access: {
         Row: {
           allowed_roles: Database["public"]["Enums"]["app_role"][]
@@ -2771,6 +2845,67 @@ export type Database = {
           },
         ]
       }
+      fiscal_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          end_date: string
+          id: string
+          name: string
+          organization_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["fiscal_period_status"]
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          name: string
+          organization_id: string
+          start_date: string
+          status?: Database["public"]["Enums"]["fiscal_period_status"]
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["fiscal_period_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_periods_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_periods_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fiscal_periods_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       fx_audit_log: {
         Row: {
           actor_id: string | null
@@ -3882,6 +4017,165 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "suppliers"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          entry_number: string | null
+          fiscal_period_id: string | null
+          id: string
+          is_reversal: boolean
+          narration: string | null
+          organization_id: string
+          posted_by: string | null
+          reference_id: string | null
+          reference_type: string | null
+          reversed_entry_id: string | null
+          status: Database["public"]["Enums"]["journal_entry_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entry_date?: string
+          entry_number?: string | null
+          fiscal_period_id?: string | null
+          id?: string
+          is_reversal?: boolean
+          narration?: string | null
+          organization_id: string
+          posted_by?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          reversed_entry_id?: string | null
+          status?: Database["public"]["Enums"]["journal_entry_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          entry_number?: string | null
+          fiscal_period_id?: string | null
+          id?: string
+          is_reversal?: boolean
+          narration?: string | null
+          organization_id?: string
+          posted_by?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          reversed_entry_id?: string | null
+          status?: Database["public"]["Enums"]["journal_entry_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_fiscal_period_id_fkey"
+            columns: ["fiscal_period_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "journal_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reversed_entry_id_fkey"
+            columns: ["reversed_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          account_id: string
+          created_at: string
+          credit_amount: number
+          debit_amount: number
+          id: string
+          journal_entry_id: string
+          line_order: number
+          narration: string | null
+          organization_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          credit_amount?: number
+          debit_amount?: number
+          id?: string
+          journal_entry_id: string
+          line_order?: number
+          narration?: string | null
+          organization_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          credit_amount?: number
+          debit_amount?: number
+          id?: string
+          journal_entry_id?: string
+          line_order?: number
+          narration?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
           },
         ]
       }
@@ -9985,6 +10279,17 @@ export type Database = {
         Args: { _limit_key: string; _org_id: string; _period?: string }
         Returns: Json
       }
+      post_journal_entry: {
+        Args: {
+          p_entry_date: string
+          p_lines: Json
+          p_narration: string
+          p_organization_id: string
+          p_reference_id: string
+          p_reference_type: string
+        }
+        Returns: string
+      }
       provision_organization: {
         Args: {
           _business_type?: string
@@ -10127,6 +10432,10 @@ export type Database = {
         Args: { _activation_id: string; _reason?: string }
         Returns: boolean
       }
+      seed_chart_of_accounts: {
+        Args: { p_organization_id: string }
+        Returns: undefined
+      }
       set_primary_tenant_domain: {
         Args: { p_domain_id: string }
         Returns: undefined
@@ -10229,8 +10538,20 @@ export type Database = {
           min_order_amount: number
         }[]
       }
+      void_journal_entry: {
+        Args: { p_entry_id: string; p_reason?: string }
+        Returns: string
+      }
     }
     Enums: {
+      account_nature: "debit" | "credit"
+      account_type:
+        | "asset"
+        | "liability"
+        | "equity"
+        | "revenue"
+        | "expense"
+        | "cogs"
       app_role:
         | "admin"
         | "user"
@@ -10245,6 +10566,8 @@ export type Database = {
         | "distribuidor"
         | "casa"
         | "casa_cambio"
+      fiscal_period_status: "open" | "closed" | "locked"
+      journal_entry_status: "draft" | "posted" | "voided"
       tenant_lifecycle_state:
         | "pending"
         | "trial"
@@ -10379,6 +10702,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_nature: ["debit", "credit"],
+      account_type: [
+        "asset",
+        "liability",
+        "equity",
+        "revenue",
+        "expense",
+        "cogs",
+      ],
       app_role: ["admin", "user", "superadmin", "editor", "agente", "cashier"],
       business_type: [
         "detal",
@@ -10388,6 +10720,8 @@ export const Constants = {
         "casa",
         "casa_cambio",
       ],
+      fiscal_period_status: ["open", "closed", "locked"],
+      journal_entry_status: ["draft", "posted", "voided"],
       tenant_lifecycle_state: [
         "pending",
         "trial",
