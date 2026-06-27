@@ -41,18 +41,29 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Filtra por sucursales permitidas al miembro actual (owners/admins ven todas)
+      const allowed = await supabase.rpc("member_allowed_locations" as any, { _org_id: currentOrg.id });
+      const allowedIds: string[] | null = Array.isArray(allowed.data)
+        ? (allowed.data as any[]).map((r) => (typeof r === "string" ? r : r.member_allowed_locations ?? r.id)).filter(Boolean)
+        : null;
+
+      let query = supabase
         .from("locations")
         .select("id, name, code, city, is_main, is_active")
         .eq("organization_id", currentOrg.id)
         .eq("is_active", true)
         .order("is_main", { ascending: false })
         .order("name");
+      if (allowedIds && allowedIds.length > 0) {
+        query = query.in("id", allowedIds);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       setLocations((data as Location[]) ?? []);
     } finally {
       setLoading(false);
     }
+
   }, [currentOrg]);
 
   useEffect(() => {
