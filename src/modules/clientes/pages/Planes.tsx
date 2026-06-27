@@ -65,12 +65,15 @@ export default function Planes() {
     if (!currentOrg?.id) return;
     setCheckoutPlan(planKey);
     try {
+      const billingReturn = `${window.location.origin}/billing?from=wompi${
+        returnTo ? `&return_to=${encodeURIComponent(returnTo)}` : ""
+      }`;
       const { data, error: e } = await supabase.functions.invoke("wompi-create-subscription", {
         body: {
           organization_id: currentOrg.id,
           plan_key: planKey,
           billing_cycle: cycle,
-          return_url: `${window.location.origin}/billing?from=wompi`,
+          return_url: billingReturn,
         },
       });
       if (e) throw e;
@@ -81,6 +84,7 @@ export default function Planes() {
       setCheckoutPlan(null);
     }
   }
+
 
   const reasonLabel = useMemo(() => (reason ? MODULE_LABELS[reason] ?? reason : null), [reason]);
 

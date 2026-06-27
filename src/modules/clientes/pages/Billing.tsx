@@ -5,8 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { CreditCard, Calendar, ArrowUpRight, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { CreditCard, Calendar, ArrowUpRight, Loader2, CheckCircle2, XCircle, Clock, ArrowLeft } from "lucide-react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
+
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 
@@ -32,7 +33,10 @@ export default function Billing() {
 
   // === Slice 4: retorno desde Wompi ===
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const fromWompi = searchParams.get("from") === "wompi";
+  const returnTo = searchParams.get("return_to");
+
   const [wompiState, setWompiState] = useState<"polling" | "approved" | "failed" | "timeout" | null>(
     fromWompi ? "polling" : null,
   );
@@ -130,8 +134,16 @@ export default function Billing() {
                 {wompiState === "timeout"  && "Wompi nos notificará cuando termine. Refresca esta página en unos minutos."}
               </p>
             </div>
-            <Button size="sm" variant="ghost" onClick={dismissWompiBanner}>Cerrar</Button>
+            <div className="flex gap-2">
+              {wompiState === "approved" && returnTo && (
+                <Button size="sm" onClick={() => navigate(returnTo)}>
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Volver a tu acción
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={dismissWompiBanner}>Cerrar</Button>
+            </div>
           </div>
+
         </Card>
       )}
 
