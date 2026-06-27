@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 /**
  * POS-einvoice-bulk-retry-hardening · Audit UI
  *
@@ -253,8 +254,18 @@ export default function EinvoiceBulkRetryAudit() {
 
       <Card className="p-0 overflow-hidden">
         {isLoading && (
-          <div className="p-6 text-sm text-muted-foreground flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" /> Cargando auditoría…
+          <div className="divide-y" aria-busy="true" aria-live="polite">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="px-4 py-3 flex items-center gap-3">
+                <Skeleton className="h-4 w-4" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3 w-64" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-16" />
+              </div>
+            ))}
           </div>
         )}
         {!isLoading && bundles.length === 0 && (

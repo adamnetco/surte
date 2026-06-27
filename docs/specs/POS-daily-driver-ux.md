@@ -28,7 +28,7 @@ SistecPOS tiene features completas pero el flujo diario del operador todavía ti
 
 ### Estados vacíos y carga
 - [x] **AC8:** Componente `<EmptyState />` reutilizable en `src/components/ui/empty-state.tsx` (ilustración + CTA)
-- [x] **AC9:** Skeletons en listas de alto tráfico (Slice E + audits 2/3/4/5: tabs admin, Inventario, ClientTickets, PlansCatalog, Mesas, CatalogosBase, FX divisas, **KDS, PosHub, TenantEntitlements, ClientPortal**). `Loader2` restantes son button busy-states (correctos).
+- [x] **AC9:** Skeletons en listas de alto tráfico (Slice E + audits 2/3/4/5/6: tabs admin, Inventario, ClientTickets, PlansCatalog, Mesas, CatalogosBase, FX divisas, KDS, PosHub, TenantEntitlements, ClientPortal, **HealthLogs, EinvoiceBulkRetry, EinvoiceBulkRetryAudit**). `Loader2` restantes son button busy-states (correctos).
 - [x] **AC10:** Optimistic updates en CRUD admin (Slice F + H: 13 tabs con snapshot-rollback y undo toasts)
 
 

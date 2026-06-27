@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 /**
  * HealthLogs — panel admin de eventos de salud (printer/core/wp/sites).
  *
@@ -209,7 +210,18 @@ export default function HealthLogs() {
         <Card>
           <CardContent className="p-0 overflow-hidden">
             {loading && rows.length === 0 ? (
-              <div className="grid place-items-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              <div className="divide-y" aria-busy="true" aria-live="polite">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="px-3 py-3 flex items-center gap-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-14" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 flex-1" />
+                  </div>
+                ))}
+              </div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-16 text-sm text-muted-foreground" role="status">
                 Sin eventos para los filtros actuales.

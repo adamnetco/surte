@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 /**
  * POS-einvoice-bulk-retry-admin · AC6 — UI Superadmin
  * Permite seleccionar N organizaciones (máx 20), parametrizar batch_size y
@@ -307,8 +308,17 @@ export default function EinvoiceBulkRetry() {
           className="divide-y rounded-md border max-h-[420px] overflow-y-auto"
         >
           {orgsLoading && (
-            <div className="p-6 text-sm text-muted-foreground flex items-center gap-2" aria-busy="true">
-              <Loader2 className="h-4 w-4 animate-spin" /> Cargando organizaciones…
+            <div className="divide-y" aria-busy="true" aria-live="polite">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2">
+                  <Skeleton className="h-4 w-4" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3 w-48" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-5 w-12" />
+                </div>
+              ))}
             </div>
           )}
           {!orgsLoading && filteredOrgs.length === 0 && (
