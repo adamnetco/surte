@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Camera, CameraOff, Plus, Minus, Search, PackageCheck } from "lucide-react";
+import { Camera, CameraOff, Plus, Minus, Search, PackageCheck, Scale } from "lucide-react";
 import { toast } from "sonner";
 
 interface POItem {
@@ -42,6 +42,8 @@ declare global {
 export default function ReceivePOSheet({ open, onOpenChange, poId, orgId, warehouseId, onReceived }: Props) {
   const qc = useQueryClient();
   const [received, setReceived] = useState<Record<string, number>>({});
+  const [adjustTo, setAdjustTo] = useState<Record<string, string>>({});
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -74,6 +76,66 @@ export default function ReceivePOSheet({ open, onOpenChange, poId, orgId, wareho
     },
     enabled: !!poId && open,
   });
+
+  // Stock actual por producto en la bodega de recepción (para pre-ajuste)
+  const productIds = (items ?? []).map((i) => i.product_id).filter(Boolean) as string[];
+  const { data: stockMap } = useQuery({
+    queryKey: ["po-stock", warehouseId, productIds.sort().join(",")],
+    queryFn: async () => {
+      if (!warehouseId || !productIds.length) return {} as Record<string, number>;
+      const { data, error } = await supabase
+        .from("product_stock")
+        .select("product_id, quantity")
+        .eq("organization_id", orgId)
+        .eq("warehouse_id", warehouseId)
+        .in("product_id", productIds);
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((r: any) => {
+        map[r.product_id] = (map[r.product_id] ?? 0) + Number(r.quantity ?? 0);
+      });
+      return map;
+    },
+    enabled: !!warehouseId && productIds.length > 0 && open,
+  });
+
+  const applyPreAdjust = async (it: POItem) => {
+    if (!it.product_id || !warehouseId) return;
+    const target = Number(adjustTo[it.id]);
+    if (Number.isNaN(target) || target < 0) {
+      toast.error("Cantidad real inválida");
+      return;
+    }
+    const current = stockMap?.[it.product_id] ?? 0;
+    const diff = target - current;
+    if (diff === 0) {
+      toast.info("El stock ya coincide");
+      return;
+    }
+    setAdjustingId(it.id);
+    try {
+      const { error } = await supabase.rpc("apply_stock_movement", {
+        _org_id: orgId,
+        _warehouse_id: warehouseId,
+        _product_id: it.product_id,
+        _presentation_id: null,
+        _movement_type: diff > 0 ? "adjustment" : "out",
+        _quantity: Math.abs(diff),
+        _unit_cost: 0,
+        _reference_type: "pre_receive_adjustment",
+        _reference_id: poId,
+        _notes: `Ajuste previo a recepción OC. Conteo físico: ${target} (antes ${current})`,
+      });
+      if (error) throw error;
+      toast.success(`Stock ajustado a ${target}`);
+      setAdjustTo((p) => ({ ...p, [it.id]: "" }));
+      qc.invalidateQueries({ queryKey: ["po-stock", warehouseId] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al ajustar");
+    } finally {
+      setAdjustingId(null);
+    }
+  };
 
   // Reset state on open change
   useEffect(() => {
@@ -298,6 +360,42 @@ export default function ReceivePOSheet({ open, onOpenChange, poId, orgId, wareho
                     </div>
                   </div>
                 </div>
+
+                {it.product_id && warehouseId && (
+                  <div className="mt-2 rounded-md border border-dashed border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-2">
+                    <div className="flex items-center justify-between text-[11px] mb-1">
+                      <span className="flex items-center gap-1 text-amber-700 dark:text-amber-300">
+                        <Scale className="w-3 h-3" /> Stock actual en bodega
+                      </span>
+                      <strong className="text-amber-900 dark:text-amber-200">
+                        {stockMap?.[it.product_id] ?? 0}
+                      </strong>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="any"
+                        placeholder="Conteo real ahora…"
+                        value={adjustTo[it.id] ?? ""}
+                        onChange={(e) => setAdjustTo((p) => ({ ...p, [it.id]: e.target.value }))}
+                        className="h-8 text-xs"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs whitespace-nowrap"
+                        disabled={adjustingId === it.id || !adjustTo[it.id]}
+                        onClick={() => applyPreAdjust(it)}
+                      >
+                        {adjustingId === it.id ? "…" : "Ajustar"}
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Corrige merma/faltantes antes de sumar la factura.
+                    </p>
+                  </div>
+                )}
 
                 {!fullyReceived && (
                   <div className="flex items-center gap-2 mt-3">
