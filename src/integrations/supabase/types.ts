@@ -9685,6 +9685,53 @@ export type Database = {
         Returns: Json
       }
       rematch_invoice_scan: { Args: { _scan_id: string }; Returns: Json }
+      report_cashier_performance: {
+        Args: { _from: string; _org_id: string; _to: string }
+        Returns: {
+          avg_ticket: number
+          cashier_id: string
+          cashier_name: string
+          gross: number
+          tickets: number
+        }[]
+      }
+      report_payment_mix: {
+        Args: { _from: string; _org_id: string; _to: string }
+        Returns: {
+          amount: number
+          count: number
+          method: string
+        }[]
+      }
+      report_sales_summary: {
+        Args: {
+          _from: string
+          _granularity?: string
+          _org_id: string
+          _to: string
+        }
+        Returns: {
+          bucket: string
+          discount: number
+          gross: number
+          net: number
+          refunds: number
+          tax: number
+          tickets: number
+          units: number
+        }[]
+      }
+      report_top_products: {
+        Args: { _from: string; _limit?: number; _org_id: string; _to: string }
+        Returns: {
+          gross: number
+          product_id: string
+          product_name: string
+          sku: string
+          tickets: number
+          units: number
+        }[]
+      }
       request_critical_action: {
         Args: {
           _action_type: string
