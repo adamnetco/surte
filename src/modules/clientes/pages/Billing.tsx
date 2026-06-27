@@ -134,8 +134,16 @@ export default function Billing() {
                 {wompiState === "timeout"  && "Wompi nos notificará cuando termine. Refresca esta página en unos minutos."}
               </p>
             </div>
-            <Button size="sm" variant="ghost" onClick={dismissWompiBanner}>Cerrar</Button>
+            <div className="flex gap-2">
+              {wompiState === "approved" && returnTo && (
+                <Button size="sm" onClick={() => navigate(returnTo)}>
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Volver a tu acción
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={dismissWompiBanner}>Cerrar</Button>
+            </div>
           </div>
+
         </Card>
       )}
 
