@@ -8,18 +8,29 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { TrendingUp, TrendingDown, Receipt, DollarSign, Percent, ShoppingBag } from "lucide-react";
+import { TrendingUp, TrendingDown, Receipt, DollarSign, Percent, ShoppingBag, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   useSalesSummary,
+  useTopProducts,
+  usePaymentMix,
+  useCashierPerformance,
   aggregate,
   type Granularity,
   type SalesBucket,
 } from "../hooks/useSalesReport";
 import ReportesDetail from "../components/ReportesDetail";
+import { exportReportsCsv, exportReportsXlsx } from "../lib/exportReports";
+import { toast } from "@/hooks/use-toast";
 
 type RangeKey = "today" | "7d" | "30d" | "month" | "custom";
 
@@ -171,6 +182,10 @@ const Reportes = () => {
     granularity: prevRange.granularity,
   });
 
+  const topProducts = useTopProducts({ orgId: currentOrg?.id, from: range.from, to: range.to, limit: 25 });
+  const paymentMix = usePaymentMix({ orgId: currentOrg?.id, from: range.from, to: range.to });
+  const cashiers = useCashierPerformance({ orgId: currentOrg?.id, from: range.from, to: range.to });
+
   const currTotals = useMemo(() => aggregate(current.data ?? []), [current.data]);
   const prevTotals = useMemo(() => aggregate(previous.data ?? []), [previous.data]);
 
@@ -191,6 +206,35 @@ const Reportes = () => {
   );
 
   const loading = current.isLoading;
+
+  const exportReady =
+    !current.isLoading && !topProducts.isLoading && !paymentMix.isLoading && !cashiers.isLoading;
+
+  const handleExport = (format: "csv" | "xlsx") => {
+    if (!exportReady) {
+      toast({ title: "Espera", description: "Los datos siguen cargando." });
+      return;
+    }
+    const payload = {
+      orgName: currentOrg?.name ?? "negocio",
+      rangeLabel: range.label,
+      from: range.from,
+      to: range.to,
+      granularity: range.granularity,
+      buckets: current.data ?? [],
+      topProducts: topProducts.data ?? [],
+      paymentMix: paymentMix.data ?? [],
+      cashiers: cashiers.data ?? [],
+    };
+    try {
+      if (format === "csv") exportReportsCsv(payload);
+      else exportReportsXlsx(payload);
+      toast({ title: "Exportación lista", description: `Archivo ${format.toUpperCase()} descargado.` });
+    } catch (e: any) {
+      toast({ title: "Error al exportar", description: e?.message ?? "Intenta de nuevo.", variant: "destructive" });
+    }
+  };
+
 
   return (
     <main className="min-h-[100dvh] bg-background pb-16">
@@ -251,15 +295,35 @@ const Reportes = () => {
               </div>
             )}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => current.refetch()}
-              disabled={loading}
-              className="ml-auto"
-            >
-              Actualizar
-            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={!exportReady} className="gap-1.5">
+                    <Download className="h-3.5 w-3.5" />
+                    Exportar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport("xlsx")} className="gap-2">
+                    <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                    Excel (.xlsx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("csv")} className="gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => current.refetch()}
+                disabled={loading}
+              >
+                Actualizar
+              </Button>
+            </div>
+
           </div>
         </header>
 
@@ -395,8 +459,9 @@ const Reportes = () => {
         <ReportesDetail orgId={currentOrg?.id} from={range.from} to={range.to} />
 
         <p className="text-[11px] text-muted-foreground text-center">
-          Próximo slice: exportación CSV / XLSX.
+          Exportaciones disponibles en Excel y CSV · Datos del rango seleccionado.
         </p>
+
       </div>
     </main>
   );
