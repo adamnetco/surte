@@ -94,20 +94,20 @@ export function useSmartAlerts(orgId: string | undefined) {
         });
       }
 
-      // 5) Health events recientes con severity high
+      // 5) Health events recientes con status degraded/down
       const { data: health } = await supabase
         .from("health_events")
-        .select("id, event_type, severity, message, created_at")
+        .select("id, source, status, message, created_at")
         .eq("organization_id", orgId)
-        .in("severity", ["high", "critical"])
+        .in("status", ["degraded", "down"])
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(3);
-      for (const h of health ?? []) {
+      for (const h of (health ?? []) as Array<{ id: string; source: string | null; status: string | null; message: string | null }>) {
         out.push({
           id: `health-${h.id}`,
-          severity: h.severity === "critical" ? "critical" : "warning",
-          title: h.event_type ?? "Evento de salud",
+          severity: h.status === "down" ? "critical" : "warning",
+          title: h.source ? `${h.source}: ${h.status}` : `Servicio ${h.status}`,
           description: h.message ?? undefined,
           href: "/superadmin/health",
           group: "health",
