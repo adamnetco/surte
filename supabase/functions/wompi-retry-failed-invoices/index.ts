@@ -71,9 +71,13 @@ Deno.serve(async (req) => {
         await admin.from("dunning_events").insert({
           organization_id: inv.organization_id,
           subscription_id: inv.subscription_id,
-          event_type: "max_retries_reached",
-          metadata: { invoice_id: inv.id, attempts: maxAttempts },
+          invoice_id: inv.id,
+          attempt: maxAttempts,
+          status: "abandoned",
+          reason: `Abandonada tras ${maxAttempts} intentos fallidos`,
         }).then(() => {}).catch(() => {});
+
+
 
         results.push({ invoice_id: inv.id, action: "abandoned" });
         continue;
