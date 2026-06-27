@@ -391,9 +391,11 @@ const Reportes = () => {
           </Card>
         </section>
 
-        {/* Footer note for slices siguientes */}
+        {/* Detalle: top productos, mix de pagos, cajeros */}
+        <ReportesDetail orgId={currentOrg?.id} from={range.from} to={range.to} />
+
         <p className="text-[11px] text-muted-foreground text-center">
-          Próximo slice: top productos, mix de pagos y desempeño por cajero.
+          Próximo slice: exportación CSV / XLSX.
         </p>
       </div>
     </main>
