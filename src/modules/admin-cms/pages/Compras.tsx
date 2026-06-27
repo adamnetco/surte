@@ -91,7 +91,7 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
     if (error) return toast.error(error.message);
     toast.success("Proveedor creado");
     setOpen(false);
-    setForm({ name: "", tax_id: "", contact_name: "", phone: "", email: "", city: "", payment_terms_days: 30, lead_time_days: 3 });
+    setForm({ name: "", tax_id: "", contact_name: "", phone: "", email: "", city: "", payment_terms_days: 30, lead_time_days: 3, requires_support_doc: false, is_natural_person: true, document_type_code: "CC", regimen: "no_responsable_iva" });
     qc.invalidateQueries({ queryKey: ["suppliers", orgId] });
   };
 
