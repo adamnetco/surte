@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 
 export interface OrgDefaultDocTypes {
   consumerFinal: string;
@@ -56,18 +57,23 @@ export function useOrgDefaultDocTypes(organizationId: string | null | undefined)
 
   useEffect(() => {
     if (!organizationId) return;
-    const channel = supabase
-      .channel(`einvoice-defaults-${organizationId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "einvoice_configs", filter: `organization_id=eq.${organizationId}` },
-        () => {
-          qc.invalidateQueries({ queryKey: queryKey(organizationId) });
-        },
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(uniqueTopic(`einvoice-defaults-${organizationId}`))
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "einvoice_configs", filter: `organization_id=eq.${organizationId}` },
+          () => {
+            qc.invalidateQueries({ queryKey: queryKey(organizationId) });
+          },
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("[useOrgDefaultDocTypes] realtime subscribe failed", err);
+    }
     return () => {
-      supabase.removeChannel(channel);
+      safeRemoveChannel(channel);
     };
   }, [organizationId, qc]);
 
