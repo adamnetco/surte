@@ -9976,6 +9976,10 @@ export type Database = {
         }[]
       }
       export_tenant_snapshot: { Args: { _org_id: string }; Returns: Json }
+      find_account_id: {
+        Args: { _code: string; _org: string }
+        Returns: string
+      }
       fx_apply_pricing_rule: {
         Args: {
           _base: number
