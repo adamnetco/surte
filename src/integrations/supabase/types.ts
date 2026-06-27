@@ -9701,6 +9701,10 @@ export type Database = {
         Args: { _po_id: string; _warehouse_id: string }
         Returns: Json
       }
+      receive_purchase_order_partial: {
+        Args: { _lines: Json; _po_id: string; _warehouse_id: string }
+        Returns: Json
+      }
       record_health_event: {
         Args: {
           p_correlation_id?: string
