@@ -270,6 +270,12 @@ const ContactsTab = () => {
           )}
         </div>
       </div>
+
+      <Customer360Sheet
+        profileId={tab === "customers" ? selectedId : null}
+        open={open360}
+        onOpenChange={setOpen360}
+      />
     </div>
   );
 };
