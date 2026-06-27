@@ -10055,6 +10055,39 @@ export type Database = {
           },
         ]
       }
+      v_conversion_funnel_daily: {
+        Row: {
+          day: string | null
+          denials: number | null
+          organization_id: string | null
+          upgrade_clicks: number | null
+          users_blocked: number | null
+          users_clicked: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usage_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "usage_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       v_gate_denials_daily: {
         Row: {
           day: string | null
@@ -10262,6 +10295,7 @@ export type Database = {
             }
             Returns: Json
           }
+      conversion_funnel_summary: { Args: { p_days?: number }; Returns: Json }
       cosign_critical_action: {
         Args: { _action_id: string; _decision: string; _reason?: string }
         Returns: Json
@@ -10572,6 +10606,10 @@ export type Database = {
             }
             Returns: string
           }
+      log_upgrade_click: {
+        Args: { p_context?: Json; p_org_id: string }
+        Returns: undefined
+      }
       log_usage: {
         Args: {
           _meta?: Json
