@@ -25,9 +25,10 @@ export function useLimitGuard() {
   const { currentOrg } = useOrganization();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const consume = useCallback(
-    async (limitKey: string, amount = 1, opts?: { silent?: boolean; period?: string }): Promise<LimitDecision> => {
+    async (limitKey: string, amount = 1, opts?: { silent?: boolean; period?: string; returnTo?: string }): Promise<LimitDecision> => {
       if (!currentOrg?.id) return { allowed: false, reason: "forbidden" };
       const { data, error } = await supabase.rpc("consume_limit" as any, {
         p_org_id: currentOrg.id,
@@ -41,13 +42,18 @@ export function useLimitGuard() {
       }
       const d = (data ?? {}) as LimitDecision;
       if (!d.allowed && !opts?.silent) {
+        const ctx: GateContext = { kind: "limit", key: limitKey };
+        const recommended = recommendPlanFor(ctx);
+        const returnTo = opts?.returnTo ?? location.pathname + location.search;
+        const upgradeUrl = buildUpgradeUrl(ctx, returnTo);
         toast.error(
           d.reason === "limit_exceeded"
-            ? `Alcanzaste tu cupo de ${limitKey} (${d.used}/${d.limit}). Mejora tu plan para continuar.`
+            ? `Alcanzaste tu cupo de ${limitKey} (${d.used}/${d.limit}). Sube al plan ${recommended.toUpperCase()} para continuar.`
             : "Acceso denegado",
           {
+            duration: 8000,
             action: d.reason === "limit_exceeded"
-              ? { label: "Ver planes", onClick: () => navigate(`/planes?reason=${limitKey}`) }
+              ? { label: `Ver plan ${recommended.toUpperCase()}`, onClick: () => navigate(upgradeUrl) }
               : undefined,
           }
         );
@@ -55,7 +61,7 @@ export function useLimitGuard() {
       if (d.allowed) qc.invalidateQueries({ queryKey: ["entitlements", currentOrg.id] });
       return d;
     },
-    [currentOrg?.id, qc, navigate]
+    [currentOrg?.id, qc, navigate, location.pathname, location.search]
   );
 
   const logDenial = useCallback(
@@ -74,3 +80,4 @@ export function useLimitGuard() {
 
   return { consume, logDenial };
 }
+
