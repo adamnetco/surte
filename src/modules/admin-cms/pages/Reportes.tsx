@@ -8,18 +8,29 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { TrendingUp, TrendingDown, Receipt, DollarSign, Percent, ShoppingBag } from "lucide-react";
+import { TrendingUp, TrendingDown, Receipt, DollarSign, Percent, ShoppingBag, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   useSalesSummary,
+  useTopProducts,
+  usePaymentMix,
+  useCashierPerformance,
   aggregate,
   type Granularity,
   type SalesBucket,
 } from "../hooks/useSalesReport";
 import ReportesDetail from "../components/ReportesDetail";
+import { exportReportsCsv, exportReportsXlsx } from "../lib/exportReports";
+import { toast } from "@/hooks/use-toast";
 
 type RangeKey = "today" | "7d" | "30d" | "month" | "custom";
 
