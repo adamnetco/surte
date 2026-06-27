@@ -5,8 +5,9 @@ import { useOrganization } from "@/modules/platform/context/OrganizationContext"
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Award, Heart, AlertTriangle, Moon, Sparkles, RefreshCw, Download, Users2 } from "lucide-react";
+import { Award, Heart, AlertTriangle, Moon, Sparkles, RefreshCw, Download, Users2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import RfmCampaignSheet from "./RfmCampaignSheet";
 
 const SEGMENTS = [
   { key: "Champions", icon: Award, color: "bg-emerald-500/10 text-emerald-700 border-emerald-300" },
