@@ -19,6 +19,7 @@ interface POItem {
   unit_cost: number;
   supplier_sku: string | null;
   description: string | null;
+  applied: boolean;
   products?: { name: string; sku: string | null; gtin: string | null; image_url: string | null } | null;
 }
 
