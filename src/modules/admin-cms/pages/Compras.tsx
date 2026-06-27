@@ -123,7 +123,8 @@ function SuppliersTab({ orgId, qc }: { orgId: string; qc: any }) {
             </div>
             <Button onClick={save}>Guardar</Button>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <Table>
