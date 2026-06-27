@@ -343,7 +343,8 @@ export default function Facturacion() {
                     )}
                   </div>
                 </div>
-              ))}
+                ));
+              })()}
             </div>
           </Card>
         </TabsContent>
