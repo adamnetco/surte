@@ -58,8 +58,8 @@ export function useTenantAddons(organizationId: string | null | undefined) {
 }
 
 /**
- * Reserva un add-on creando una fila `pending` en `tenant_addons`.
- * El cobro real con Wompi se completa en Slice 3 (mutación de status a 'active').
+ * Reserva un add-on y abre Wompi Web Checkout en una pestaña nueva.
+ * El webhook `wompi-events` activa el add-on (status=pending → active) al recibir APPROVED.
  */
 export function usePurchaseAddon() {
   const qc = useQueryClient();
@@ -68,29 +68,26 @@ export function usePurchaseAddon() {
       organization_id: string;
       addon: Addon;
       quantity?: number;
+      return_url?: string;
     }) => {
-      const ends_at =
-        input.addon.billing_period === "one_shot"
-          ? new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString()
-          : input.addon.billing_period === "yearly"
-            ? new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString()
-            : new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+      const returnUrl =
+        input.return_url ??
+        `${window.location.origin}/billing?from=wompi&return_to=${encodeURIComponent("/planes")}`;
 
-      const { data, error } = await supabase
-        .from("tenant_addons" as any)
-        .insert({
+      const { data, error } = await supabase.functions.invoke("wompi-purchase-addon", {
+        body: {
           organization_id: input.organization_id,
           addon_code: input.addon.code,
           quantity: input.quantity ?? 1,
-          status: "pending",
-          amount_paid_cop: input.addon.price_cop * (input.quantity ?? 1),
-          ends_at,
-          metadata: { source: "self_service_ui" },
-        })
-        .select()
-        .single();
+          return_url: returnUrl,
+        },
+      });
       if (error) throw error;
-      return data as unknown as TenantAddon;
+      if (!data?.checkout_url) throw new Error("No se obtuvo checkout_url de Wompi");
+
+      // Abre el checkout (nueva pestaña para no perder estado de la app)
+      window.open(data.checkout_url, "_blank", "noopener,noreferrer");
+      return data as { reference: string; tenant_addon_id: string; checkout_url: string };
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["addons", "tenant", vars.organization_id] });
@@ -98,3 +95,4 @@ export function usePurchaseAddon() {
     },
   });
 }
+

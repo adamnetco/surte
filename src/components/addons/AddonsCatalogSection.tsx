@@ -48,11 +48,11 @@ export default function AddonsCatalogSection() {
     try {
       await purchase.mutateAsync({ organization_id: currentOrg.id, addon });
       toast({
-        title: "Add-on reservado",
-        description: `Te enviaremos el link de pago Wompi para activar "${addon.name}".`,
+        title: "Checkout Wompi abierto",
+        description: `Completa el pago para activar "${addon.name}". Se activará automáticamente al confirmar.`,
       });
     } catch (e: any) {
-      toast({ title: "No se pudo reservar", description: e.message ?? String(e), variant: "destructive" });
+      toast({ title: "No se pudo iniciar el pago", description: e.message ?? String(e), variant: "destructive" });
     }
   }
 

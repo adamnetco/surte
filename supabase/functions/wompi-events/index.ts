@@ -81,7 +81,50 @@ Deno.serve(async (req) => {
     const paymentMethodType = tx.payment_method_type as string | undefined;
     const statusMessage = tx.status_message as string | undefined;
 
-    // 2) Localizar factura por reference
+    // 2a) Si la referencia corresponde a un add-on (prefijo "addon_"), procesar y salir
+    if (reference?.startsWith("addon_")) {
+      const { data: addonRow } = await admin
+        .from("tenant_addons")
+        .select("id, status")
+        .eq("wompi_reference", reference)
+        .maybeSingle();
+
+      if (!addonRow) {
+        console.warn("[wompi-events] addon row not found for reference", reference);
+        return new Response(JSON.stringify({ ok: true, warn: "addon_not_found", reference }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const addonStatus =
+        status === "APPROVED" ? "active" :
+        status === "DECLINED" || status === "ERROR" ? "failed" :
+        status === "VOIDED" ? "canceled" : "pending";
+
+      // Idempotencia: no degradar un add-on ya activo
+      if (addonRow.status === "active" && status !== "APPROVED") {
+        return new Response(JSON.stringify({ ok: true, addon_id: addonRow.id, ignored: "already_active" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      await admin
+        .from("tenant_addons")
+        .update({
+          status: addonStatus,
+          wompi_transaction_id: wompiTxId,
+          starts_at: status === "APPROVED" ? new Date().toISOString() : undefined,
+          metadata: { last_status_message: statusMessage ?? null, payment_method: paymentMethodType ?? null },
+        })
+        .eq("id", addonRow.id);
+
+      console.log("[wompi-events] addon updated", { addon_id: addonRow.id, status: addonStatus });
+      return new Response(JSON.stringify({ ok: true, addon_id: addonRow.id, status: addonStatus }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 2b) Localizar factura de suscripción por reference
     const { data: invoice, error: invErr } = await admin
       .from("subscription_invoices")
       .select("id, subscription_id, status")
@@ -95,6 +138,7 @@ Deno.serve(async (req) => {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     // 3) Mapear estado Wompi -> estado interno
     const invoiceStatus =
