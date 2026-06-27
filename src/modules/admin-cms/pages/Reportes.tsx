@@ -182,6 +182,10 @@ const Reportes = () => {
     granularity: prevRange.granularity,
   });
 
+  const topProducts = useTopProducts({ orgId: currentOrg?.id, from: range.from, to: range.to, limit: 25 });
+  const paymentMix = usePaymentMix({ orgId: currentOrg?.id, from: range.from, to: range.to });
+  const cashiers = useCashierPerformance({ orgId: currentOrg?.id, from: range.from, to: range.to });
+
   const currTotals = useMemo(() => aggregate(current.data ?? []), [current.data]);
   const prevTotals = useMemo(() => aggregate(previous.data ?? []), [previous.data]);
 
@@ -202,6 +206,35 @@ const Reportes = () => {
   );
 
   const loading = current.isLoading;
+
+  const exportReady =
+    !current.isLoading && !topProducts.isLoading && !paymentMix.isLoading && !cashiers.isLoading;
+
+  const handleExport = (format: "csv" | "xlsx") => {
+    if (!exportReady) {
+      toast({ title: "Espera", description: "Los datos siguen cargando." });
+      return;
+    }
+    const payload = {
+      orgName: currentOrg?.name ?? "negocio",
+      rangeLabel: range.label,
+      from: range.from,
+      to: range.to,
+      granularity: range.granularity,
+      buckets: current.data ?? [],
+      topProducts: topProducts.data ?? [],
+      paymentMix: paymentMix.data ?? [],
+      cashiers: cashiers.data ?? [],
+    };
+    try {
+      if (format === "csv") exportReportsCsv(payload);
+      else exportReportsXlsx(payload);
+      toast({ title: "Exportación lista", description: `Archivo ${format.toUpperCase()} descargado.` });
+    } catch (e: any) {
+      toast({ title: "Error al exportar", description: e?.message ?? "Intenta de nuevo.", variant: "destructive" });
+    }
+  };
+
 
   return (
     <main className="min-h-[100dvh] bg-background pb-16">
