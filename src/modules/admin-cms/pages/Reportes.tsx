@@ -85,9 +85,19 @@ function prevRangeOf(r: Range): Range {
     from: new Date(r.from.getTime() - span - 1),
     to: new Date(r.from.getTime() - 1),
     granularity: r.granularity,
-    label: "Anterior",
+    label: "Período anterior",
   };
 }
+
+function yoyRangeOf(r: Range): Range {
+  const shift = (d: Date) => {
+    const x = new Date(d);
+    x.setFullYear(x.getFullYear() - 1);
+    return x;
+  };
+  return { from: shift(r.from), to: shift(r.to), granularity: r.granularity, label: "Año anterior" };
+}
+
 
 const cop = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
