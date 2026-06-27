@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Users, Truck, Phone, Mail, MapPin, Loader2, Tag } from "lucide-react";
+import { Search, Users, Truck, Phone, Mail, MapPin, Loader2, Tag, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import Customer360Sheet from "./Customer360Sheet";
 
 type TabKind = "customers" | "suppliers";
 
