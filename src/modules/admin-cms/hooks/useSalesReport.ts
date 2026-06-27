@@ -142,6 +142,45 @@ export function useCashierPerformance({ orgId, from, to }: Omit<Params, "granula
   });
 }
 
+export interface LocationRow {
+  location_id: string | null;
+  location_name: string;
+  tickets: number;
+  gross: number;
+  net: number;
+  tax: number;
+  discount: number;
+  refunds: number;
+  avg_ticket: number;
+}
+
+export function useSalesByLocation({ orgId, from, to }: Omit<Params, "granularity">) {
+  return useQuery({
+    enabled: !!orgId,
+    queryKey: ["report-sales-by-location", orgId, from.toISOString(), to.toISOString()],
+    queryFn: async (): Promise<LocationRow[]> => {
+      const { data, error } = await (supabase as any).rpc("report_sales_by_location", {
+        _org_id: orgId,
+        _from: from.toISOString(),
+        _to: to.toISOString(),
+      });
+      if (error) throw error;
+      return (data ?? []).map((r: any) => ({
+        location_id: r.location_id,
+        location_name: r.location_name ?? "Sin sucursal",
+        tickets: num(r.tickets),
+        gross: num(r.gross),
+        net: num(r.net),
+        tax: num(r.tax),
+        discount: num(r.discount),
+        refunds: num(r.refunds),
+        avg_ticket: num(r.avg_ticket),
+      }));
+    },
+    staleTime: 60_000,
+  });
+}
+
 export function aggregate(buckets: SalesBucket[]) {
   return buckets.reduce(
     (acc, b) => ({
