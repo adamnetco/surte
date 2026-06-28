@@ -248,6 +248,73 @@ export type Database = {
         }
         Relationships: []
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          key_hash: string
+          last_used_at: string | null
+          name: string
+          organization_id: string
+          prefix: string
+          revoked_at: string | null
+          scopes: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          last_used_at?: string | null
+          name: string
+          organization_id: string
+          prefix: string
+          revoked_at?: string | null
+          scopes?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          last_used_at?: string | null
+          name?: string
+          organization_id?: string
+          prefix?: string
+          revoked_at?: string | null
+          scopes?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "api_keys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           id: string
@@ -10758,6 +10825,150 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_deliveries: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          endpoint_id: string
+          event_type: string
+          id: string
+          last_attempt_at: string | null
+          last_response: string | null
+          last_status_code: number | null
+          next_attempt_at: string
+          organization_id: string
+          payload: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          endpoint_id: string
+          event_type: string
+          id?: string
+          last_attempt_at?: string | null
+          last_response?: string | null
+          last_status_code?: number | null
+          next_attempt_at?: string
+          organization_id: string
+          payload: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          endpoint_id?: string
+          event_type?: string
+          id?: string
+          last_attempt_at?: string | null
+          last_response?: string | null
+          last_status_code?: number | null
+          next_attempt_at?: string
+          organization_id?: string
+          payload?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_deliveries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_deliveries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "webhook_deliveries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
+      webhook_endpoints: {
+        Row: {
+          consecutive_failures: number
+          created_at: string
+          description: string | null
+          events: string[]
+          id: string
+          is_active: boolean
+          last_failure_at: string | null
+          last_success_at: string | null
+          organization_id: string
+          secret: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          consecutive_failures?: number
+          created_at?: string
+          description?: string | null
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          organization_id: string
+          secret: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          consecutive_failures?: number
+          created_at?: string
+          description?: string | null
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          organization_id?: string
+          secret?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_endpoints_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_endpoints_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "webhook_endpoints_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       whatsapp_message_events: {
         Row: {
           created_at: string
@@ -11366,6 +11577,15 @@ export type Database = {
         Returns: Json
       }
       count_active_terminals: { Args: { _license_id: string }; Returns: number }
+      create_api_key: {
+        Args: {
+          p_expires_at?: string
+          p_name: string
+          p_org: string
+          p_scopes?: string[]
+        }
+        Returns: Json
+      }
       create_license: {
         Args: {
           _expires_at?: string
@@ -11499,6 +11719,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      enqueue_webhook_event: {
+        Args: { p_event_type: string; p_org: string; p_payload: Json }
+        Returns: number
       }
       expire_overdue_subscriptions: {
         Args: never
@@ -12118,6 +12342,7 @@ export type Database = {
         Args: { _activation_id: string; _reason?: string }
         Returns: boolean
       }
+      revoke_api_key: { Args: { p_id: string }; Returns: boolean }
       seed_chart_of_accounts: {
         Args: { p_organization_id: string }
         Returns: undefined
