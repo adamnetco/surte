@@ -343,6 +343,7 @@ const App = () => (
                     <Route path="/compras" element={<Compras />} />
                     <Route path="/admin/health-logs" element={<RoleGuard section="admin"><SubscriptionGate><HealthLogs /></SubscriptionGate></RoleGuard>} />
                     <Route path="/admin/contabilidad" element={<RoleGuard section="admin"><SubscriptionGate><Contabilidad /></SubscriptionGate></RoleGuard>} />
+                    <Route path="/admin/api" element={<RoleGuard section="admin"><SubscriptionGate><DeveloperApi /></SubscriptionGate></RoleGuard>} />
                     <Route path="/gerente-ia" element={<GerenteIA />} />
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/activacion" element={<ActivationStatus />} />
