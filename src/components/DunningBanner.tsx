@@ -78,7 +78,7 @@ export function DunningBanner() {
           Pago vencido{monto ? ` por ${monto}` : ""}. Intento {c.attempt_count}/4
           {diasGracia !== null ? ` · ${diasGracia} día${diasGracia === 1 ? "" : "s"} de gracia restantes` : ""}.
         </span>
-        <Link to="/billing" className="ml-auto underline font-semibold">
+        <Link to="/billing/recover" className="ml-auto underline font-semibold">
           Actualizar método de pago
         </Link>
       </div>

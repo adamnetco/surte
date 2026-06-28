@@ -94,6 +94,8 @@ const FxPricing = lazy(() => import("./modules/fx").then((m) => ({ default: m.Fx
 const FxPublicBoard = lazy(() => import("./modules/fx").then((m) => ({ default: m.FxPublicBoardPage })));
 const Planes = lazy(() => import("./modules/clientes").then((m) => ({ default: m.PlanesPage })));
 const Billing = lazy(() => import("./modules/clientes").then((m) => ({ default: m.BillingPage })));
+const BillingRecover = lazy(() => import("./modules/clientes/pages/BillingRecover"));
+
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
 const ActivationStatus = lazy(() => import("./modules/onboarding/pages/ActivationStatus"));
 const CatalogosBase = lazy(() => import("./modules/superadmin").then((m) => ({ default: m.CatalogosBasePage })));
@@ -336,6 +338,8 @@ const App = () => (
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/activacion" element={<ActivationStatus />} />
                     <Route path="/billing" element={<Billing />} />
+                    <Route path="/billing/recover" element={<BillingRecover />} />
+
 
                     {/* === Panel SistecPOS (solo en hosts del sistema) === */}
                     <Route path="/superadmin/*" element={<HostGuard require="system"><SuperadminDashboard /></HostGuard>} />

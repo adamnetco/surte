@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
                 attempt_no: attemptNo,
                 amount_cop: Number(c.total_amount_cop ?? 0),
                 grace_until: c.grace_until,
-                retry_url: "https://admin.sistecpos.com/billing",
+                retry_url: "https://admin.sistecpos.com/billing/recover",
                 stage,
               },
             },
