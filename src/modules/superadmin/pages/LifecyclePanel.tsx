@@ -269,6 +269,8 @@ export default function LifecyclePanel() {
         )}
       </Card>
 
+      <SubjectVariantsManager />
+
       {/* Suppression analytics */}
       <Card className="p-3">
         <h2 className="text-sm font-semibold mb-2 flex items-center gap-1"><ShieldOff className="w-4 h-4" /> Suprimidos por secuencia (30d)</h2>
