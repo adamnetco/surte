@@ -63,7 +63,46 @@ export default function SurveysPanel() {
   const [kpis, setKpis] = useState<KPIs | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [detractors, setDetractors] = useState<Detractor[]>([]);
+  const [benchmarks, setBenchmarks] = useState<any[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const exportDetractorsCSV = () => {
+    const header = ["fecha", "campaña", "score", "organización", "comentario", "ticket_id", "csm_alerted_at"];
+    const rows = detractors.map((d) => [
+      new Date(d.created_at).toISOString(),
+      d.campaign_code,
+      d.score,
+      d.org_name ?? "",
+      (d.comment ?? "").replace(/"/g, '""'),
+      d.ticket_id ?? "",
+      d.csm_alerted_at ?? "",
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c)}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `detractores-${days}d-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportBenchmarksCSV = () => {
+    const header = ["plan_code", "plan_name", "nps_score", "promoters", "passives", "detractors", "nps_responses", "csat_avg", "csat_responses"];
+    const rows = benchmarks.map((b) => [
+      b.plan_code, b.plan_name, b.nps_score ?? "", b.promoters, b.passives, b.detractors, b.nps_responses, b.csat_avg ?? "", b.csat_responses,
+    ]);
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c)}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `benchmarks-plan-${days}d-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const createTicket = async (d: Detractor) => {
     setActionLoading(d.id + ":ticket");
