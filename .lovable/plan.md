@@ -1,74 +1,60 @@
-# Ola 7 — Reportes & Analítica POS
+# Ola 18 — Dunning & Recuperación de pago
 
-**Objetivo:** Dashboard de ventas robusto y exportable que compita con Vendty/Loyverse/Alegra. Mobile-first, scoped por organization, sin tablas anchas.
+Objetivo: recuperar churn involuntario (tarjeta vencida, fondos insuficientes, fallo de gateway) con reintentos automáticos Wompi, escalado de comunicaciones, grace period, pausa automática y panel de morosidad para superadmin.
 
-Cada slice se entrega completo en su propio turno. Verificación = typecheck verde + screenshot Playwright.
+## Estado actual relevante
+- Wompi ya emite webhooks (`wompi-events`) con estados APPROVED/DECLINED/ERROR/VOIDED para suscripciones y add-ons.
+- `subscriptions` tiene `status` (active/past_due/canceled/...) y `current_period_end`.
+- `subscription_invoices` ya existe con 22 columnas.
+- `SubscriptionStatusBanner` y `SubscriptionGate` ya reaccionan a status `past_due`.
+- Embudo Ola 17 (`gate_denials → upgrade_clicks → wompi_approved`) listo para enriquecer con eventos de dunning.
 
----
+## Slices
 
-## Slice 1 — Backend de agregación (RPC + índices)
+### Slice 1 — Schema + detección de fallo (DB)
+- Tabla `dunning_cases` (organization_id, subscription_id, invoice_id, status [open/recovered/written_off/paused], failure_reason, attempt_count, next_retry_at, opened_at, closed_at, total_amount_cop).
+- Tabla `dunning_attempts` (case_id, attempt_no, scheduled_at, executed_at, outcome [approved/declined/error/skipped], wompi_transaction_id, error_code).
+- RLS: admin/owner del tenant lee sus casos; superadmin lee todo; service_role escribe.
+- RPC `dunning_open_case(p_subscription_id, p_invoice_id, p_reason)` — idempotente por (subscription_id, invoice_id).
+- Trigger en `wompi-events`: cuando DECLINED/ERROR en cobro recurrente → abre caso + marca `subscription.status='past_due'`.
+- Vista `v_dunning_summary` (por tenant y global) para KPIs.
 
-Crear una sola fuente de verdad para los reportes.
+### Slice 2 — Retry engine (Edge + cron)
+- Edge function `dunning-retry-worker`: lee casos `open` con `next_retry_at <= now()`, ejecuta cobro Wompi (PSE/tarjeta tokenizada), registra attempt, calcula siguiente retry con backoff exponencial **D+1, D+3, D+5, D+7** (max 4 intentos). 
+- En APPROVED → `recovered` + suscripción `active`; en último intento fallido → `paused` (suspende tenant) + status `canceled_for_nonpayment`.
+- `pg_cron` cada 30 min invoca el worker.
+- Telemetría: `usage_events` con `kind='dunning_attempt'`.
 
-**Migración:**
-- `report_sales_summary(org_id uuid, from_date date, to_date date, granularity text)` → SECURITY DEFINER, devuelve `bucket, gross, net, tax, discount, refunds, tickets, units`. Granularity: `hour|day|week|month`.
-- `report_top_products(org_id, from, to, limit)` → top N por `units` y `gross`, con `product_id, name, sku, units, gross, margin_pct`.
-- `report_payment_mix(org_id, from, to)` → suma por método.
-- `report_cashier_performance(org_id, from, to)` → por `cashier_id`: tickets, gross, avg_ticket.
-- Índices: `idx_pos_orders_org_closed_at`, `idx_pos_order_items_order` (si no existen).
-- GRANT EXECUTE a `authenticated` + check `has_org_access(org_id)` dentro.
+### Slice 3 — Comunicaciones escalonadas (emails + in-app)
+- Plantillas React Email en `_shared/transactional-email-templates/`:
+  - `dunning-payment-failed` (D+0): "No pudimos cobrar tu plan, lo reintentaremos automáticamente. Actualiza tu método si quieres adelantar."
+  - `dunning-reminder` (D+3): "Segundo intento falló. Quedan 4 días de gracia."
+  - `dunning-final-warning` (D+6): "Mañana suspenderemos tu cuenta."
+  - `dunning-suspended` (D+7+): "Cuenta suspendida. Reactiva con un pago."
+  - `dunning-recovered`: "¡Pago recuperado! Tu cuenta sigue activa."
+- Triggers en `dunning-retry-worker` después de cada attempt.
+- Banner `DunningBanner.tsx` global (ámbar→rojo según attempt_no) con CTA "Actualizar método de pago" → deep-link a `/billing/update-payment` con `return_to`.
 
----
+### Slice 4 — Grace period + pausa automática + reactivación
+- Config `grace_period_days` por plan (default 7) en `saas_plans.grace_period_days`.
+- Durante grace: tenant lee/escribe normal, pero `SubscriptionGate` muestra DunningBanner crítico.
+- Al expirar grace: `dunning-retry-worker` ejecuta `pause_tenant(org_id)` → cambia `organizations.status='suspended_payment'`, fuerza `TenantSuspendedBanner` ya existente.
+- Página `/billing/recover`: muestra invoices vencidas, botón "Pagar y reactivar" → invoca `wompi-recover-payment` (nueva edge) → al APPROVED dispara `reactivate_tenant`.
 
-## Slice 2 — Página `/admin/reportes` (KPIs + gráficos)
+### Slice 5 — Panel superadmin de morosidad + churn involuntario
+- Página `/superadmin/dunning`:
+  - KPI cards: casos abiertos, MRR en riesgo, tasa de recuperación 30d, churn involuntario evitado.
+  - Tabla casos abiertos (tenant, días en mora, intentos, próximo retry, monto) con acciones: forzar retry ahora, marcar `written_off`, extender grace.
+  - Gráfica recovery rate por cohorte semanal (Recharts).
+- Integración con `ConversionFunnelPanel`: añadir métrica "churn recuperado" al embudo PLG.
+- Export CSV de casos para finanzas.
 
-**Layout mobile-first:**
-- Header: range picker (Hoy / 7d / 30d / Mes / Custom) + comparador (vs período anterior).
-- 4 KPI cards: Ventas netas, Tickets, Ticket promedio, Margen. Cada uno con delta % vs período anterior + sparkline.
-- Gráfico principal: serie temporal (recharts) con toggle gross/net/units.
-- Skeleton presets durante carga.
-- Hook `useSalesReport({ from, to, granularity })` con React Query, key `["report-sales", orgId, from, to, granularity]`.
+## Skills aplicadas
+- `saas-entitlements-and-plan-gating` — coordinación con SubscriptionGate ya existente.
+- `saas-lifecycle-email-orchestration` — secuencia retention/dunning event-triggered, con suppression al recuperar.
+- `saas-admin-backoffice-tooling` — panel superadmin con audit log y acciones co-firmadas (extender grace, write-off).
+- `saas-business-metrics` — KPIs de involuntary churn y recovery rate.
+- `feature-dev`, `frontend-design`, `code-review`, `claude-mem`.
 
----
-
-## Slice 3 — Vertical cards de detalle
-
-Tres secciones tipo card-stack (NO tablas anchas):
-- **Top productos** — card por producto con nombre, sku, units, gross, barra de progreso del % sobre total.
-- **Mix de pagos** — donut + leyenda con %.
-- **Performance por cajero** — card por cajero con avatar, tickets, gross, avg.
-
-Cada card es tap-target ≥56px en mobile. En desktop, grid de 3 columnas.
-
----
-
-## Slice 4 — Exportación CSV / XLSX
-
-- Botón "Exportar" en header con menú: CSV (rápido) / XLSX (con formato).
-- CSV client-side con `Papa.unparse`.
-- XLSX con `xlsx` lib (ya en deps si no, `bun add xlsx`). Hojas: Resumen, Productos, Pagos, Cajeros.
-- Filename: `sistecpos-reporte-{orgSlug}-{from}-{to}.xlsx`.
-- Toast con progreso si > 1000 filas.
-
----
-
-## Slice 5 — Comparativas + persistencia + QA
-
-- Toggle "Comparar con período anterior" persiste en localStorage por org.
-- Saved views: usuario guarda combinaciones (rango + granularity + comparador) en `app_settings.user_report_views`.
-- Atajo Cmd+K: "Ir a Reportes" + búsqueda "ventas hoy/ayer/semana".
-- Playwright E2E: range picker → KPIs cargan → export descarga archivo.
-- Typecheck verde, security scan, publish a producción.
-
----
-
-## Decisiones técnicas
-
-- **Sin recharts nuevo**: ya está en el stack (`src/components/ui/chart.tsx`).
-- **Sin tablas legacy**: solo vertical cards.
-- **Realtime opcional**: por ahora pull-on-focus; realtime para "Hoy" en slice futuro si lo pides.
-- **No tocar pos_orders schema**: todas las agregaciones se hacen en RPC sobre lo que ya existe.
-
----
-
-¿Apruebo el plan y arranco **Slice 1 (RPCs + índices)** en el siguiente turno?
+## Orden de ejecución
+Arranco con **Slice 1 (schema + apertura de caso)** ahora mismo si confirmas. ¿Procedo?

@@ -2318,6 +2318,149 @@ export type Database = {
         }
         Relationships: []
       }
+      dunning_attempts: {
+        Row: {
+          amount_cop: number | null
+          attempt_no: number
+          case_id: string
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          executed_at: string | null
+          id: string
+          metadata: Json
+          outcome: string | null
+          scheduled_at: string
+          wompi_transaction_id: string | null
+        }
+        Insert: {
+          amount_cop?: number | null
+          attempt_no: number
+          case_id: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          id?: string
+          metadata?: Json
+          outcome?: string | null
+          scheduled_at: string
+          wompi_transaction_id?: string | null
+        }
+        Update: {
+          amount_cop?: number | null
+          attempt_no?: number
+          case_id?: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          id?: string
+          metadata?: Json
+          outcome?: string | null
+          scheduled_at?: string
+          wompi_transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_attempts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "dunning_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dunning_cases: {
+        Row: {
+          attempt_count: number
+          closed_at: string | null
+          created_at: string
+          failure_reason: string | null
+          grace_until: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json
+          next_retry_at: string | null
+          opened_at: string
+          organization_id: string
+          status: string
+          subscription_id: string | null
+          total_amount_cop: number
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          closed_at?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          grace_until?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json
+          next_retry_at?: string | null
+          opened_at?: string
+          organization_id: string
+          status?: string
+          subscription_id?: string | null
+          total_amount_cop?: number
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          closed_at?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          grace_until?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json
+          next_retry_at?: string | null
+          opened_at?: string
+          organization_id?: string
+          status?: string
+          subscription_id?: string | null
+          total_amount_cop?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_cases_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dunning_cases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dunning_cases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "dunning_cases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "dunning_cases_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dunning_events: {
         Row: {
           attempt: number
@@ -7940,6 +8083,7 @@ export type Database = {
           created_at: string
           currency: string
           description: string | null
+          grace_period_days: number
           id: string
           is_public: boolean
           key: string
@@ -7956,6 +8100,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          grace_period_days?: number
           id?: string
           is_public?: boolean
           key: string
@@ -7972,6 +8117,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          grace_period_days?: number
           id?: string
           is_public?: boolean
           key?: string
@@ -10088,6 +10234,40 @@ export type Database = {
           },
         ]
       }
+      v_dunning_summary: {
+        Row: {
+          last_opened_at: string | null
+          lost_cases: number | null
+          mrr_at_risk_cop: number | null
+          open_cases: number | null
+          organization_id: string | null
+          recovered_30d_cop: number | null
+          recovered_cases: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_cases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dunning_cases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "dunning_cases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       v_gate_denials_daily: {
         Row: {
           day: string | null
@@ -10319,6 +10499,16 @@ export type Database = {
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
+      }
+      dunning_open_case: {
+        Args: {
+          p_amount_cop?: number
+          p_invoice_id: string
+          p_org_id: string
+          p_reason: string
+          p_subscription_id: string
+        }
+        Returns: string
       }
       einvoice_apply_business_type_defaults: {
         Args: { _org_id?: string }
