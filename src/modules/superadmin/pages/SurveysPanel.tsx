@@ -307,8 +307,58 @@ export default function SurveysPanel() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <BarChart3 className="h-4 w-4" /> Benchmarks por plan
+          </CardTitle>
+          <Button size="sm" variant="outline" onClick={exportBenchmarksCSV} disabled={loading || benchmarks.length === 0}>
+            <Download className="mr-1 h-4 w-4" /> CSV
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+          ) : benchmarks.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin respuestas asociadas a planes en el periodo.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b text-left text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="py-2 pr-3">Plan</th>
+                    <th className="py-2 pr-3">NPS</th>
+                    <th className="py-2 pr-3">Prom / Pas / Det</th>
+                    <th className="py-2 pr-3">CSAT</th>
+                    <th className="py-2 pr-3">Respuestas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {benchmarks.map((b) => (
+                    <tr key={b.plan_code} className="border-b last:border-0">
+                      <td className="py-2 pr-3 font-medium">{b.plan_name}</td>
+                      <td className={`py-2 pr-3 font-semibold ${npsTone(b.nps_score)}`}>{b.nps_score ?? "—"}</td>
+                      <td className="py-2 pr-3 text-muted-foreground">
+                        {b.promoters} / {b.passives} / {b.detractors}
+                      </td>
+                      <td className="py-2 pr-3">{b.csat_avg ?? "—"}{b.csat_avg ? " / 5" : ""}</td>
+                      <td className="py-2 pr-3 text-muted-foreground">{b.nps_responses + b.csat_responses}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Top detractores recientes</CardTitle>
+          <Button size="sm" variant="outline" onClick={exportDetractorsCSV} disabled={loading || detractors.length === 0}>
+            <Download className="mr-1 h-4 w-4" /> CSV
+          </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
