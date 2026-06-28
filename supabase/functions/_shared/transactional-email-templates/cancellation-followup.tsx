@@ -73,8 +73,8 @@ const Email = ({ full_name, org_name, reason_code, reactivation_url, feedback_ur
 
 export const template = {
   component: Email,
-  subject: ({ org_name }: Props = {}) =>
-    `¿Cómo va ${org_name ?? 'tu negocio'} sin ${SITE_NAME}?`,
+  subject: (d: Record<string, any> & Props = {}) =>
+    d?.subject_override ?? `¿Cómo va ${d?.org_name ?? 'tu negocio'} sin ${SITE_NAME}?`,
   displayName: 'Cancellation Follow-up',
   previewData: {
     full_name: 'Eduardo',
