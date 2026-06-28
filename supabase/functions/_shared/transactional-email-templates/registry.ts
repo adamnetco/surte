@@ -16,6 +16,7 @@ import { template as trialOnboarding } from './trial-onboarding.tsx'
 import { template as trialEnding } from './trial-ending.tsx'
 import { template as winbackInactive } from './winback-inactive.tsx'
 import { template as approachingLimit } from './approaching-limit.tsx'
+import { template as cancellationFollowup } from './cancellation-followup.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'order-confirmation': orderConfirmation,
@@ -25,4 +26,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'trial-ending': trialEnding,
   'winback-inactive': winbackInactive,
   'approaching-limit': approachingLimit,
+  'cancellation-followup': cancellationFollowup,
 }
