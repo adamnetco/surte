@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Smile, MessageSquareWarning, RefreshCw, TrendingUp, Users, Ticket, MessageCircle, CheckCircle2 } from "lucide-react";
+import { Smile, MessageSquareWarning, RefreshCw, TrendingUp, Users, Ticket, MessageCircle, CheckCircle2, Download, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -63,7 +63,46 @@ export default function SurveysPanel() {
   const [kpis, setKpis] = useState<KPIs | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [detractors, setDetractors] = useState<Detractor[]>([]);
+  const [benchmarks, setBenchmarks] = useState<any[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const exportDetractorsCSV = () => {
+    const header = ["fecha", "campaña", "score", "organización", "comentario", "ticket_id", "csm_alerted_at"];
+    const rows = detractors.map((d) => [
+      new Date(d.created_at).toISOString(),
+      d.campaign_code,
+      d.score,
+      d.org_name ?? "",
+      (d.comment ?? "").replace(/"/g, '""'),
+      d.ticket_id ?? "",
+      d.csm_alerted_at ?? "",
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c)}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `detractores-${days}d-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportBenchmarksCSV = () => {
+    const header = ["plan_code", "plan_name", "nps_score", "promoters", "passives", "detractors", "nps_responses", "csat_avg", "csat_responses"];
+    const rows = benchmarks.map((b) => [
+      b.plan_code, b.plan_name, b.nps_score ?? "", b.promoters, b.passives, b.detractors, b.nps_responses, b.csat_avg ?? "", b.csat_responses,
+    ]);
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c)}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `benchmarks-plan-${days}d-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const createTicket = async (d: Detractor) => {
     setActionLoading(d.id + ":ticket");
@@ -109,16 +148,21 @@ export default function SurveysPanel() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.rpc("get_survey_analytics", { p_days: days });
+    const [{ data, error }, { data: bench, error: benchErr }] = await Promise.all([
+      supabase.rpc("get_survey_analytics", { p_days: days }),
+      supabase.rpc("get_survey_benchmarks_by_plan", { p_days: days }),
+    ]);
     if (error) {
       toast.error("No se pudo cargar analítica de encuestas", { description: error.message });
       setLoading(false);
       return;
     }
+    if (benchErr) console.warn("benchmarks error", benchErr);
     const payload = data as any;
     setKpis(payload?.kpis ?? null);
     setCampaigns((payload?.campaigns ?? []) as CampaignRow[]);
     setDetractors((payload?.detractors ?? []) as Detractor[]);
+    setBenchmarks((bench as any[]) ?? []);
     setLoading(false);
   };
 
@@ -263,8 +307,58 @@ export default function SurveysPanel() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <BarChart3 className="h-4 w-4" /> Benchmarks por plan
+          </CardTitle>
+          <Button size="sm" variant="outline" onClick={exportBenchmarksCSV} disabled={loading || benchmarks.length === 0}>
+            <Download className="mr-1 h-4 w-4" /> CSV
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+          ) : benchmarks.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin respuestas asociadas a planes en el periodo.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b text-left text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="py-2 pr-3">Plan</th>
+                    <th className="py-2 pr-3">NPS</th>
+                    <th className="py-2 pr-3">Prom / Pas / Det</th>
+                    <th className="py-2 pr-3">CSAT</th>
+                    <th className="py-2 pr-3">Respuestas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {benchmarks.map((b) => (
+                    <tr key={b.plan_code} className="border-b last:border-0">
+                      <td className="py-2 pr-3 font-medium">{b.plan_name}</td>
+                      <td className={`py-2 pr-3 font-semibold ${npsTone(b.nps_score)}`}>{b.nps_score ?? "—"}</td>
+                      <td className="py-2 pr-3 text-muted-foreground">
+                        {b.promoters} / {b.passives} / {b.detractors}
+                      </td>
+                      <td className="py-2 pr-3">{b.csat_avg ?? "—"}{b.csat_avg ? " / 5" : ""}</td>
+                      <td className="py-2 pr-3 text-muted-foreground">{b.nps_responses + b.csat_responses}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Top detractores recientes</CardTitle>
+          <Button size="sm" variant="outline" onClick={exportDetractorsCSV} disabled={loading || detractors.length === 0}>
+            <Download className="mr-1 h-4 w-4" /> CSV
+          </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
