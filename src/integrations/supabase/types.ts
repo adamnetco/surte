@@ -9643,11 +9643,13 @@ export type Database = {
           category: string | null
           comment: string | null
           created_at: string
+          csm_alerted_at: string | null
           id: string
           invite_id: string
           metadata: Json
           org_id: string | null
           score: number
+          ticket_id: string | null
           user_id: string
         }
         Insert: {
@@ -9655,11 +9657,13 @@ export type Database = {
           category?: string | null
           comment?: string | null
           created_at?: string
+          csm_alerted_at?: string | null
           id?: string
           invite_id: string
           metadata?: Json
           org_id?: string | null
           score: number
+          ticket_id?: string | null
           user_id: string
         }
         Update: {
@@ -9667,11 +9671,13 @@ export type Database = {
           category?: string | null
           comment?: string | null
           created_at?: string
+          csm_alerted_at?: string | null
           id?: string
           invite_id?: string
           metadata?: Json
           org_id?: string | null
           score?: number
+          ticket_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -9709,6 +9715,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_tenant_entitlements_modules"
             referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "survey_responses_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "client_tickets"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -12173,6 +12186,14 @@ export type Database = {
           sku: string
           variation_pct: number
         }[]
+      }
+      survey_create_detractor_ticket: {
+        Args: { p_response_id: string }
+        Returns: string
+      }
+      survey_mark_csm_alerted: {
+        Args: { p_response_id: string }
+        Returns: undefined
       }
       transition_tenant_lifecycle: {
         Args: {

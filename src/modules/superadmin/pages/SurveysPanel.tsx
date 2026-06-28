@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Smile, MessageSquareWarning, RefreshCw, TrendingUp, Users } from "lucide-react";
+import { Smile, MessageSquareWarning, RefreshCw, TrendingUp, Users, Ticket, MessageCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -38,6 +38,9 @@ type Detractor = {
   campaign_name: string;
   org_name: string | null;
   org_id: string | null;
+  ticket_id: string | null;
+  csm_alerted_at: string | null;
+  user_id: string | null;
 };
 
 const RANGES = [
@@ -60,6 +63,49 @@ export default function SurveysPanel() {
   const [kpis, setKpis] = useState<KPIs | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [detractors, setDetractors] = useState<Detractor[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const createTicket = async (d: Detractor) => {
+    setActionLoading(d.id + ":ticket");
+    const { data, error } = await supabase.rpc("survey_create_detractor_ticket", { p_response_id: d.id });
+    setActionLoading(null);
+    if (error) return toast.error("No se pudo crear ticket", { description: error.message });
+    toast.success("Ticket de soporte creado", { description: `ID ${String(data).slice(0, 8)}` });
+    load();
+  };
+
+  const alertCsm = async (d: Detractor) => {
+    setActionLoading(d.id + ":csm");
+    try {
+      const { data: setting } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "csm_whatsapp_phone")
+        .maybeSingle();
+      const phone = (setting?.value as any)?.phone || (setting?.value as any);
+      if (!phone || typeof phone !== "string") {
+        toast.error("Configura csm_whatsapp_phone en app_settings");
+        setActionLoading(null);
+        return;
+      }
+      const message =
+        `🚨 Detractor ${d.campaign_code.toUpperCase()} score ${d.score}\n` +
+        `Org: ${d.org_name ?? "(sin nombre)"}\n` +
+        `Comentario: ${d.comment ?? "(sin comentario)"}\n` +
+        `Fecha: ${new Date(d.created_at).toLocaleString("es-CO")}`;
+      const { error } = await supabase.functions.invoke("send-ycloud-whatsapp", {
+        body: { action: "send_text", to: phone, message },
+      });
+      if (error) throw error;
+      await supabase.rpc("survey_mark_csm_alerted", { p_response_id: d.id });
+      toast.success("CSM alertado por WhatsApp");
+      load();
+    } catch (e: any) {
+      toast.error("No se pudo alertar al CSM", { description: e?.message });
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -242,6 +288,36 @@ export default function SurveysPanel() {
                     </span>
                   </div>
                   {d.comment && <p className="mt-2 text-sm text-foreground/80">"{d.comment}"</p>}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {d.ticket_id ? (
+                      <Badge variant="outline" className="gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Ticket #{d.ticket_id.slice(0, 8)}
+                      </Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={actionLoading === d.id + ":ticket"}
+                        onClick={() => createTicket(d)}
+                      >
+                        <Ticket className="mr-1 h-4 w-4" /> Abrir ticket
+                      </Button>
+                    )}
+                    {d.csm_alerted_at ? (
+                      <Badge variant="outline" className="gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> CSM alertado
+                      </Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={actionLoading === d.id + ":csm"}
+                        onClick={() => alertCsm(d)}
+                      >
+                        <MessageCircle className="mr-1 h-4 w-4" /> Alertar CSM
+                      </Button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
