@@ -37,6 +37,14 @@ interface RewardConfig {
   qualifying_period_days: number;
 }
 
+interface CreditBalance {
+  currency: string;
+  available_amount: number;
+  consumed_amount: number;
+  expired_amount: number;
+  available_count: number;
+}
+
 const COP = (n: number) => "$" + Math.round(n || 0).toLocaleString("es-CO");
 
 const STATUS_META: Record<string, { label: string; tone: string }> = {
