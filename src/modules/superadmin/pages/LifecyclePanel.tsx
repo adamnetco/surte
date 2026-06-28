@@ -62,20 +62,26 @@ export default function LifecyclePanel() {
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [bySeq, setBySeq] = useState<SeqRow[]>([]);
   const [daily, setDaily] = useState<DailyRow[]>([]);
+  const [ab, setAb] = useState<AbRow[]>([]);
+  const [sup, setSup] = useState<SupRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data: k }, { data: s }, { data: d, error: de }] = await Promise.all([
+    const [{ data: k }, { data: s }, { data: d, error: de }, { data: a }, { data: sp }] = await Promise.all([
       supabase.from("v_lifecycle_kpis_30d" as never).select("*").maybeSingle(),
       supabase.from("v_lifecycle_by_sequence_30d" as never).select("*"),
       supabase.from("v_lifecycle_daily_30d" as never).select("*").order("day", { ascending: true }),
+      supabase.from("v_lifecycle_ab_30d" as never).select("*"),
+      supabase.from("v_lifecycle_suppression_30d" as never).select("*"),
     ]);
     if (de) toast.error(de.message);
     setKpis((k as Kpis) ?? null);
     setBySeq((s as SeqRow[]) ?? []);
     setDaily((d as DailyRow[]) ?? []);
+    setAb((a as AbRow[]) ?? []);
+    setSup((sp as SupRow[]) ?? []);
     setLoading(false);
   }, []);
 
