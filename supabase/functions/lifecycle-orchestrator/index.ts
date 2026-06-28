@@ -35,6 +35,9 @@ const SEQUENCES: Record<string, Array<{ template: string; nextDays: number | nul
   approaching_limit: [
     { template: 'approaching-limit', nextDays: null },
   ],
+  cancellation_followup: [
+    { template: 'cancellation-followup', nextDays: null },
+  ],
 }
 
 Deno.serve(async (req) => {
