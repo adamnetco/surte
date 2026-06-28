@@ -58,7 +58,7 @@ const Email = ({ full_name, org_name, offer_label, admin_url }: Props) => {
 
 export const template = {
   component: Email,
-  subject: () => `Te extrañamos en ${SITE_NAME} — tu cuenta sigue lista`,
+  subject: (d: Record<string, any> = {}) => d?.subject_override ?? `Te extrañamos en ${SITE_NAME} — tu cuenta sigue lista`,
   displayName: 'Win-back — Inactivo',
   previewData: {
     full_name: 'Eduardo',
