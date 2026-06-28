@@ -120,6 +120,7 @@ const SuperadminDashboard = () => {
                 <Route path="diagnostico" element={<DiagnosticoRLS />} />
                 <Route path="health" element={<HealthEvents />} />
                 <Route path="dunning" element={<DunningPanel />} />
+                <Route path="lifecycle" element={<LifecyclePanel />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
