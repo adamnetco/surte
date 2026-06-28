@@ -148,16 +148,21 @@ export default function SurveysPanel() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.rpc("get_survey_analytics", { p_days: days });
+    const [{ data, error }, { data: bench, error: benchErr }] = await Promise.all([
+      supabase.rpc("get_survey_analytics", { p_days: days }),
+      supabase.rpc("get_survey_benchmarks_by_plan", { p_days: days }),
+    ]);
     if (error) {
       toast.error("No se pudo cargar analítica de encuestas", { description: error.message });
       setLoading(false);
       return;
     }
+    if (benchErr) console.warn("benchmarks error", benchErr);
     const payload = data as any;
     setKpis(payload?.kpis ?? null);
     setCampaigns((payload?.campaigns ?? []) as CampaignRow[]);
     setDetractors((payload?.detractors ?? []) as Detractor[]);
+    setBenchmarks((bench as any[]) ?? []);
     setLoading(false);
   };
 
