@@ -8586,6 +8586,83 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_cancellations: {
+        Row: {
+          competitor: string | null
+          created_at: string
+          id: string
+          mrr_at_cancel: number | null
+          offer_accepted: boolean
+          offer_shown: string | null
+          organization_id: string
+          outcome: string
+          plan_at_cancel: string | null
+          reason_code: string
+          reason_detail: string | null
+          subscription_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          competitor?: string | null
+          created_at?: string
+          id?: string
+          mrr_at_cancel?: number | null
+          offer_accepted?: boolean
+          offer_shown?: string | null
+          organization_id: string
+          outcome: string
+          plan_at_cancel?: string | null
+          reason_code: string
+          reason_detail?: string | null
+          subscription_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          competitor?: string | null
+          created_at?: string
+          id?: string
+          mrr_at_cancel?: number | null
+          offer_accepted?: boolean
+          offer_shown?: string | null
+          organization_id?: string
+          outcome?: string
+          plan_at_cancel?: string | null
+          reason_code?: string
+          reason_detail?: string | null
+          subscription_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_cancellations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_cancellations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "subscription_cancellations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "subscription_cancellations_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_invoices: {
         Row: {
           amount: number

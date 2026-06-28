@@ -227,8 +227,10 @@ export default function BillingPlan() {
                 checked={!sub.cancel_at_period_end}
                 disabled={cancelBusy}
                 onCheckedChange={(checked) => {
-                  if (!checked) setConfirmCancel(true);
-                  else toggleCancel(false);
+                  if (!checked) {
+                    // route through retention flow instead of cancelling silently
+                    window.location.href = "/billing/cancel";
+                  } else toggleCancel(false);
                 }}
               />
             </div>
