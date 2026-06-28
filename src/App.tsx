@@ -95,6 +95,7 @@ const FxPublicBoard = lazy(() => import("./modules/fx").then((m) => ({ default: 
 const Planes = lazy(() => import("./modules/clientes").then((m) => ({ default: m.PlanesPage })));
 const Billing = lazy(() => import("./modules/clientes").then((m) => ({ default: m.BillingPage })));
 const BillingRecover = lazy(() => import("./modules/clientes/pages/BillingRecover"));
+const BillingOverview = lazy(() => import("./modules/clientes/pages/BillingOverview"));
 
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
 const ActivationStatus = lazy(() => import("./modules/onboarding/pages/ActivationStatus"));
