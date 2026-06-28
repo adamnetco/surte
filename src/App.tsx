@@ -338,6 +338,8 @@ const App = () => (
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/activacion" element={<ActivationStatus />} />
                     <Route path="/billing" element={<Billing />} />
+                    <Route path="/billing/recover" element={<BillingRecover />} />
+
 
                     {/* === Panel SistecPOS (solo en hosts del sistema) === */}
                     <Route path="/superadmin/*" element={<HostGuard require="system"><SuperadminDashboard /></HostGuard>} />
