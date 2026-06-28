@@ -8234,6 +8234,204 @@ export type Database = {
           },
         ]
       }
+      referral_codes: {
+        Row: {
+          campaign_name: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          organization_id: string
+          updated_at: string
+          uses_count: number
+        }
+        Insert: {
+          campaign_name?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          organization_id: string
+          updated_at?: string
+          uses_count?: number
+        }
+        Update: {
+          campaign_name?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          organization_id?: string
+          updated_at?: string
+          uses_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_codes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_codes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "referral_codes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
+      referral_conversions: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          qualified_at: string | null
+          referee_email: string | null
+          referee_org_id: string | null
+          referral_code_id: string
+          referrer_org_id: string
+          reward_amount: number
+          reward_currency: string
+          rewarded_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          qualified_at?: string | null
+          referee_email?: string | null
+          referee_org_id?: string | null
+          referral_code_id: string
+          referrer_org_id: string
+          reward_amount?: number
+          reward_currency?: string
+          rewarded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          qualified_at?: string | null
+          referee_email?: string | null
+          referee_org_id?: string | null
+          referral_code_id?: string
+          referrer_org_id?: string
+          reward_amount?: number
+          reward_currency?: string
+          rewarded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_conversions_referee_org_id_fkey"
+            columns: ["referee_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_conversions_referee_org_id_fkey"
+            columns: ["referee_org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "referral_conversions_referee_org_id_fkey"
+            columns: ["referee_org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "referral_conversions_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_conversions_referrer_org_id_fkey"
+            columns: ["referrer_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_conversions_referrer_org_id_fkey"
+            columns: ["referrer_org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "referral_conversions_referrer_org_id_fkey"
+            columns: ["referrer_org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
+      referral_rewards_config: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          plan_code: string | null
+          qualifying_period_days: number
+          referee_discount_pct: number
+          referrer_reward_amount: number
+          referrer_reward_currency: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          plan_code?: string | null
+          qualifying_period_days?: number
+          referee_discount_pct?: number
+          referrer_reward_amount?: number
+          referrer_reward_currency?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          plan_code?: string | null
+          qualifying_period_days?: number
+          referee_discount_pct?: number
+          referrer_reward_amount?: number
+          referrer_reward_currency?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       saas_plans: {
         Row: {
           created_at: string
@@ -10977,6 +11175,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      generate_referral_code: { Args: never; Returns: string }
       get_admin_products_secure: {
         Args: {
           _cursor_created_at?: string
