@@ -63,6 +63,49 @@ export default function SurveysPanel() {
   const [kpis, setKpis] = useState<KPIs | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [detractors, setDetractors] = useState<Detractor[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const createTicket = async (d: Detractor) => {
+    setActionLoading(d.id + ":ticket");
+    const { data, error } = await supabase.rpc("survey_create_detractor_ticket", { p_response_id: d.id });
+    setActionLoading(null);
+    if (error) return toast.error("No se pudo crear ticket", { description: error.message });
+    toast.success("Ticket de soporte creado", { description: `ID ${String(data).slice(0, 8)}` });
+    load();
+  };
+
+  const alertCsm = async (d: Detractor) => {
+    setActionLoading(d.id + ":csm");
+    try {
+      const { data: setting } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "csm_whatsapp_phone")
+        .maybeSingle();
+      const phone = (setting?.value as any)?.phone || (setting?.value as any);
+      if (!phone || typeof phone !== "string") {
+        toast.error("Configura csm_whatsapp_phone en app_settings");
+        setActionLoading(null);
+        return;
+      }
+      const message =
+        `🚨 Detractor ${d.campaign_code.toUpperCase()} score ${d.score}\n` +
+        `Org: ${d.org_name ?? "(sin nombre)"}\n` +
+        `Comentario: ${d.comment ?? "(sin comentario)"}\n` +
+        `Fecha: ${new Date(d.created_at).toLocaleString("es-CO")}`;
+      const { error } = await supabase.functions.invoke("send-ycloud-whatsapp", {
+        body: { action: "send_text", to: phone, message },
+      });
+      if (error) throw error;
+      await supabase.rpc("survey_mark_csm_alerted", { p_response_id: d.id });
+      toast.success("CSM alertado por WhatsApp");
+      load();
+    } catch (e: any) {
+      toast.error("No se pudo alertar al CSM", { description: e?.message });
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
