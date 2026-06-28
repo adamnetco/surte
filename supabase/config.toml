@@ -92,3 +92,7 @@ project_id = "dimyhjzcwlgfczimqhet"
   [functions.webhooks-dispatch-worker]
     verify_jwt = false
 
+  [functions.public-api]
+    verify_jwt = false
+
+

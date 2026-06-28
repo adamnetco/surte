@@ -248,6 +248,32 @@ export type Database = {
         }
         Relationships: []
       }
+      api_key_usage: {
+        Row: {
+          api_key_id: string
+          count: number
+          window_start: string
+        }
+        Insert: {
+          api_key_id: string
+          count?: number
+          window_start: string
+        }
+        Update: {
+          api_key_id?: string
+          count?: number
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_key_usage_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -11494,6 +11520,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      api_key_consume: {
+        Args: { p_hash: string; p_max_per_min?: number; p_prefix: string }
+        Returns: Json
       }
       app_current_role: { Args: never; Returns: string }
       apply_catalog_template: {
