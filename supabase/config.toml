@@ -88,3 +88,7 @@ project_id = "dimyhjzcwlgfczimqhet"
 
   [functions.wompi-events]
     verify_jwt = false
+
+  [functions.webhooks-dispatch-worker]
+    verify_jwt = false
+
