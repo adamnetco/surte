@@ -5052,6 +5052,8 @@ export type Database = {
           sequence: Database["public"]["Enums"]["lifecycle_sequence"]
           status: string
           step: number
+          subject_used: string | null
+          subject_variant: string | null
           template_name: string
         }
         Insert: {
@@ -5064,6 +5066,8 @@ export type Database = {
           sequence: Database["public"]["Enums"]["lifecycle_sequence"]
           status?: string
           step: number
+          subject_used?: string | null
+          subject_variant?: string | null
           template_name: string
         }
         Update: {
@@ -5076,6 +5080,8 @@ export type Database = {
           sequence?: Database["public"]["Enums"]["lifecycle_sequence"]
           status?: string
           step?: number
+          subject_used?: string | null
+          subject_variant?: string | null
           template_name?: string
         }
         Relationships: [
@@ -5087,6 +5093,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lifecycle_subject_variants: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          sequence: string
+          step: number
+          subject: string
+          variant_key: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sequence: string
+          step?: number
+          subject: string
+          variant_key: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sequence?: string
+          step?: number
+          subject?: string
+          variant_key?: string
+          weight?: number
+        }
+        Relationships: []
       }
       locations: {
         Row: {
@@ -10520,6 +10559,19 @@ export type Database = {
           },
         ]
       }
+      v_lifecycle_ab_30d: {
+        Row: {
+          delivery_rate: number | null
+          failed: number | null
+          sent: number | null
+          sequence: Database["public"]["Enums"]["lifecycle_sequence"] | null
+          step: number | null
+          subject_sample: string | null
+          total: number | null
+          variant_key: string | null
+        }
+        Relationships: []
+      }
       v_lifecycle_by_sequence_30d: {
         Row: {
           active: number | null
@@ -10553,6 +10605,16 @@ export type Database = {
           sends_sent_30d: number | null
           sends_suppressed_30d: number | null
           suppressed_enroll: number | null
+        }
+        Relationships: []
+      }
+      v_lifecycle_suppression_30d: {
+        Row: {
+          sequence: Database["public"]["Enums"]["lifecycle_sequence"] | null
+          suppressed_count: number | null
+          suppressed_unique: number | null
+          suppression_rate: number | null
+          total_enrollments: number | null
         }
         Relationships: []
       }
