@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, RefreshCw, Send, AlertTriangle, ShieldOff, Users, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, LineChart, Line } from "recharts";
+import SubjectVariantsManager from "../components/SubjectVariantsManager";
 
 type Kpis = {
   enrollments_30d: number;
