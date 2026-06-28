@@ -60,6 +60,7 @@ export default function BillingReferrals() {
   const [codes, setCodes] = useState<ReferralCode[]>([]);
   const [conversions, setConversions] = useState<Conversion[]>([]);
   const [config, setConfig] = useState<RewardConfig | null>(null);
+  const [balances, setBalances] = useState<CreditBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [campaignName, setCampaignName] = useState("");
@@ -69,15 +70,17 @@ export default function BillingReferrals() {
   const load = useCallback(async () => {
     if (!orgId) return;
     setLoading(true);
-    const [cRes, convRes, cfgRes] = await Promise.all([
+    const [cRes, convRes, cfgRes, balRes] = await Promise.all([
       supabase.from("referral_codes" as never).select("*").eq("organization_id", orgId).order("created_at", { ascending: false }),
       supabase.from("referral_conversions" as never).select("*").eq("referrer_org_id", orgId).order("created_at", { ascending: false }).limit(50),
       supabase.from("referral_rewards_config" as never).select("*").eq("is_active", true).is("plan_code", null).maybeSingle(),
+      supabase.from("v_referral_credit_balance" as never).select("*").eq("organization_id", orgId),
     ]);
     if (cRes.error) toast.error(cRes.error.message);
     setCodes((cRes.data as unknown as ReferralCode[]) ?? []);
     setConversions((convRes.data as unknown as Conversion[]) ?? []);
     setConfig((cfgRes.data as unknown as RewardConfig) ?? null);
+    setBalances((balRes.data as unknown as CreditBalance[]) ?? []);
     setLoading(false);
   }, [orgId]);
 
