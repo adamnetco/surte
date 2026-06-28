@@ -11476,6 +11476,7 @@ export type Database = {
         Args: { _kind?: string; _order_id: string }
         Returns: string[]
       }
+      enqueue_recurring_nps: { Args: never; Returns: number }
       enqueue_survey_invite: {
         Args: {
           p_campaign_code: string
