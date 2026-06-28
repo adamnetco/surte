@@ -338,6 +338,7 @@ const App = () => (
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/activacion" element={<ActivationStatus />} />
                     <Route path="/billing" element={<Billing />} />
+                    <Route path="/billing/overview" element={<BillingOverview />} />
                     <Route path="/billing/recover" element={<BillingRecover />} />
 
 
