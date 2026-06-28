@@ -183,6 +183,12 @@ Deno.serve(async (req) => {
         periodEnd.setMonth(periodEnd.getMonth() + 1);
       }
 
+      // Capturar marca y últimos 4 de la tarjeta cuando Wompi los provee (Slice 4)
+      const pmExtra = (tx?.payment_method?.extra ?? {}) as Record<string, unknown>;
+      const cardBrand = (pmExtra.brand ?? pmExtra.card_brand ?? null) as string | null;
+      const cardLast4 = (pmExtra.last_four ?? pmExtra.last_four_digits ?? null) as string | null;
+      const cardSourceId = (tx?.payment_source_id ?? null) as string | null;
+
       await admin
         .from("subscriptions")
         .update({
@@ -192,6 +198,9 @@ Deno.serve(async (req) => {
           retry_count: 0,
           last_payment_error: null,
           external_id: wompiTxId,
+          ...(cardBrand ? { payment_method_brand: String(cardBrand).toLowerCase() } : {}),
+          ...(cardLast4 ? { payment_method_last4: String(cardLast4) } : {}),
+          ...(cardSourceId ? { payment_source_id: String(cardSourceId) } : {}),
         })
         .eq("id", invoice.subscription_id);
 
