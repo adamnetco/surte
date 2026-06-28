@@ -10480,25 +10480,15 @@ export type Database = {
         Args: { _cart_token: string }
         Returns: boolean
       }
-      consume_limit:
-        | {
-            Args: {
-              _delta?: number
-              _limit_key: string
-              _org_id: string
-              _period?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_amount?: number
-              p_limit_key: string
-              p_org_id: string
-              p_period_key?: string
-            }
-            Returns: Json
-          }
+      consume_limit: {
+        Args: {
+          p_amount?: number
+          p_limit_key: string
+          p_org_id: string
+          p_period_key?: string
+        }
+        Returns: Json
+      }
       conversion_funnel_summary: { Args: { p_days?: number }; Returns: Json }
       cosign_critical_action: {
         Args: { _action_id: string; _decision: string; _reason?: string }

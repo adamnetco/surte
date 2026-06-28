@@ -35,10 +35,10 @@ export function useConsumeLimit(organizationId: string | null | undefined) {
     mutationFn: async (input: { limitKey: string; delta?: number; period?: string }) => {
       if (!organizationId) throw new Error("no_organization");
       const { data, error } = await (supabase as any).rpc("consume_limit", {
-        _org_id: organizationId,
-        _limit_key: input.limitKey,
-        _delta: input.delta ?? 1,
-        _period: input.period ?? "lifetime",
+        p_org_id: organizationId,
+        p_limit_key: input.limitKey,
+        p_amount: input.delta ?? 1,
+        p_period_key: input.period ?? "lifetime",
       });
       if (error) {
         const m = error.message?.match(/limit_exceeded:([^:]+):(\d+):(\d+)/);
