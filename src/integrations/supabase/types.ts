@@ -8396,6 +8396,90 @@ export type Database = {
           },
         ]
       }
+      referral_credits: {
+        Row: {
+          amount: number
+          consumed_at: string | null
+          consumed_invoice_id: string | null
+          conversion_id: string | null
+          created_at: string
+          currency: string
+          expires_at: string | null
+          id: string
+          metadata: Json
+          organization_id: string
+          reason: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          consumed_at?: string | null
+          consumed_invoice_id?: string | null
+          conversion_id?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          organization_id: string
+          reason?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          consumed_at?: string | null
+          consumed_invoice_id?: string | null
+          conversion_id?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          reason?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_credits_consumed_invoice_id_fkey"
+            columns: ["consumed_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_conversion_id_fkey"
+            columns: ["conversion_id"]
+            isOneToOne: false
+            referencedRelation: "referral_conversions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "referral_credits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       referral_rewards_config: {
         Row: {
           created_at: string
@@ -10816,6 +10900,39 @@ export type Database = {
         }
         Relationships: []
       }
+      v_referral_credit_balance: {
+        Row: {
+          available_amount: number | null
+          available_count: number | null
+          consumed_amount: number | null
+          currency: string | null
+          expired_amount: number | null
+          organization_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_credits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "referral_credits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       v_tenant_entitlements_limits: {
         Row: {
           effective_value: number | null
@@ -11449,6 +11566,10 @@ export type Database = {
           p_reference_type: string
         }
         Returns: string
+      }
+      process_referral_qualification: {
+        Args: { p_paid_amount: number; p_referee_org_id: string }
+        Returns: Json
       }
       provision_organization: {
         Args: {
