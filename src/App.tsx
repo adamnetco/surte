@@ -97,6 +97,7 @@ const Billing = lazy(() => import("./modules/clientes").then((m) => ({ default: 
 const BillingRecover = lazy(() => import("./modules/clientes/pages/BillingRecover"));
 const BillingOverview = lazy(() => import("./modules/clientes/pages/BillingOverview"));
 const BillingInvoices = lazy(() => import("./modules/clientes/pages/BillingInvoices"));
+const BillingPlan = lazy(() => import("./modules/clientes/pages/BillingPlan"));
 
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
 const ActivationStatus = lazy(() => import("./modules/onboarding/pages/ActivationStatus"));
@@ -342,7 +343,9 @@ const App = () => (
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/billing/overview" element={<BillingOverview />} />
                     <Route path="/billing/invoices" element={<BillingInvoices />} />
+                    <Route path="/billing/plan" element={<BillingPlan />} />
                     <Route path="/billing/recover" element={<BillingRecover />} />
+
 
 
                     {/* === Panel SistecPOS (solo en hosts del sistema) === */}
