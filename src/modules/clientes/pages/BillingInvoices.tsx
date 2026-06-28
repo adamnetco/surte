@@ -47,6 +47,8 @@ type Invoice = {
   last_error: string | null;
   wompi_reference: string | null;
   created_at: string;
+  credit_applied_amount: number | null;
+  credit_applied_at: string | null;
 };
 
 export default function BillingInvoices() {
