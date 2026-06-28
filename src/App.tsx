@@ -346,6 +346,7 @@ const App = () => (
                     <Route path="/billing/invoices" element={<BillingInvoices />} />
                     <Route path="/billing/plan" element={<BillingPlan />} />
                     <Route path="/billing/recover" element={<BillingRecover />} />
+                    <Route path="/billing/addons" element={<BillingAddons />} />
 
 
 
