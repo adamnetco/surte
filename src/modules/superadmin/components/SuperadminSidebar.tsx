@@ -27,6 +27,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/diagnostico", label: "Diagnóstico RLS", icon: ShieldAlert, desc: "RLS · GRANTs · políticas por tabla" },
   { to: "/superadmin/health", label: "Salud del sistema", icon: HeartPulse, desc: "Health events · WhatsApp traces" },
   { to: "/superadmin/dunning", label: "Dunning & morosidad", icon: AlertOctagon, desc: "Casos abiertos · recuperación · churn involuntario" },
+  { to: "/superadmin/lifecycle", label: "Lifecycle emails", icon: Mail, desc: "Inscripciones · envíos · conversión por secuencia" },
 ];
 
 const TENANT_ITEMS = [
