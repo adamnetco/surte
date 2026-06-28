@@ -37,6 +37,14 @@ interface RewardConfig {
   qualifying_period_days: number;
 }
 
+interface CreditBalance {
+  currency: string;
+  available_amount: number;
+  consumed_amount: number;
+  expired_amount: number;
+  available_count: number;
+}
+
 const COP = (n: number) => "$" + Math.round(n || 0).toLocaleString("es-CO");
 
 const STATUS_META: Record<string, { label: string; tone: string }> = {
@@ -52,6 +60,7 @@ export default function BillingReferrals() {
   const [codes, setCodes] = useState<ReferralCode[]>([]);
   const [conversions, setConversions] = useState<Conversion[]>([]);
   const [config, setConfig] = useState<RewardConfig | null>(null);
+  const [balances, setBalances] = useState<CreditBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [campaignName, setCampaignName] = useState("");
@@ -61,15 +70,17 @@ export default function BillingReferrals() {
   const load = useCallback(async () => {
     if (!orgId) return;
     setLoading(true);
-    const [cRes, convRes, cfgRes] = await Promise.all([
+    const [cRes, convRes, cfgRes, balRes] = await Promise.all([
       supabase.from("referral_codes" as never).select("*").eq("organization_id", orgId).order("created_at", { ascending: false }),
       supabase.from("referral_conversions" as never).select("*").eq("referrer_org_id", orgId).order("created_at", { ascending: false }).limit(50),
       supabase.from("referral_rewards_config" as never).select("*").eq("is_active", true).is("plan_code", null).maybeSingle(),
+      supabase.from("v_referral_credit_balance" as never).select("*").eq("organization_id", orgId),
     ]);
     if (cRes.error) toast.error(cRes.error.message);
     setCodes((cRes.data as unknown as ReferralCode[]) ?? []);
     setConversions((convRes.data as unknown as Conversion[]) ?? []);
     setConfig((cfgRes.data as unknown as RewardConfig) ?? null);
+    setBalances((balRes.data as unknown as CreditBalance[]) ?? []);
     setLoading(false);
   }, [orgId]);
 
@@ -143,6 +154,27 @@ export default function BillingReferrals() {
           Invita otras tiendas y gana {config ? COP(config.referrer_reward_amount) : "—"} de crédito por cada conversión. Tus referidos reciben {config?.referee_discount_pct ?? 20}% de descuento en su primer mes.
         </p>
       </header>
+
+      {/* Credit balance banner */}
+      {balances.length > 0 && (
+        <Card className="p-3 border-success/40 bg-success/5">
+          <div className="flex flex-wrap items-center gap-3">
+            <Gift className="w-5 h-5 text-success" />
+            <div className="flex-1 min-w-[200px]">
+              <p className="text-xs uppercase text-muted-foreground">Crédito disponible</p>
+              {balances.map((b) => (
+                <p key={b.currency} className="text-2xl font-bold text-success leading-tight">
+                  {COP(b.available_amount)} <span className="text-xs text-muted-foreground font-normal">{b.currency} · {b.available_count} crédito{b.available_count === 1 ? "" : "s"}</span>
+                </p>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground max-w-[260px]">
+              Se aplicará automáticamente en tu próxima factura. Vence a 180 días desde su emisión.
+            </p>
+          </div>
+        </Card>
+      )}
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
