@@ -11535,6 +11535,7 @@ export type Database = {
         | "payment_recovered"
         | "winback_inactive"
         | "approaching_limit"
+        | "cancellation_followup"
       lifecycle_status: "active" | "completed" | "suppressed" | "failed"
       tenant_lifecycle_state:
         | "pending"
@@ -11696,6 +11697,7 @@ export const Constants = {
         "payment_recovered",
         "winback_inactive",
         "approaching_limit",
+        "cancellation_followup",
       ],
       lifecycle_status: ["active", "completed", "suppressed", "failed"],
       tenant_lifecycle_state: [
