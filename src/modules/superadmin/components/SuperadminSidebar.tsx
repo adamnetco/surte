@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
 
   BarChart3, Building2, RefreshCw, Database, Package,
-  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu,
+  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu, AlertOctagon,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -26,6 +26,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/einvoice-bulk-retry/auditoria", label: "Bulk retry · Auditoría", icon: History, desc: "Idempotency keys · estado · lotes" },
   { to: "/superadmin/diagnostico", label: "Diagnóstico RLS", icon: ShieldAlert, desc: "RLS · GRANTs · políticas por tabla" },
   { to: "/superadmin/health", label: "Salud del sistema", icon: HeartPulse, desc: "Health events · WhatsApp traces" },
+  { to: "/superadmin/dunning", label: "Dunning & morosidad", icon: AlertOctagon, desc: "Casos abiertos · recuperación · churn involuntario" },
 ];
 
 const TENANT_ITEMS = [
