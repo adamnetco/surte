@@ -9518,6 +9518,200 @@ export type Database = {
         }
         Relationships: []
       }
+      survey_campaigns: {
+        Row: {
+          audience: Json
+          code: string
+          cooldown_days: number
+          created_at: string
+          follow_up_question: string | null
+          id: string
+          is_active: boolean
+          name: string
+          question: string
+          trigger_config: Json
+          trigger_event: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: Json
+          code: string
+          cooldown_days?: number
+          created_at?: string
+          follow_up_question?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          question: string
+          trigger_config?: Json
+          trigger_event: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: Json
+          code?: string
+          cooldown_days?: number
+          created_at?: string
+          follow_up_question?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          question?: string
+          trigger_config?: Json
+          trigger_event?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      survey_invites: {
+        Row: {
+          answered_at: string | null
+          campaign_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          org_id: string | null
+          shown_at: string | null
+          status: string
+          trigger_event: string
+          trigger_ref: string | null
+          user_id: string
+        }
+        Insert: {
+          answered_at?: string | null
+          campaign_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          org_id?: string | null
+          shown_at?: string | null
+          status?: string
+          trigger_event: string
+          trigger_ref?: string | null
+          user_id: string
+        }
+        Update: {
+          answered_at?: string | null
+          campaign_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          org_id?: string | null
+          shown_at?: string | null
+          status?: string
+          trigger_event?: string
+          trigger_ref?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_invites_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "survey_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "survey_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          campaign_id: string
+          category: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          invite_id: string
+          metadata: Json
+          org_id: string | null
+          score: number
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          category?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          invite_id: string
+          metadata?: Json
+          org_id?: string | null
+          score: number
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          category?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          invite_id?: string
+          metadata?: Json
+          org_id?: string | null
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "survey_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "survey_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "survey_responses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       sync_logs: {
         Row: {
           attempts: number
@@ -11178,6 +11372,10 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      dismiss_survey_invite: {
+        Args: { p_invite_id: string }
+        Returns: undefined
+      }
       dunning_extend_grace: {
         Args: { p_case_id: string; p_extra_days: number }
         Returns: {
@@ -11277,6 +11475,16 @@ export type Database = {
       enqueue_print_job: {
         Args: { _kind?: string; _order_id: string }
         Returns: string[]
+      }
+      enqueue_survey_invite: {
+        Args: {
+          p_campaign_code: string
+          p_org_id?: string
+          p_trigger_event?: string
+          p_trigger_ref?: string
+          p_user_id: string
+        }
+        Returns: string
       }
       expire_overdue_subscriptions: {
         Args: never
@@ -11413,6 +11621,17 @@ export type Database = {
       get_landing_by_slug: {
         Args: { _scope: string; _slug: string }
         Returns: Json
+      }
+      get_pending_survey: {
+        Args: never
+        Returns: {
+          campaign_id: string
+          code: string
+          follow_up_question: string
+          invite_id: string
+          question: string
+          type: string
+        }[]
       }
       get_persistent_cart: {
         Args: { _cart_token: string }
@@ -11611,6 +11830,7 @@ export type Database = {
         }
         Returns: number
       }
+      nps_category: { Args: { score: number }; Returns: string }
       open_fiscal_period: {
         Args: { _end: string; _name: string; _org: string; _start: string }
         Returns: string
@@ -11890,6 +12110,10 @@ export type Database = {
       set_subscription_cancel_at_period_end: {
         Args: { p_cancel: boolean; p_org_id: string }
         Returns: Json
+      }
+      submit_survey_response: {
+        Args: { p_comment?: string; p_invite_id: string; p_score: number }
+        Returns: string
       }
       suggest_purchase_orders: {
         Args: {
