@@ -38,6 +38,9 @@ type Detractor = {
   campaign_name: string;
   org_name: string | null;
   org_id: string | null;
+  ticket_id: string | null;
+  csm_alerted_at: string | null;
+  user_id: string | null;
 };
 
 const RANGES = [
