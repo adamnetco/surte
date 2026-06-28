@@ -62,7 +62,7 @@ export default function BillingInvoices() {
       const { data, error } = await supabase
         .from("subscription_invoices")
         .select(
-          "id, amount, currency, status, due_date, paid_at, period_start, period_end, pdf_url, checkout_url, attempt_count, max_attempts, last_error, wompi_reference, created_at"
+          "id, amount, currency, status, due_date, paid_at, period_start, period_end, pdf_url, checkout_url, attempt_count, max_attempts, last_error, wompi_reference, created_at, credit_applied_amount, credit_applied_at"
         )
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false })
