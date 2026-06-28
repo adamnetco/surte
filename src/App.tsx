@@ -29,6 +29,7 @@ import PinLock from "@/components/PinLock";
 import AuthHealthMonitor from "@/components/AuthHealthMonitor";
 const OnboardingChecklist = lazy(() => import("@/modules/onboarding/components/OnboardingChecklist"));
 const FirstLoginTour = lazy(() => import("@/components/FirstLoginTour"));
+const SurveyPrompt = lazy(() => import("@/components/SurveyPrompt"));
 
 import DevBypassBanner from "@/components/DevBypassBanner";
 import TenantSuspendedBanner from "@/components/TenantSuspendedBanner";
@@ -271,6 +272,7 @@ const App = () => (
                 <AuthHealthMonitor />
                 <Suspense fallback={null}><OnboardingChecklist /></Suspense>
                 <Suspense fallback={null}><FirstLoginTour /></Suspense>
+                <Suspense fallback={null}><SurveyPrompt /></Suspense>
 
                 <SwipeProvider>
                   <PageBreadcrumbs />
