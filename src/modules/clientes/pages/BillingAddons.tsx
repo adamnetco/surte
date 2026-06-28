@@ -39,7 +39,7 @@ const STATUS_BADGE: Record<string, { label: string; cls: string; icon: typeof Ch
 
 export default function BillingAddons() {
   const { currentOrg } = useOrganization();
-  const orgId = currentOrg?.organization_id ?? null;
+  const orgId = currentOrg?.id ?? null;
 
   const { data: catalog, isLoading: catLoading } = useAddonsCatalog();
   const { data: tenantAddons, isLoading: taLoading } = useTenantAddons(orgId);
