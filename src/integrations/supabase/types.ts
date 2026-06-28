@@ -9107,6 +9107,8 @@ export type Database = {
           attempt_count: number
           checkout_url: string | null
           created_at: string
+          credit_applied_amount: number
+          credit_applied_at: string | null
           currency: string
           due_date: string
           external_id: string | null
@@ -9131,6 +9133,8 @@ export type Database = {
           attempt_count?: number
           checkout_url?: string | null
           created_at?: string
+          credit_applied_amount?: number
+          credit_applied_at?: string | null
           currency?: string
           due_date: string
           external_id?: string | null
@@ -9155,6 +9159,8 @@ export type Database = {
           attempt_count?: number
           checkout_url?: string | null
           created_at?: string
+          credit_applied_amount?: number
+          credit_applied_at?: string | null
           currency?: string
           due_date?: string
           external_id?: string | null
@@ -11031,6 +11037,10 @@ export type Database = {
       }
       apply_invoice_scan: {
         Args: { _scan_id: string; _warehouse_id: string }
+        Returns: Json
+      }
+      apply_referral_credits_to_invoice: {
+        Args: { p_invoice_id: string }
         Returns: Json
       }
       apply_stock_movement: {
