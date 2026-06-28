@@ -10234,6 +10234,30 @@ export type Database = {
           },
         ]
       }
+      v_dunning_daily: {
+        Row: {
+          amount_cop: number | null
+          day: string | null
+          lost: number | null
+          opened: number | null
+          recovered: number | null
+        }
+        Relationships: []
+      }
+      v_dunning_global_kpis: {
+        Row: {
+          canceled_cases: number | null
+          lost_30d_cop: number | null
+          mrr_at_risk_cop: number | null
+          open_cases: number | null
+          paused_cases: number | null
+          recovered_30d_cop: number | null
+          recovered_cases: number | null
+          recovery_rate_30d_pct: number | null
+          written_off_cases: number | null
+        }
+        Relationships: []
+      }
       v_dunning_summary: {
         Row: {
           last_opened_at: string | null
@@ -10500,6 +10524,58 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      dunning_extend_grace: {
+        Args: { p_case_id: string; p_extra_days: number }
+        Returns: {
+          attempt_count: number
+          closed_at: string | null
+          created_at: string
+          failure_reason: string | null
+          grace_until: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json
+          next_retry_at: string | null
+          opened_at: string
+          organization_id: string
+          status: string
+          subscription_id: string | null
+          total_amount_cop: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "dunning_cases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      dunning_force_retry: {
+        Args: { p_case_id: string }
+        Returns: {
+          attempt_count: number
+          closed_at: string | null
+          created_at: string
+          failure_reason: string | null
+          grace_until: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json
+          next_retry_at: string | null
+          opened_at: string
+          organization_id: string
+          status: string
+          subscription_id: string | null
+          total_amount_cop: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "dunning_cases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       dunning_open_case: {
         Args: {
           p_amount_cop?: number
@@ -10509,6 +10585,32 @@ export type Database = {
           p_subscription_id: string
         }
         Returns: string
+      }
+      dunning_write_off: {
+        Args: { p_case_id: string; p_reason?: string }
+        Returns: {
+          attempt_count: number
+          closed_at: string | null
+          created_at: string
+          failure_reason: string | null
+          grace_until: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json
+          next_retry_at: string | null
+          opened_at: string
+          organization_id: string
+          status: string
+          subscription_id: string | null
+          total_amount_cop: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "dunning_cases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       einvoice_apply_business_type_defaults: {
         Args: { _org_id?: string }
