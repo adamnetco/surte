@@ -66,6 +66,7 @@ const Reportes = lazy(() => import("./modules/admin-cms").then((m) => ({ default
 const Innapsis = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisPage })));
 const InnapsisDetail = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisDetailPage })));
 const InnapsisResumen = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisResumenPage })));
+const DeveloperApi = lazy(() => import("./modules/admin-cms/pages/DeveloperApi"));
 
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
@@ -342,6 +343,7 @@ const App = () => (
                     <Route path="/compras" element={<Compras />} />
                     <Route path="/admin/health-logs" element={<RoleGuard section="admin"><SubscriptionGate><HealthLogs /></SubscriptionGate></RoleGuard>} />
                     <Route path="/admin/contabilidad" element={<RoleGuard section="admin"><SubscriptionGate><Contabilidad /></SubscriptionGate></RoleGuard>} />
+                    <Route path="/admin/api" element={<RoleGuard section="admin"><SubscriptionGate><DeveloperApi /></SubscriptionGate></RoleGuard>} />
                     <Route path="/gerente-ia" element={<GerenteIA />} />
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/activacion" element={<ActivationStatus />} />
