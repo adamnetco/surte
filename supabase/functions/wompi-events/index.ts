@@ -195,12 +195,41 @@ Deno.serve(async (req) => {
         })
         .eq("id", invoice.subscription_id);
 
+      // Ola 18 · Slice 4: cerrar caso de dunning + reactivar tenant si estaba suspendido/past_due
+      if (sub?.organization_id) {
+        await admin
+          .from("dunning_cases")
+          .update({ status: "recovered", closed_at: new Date().toISOString() })
+          .eq("organization_id", sub.organization_id)
+          .eq("status", "open");
+
+        const { data: org } = await admin
+          .from("organizations")
+          .select("lifecycle_state, is_active")
+          .eq("id", sub.organization_id)
+          .maybeSingle();
+        if (org && (org.lifecycle_state === "suspended" || org.lifecycle_state === "past_due" || org.is_active === false)) {
+          await admin
+            .from("organizations")
+            .update({ lifecycle_state: "active", is_active: true })
+            .eq("id", sub.organization_id);
+          await admin.from("dunning_events").insert({
+            organization_id: sub.organization_id,
+            subscription_id: invoice.subscription_id,
+            invoice_id: invoice.id,
+            status: "tenant_reactivated",
+            reason: "Pago aprobado tras dunning",
+          });
+        }
+      }
+
       console.log("[wompi-events] subscription activated", {
         subscription_id: invoice.subscription_id,
         org: sub?.organization_id,
         plan: sub?.plan,
         periodEnd: periodEnd.toISOString(),
       });
+
     } else if (status !== "APPROVED") {
       // No-aprobado: marcar la suscripción según estado (sin sobrescribir active existente)
       const { data: sub } = await admin
