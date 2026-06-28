@@ -26,6 +26,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/einvoice-bulk-retry/auditoria", label: "Bulk retry · Auditoría", icon: History, desc: "Idempotency keys · estado · lotes" },
   { to: "/superadmin/diagnostico", label: "Diagnóstico RLS", icon: ShieldAlert, desc: "RLS · GRANTs · políticas por tabla" },
   { to: "/superadmin/health", label: "Salud del sistema", icon: HeartPulse, desc: "Health events · WhatsApp traces" },
+  { to: "/superadmin/dunning", label: "Dunning & morosidad", icon: AlertOctagon, desc: "Casos abiertos · recuperación · churn involuntario" },
 ];
 
 const TENANT_ITEMS = [
