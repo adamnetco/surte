@@ -10520,6 +10520,42 @@ export type Database = {
           },
         ]
       }
+      v_lifecycle_by_sequence_30d: {
+        Row: {
+          active: number | null
+          completed: number | null
+          enrollments: number | null
+          failed: number | null
+          failed_enroll: number | null
+          sent: number | null
+          sequence: string | null
+          suppressed: number | null
+        }
+        Relationships: []
+      }
+      v_lifecycle_daily_30d: {
+        Row: {
+          day: string | null
+          failed: number | null
+          sent: number | null
+          sequence: string | null
+          suppressed: number | null
+        }
+        Relationships: []
+      }
+      v_lifecycle_kpis_30d: {
+        Row: {
+          active: number | null
+          completed: number | null
+          enrollments_30d: number | null
+          failed_enroll: number | null
+          sends_failed_30d: number | null
+          sends_sent_30d: number | null
+          sends_suppressed_30d: number | null
+          suppressed_enroll: number | null
+        }
+        Relationships: []
+      }
       v_tenant_entitlements_limits: {
         Row: {
           effective_value: number | null
