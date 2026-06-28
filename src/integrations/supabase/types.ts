@@ -11203,6 +11203,10 @@ export type Database = {
         Args: { p_domain_id: string }
         Returns: undefined
       }
+      set_subscription_cancel_at_period_end: {
+        Args: { p_cancel: boolean; p_org_id: string }
+        Returns: Json
+      }
       suggest_purchase_orders: {
         Args: {
           _coverage_days?: number
