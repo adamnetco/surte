@@ -10939,6 +10939,53 @@ export type Database = {
           },
         ]
       }
+      v_referral_program_kpis: {
+        Row: {
+          active_codes: number | null
+          qualified_conversions: number | null
+          total_applied_to_invoices: number | null
+          total_conversions: number | null
+          total_credits_available: number | null
+          total_credits_expired: number | null
+          total_credits_issued: number | null
+          total_credits_redeemed: number | null
+        }
+        Relationships: []
+      }
+      v_referral_top_referrers: {
+        Row: {
+          code: string | null
+          credits_available: number | null
+          organization_id: string | null
+          organization_name: string | null
+          qualified_count: number | null
+          total_conversions: number | null
+          total_credits_earned: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_codes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_codes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "referral_codes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       v_tenant_entitlements_limits: {
         Row: {
           effective_value: number | null
@@ -11236,6 +11283,13 @@ export type Database = {
         Returns: {
           organization_id: string
           subscription_id: string
+        }[]
+      }
+      expire_referral_credits: {
+        Args: never
+        Returns: {
+          expired_amount: number
+          expired_count: number
         }[]
       }
       export_tenant_snapshot: { Args: { _org_id: string }; Returns: Json }
