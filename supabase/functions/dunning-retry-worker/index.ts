@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
         // Suspender tenant + suscripción
         await admin
           .from("organizations")
-          .update({ status: "suspended_payment" })
+          .update({ lifecycle_state: "suspended", is_active: false })
           .eq("id", c.organization_id);
         if (c.subscription_id) {
           await admin
