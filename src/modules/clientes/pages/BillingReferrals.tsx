@@ -155,6 +155,27 @@ export default function BillingReferrals() {
         </p>
       </header>
 
+      {/* Credit balance banner */}
+      {balances.length > 0 && (
+        <Card className="p-3 border-success/40 bg-success/5">
+          <div className="flex flex-wrap items-center gap-3">
+            <Gift className="w-5 h-5 text-success" />
+            <div className="flex-1 min-w-[200px]">
+              <p className="text-xs uppercase text-muted-foreground">Crédito disponible</p>
+              {balances.map((b) => (
+                <p key={b.currency} className="text-2xl font-bold text-success leading-tight">
+                  {COP(b.available_amount)} <span className="text-xs text-muted-foreground font-normal">{b.currency} · {b.available_count} crédito{b.available_count === 1 ? "" : "s"}</span>
+                </p>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground max-w-[260px]">
+              Se aplicará automáticamente en tu próxima factura. Vence a 180 días desde su emisión.
+            </p>
+          </div>
+        </Card>
+      )}
+
+
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3">
