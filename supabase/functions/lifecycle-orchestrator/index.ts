@@ -87,13 +87,35 @@ Deno.serve(async (req) => {
 
     const idempotencyKey = `lifecycle:${enr.id}:${enr.current_step}`
 
+    // A/B subject variant selection (weighted random)
+    let chosenVariant: string | null = null
+    let chosenSubject: string | null = null
+    const { data: variants } = await supabase
+      .from('lifecycle_subject_variants')
+      .select('variant_key, subject, weight')
+      .eq('sequence', enr.sequence)
+      .eq('step', enr.current_step)
+      .eq('is_active', true)
+    if (variants && variants.length > 0) {
+      const totalW = variants.reduce((a: number, v: any) => a + (v.weight ?? 1), 0)
+      let r = Math.random() * totalW
+      for (const v of variants as any[]) {
+        r -= v.weight ?? 1
+        if (r <= 0) { chosenVariant = v.variant_key; chosenSubject = v.subject; break }
+      }
+    }
+
     try {
       const { error: sendErr } = await supabase.functions.invoke('send-transactional-email', {
         body: {
           templateName: stepDef.template,
           recipientEmail: enr.recipient_email,
           idempotencyKey,
-          templateData: { ...enr.context, org_id: enr.organization_id },
+          templateData: {
+            ...enr.context,
+            org_id: enr.organization_id,
+            ...(chosenSubject ? { subject_override: chosenSubject } : {}),
+          },
         },
       })
       if (sendErr) throw sendErr
@@ -106,6 +128,8 @@ Deno.serve(async (req) => {
         recipient_email: enr.recipient_email,
         idempotency_key: idempotencyKey,
         status: 'sent',
+        subject_variant: chosenVariant,
+        subject_used: chosenSubject,
       })
 
       const updates: Record<string, any> = { current_step: enr.current_step + 1 }
@@ -128,8 +152,11 @@ Deno.serve(async (req) => {
         idempotency_key: idempotencyKey,
         status: 'failed',
         error: String((e as Error)?.message ?? e),
+        subject_variant: chosenVariant,
+        subject_used: chosenSubject,
       }).then(() => {})
     }
+
   }
 
   return new Response(
