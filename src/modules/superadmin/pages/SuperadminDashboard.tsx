@@ -36,6 +36,7 @@ const HealthEvents = lazy(() => import("@/modules/superadmin/pages/HealthEvents"
 const DunningPanel = lazy(() => import("@/modules/superadmin/pages/DunningPanel"));
 const LifecyclePanel = lazy(() => import("@/modules/superadmin/pages/LifecyclePanel"));
 const ReferralsPanel = lazy(() => import("@/modules/superadmin/pages/ReferralsPanel"));
+const SurveysPanel = lazy(() => import("@/modules/superadmin/pages/SurveysPanel"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -123,6 +124,7 @@ const SuperadminDashboard = () => {
                 <Route path="dunning" element={<DunningPanel />} />
                 <Route path="lifecycle" element={<LifecyclePanel />} />
                 <Route path="referrals" element={<ReferralsPanel />} />
+                <Route path="surveys" element={<SurveysPanel />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />

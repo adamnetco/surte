@@ -11675,6 +11675,7 @@ export type Database = {
           slot_start: string
         }[]
       }
+      get_survey_analytics: { Args: { p_days?: number }; Returns: Json }
       get_upgrade_target_plan: {
         Args: { _module_key: string }
         Returns: string

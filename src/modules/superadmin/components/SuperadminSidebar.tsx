@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
 
   BarChart3, Building2, RefreshCw, Database, Package,
-  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu, AlertOctagon, Mail, Gift,
+  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu, AlertOctagon, Mail, Gift, Smile,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -29,6 +29,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/dunning", label: "Dunning & morosidad", icon: AlertOctagon, desc: "Casos abiertos · recuperación · churn involuntario" },
   { to: "/superadmin/lifecycle", label: "Lifecycle emails", icon: Mail, desc: "Inscripciones · envíos · conversión por secuencia" },
   { to: "/superadmin/referrals", label: "Referidos", icon: Gift, desc: "KPIs · top referidores · expiración de créditos" },
+  { to: "/superadmin/surveys", label: "NPS & CSAT", icon: Smile, desc: "Score NPS · CSAT promedio · detractores" },
 ];
 
 const TENANT_ITEMS = [
