@@ -57,6 +57,7 @@ const Email = ({ full_name, org_name, trial_ends_at, billing_url }: Props) => {
 export const template = {
   component: Email,
   subject: (d: Record<string, any>) => {
+    if (d?.subject_override) return d.subject_override
     const f = d?.trial_ends_at ? new Date(d.trial_ends_at).toLocaleDateString('es-CO') : 'pronto'
     return `Tu prueba de ${SITE_NAME} termina ${f} — activa tu plan`
   },

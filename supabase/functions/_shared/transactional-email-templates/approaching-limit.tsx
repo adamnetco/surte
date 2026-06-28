@@ -59,7 +59,7 @@ const Email = ({ full_name, org_name, limit_label, used, cap, upgrade_url }: Pro
 export const template = {
   component: Email,
   subject: (d: Record<string, any>) =>
-    `Estás cerca del límite de ${d?.limit_label ?? 'tu plan'} en ${SITE_NAME}`,
+    d?.subject_override ?? `Estás cerca del límite de ${d?.limit_label ?? 'tu plan'} en ${SITE_NAME}`,
   displayName: 'Approaching limit',
   previewData: {
     full_name: 'Eduardo',

@@ -61,7 +61,7 @@ const Email = ({ full_name, org_name, days_left = 14, admin_url }: Props) => {
 export const template = {
   component: Email,
   subject: (d: Record<string, any>) =>
-    `Tu prueba de ${SITE_NAME} — ${d?.days_left ?? 14} días para dejar todo listo`,
+    d?.subject_override ?? `Tu prueba de ${SITE_NAME} — ${d?.days_left ?? 14} días para dejar todo listo`,
   displayName: 'Trial — Onboarding D+1',
   previewData: { full_name: 'Eduardo', org_name: 'Mi Tienda Demo', days_left: 13 },
 } satisfies TemplateEntry

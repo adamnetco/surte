@@ -31,6 +31,25 @@ type SeqRow = {
 
 type DailyRow = { day: string; sequence: string; sent: number; failed: number; suppressed: number };
 
+type AbRow = {
+  sequence: string;
+  step: number;
+  variant_key: string;
+  subject_sample: string | null;
+  sent: number;
+  failed: number;
+  total: number;
+  delivery_rate: number | null;
+};
+
+type SupRow = {
+  sequence: string;
+  suppressed_count: number;
+  suppressed_unique: number;
+  total_enrollments: number;
+  suppression_rate: number | null;
+};
+
 const SEQ_LABEL: Record<string, string> = {
   trial_onboarding: "Trial onboarding",
   trial_ending: "Trial por vencer",
@@ -43,20 +62,26 @@ export default function LifecyclePanel() {
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [bySeq, setBySeq] = useState<SeqRow[]>([]);
   const [daily, setDaily] = useState<DailyRow[]>([]);
+  const [ab, setAb] = useState<AbRow[]>([]);
+  const [sup, setSup] = useState<SupRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data: k }, { data: s }, { data: d, error: de }] = await Promise.all([
+    const [{ data: k }, { data: s }, { data: d, error: de }, { data: a }, { data: sp }] = await Promise.all([
       supabase.from("v_lifecycle_kpis_30d" as never).select("*").maybeSingle(),
       supabase.from("v_lifecycle_by_sequence_30d" as never).select("*"),
       supabase.from("v_lifecycle_daily_30d" as never).select("*").order("day", { ascending: true }),
+      supabase.from("v_lifecycle_ab_30d" as never).select("*"),
+      supabase.from("v_lifecycle_suppression_30d" as never).select("*"),
     ]);
     if (de) toast.error(de.message);
     setKpis((k as Kpis) ?? null);
     setBySeq((s as SeqRow[]) ?? []);
     setDaily((d as DailyRow[]) ?? []);
+    setAb((a as AbRow[]) ?? []);
+    setSup((sp as SupRow[]) ?? []);
     setLoading(false);
   }, []);
 
@@ -203,6 +228,69 @@ export default function LifecyclePanel() {
               })}
             </div>
           </>
+        )}
+      </Card>
+
+      {/* A/B subject variants */}
+      <Card className="p-3">
+        <h2 className="text-sm font-semibold mb-2">A/B de asuntos (30d)</h2>
+        {ab.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">Sin envíos con variantes todavía. Define variantes en <code>lifecycle_subject_variants</code>.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-left text-muted-foreground">
+                <tr className="border-b border-border">
+                  <th className="py-1.5 pr-2">Secuencia</th>
+                  <th className="py-1.5 pr-2">Paso</th>
+                  <th className="py-1.5 pr-2">Variante</th>
+                  <th className="py-1.5 pr-2">Asunto</th>
+                  <th className="py-1.5 pr-2 text-right">Enviados</th>
+                  <th className="py-1.5 pr-2 text-right">Fallidos</th>
+                  <th className="py-1.5 pr-2 text-right">Delivery</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ab.map((r, i) => (
+                  <tr key={i} className="border-b border-border/40">
+                    <td className="py-1.5 pr-2">{SEQ_LABEL[r.sequence] ?? r.sequence}</td>
+                    <td className="py-1.5 pr-2">{r.step}</td>
+                    <td className="py-1.5 pr-2"><Badge variant="outline" className="text-[10px]">{r.variant_key}</Badge></td>
+                    <td className="py-1.5 pr-2 max-w-[320px] truncate" title={r.subject_sample ?? ""}>{r.subject_sample ?? "—"}</td>
+                    <td className="py-1.5 pr-2 text-right text-success font-semibold">{r.sent}</td>
+                    <td className="py-1.5 pr-2 text-right text-destructive">{r.failed}</td>
+                    <td className="py-1.5 pr-2 text-right font-bold">{r.delivery_rate ?? 0}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      {/* Suppression analytics */}
+      <Card className="p-3">
+        <h2 className="text-sm font-semibold mb-2 flex items-center gap-1"><ShieldOff className="w-4 h-4" /> Suprimidos por secuencia (30d)</h2>
+        {sup.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">Sin inscripciones suprimidas.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {sup.map((s) => (
+              <div key={s.sequence} className="border border-border rounded-lg p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold">{SEQ_LABEL[s.sequence] ?? s.sequence}</span>
+                  <Badge variant={Number(s.suppression_rate ?? 0) > 5 ? "destructive" : "outline"} className="text-[10px]">
+                    {s.suppression_rate ?? 0}%
+                  </Badge>
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
+                  <Stat label="Suprimidos" value={s.suppressed_count} tone="destructive" />
+                  <Stat label="Únicos" value={s.suppressed_unique} />
+                  <Stat label="Total" value={s.total_enrollments} />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </Card>
     </div>
