@@ -161,6 +161,66 @@ Deno.serve(async (req) => {
         },
       });
 
+      // 7) Email escalonado (soft / urgent / final)
+      try {
+        const stage: 'soft' | 'urgent' | 'final' =
+          attemptNo >= MAX_ATTEMPTS || graceExpired ? 'final'
+          : attemptNo >= 2 ? 'urgent'
+          : 'soft';
+
+        // Resolver email del owner
+        const { data: owner } = await admin
+          .from("organization_members")
+          .select("user_id, profiles:profiles!organization_members_user_id_fkey(full_name)")
+          .eq("organization_id", c.organization_id)
+          .eq("role", "owner")
+          .limit(1)
+          .maybeSingle();
+
+        const { data: org } = await admin
+          .from("organizations")
+          .select("name, support_email")
+          .eq("id", c.organization_id)
+          .maybeSingle();
+
+        let recipient = org?.support_email as string | null;
+        let fullName: string | null = (owner as any)?.profiles?.full_name ?? null;
+        if (!recipient && owner?.user_id) {
+          const { data: u } = await admin.auth.admin.getUserById(owner.user_id);
+          recipient = u?.user?.email ?? null;
+        }
+
+        if (recipient) {
+          await admin.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "dunning-notice",
+              recipientEmail: recipient,
+              idempotencyKey: `dunning-${c.id}-${attemptNo}`,
+              templateData: {
+                full_name: fullName,
+                org_name: org?.name,
+                attempt_no: attemptNo,
+                amount_cop: Number(c.total_amount_cop ?? 0),
+                grace_until: c.grace_until,
+                retry_url: "https://admin.sistecpos.com/billing",
+                stage,
+              },
+            },
+          });
+
+          await admin.from("dunning_events").insert({
+            organization_id: c.organization_id,
+            subscription_id: c.subscription_id,
+            invoice_id: c.invoice_id,
+            attempt: attemptNo,
+            status: `email_${stage}`,
+            reason: errorMessage,
+          });
+        }
+      } catch (mailErr) {
+        console.error("[dunning] email dispatch failed", (mailErr as Error).message);
+      }
+
       results.push({ case_id: c.id, attempt_no: attemptNo, outcome });
     }
 
