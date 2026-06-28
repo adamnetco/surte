@@ -33,6 +33,7 @@ const FirstLoginTour = lazy(() => import("@/components/FirstLoginTour"));
 import DevBypassBanner from "@/components/DevBypassBanner";
 import TenantSuspendedBanner from "@/components/TenantSuspendedBanner";
 import { SubscriptionStatusBanner } from "@/components/SubscriptionStatusBanner";
+import { DunningBanner } from "@/components/DunningBanner";
 import { ApproachingLimitBanner } from "@/components/ApproachingLimitBanner";
 import { SubscriptionGate } from "@/lib/entitlements/SubscriptionGate";
 import { isAuthLockAbort } from "@/modules/auth/lib/authRecovery";
