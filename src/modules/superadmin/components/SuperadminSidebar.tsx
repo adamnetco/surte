@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
 
   BarChart3, Building2, RefreshCw, Database, Package,
-  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu, AlertOctagon,
+  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu, AlertOctagon, Mail,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
