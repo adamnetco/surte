@@ -10733,6 +10733,7 @@ export type Database = {
           weight: string
         }[]
       }
+      get_billing_overview: { Args: { p_org_id: string }; Returns: Json }
       get_current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
