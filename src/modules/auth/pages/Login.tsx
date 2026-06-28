@@ -10,6 +10,7 @@ import { welcomeTemplate, brandFromSettings } from "@/modules/email/emailTemplat
 import defaultLogo from "@/assets/surte-logo.png";
 import { useTenantBrand } from "@/modules/auth/hooks/useTenantBrand";
 import { verifySignupTenantLinkWithRetry } from "@/modules/auth/lib/verifySignupTenantLink";
+import { captureReferralFromUrl } from "@/modules/clientes/lib/referralCapture";
 
 const MASTER_EMAIL = "eduardotp77@gmail.com";
 const AUTH_WAIT_TIMEOUT_MS = 6000;
@@ -55,6 +56,9 @@ const Login = () => {
     // Si ya completaron onboarding, /onboarding redirige solo a /pos.
     return "/onboarding";
   };
+
+  // Captura ?ref=CODE para asociarlo al tenant al terminar onboarding
+  useEffect(() => { captureReferralFromUrl(); }, []);
 
   // Auto-redirect si ya hay sesión al entrar a /login
   useEffect(() => {
