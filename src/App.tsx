@@ -96,6 +96,7 @@ const Planes = lazy(() => import("./modules/clientes").then((m) => ({ default: m
 const Billing = lazy(() => import("./modules/clientes").then((m) => ({ default: m.BillingPage })));
 const BillingRecover = lazy(() => import("./modules/clientes/pages/BillingRecover"));
 const BillingOverview = lazy(() => import("./modules/clientes/pages/BillingOverview"));
+const BillingInvoices = lazy(() => import("./modules/clientes/pages/BillingInvoices"));
 
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
 const ActivationStatus = lazy(() => import("./modules/onboarding/pages/ActivationStatus"));
@@ -340,6 +341,7 @@ const App = () => (
                     <Route path="/activacion" element={<ActivationStatus />} />
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/billing/overview" element={<BillingOverview />} />
+                    <Route path="/billing/invoices" element={<BillingInvoices />} />
                     <Route path="/billing/recover" element={<BillingRecover />} />
 
 
