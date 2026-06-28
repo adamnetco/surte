@@ -31,6 +31,25 @@ type SeqRow = {
 
 type DailyRow = { day: string; sequence: string; sent: number; failed: number; suppressed: number };
 
+type AbRow = {
+  sequence: string;
+  step: number;
+  variant_key: string;
+  subject_sample: string | null;
+  sent: number;
+  failed: number;
+  total: number;
+  delivery_rate: number | null;
+};
+
+type SupRow = {
+  sequence: string;
+  suppressed_count: number;
+  suppressed_unique: number;
+  total_enrollments: number;
+  suppression_rate: number | null;
+};
+
 const SEQ_LABEL: Record<string, string> = {
   trial_onboarding: "Trial onboarding",
   trial_ending: "Trial por vencer",
