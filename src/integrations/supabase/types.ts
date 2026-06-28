@@ -4971,6 +4971,123 @@ export type Database = {
           },
         ]
       }
+      lifecycle_enrollments: {
+        Row: {
+          completed_at: string | null
+          context: Json
+          created_at: string
+          current_step: number
+          enrolled_at: string
+          id: string
+          next_send_at: string
+          organization_id: string
+          recipient_email: string
+          sequence: Database["public"]["Enums"]["lifecycle_sequence"]
+          status: Database["public"]["Enums"]["lifecycle_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          context?: Json
+          created_at?: string
+          current_step?: number
+          enrolled_at?: string
+          id?: string
+          next_send_at?: string
+          organization_id: string
+          recipient_email: string
+          sequence: Database["public"]["Enums"]["lifecycle_sequence"]
+          status?: Database["public"]["Enums"]["lifecycle_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          context?: Json
+          created_at?: string
+          current_step?: number
+          enrolled_at?: string
+          id?: string
+          next_send_at?: string
+          organization_id?: string
+          recipient_email?: string
+          sequence?: Database["public"]["Enums"]["lifecycle_sequence"]
+          status?: Database["public"]["Enums"]["lifecycle_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lifecycle_enrollments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lifecycle_enrollments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "lifecycle_enrollments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
+      lifecycle_sends: {
+        Row: {
+          enrollment_id: string
+          error: string | null
+          id: string
+          idempotency_key: string
+          recipient_email: string
+          sent_at: string
+          sequence: Database["public"]["Enums"]["lifecycle_sequence"]
+          status: string
+          step: number
+          template_name: string
+        }
+        Insert: {
+          enrollment_id: string
+          error?: string | null
+          id?: string
+          idempotency_key: string
+          recipient_email: string
+          sent_at?: string
+          sequence: Database["public"]["Enums"]["lifecycle_sequence"]
+          status?: string
+          step: number
+          template_name: string
+        }
+        Update: {
+          enrollment_id?: string
+          error?: string | null
+          id?: string
+          idempotency_key?: string
+          recipient_email?: string
+          sent_at?: string
+          sequence?: Database["public"]["Enums"]["lifecycle_sequence"]
+          status?: string
+          step?: number
+          template_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lifecycle_sends_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "lifecycle_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           address: string | null
@@ -11412,6 +11529,13 @@ export type Database = {
         | "casa_cambio"
       fiscal_period_status: "open" | "closed" | "locked"
       journal_entry_status: "draft" | "posted" | "voided"
+      lifecycle_sequence:
+        | "trial_onboarding"
+        | "trial_ending"
+        | "payment_recovered"
+        | "winback_inactive"
+        | "approaching_limit"
+      lifecycle_status: "active" | "completed" | "suppressed" | "failed"
       tenant_lifecycle_state:
         | "pending"
         | "trial"
@@ -11566,6 +11690,14 @@ export const Constants = {
       ],
       fiscal_period_status: ["open", "closed", "locked"],
       journal_entry_status: ["draft", "posted", "voided"],
+      lifecycle_sequence: [
+        "trial_onboarding",
+        "trial_ending",
+        "payment_recovered",
+        "winback_inactive",
+        "approaching_limit",
+      ],
+      lifecycle_status: ["active", "completed", "suppressed", "failed"],
       tenant_lifecycle_state: [
         "pending",
         "trial",

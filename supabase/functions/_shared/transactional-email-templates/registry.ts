@@ -12,9 +12,17 @@ export interface TemplateEntry {
 import { template as orderConfirmation } from './order-confirmation.tsx'
 import { template as organizationWelcome } from './organization-welcome.tsx'
 import { template as dunningNotice } from './dunning-notice.tsx'
+import { template as trialOnboarding } from './trial-onboarding.tsx'
+import { template as trialEnding } from './trial-ending.tsx'
+import { template as winbackInactive } from './winback-inactive.tsx'
+import { template as approachingLimit } from './approaching-limit.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'order-confirmation': orderConfirmation,
   'organization-welcome': organizationWelcome,
   'dunning-notice': dunningNotice,
+  'trial-onboarding': trialOnboarding,
+  'trial-ending': trialEnding,
+  'winback-inactive': winbackInactive,
+  'approaching-limit': approachingLimit,
 }
