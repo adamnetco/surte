@@ -341,6 +341,7 @@ const App = () => (
                     <Route path="/activacion" element={<ActivationStatus />} />
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/billing/overview" element={<BillingOverview />} />
+                    <Route path="/billing/invoices" element={<BillingInvoices />} />
                     <Route path="/billing/recover" element={<BillingRecover />} />
 
 
