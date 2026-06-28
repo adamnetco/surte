@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
       // No-aprobado: marcar la suscripción según estado (sin sobrescribir active existente)
       const { data: sub } = await admin
         .from("subscriptions")
-        .select("status")
+        .select("status, organization_id")
         .eq("id", invoice.subscription_id)
         .maybeSingle();
       if (sub && sub.status !== "active") {
@@ -214,6 +214,32 @@ Deno.serve(async (req) => {
           .update({ status: subStatus })
           .eq("id", invoice.subscription_id);
       }
+
+      // Ola 18 · Slice 1: abrir caso de dunning en DECLINED/ERROR
+      if ((status === "DECLINED" || status === "ERROR") && sub?.organization_id) {
+        const { data: invFull } = await admin
+          .from("subscription_invoices")
+          .select("amount_cop, amount_due")
+          .eq("id", invoice.id)
+          .maybeSingle();
+        const amount = Number((invFull as any)?.amount_cop ?? (invFull as any)?.amount_due ?? 0);
+        const { data: caseId, error: caseErr } = await admin.rpc("dunning_open_case", {
+          p_org_id: sub.organization_id,
+          p_subscription_id: invoice.subscription_id,
+          p_invoice_id: invoice.id,
+          p_reason: statusMessage ?? status,
+          p_amount_cop: amount,
+        });
+        if (caseErr) console.warn("[wompi-events] dunning_open_case failed", caseErr.message);
+        else console.log("[wompi-events] dunning case opened", { case_id: caseId, invoice_id: invoice.id });
+      }
+    } else if (status === "APPROVED" && invoice.subscription_id) {
+      // Ola 18 · Slice 1: si había caso abierto, marcar recuperado
+      await admin
+        .from("dunning_cases")
+        .update({ status: "recovered", closed_at: new Date().toISOString() })
+        .eq("invoice_id", invoice.id)
+        .eq("status", "open");
     }
 
     return new Response(JSON.stringify({ ok: true, status, invoice_id: invoice.id }), {
