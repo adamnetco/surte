@@ -35,6 +35,7 @@ const DiagnosticoRLS = lazy(() => import("@/modules/superadmin/pages/Diagnostico
 const HealthEvents = lazy(() => import("@/modules/superadmin/pages/HealthEvents"));
 const DunningPanel = lazy(() => import("@/modules/superadmin/pages/DunningPanel"));
 const LifecyclePanel = lazy(() => import("@/modules/superadmin/pages/LifecyclePanel"));
+const ReferralsPanel = lazy(() => import("@/modules/superadmin/pages/ReferralsPanel"));
 
 const SyncSection = () => (
   <div className="space-y-4">
