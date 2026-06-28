@@ -288,6 +288,36 @@ export default function SurveysPanel() {
                     </span>
                   </div>
                   {d.comment && <p className="mt-2 text-sm text-foreground/80">"{d.comment}"</p>}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {d.ticket_id ? (
+                      <Badge variant="outline" className="gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Ticket #{d.ticket_id.slice(0, 8)}
+                      </Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={actionLoading === d.id + ":ticket"}
+                        onClick={() => createTicket(d)}
+                      >
+                        <Ticket className="mr-1 h-4 w-4" /> Abrir ticket
+                      </Button>
+                    )}
+                    {d.csm_alerted_at ? (
+                      <Badge variant="outline" className="gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> CSM alertado
+                      </Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={actionLoading === d.id + ":csm"}
+                        onClick={() => alertCsm(d)}
+                      >
+                        <MessageCircle className="mr-1 h-4 w-4" /> Alertar CSM
+                      </Button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
