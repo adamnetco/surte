@@ -11701,6 +11701,10 @@ export type Database = {
         Args: { _org_id?: string }
         Returns: number
       }
+      emit_webhook_if_subscribed: {
+        Args: { p_event: string; p_org: string; p_payload: Json }
+        Returns: undefined
+      }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
