@@ -34,6 +34,7 @@ const EinvoiceBulkRetryAudit = lazy(() => import("@/modules/superadmin/pages/Ein
 const DiagnosticoRLS = lazy(() => import("@/modules/superadmin/pages/DiagnosticoRLS"));
 const HealthEvents = lazy(() => import("@/modules/superadmin/pages/HealthEvents"));
 const DunningPanel = lazy(() => import("@/modules/superadmin/pages/DunningPanel"));
+const LifecyclePanel = lazy(() => import("@/modules/superadmin/pages/LifecyclePanel"));
 
 const SyncSection = () => (
   <div className="space-y-4">
