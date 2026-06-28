@@ -125,7 +125,10 @@ Deno.serve(async (req) => {
         last_attempt_at: new Date().toISOString(),
         next_attempt_at: next,
       }).eq("id", d.id);
-      await sb.rpc("noop_inc_webhook_failure", { p_endpoint: d.endpoint_id }).catch(() => {});
+      await sb.from("webhook_endpoints").update({
+        last_failure_at: new Date().toISOString(),
+      }).eq("id", d.endpoint_id);
+
       results.failed++;
     }
   }
