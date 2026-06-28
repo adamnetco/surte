@@ -11,7 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  FileText, Download, ExternalLink, AlertCircle, RefreshCcw, CreditCard,
+  FileText, Download, ExternalLink, AlertCircle, RefreshCcw, CreditCard, Gift,
 } from "lucide-react";
 
 const COP = (n: number, currency = "COP") =>
@@ -47,6 +47,8 @@ type Invoice = {
   last_error: string | null;
   wompi_reference: string | null;
   created_at: string;
+  credit_applied_amount: number | null;
+  credit_applied_at: string | null;
 };
 
 export default function BillingInvoices() {
@@ -60,7 +62,7 @@ export default function BillingInvoices() {
       const { data, error } = await supabase
         .from("subscription_invoices")
         .select(
-          "id, amount, currency, status, due_date, paid_at, period_start, period_end, pdf_url, checkout_url, attempt_count, max_attempts, last_error, wompi_reference, created_at"
+          "id, amount, currency, status, due_date, paid_at, period_start, period_end, pdf_url, checkout_url, attempt_count, max_attempts, last_error, wompi_reference, created_at, credit_applied_amount, credit_applied_at"
         )
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false })
@@ -154,7 +156,15 @@ export default function BillingInvoices() {
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-xs">{fmtDate(inv.created_at)}</TableCell>
                       <TableCell className="whitespace-nowrap text-xs">{fmtDate(inv.due_date)}</TableCell>
-                      <TableCell className="text-right font-medium">{COP(inv.amount, inv.currency)}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {COP(inv.amount, inv.currency)}
+                        {Number(inv.credit_applied_amount) > 0 && (
+                          <div className="text-[10px] text-emerald-600 flex items-center justify-end gap-1 mt-0.5 font-normal">
+                            <Gift className="h-3 w-3" />
+                            −{COP(Number(inv.credit_applied_amount), inv.currency)} crédito
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <Badge variant={meta.variant}>{meta.label}</Badge>
