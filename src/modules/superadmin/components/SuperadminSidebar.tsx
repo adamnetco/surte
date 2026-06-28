@@ -29,6 +29,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/dunning", label: "Dunning & morosidad", icon: AlertOctagon, desc: "Casos abiertos · recuperación · churn involuntario" },
   { to: "/superadmin/lifecycle", label: "Lifecycle emails", icon: Mail, desc: "Inscripciones · envíos · conversión por secuencia" },
   { to: "/superadmin/referrals", label: "Referidos", icon: Gift, desc: "KPIs · top referidores · expiración de créditos" },
+  { to: "/superadmin/surveys", label: "NPS & CSAT", icon: Smile, desc: "Score NPS · CSAT promedio · detractores" },
 ];
 
 const TENANT_ITEMS = [
