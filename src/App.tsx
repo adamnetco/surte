@@ -99,6 +99,7 @@ const BillingOverview = lazy(() => import("./modules/clientes/pages/BillingOverv
 const BillingInvoices = lazy(() => import("./modules/clientes/pages/BillingInvoices"));
 const BillingPlan = lazy(() => import("./modules/clientes/pages/BillingPlan"));
 const BillingAddons = lazy(() => import("./modules/clientes/pages/BillingAddons"));
+const BillingReferrals = lazy(() => import("./modules/clientes/pages/BillingReferrals"));
 const BillingCancel = lazy(() => import("./modules/clientes/pages/BillingCancel"));
 
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
@@ -348,7 +349,8 @@ const App = () => (
                     <Route path="/billing/plan" element={<BillingPlan />} />
                     <Route path="/billing/recover" element={<BillingRecover />} />
                     <Route path="/billing/addons" element={<BillingAddons />} />
-                    <Route path="/billing/cancel" element={<BillingCancel />} />
+                   <Route path="/billing/cancel" element={<BillingCancel />} />
+                   <Route path="/billing/referrals" element={<BillingReferrals />} />
 
 
 
