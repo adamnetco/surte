@@ -11516,6 +11516,14 @@ export type Database = {
         }
         Returns: Json
       }
+      register_referral_conversion: {
+        Args: {
+          p_code: string
+          p_referee_email?: string
+          p_referee_org_id: string
+        }
+        Returns: string
+      }
       rematch_invoice_scan: { Args: { _scan_id: string }; Returns: Json }
       reopen_fiscal_period: { Args: { _id: string }; Returns: undefined }
       report_account_ledger: {
