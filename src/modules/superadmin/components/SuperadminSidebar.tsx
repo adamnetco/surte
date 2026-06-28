@@ -28,6 +28,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/health", label: "Salud del sistema", icon: HeartPulse, desc: "Health events · WhatsApp traces" },
   { to: "/superadmin/dunning", label: "Dunning & morosidad", icon: AlertOctagon, desc: "Casos abiertos · recuperación · churn involuntario" },
   { to: "/superadmin/lifecycle", label: "Lifecycle emails", icon: Mail, desc: "Inscripciones · envíos · conversión por secuencia" },
+  { to: "/superadmin/referrals", label: "Referidos", icon: Gift, desc: "KPIs · top referidores · expiración de créditos" },
 ];
 
 const TENANT_ITEMS = [
