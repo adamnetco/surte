@@ -156,7 +156,15 @@ export default function BillingInvoices() {
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-xs">{fmtDate(inv.created_at)}</TableCell>
                       <TableCell className="whitespace-nowrap text-xs">{fmtDate(inv.due_date)}</TableCell>
-                      <TableCell className="text-right font-medium">{COP(inv.amount, inv.currency)}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {COP(inv.amount, inv.currency)}
+                        {Number(inv.credit_applied_amount) > 0 && (
+                          <div className="text-[10px] text-emerald-600 flex items-center justify-end gap-1 mt-0.5 font-normal">
+                            <Gift className="h-3 w-3" />
+                            −{COP(Number(inv.credit_applied_amount), inv.currency)} crédito
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <Badge variant={meta.variant}>{meta.label}</Badge>
