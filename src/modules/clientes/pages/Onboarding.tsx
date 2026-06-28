@@ -30,6 +30,19 @@ import { WizardShell } from "@/modules/onboarding/components/WizardShell";
 import { BUSINESS_TEMPLATES, ALL_MODULES, getTemplate, type BusinessKey } from "@/modules/onboarding/lib/businessTemplates";
 import { EntitlementsWizardStep } from "@/modules/platform/components/EntitlementsWizardStep";
 import { cn } from "@/lib/utils";
+import { getStoredReferral, clearStoredReferral } from "@/modules/clientes/lib/referralCapture";
+
+async function tryRegisterReferral(orgId: string, email: string | null | undefined) {
+  const code = getStoredReferral();
+  if (!code) return;
+  const { error } = await supabase.rpc("register_referral_conversion" as never, {
+    p_code: code,
+    p_referee_org_id: orgId,
+    p_referee_email: email ?? null,
+  } as never);
+  if (!error) clearStoredReferral();
+  else console.warn("[Onboarding] referral register failed", error);
+}
 
 const TOTAL = 7;
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
@@ -132,6 +145,7 @@ export default function Onboarding() {
             is_active: true,
           });
         }
+        await tryRegisterReferral(data!.id, user.email);
         await refresh();
       } catch (e: any) {
         console.error("[Onboarding] auto-create org failed", e);
@@ -141,6 +155,11 @@ export default function Onboarding() {
       }
     })();
   }, [orgLoading, user, currentOrg, orgs.length, provisioning, refresh, isPlatformSuperadmin, navigate]);
+
+  // Si ya existía la org (signup con trigger), aún así intentamos asociar el referido.
+  useEffect(() => {
+    if (currentOrg?.id) tryRegisterReferral(currentOrg.id, user?.email);
+  }, [currentOrg?.id, user?.email]);
 
   useEffect(() => {
     if (!currentOrg) return;
