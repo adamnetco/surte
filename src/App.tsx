@@ -99,6 +99,7 @@ const BillingOverview = lazy(() => import("./modules/clientes/pages/BillingOverv
 const BillingInvoices = lazy(() => import("./modules/clientes/pages/BillingInvoices"));
 const BillingPlan = lazy(() => import("./modules/clientes/pages/BillingPlan"));
 const BillingAddons = lazy(() => import("./modules/clientes/pages/BillingAddons"));
+const BillingReferrals = lazy(() => import("./modules/clientes/pages/BillingReferrals"));
 const BillingCancel = lazy(() => import("./modules/clientes/pages/BillingCancel"));
 
 const Onboarding = lazy(() => import("./modules/clientes").then((m) => ({ default: m.OnboardingPage })));
