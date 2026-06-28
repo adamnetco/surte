@@ -343,7 +343,9 @@ const App = () => (
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/billing/overview" element={<BillingOverview />} />
                     <Route path="/billing/invoices" element={<BillingInvoices />} />
+                    <Route path="/billing/plan" element={<BillingPlan />} />
                     <Route path="/billing/recover" element={<BillingRecover />} />
+
 
 
                     {/* === Panel SistecPOS (solo en hosts del sistema) === */}
