@@ -11,7 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  FileText, Download, ExternalLink, AlertCircle, RefreshCcw, CreditCard,
+  FileText, Download, ExternalLink, AlertCircle, RefreshCcw, CreditCard, Gift,
 } from "lucide-react";
 
 const COP = (n: number, currency = "COP") =>
