@@ -118,6 +118,7 @@ const SuperadminDashboard = () => {
                 <Route path="einvoice-bulk-retry/auditoria" element={<EinvoiceBulkRetryAudit />} />
                 <Route path="diagnostico" element={<DiagnosticoRLS />} />
                 <Route path="health" element={<HealthEvents />} />
+                <Route path="dunning" element={<DunningPanel />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
