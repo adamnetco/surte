@@ -56,7 +56,7 @@ export default function BillingReferrals() {
   const [creating, setCreating] = useState(false);
   const [campaignName, setCampaignName] = useState("");
 
-  const orgId = currentOrg?.organization_id;
+  const orgId = currentOrg?.id;
 
   const load = useCallback(async () => {
     if (!orgId) return;
