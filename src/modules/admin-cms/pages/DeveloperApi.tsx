@@ -38,7 +38,7 @@ export default function DeveloperApiPage() {
   const [statsDays, setStatsDays] = useState(7);
   const [loading, setLoading] = useState(true);
 
-  const [newKey, setNewKey] = useState<{ name: string; scopes: string[]; allowed_ips: string }>({ name: "", scopes: ["pos_orders:read"], allowed_ips: "" });
+  const [newKey, setNewKey] = useState<{ name: string; scopes: string[]; allowed_ips: string; mode: "live" | "test" }>({ name: "", scopes: ["pos_orders:read"], allowed_ips: "", mode: "live" });
   const [newKeyResult, setNewKeyResult] = useState<{ prefix: string; secret: string } | null>(null);
   const [newWh, setNewWh] = useState<{ url: string; events: string[]; description: string }>({ url: "", events: [], description: "" });
   const [showWhDialog, setShowWhDialog] = useState(false);
@@ -62,8 +62,9 @@ export default function DeveloperApiPage() {
       supabase.from("webhook_endpoints").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }),
       supabase.from("webhook_deliveries").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(50),
       supabase.rpc("api_key_usage_stats", { p_org: orgId, p_days: statsDays }),
-      supabase.from("api_request_logs").select("id,key_prefix,method,path,status_code,latency_ms,error_code,created_at")
+      supabase.from("api_request_logs").select("id,key_prefix,method,path,status_code,latency_ms,error_code,created_at,mode")
         .eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
+
     ]);
     setKeys(k.data ?? []);
     setEndpoints(e.data ?? []);
@@ -87,13 +88,18 @@ export default function DeveloperApiPage() {
     });
     if (error) return toast.error("No se pudo crear", { description: error.message });
     const created = data as any;
-    if (ips.length > 0 && created?.id) {
-      await supabase.from("api_keys").update({ allowed_ips: ips }).eq("id", created.id);
+    const patch: { allowed_ips?: string[]; mode?: string } = {};
+    if (ips.length > 0) patch.allowed_ips = ips;
+    if (newKey.mode === "test") patch.mode = "test";
+    if (Object.keys(patch).length > 0 && created?.id) {
+      await supabase.from("api_keys").update(patch).eq("id", created.id);
     }
+
     setNewKeyResult({ prefix: created.prefix, secret: created.secret });
-    setNewKey({ name: "", scopes: ["pos_orders:read"], allowed_ips: "" });
+    setNewKey({ name: "", scopes: ["pos_orders:read"], allowed_ips: "", mode: "live" });
     load();
   };
+
 
   const revokeKey = async (id: string) => {
     if (!confirm("¿Revocar esta clave? No podrá deshacerse.")) return;
@@ -232,6 +238,26 @@ export default function DeveloperApiPage() {
               </p>
             </div>
 
+            <div>
+              <Label>Modo</Label>
+              <div className="mt-1 flex gap-2">
+                {(["live", "test"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setNewKey((s) => ({ ...s, mode: m }))}
+                    className={`rounded-md border px-3 py-1.5 text-xs ${newKey.mode === m ? "border-primary bg-primary/10 font-semibold" : "border-border bg-background"}`}
+                  >
+                    {m === "live" ? "🚀 Producción (live)" : "🧪 Pruebas (test)"}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Las keys <code>test</code> registran tráfico segregado y bloquean la emisión real de facturas DIAN.
+              </p>
+            </div>
+
+
             <div className="flex justify-end">
               <Button onClick={createKey} disabled={!newKey.name.trim()}>
                 <Plus className="mr-1 h-4 w-4" /> Crear
@@ -252,7 +278,11 @@ export default function DeveloperApiPage() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{k.name}</span>
+                          {k.mode === "test"
+                            ? <Badge variant="outline" className="border-amber-500 text-amber-700">🧪 test</Badge>
+                            : <Badge variant="outline" className="border-emerald-500 text-emerald-700">🚀 live</Badge>}
                           {k.revoked_at ? <Badge variant="destructive">Revocada</Badge> : <Badge>Activa</Badge>}
+
                         </div>
                         <code className="text-xs text-muted-foreground">{k.prefix}…</code>
                         <span className="ml-2 text-xs text-muted-foreground">
@@ -462,6 +492,8 @@ export default function DeveloperApiPage() {
                       {l.error_code && <code className="text-xs text-red-600">{l.error_code}</code>}
                       <span className="text-xs text-muted-foreground">{l.latency_ms ?? "—"} ms</span>
                       <code className="text-xs text-muted-foreground">{l.key_prefix}</code>
+                      {l.mode === "test" && <Badge variant="outline" className="border-amber-500 text-[10px] text-amber-700">test</Badge>}
+
                       <span className="ml-auto text-xs text-muted-foreground">
                         {new Date(l.created_at).toLocaleString("es-CO")}
                       </span>

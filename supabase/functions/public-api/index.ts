@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
   const t0 = performance.now();
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const ua = req.headers.get("user-agent")?.slice(0, 200) ?? null;
-  const logCtx: { orgId?: string; keyId?: string; prefix?: string; path?: string } = {};
+  const logCtx: { orgId?: string; keyId?: string; prefix?: string; path?: string; mode?: string } = {};
   const sbLog = createClient(SUPABASE_URL, SERVICE_KEY);
   const writeLog = async (status: number, errorCode?: string) => {
     if (!logCtx.orgId) return;
@@ -65,9 +65,11 @@ Deno.serve(async (req) => {
         latency_ms: Math.round(performance.now() - t0),
         ip, user_agent: ua,
         error_code: errorCode ?? null,
+        mode: logCtx.mode ?? "live",
       });
     } catch { /* never break the response on log failure */ }
   };
+
   const respond = async (res: Response, errorCode?: string) => {
     await writeLog(res.status, errorCode);
     return res;
@@ -107,15 +109,21 @@ Deno.serve(async (req) => {
     p_prefix: prefix, p_hash: hash, p_max_per_min: MAX_PER_MIN,
   });
   if (rpcErr) return respond(json(errBody("INTERNAL", rpcErr.message), 500), "INTERNAL");
-  const c = consume as { ok: boolean; reason?: string; organization_id?: string; scopes?: string[]; limit?: number; remaining?: number; reset_at?: string };
+  const c = consume as { ok: boolean; reason?: string; organization_id?: string; scopes?: string[]; mode?: string; limit?: number; remaining?: number; reset_at?: string };
+  const apiMode = (c.mode === "test" ? "test" : "live");
+  if (c.organization_id) logCtx.mode = apiMode;
 
-  const rlHeaders: Record<string, string> = c.limit
-    ? {
-        "x-ratelimit-limit": String(c.limit),
-        "x-ratelimit-remaining": String(c.remaining ?? 0),
-        "x-ratelimit-reset": c.reset_at ? String(Math.floor(new Date(c.reset_at).getTime() / 1000)) : "",
-      }
-    : {};
+  const rlHeaders: Record<string, string> = {
+    "x-api-mode": apiMode,
+    ...(c.limit
+      ? {
+          "x-ratelimit-limit": String(c.limit),
+          "x-ratelimit-remaining": String(c.remaining ?? 0),
+          "x-ratelimit-reset": c.reset_at ? String(Math.floor(new Date(c.reset_at).getTime() / 1000)) : "",
+        }
+      : {}),
+  };
+
 
   if (c.organization_id) {
     logCtx.orgId = c.organization_id;
@@ -291,7 +299,7 @@ Deno.serve(async (req) => {
       paid_at: new Date().toISOString(),
       notes: body.notes ?? null,
       client_uuid: clientUuid,
-      metadata: { source: "public-api", key_prefix: prefix, external_ref: externalRef },
+      metadata: { source: "public-api", key_prefix: prefix, external_ref: externalRef, mode: apiMode, ...(apiMode === "test" ? { test: true } : {}) },
 
     }).select("id,ticket_number").single();
 
@@ -319,7 +327,11 @@ Deno.serve(async (req) => {
   // POST /pos-orders/:id/emit-invoice
   const emitMatch = path.match(/^\/pos-orders\/([0-9a-f-]{36})\/emit-invoice$/);
   if (emitMatch) {
+    if (apiMode === "test") {
+      return json(errBody("EMIT_DISABLED_IN_TEST", "Electronic invoice emission is disabled in test mode to avoid contaminating DIAN. Use a live (sk_live) key."), 403, rlHeaders);
+    }
     if (!need("einvoices:write")) return json(errBody("FORBIDDEN", "Missing scope einvoices:write"), 403, rlHeaders);
+
     const posOrderId = emitMatch[1];
 
     const { data: ord, error: ordErr } = await sb.from("pos_orders")
