@@ -71,10 +71,30 @@ export default function RoutingAlertsCronHealth() {
   });
   const [autoAttempted, setAutoAttempted] = useState(false);
   const [events, setEvents] = useState<HealthEventRow[]>([]);
-  const [tlKind, setTlKind] = useState<TimelineFilterKind>("all");
-  const [tlSev, setTlSev] = useState<TimelineFilterSev>("all");
-  const [tlOrg, setTlOrg] = useState<string>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tlKind, setTlKind] = useState<TimelineFilterKind>(() => {
+    const v = searchParams.get("kind");
+    return v === "sla" || v === "auto" ? v : "all";
+  });
+  const [tlSev, setTlSev] = useState<TimelineFilterSev>(() => {
+    const v = searchParams.get("sev");
+    return v === "info" || v === "warning" || v === "error" ? v : "all";
+  });
+  const [tlOrg, setTlOrg] = useState<string>(() => searchParams.get("org") ?? "all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  // Sync filter state → URL query params (shareable deep-link).
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const set = (k: string, v: string) => { if (v && v !== "all") next.set(k, v); else next.delete(k); };
+    set("kind", tlKind);
+    set("sev", tlSev);
+    set("org", tlOrg);
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tlKind, tlSev, tlOrg]);
 
   const load = useCallback(async () => {
     setLoading(true);
