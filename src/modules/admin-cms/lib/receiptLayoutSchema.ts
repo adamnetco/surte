@@ -31,7 +31,11 @@ export type SectionType =
   | "payments"
   | "qr"
   | "divider"
-  | "text";
+  | "text"
+  // Slice 4 — comanda cocina + vale anulación
+  | "station_header"
+  | "kitchen_items"
+  | "void_notice";
 
 const baseSection = z.object({
   id: z.string().min(1),
