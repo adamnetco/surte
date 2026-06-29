@@ -299,6 +299,15 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
         rules={rules}
       />
 
+      <RoutingAlertsPanel
+        organizationId={organizationId}
+        printers={printers}
+        rules={rules}
+        products={products}
+        categories={categories}
+        stations={stations}
+      />
+
       <RoutingHeatmap
         organizationId={organizationId}
         printers={printers}
