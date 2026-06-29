@@ -18,11 +18,12 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Printer, Zap, Info } from "lucide-react";
 import { toast } from "sonner";
+import { RoutingSimulator } from "./RoutingSimulator";
 
 interface PrinterRow { id: string; name: string; role: string; }
-interface StationRow { id: string; name: string; }
+interface StationRow { id: string; name: string; default_printer_id?: string | null; }
 interface CategoryRow { id: string; name: string; }
-interface ProductRow { id: string; name: string; }
+interface ProductRow { id: string; name: string; category_id?: string | null; kitchen_station_id?: string | null; }
 interface RuleRow {
   id: string;
   printer_id: string;
