@@ -11851,6 +11851,10 @@ export type Database = {
         Args: { _action_id: string; _reason?: string }
         Returns: Json
       }
+      cash_session_compute_denom_hash: {
+        Args: { p_session_id: string }
+        Returns: string
+      }
       check_api_latency_alerts: {
         Args: { p_min_requests?: number; p_threshold_ms?: number }
         Returns: number
