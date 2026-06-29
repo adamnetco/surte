@@ -118,6 +118,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [tableSheetOpen, setTableSheetOpen] = useState(false);
   const [quickModsOpen, setQuickModsOpen] = useState(false);
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
+  const [modPickerProduct, setModPickerProduct] = useState<Product | null>(null);
+  const productsWithMods = useProductsWithModifiers(organizationId);
   const [driver, setDriver] = useState<DriverInfo | null>(null); // para modo domicilio
   const [driverSheetOpen, setDriverSheetOpen] = useState(false);
   const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
