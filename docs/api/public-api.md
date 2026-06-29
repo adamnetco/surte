@@ -1,6 +1,6 @@
 # SistecPOS Public REST API (v1)
 
-API pública **read-only** para consultar tus datos desde sistemas externos (ERP, BI, integraciones).
+API pública para consultar tus datos y registrar ventas/facturas desde sistemas externos (ERP, BI, e-commerce, integraciones).
 
 **Base URL**
 ```
