@@ -65,6 +65,7 @@ import type { PosMode } from "@/modules/pos/lib/posModes";
 import type { POSCustomer } from "@/modules/pos/lib/posCustomer";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import POSFloorMapPanel from "./POSFloorMapPanel";
 import { Utensils as UtensilsIcon, LayoutGrid } from "lucide-react";
 
