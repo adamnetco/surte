@@ -30,6 +30,15 @@ interface NotificationRow {
   created_at: string;
 }
 interface OrgRow { id: string; name: string; slug: string }
+interface HealthEventRow {
+  id: string;
+  kind: string;
+  severity: "info" | "warning" | "error" | string;
+  payload: Record<string, any> | null;
+  created_at: string;
+}
+
+const HEALTH_KINDS = ["routing_alerts_cron_sla_breach", "routing_alerts_auto_recovery"];
 
 interface DayAggregate {
   day: string;
