@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { Loader2, LockKeyhole, Users, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { LockKeyhole, Users } from "lucide-react";
 import { toast } from "sonner";
 import TableOrderDrawer from "@/modules/pos/components/TableOrderDrawer";
 import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
+import { useTablesFloor, type FloorTable } from "@/modules/pos/hooks/useTablesFloor";
 
 interface Area { id: string; name: string; color: string | null; }
 interface Table {
