@@ -492,6 +492,8 @@ export default function DeveloperApiPage() {
                       {l.error_code && <code className="text-xs text-red-600">{l.error_code}</code>}
                       <span className="text-xs text-muted-foreground">{l.latency_ms ?? "—"} ms</span>
                       <code className="text-xs text-muted-foreground">{l.key_prefix}</code>
+                      {l.mode === "test" && <Badge variant="outline" className="border-amber-500 text-[10px] text-amber-700">test</Badge>}
+
                       <span className="ml-auto text-xs text-muted-foreground">
                         {new Date(l.created_at).toLocaleString("es-CO")}
                       </span>
