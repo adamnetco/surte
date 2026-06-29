@@ -188,13 +188,56 @@ export default function RoutingAlertsCronHealth() {
       toast.success(`"${name}" marcado como preset por defecto`);
     }
   };
-  // Auto-apply default preset on mount when URL has no filter params.
+
+  // Slice AA — Default de equipo (compartido vía DB).
+  // Cuando un preset de equipo está marcado is_team_default=true, todo el equipo
+  // lo ve auto-aplicado al abrir el panel (sin query params en la URL y sin que
+  // la persona haya elegido un default personal con prioridad). Solo puede haber
+  // uno (enforced por índice único parcial en DB).
+  const teamDefaultPreset = teamPresets.find((p) => p.is_team_default) ?? null;
+  const toggleTeamDefault = async (id: string, name: string, isCurrentlyDefault: boolean) => {
+    // Quitar default actual (si lo hay) para no chocar con el índice único parcial.
+    const { error: clearErr } = await (supabase as any)
+      .from("routing_alert_timeline_presets")
+      .update({ is_team_default: false })
+      .eq("is_team_default", true);
+    if (clearErr) { toast.error(clearErr.message); return; }
+    if (!isCurrentlyDefault) {
+      const { error } = await (supabase as any)
+        .from("routing_alert_timeline_presets")
+        .update({ is_team_default: true })
+        .eq("id", id);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`"${name}" marcado como default del equipo`);
+    } else {
+      toast.success(`"${name}" ya no es default del equipo`);
+    }
+    loadTeamPresets();
+  };
+
+  // Auto-apply preset on mount when URL has no filter params.
+  // Prioridad: team-default (DB) > personal-default (localStorage).
   const [defaultApplied, setDefaultApplied] = useState(false);
   useEffect(() => {
     if (defaultApplied) return;
-    if (!defaultPresetRef) return;
     const hasUrlFilters = searchParams.get("kind") || searchParams.get("sev") || searchParams.get("org");
     if (hasUrlFilters) { setDefaultApplied(true); return; }
+
+    // 1) Team default tiene prioridad para todo el equipo.
+    if (teamDefaultPreset) {
+      setTlKind(teamDefaultPreset.kind); setTlSev(teamDefaultPreset.sev); setTlOrg(teamDefaultPreset.org);
+      setDefaultApplied(true);
+      toast.message(`Default del equipo aplicado: "${teamDefaultPreset.name}"`);
+      return;
+    }
+
+    // 2) Default personal (localStorage).
+    if (!defaultPresetRef) {
+      // Si aún no terminó la carga de team presets, esperar un ciclo antes de rendirse.
+      if (teamPresets.length === 0) return;
+      setDefaultApplied(true);
+      return;
+    }
     const [scope, key] = defaultPresetRef.split(":");
     let target: TimelinePreset | undefined;
     if (scope === "team") target = teamPresets.find((p) => p.id === key);
@@ -204,12 +247,11 @@ export default function RoutingAlertsCronHealth() {
       setDefaultApplied(true);
       toast.message(`Preset por defecto aplicado: "${target.name}"`);
     } else if (scope === "team" && teamPresets.length === 0) {
-      // wait for team presets to load
       return;
     } else {
       setDefaultApplied(true);
     }
-  }, [defaultPresetRef, teamPresets, presets, searchParams, defaultApplied]);
+  }, [defaultPresetRef, teamPresets, teamDefaultPreset, presets, searchParams, defaultApplied]);
 
 
   // Sync filter state → URL query params (shareable deep-link).
