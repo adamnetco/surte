@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { RoutingSimulator } from "./RoutingSimulator";
 import { RuleJobsDialog } from "./RuleJobsDialog";
 import { RoutingHeatmap } from "./RoutingHeatmap";
+import { RoutingAlertsPanel } from "./RoutingAlertsPanel";
 
 interface PrinterRow { id: string; name: string; role: string; }
 interface StationRow { id: string; name: string; default_printer_id?: string | null; }
