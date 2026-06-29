@@ -45,18 +45,24 @@ export default function DeveloperApiPage() {
   const load = async () => {
     if (!orgId) return;
     setLoading(true);
-    const [k, e, d] = await Promise.all([
+    const [k, e, d, s, l] = await Promise.all([
       supabase.from("api_keys").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }),
       supabase.from("webhook_endpoints").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }),
       supabase.from("webhook_deliveries").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(50),
+      supabase.rpc("api_key_usage_stats", { p_org: orgId, p_days: statsDays }),
+      supabase.from("api_request_logs").select("id,key_prefix,method,path,status_code,latency_ms,error_code,created_at")
+        .eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
     ]);
     setKeys(k.data ?? []);
     setEndpoints(e.data ?? []);
     setDeliveries(d.data ?? []);
+    setStats((s.data as any[]) ?? []);
+    setRecentLogs(l.data ?? []);
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId, statsDays]);
+
 
   const createKey = async () => {
     if (!orgId || !newKey.name.trim()) return;
