@@ -50,6 +50,7 @@ import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import POSCustomerPicker from "./POSCustomerPicker";
+import POSContextualBar from "./POSContextualBar";
 import TableGridSheet from "./TableGridSheet";
 import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
