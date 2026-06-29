@@ -28,9 +28,12 @@ Selecciona los scopes al crear la key. Cada endpoint requiere un scope específi
 | Scope | Endpoints habilitados |
 |---|---|
 | `pos_orders:read` | `GET /v1/pos-orders` |
+| `pos_orders:write` | `POST /v1/pos-orders` |
 | `einvoices:read` | `GET /v1/electronic-invoices` |
+| `einvoices:write` | `POST /v1/pos-orders/:id/emit-invoice` |
 | `products:read` | `GET /v1/products` |
 | `*` | todos los anteriores |
+
 
 ## Rate limit
 
