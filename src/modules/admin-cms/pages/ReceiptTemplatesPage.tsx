@@ -78,7 +78,7 @@ export default function ReceiptTemplatesPage() {
         show_nit: parsed.show_nit ?? template.show_nit,
         header_text: parsed.header_text ?? template.header_text,
         footer_text: parsed.footer_text ?? template.footer_text,
-        layout: layoutParsed,
+        layout: { sections: layoutParsed.sections },
       });
       toast.success("Plantilla importada");
     } catch (e: any) {
@@ -100,7 +100,7 @@ export default function ReceiptTemplatesPage() {
         show_nit: preset.show_nit,
         header_text: preset.header_text ?? template.header_text,
         footer_text: preset.footer_text ?? template.footer_text,
-        layout: preset.layout,
+        layout: { sections: preset.layout.sections },
       });
       toast.success(`Preset "${preset.name}" aplicado`);
     } catch (e: any) {
