@@ -120,8 +120,8 @@ export default function Mesas() {
   }
 
   const openTable = async (t: Table) => {
-    const existing = orderByTable.get(t.id);
-    if (existing) { setOpenTableId(t.id); return; }
+    const existing = ordersByTable.get(t.id);
+    if (existing && existing.length) { setOpenTableId(t.id); return; }
     // create open order
     const { data, error } = await supabase.from("table_orders").insert({
       organization_id: orgId,
