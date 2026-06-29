@@ -128,6 +128,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [priceListId, setPriceListId] = useState<string | null>(null);
   const [priceListName, setPriceListName] = useState<string>("Pública");
   const [parkedCount, setParkedCount] = useState(0);
+  // === Cobro de mesa ===
+  // Cuando el usuario pulsa "Cobrar" en TableOrderDrawer, el ticket de mesa se
+  // carga aquí y guardamos el contexto para liberar la mesa al finalizar la venta.
+  const [activeTableOrder, setActiveTableOrder] = useState<{
+    tableOrderId: string; tableId: string; tableLabel: string; releaseTableOnPaid: boolean;
+  } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const sync = useSyncService();
