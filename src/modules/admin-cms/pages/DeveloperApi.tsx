@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock, BarChart3, Bell, RefreshCw, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { ApiAlertsPanel } from "@/modules/admin-cms/components/ApiAlertsPanel";
+import { ApiEndpointMetricsPanel } from "@/modules/admin-cms/components/ApiEndpointMetricsPanel";
+import { Activity } from "lucide-react";
 
 const ALL_EVENTS = [
   "order.created",
@@ -29,7 +31,7 @@ const ALL_EVENTS = [
 export default function DeveloperApiPage() {
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id;
-  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries" | "usage" | "alerts">("keys");
+  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries" | "usage" | "metrics" | "alerts">("keys");
   const [keys, setKeys] = useState<any[]>([]);
   const [endpoints, setEndpoints] = useState<any[]>([]);
   const [deliveries, setDeliveries] = useState<any[]>([]);
@@ -182,6 +184,7 @@ export default function DeveloperApiPage() {
           { k: "webhooks", label: "Webhooks", icon: Webhook },
           { k: "deliveries", label: "Envíos recientes", icon: Clock },
           { k: "usage", label: "Uso & logs", icon: BarChart3 },
+          { k: "metrics", label: "Métricas", icon: Activity },
           { k: "alerts", label: "Alertas", icon: Bell },
 
         ].map((t) => {
@@ -650,6 +653,7 @@ export default function DeveloperApiPage() {
         </DialogContent>
       </Dialog>
 
+      {tab === "metrics" && <ApiEndpointMetricsPanel orgId={orgId} />}
       {tab === "alerts" && <ApiAlertsPanel orgId={orgId} />}
     </div>
   );

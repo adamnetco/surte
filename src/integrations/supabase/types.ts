@@ -11253,6 +11253,23 @@ export type Database = {
       }
     }
     Views: {
+      api_endpoint_metrics_hourly: {
+        Row: {
+          avg_ms: number | null
+          bucket: string | null
+          endpoint: string | null
+          err_count: number | null
+          max_ms: number | null
+          method: string | null
+          mode: string | null
+          organization_id: string | null
+          p50_ms: number | null
+          p95_ms: number | null
+          p99_ms: number | null
+          req_count: number | null
+        }
+        Relationships: []
+      }
       products_public: {
         Row: {
           availability: string | null
@@ -11785,6 +11802,7 @@ export type Database = {
           stage: string
         }[]
       }
+      api_path_template: { Args: { p: string }; Returns: string }
       app_current_role: { Args: never; Returns: string }
       apply_catalog_template: {
         Args: { _mode?: string; _org_id: string; _template_id: string }
@@ -12147,6 +12165,23 @@ export type Database = {
           weight: string
         }[]
       }
+      get_api_endpoint_metrics: {
+        Args: { p_from?: string; p_mode?: string; p_org: string; p_to?: string }
+        Returns: {
+          avg_ms: number
+          buckets: Json
+          endpoint: string
+          err_count: number
+          err_rate: number
+          max_ms: number
+          method: string
+          mode: string
+          p50_ms: number
+          p95_ms: number
+          p99_ms: number
+          req_count: number
+        }[]
+      }
       get_billing_overview: { Args: { p_org_id: string }; Returns: Json }
       get_current_user_role: {
         Args: never
@@ -12450,6 +12485,7 @@ export type Database = {
         Returns: string
       }
       redeem_coupon: { Args: { _coupon_id: string }; Returns: boolean }
+      refresh_api_endpoint_metrics: { Args: never; Returns: undefined }
       register_activation: {
         Args: {
           _app_version: string
