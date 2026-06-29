@@ -240,11 +240,22 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
                 size="sm"
                 variant="outline"
                 className="h-7 text-xs"
-                onClick={splitOrder}
-                disabled={splitting || !order}
+                onClick={() => setSplitSheetOpen(true)}
+                disabled={!order}
+                title="Dividir por items o partes iguales"
               >
                 <SplitSquareHorizontal className="w-3.5 h-3.5 mr-1" />
                 Dividir
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs"
+                onClick={splitOrder}
+                disabled={splitting || !order}
+                title="Nueva sub-cuenta vacía"
+              >
+                +
               </Button>
             </div>
           )}
