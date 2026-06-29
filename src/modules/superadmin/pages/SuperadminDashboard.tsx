@@ -143,6 +143,7 @@ const SuperadminDashboard = () => {
                 <Route path="t/:slug/datos" element={<RequireActiveTenant><TenantDataIsland /></RequireActiveTenant>} />
                 <Route path="t/:slug/fiscal/seals" element={<RequireActiveTenant><FiscalSealsPanel /></RequireActiveTenant>} />
                 <Route path="t/:slug/fiscal/cash-book" element={<RequireActiveTenant><FiscalCashBookPanel /></RequireActiveTenant>} />
+                <Route path="t/:slug/fiscal/audit" element={<RequireActiveTenant><FiscalAdjustmentsPanel /></RequireActiveTenant>} />
 
                 <Route path="t/:slug/sync" element={<RequireActiveTenant><SyncSection /></RequireActiveTenant>} />
                 <Route path="t/:slug/licencia" element={<RequireActiveTenant><TenantLicenseSection /></RequireActiveTenant>} />
