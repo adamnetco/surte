@@ -163,9 +163,16 @@ export default function DeveloperApiPage() {
               </div>
               <div>
                 <Label>Scopes</Label>
-                <div className="flex gap-2 pt-2">
-                  {["read", "write"].map((sc) => (
-                    <label key={sc} className="flex items-center gap-1 text-sm">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 pt-2 md:grid-cols-3">
+                  {[
+                    "pos_orders:read",
+                    "pos_orders:write",
+                    "einvoices:read",
+                    "einvoices:write",
+                    "products:read",
+                    "*",
+                  ].map((sc) => (
+                    <label key={sc} className="flex items-center gap-1 text-xs">
                       <input
                         type="checkbox"
                         checked={newKey.scopes.includes(sc)}
@@ -174,11 +181,12 @@ export default function DeveloperApiPage() {
                           scopes: e.target.checked ? [...s.scopes, sc] : s.scopes.filter((x) => x !== sc),
                         }))}
                       />
-                      {sc}
+                      <code>{sc}</code>
                     </label>
                   ))}
                 </div>
               </div>
+
               <Button onClick={createKey} disabled={!newKey.name.trim()}>
                 <Plus className="mr-1 h-4 w-4" /> Crear
               </Button>
