@@ -9,6 +9,7 @@ export interface Organization {
   slug: string;
   name: string;
   role: OrgRole;
+  business_type?: string | null;
 }
 
 export interface OrganizationModule {
