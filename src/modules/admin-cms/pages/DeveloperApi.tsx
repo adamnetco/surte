@@ -360,6 +360,18 @@ export default function DeveloperApiPage() {
                     <span className="ml-auto text-xs text-muted-foreground">
                       {new Date(d.created_at).toLocaleString("es-CO")}
                     </span>
+                    <Button size="sm" variant="ghost" onClick={() => setInspectDelivery(d)} title="Ver payload">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={replayingId === d.id}
+                      onClick={() => replayDelivery(d.id)}
+                      title="Reintentar"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${replayingId === d.id ? "animate-spin" : ""}`} />
+                    </Button>
                   </li>
                 ))}
               </ul>
