@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Activity, RefreshCw } from "lucide-react";
+import { Activity, Download, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 type Row = {
@@ -88,6 +88,9 @@ export function ApiEndpointMetricsPanel({ orgId }: { orgId: string }) {
           <Button size="sm" variant="outline" onClick={load} disabled={loading}>
             <RefreshCw className={`mr-1 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refrescar
           </Button>
+          <Button size="sm" variant="outline" onClick={() => exportCsv(rows ?? [], range, mode)} disabled={!rows?.length}>
+            <Download className="mr-1 h-3.5 w-3.5" /> CSV
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -157,4 +160,22 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok
       <div className={`mt-1 text-xl font-semibold ${cls}`}>{value}</div>
     </div>
   );
+}
+
+function exportCsv(rows: Row[], range: string, mode: string) {
+  const head = ["method", "endpoint", "mode", "req_count", "err_count", "err_rate_pct", "p50_ms", "p95_ms", "p99_ms", "avg_ms", "max_ms"];
+  const esc = (v: unknown) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [head.join(",")].concat(
+    rows.map(r => [r.method, r.endpoint, r.mode, r.req_count, r.err_count, r.err_rate, r.p50_ms, r.p95_ms, r.p99_ms, r.avg_ms, r.max_ms].map(esc).join(","))
+  );
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `api-metrics-${range}-${mode}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }

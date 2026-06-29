@@ -11851,6 +11851,10 @@ export type Database = {
         Args: { _action_id: string; _reason?: string }
         Returns: Json
       }
+      check_api_latency_alerts: {
+        Args: { p_min_requests?: number; p_threshold_ms?: number }
+        Returns: number
+      }
       check_public_catalog_health: { Args: never; Returns: Json }
       cleanup_api_ip_rate: { Args: never; Returns: number }
       cleanup_sso_tokens: { Args: never; Returns: number }
