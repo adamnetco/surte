@@ -9210,6 +9210,64 @@ export type Database = {
         }
         Relationships: []
       }
+      routing_alert_mutes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          muted_until: string
+          organization_id: string
+          reason: string | null
+          target_id: string
+          target_kind: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          muted_until: string
+          organization_id: string
+          reason?: string | null
+          target_id: string
+          target_kind: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          muted_until?: string
+          organization_id?: string
+          reason?: string | null
+          target_id?: string
+          target_kind?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routing_alert_mutes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routing_alert_mutes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "routing_alert_mutes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       saas_plans: {
         Row: {
           created_at: string
