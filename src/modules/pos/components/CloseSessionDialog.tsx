@@ -38,7 +38,7 @@ interface Denomination {
 }
 
 export default function CloseSessionDialog({ open, onOpenChange, sessionId, openingAmount, organizationId, userId, onClosed }: Props) {
-  const [totals, setTotals] = useState<Totals>({ cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: 0 });
+  const [totals, setTotals] = useState<Totals>({ cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: 0, tips: 0 });
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
