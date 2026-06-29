@@ -168,38 +168,10 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
     const pendingItems = items.filter(i => i.status === "pending");
     if (pendingItems.length === 0) return toast.info("Nada nuevo que enviar");
 
-    const { data: full } = await supabase.from("table_order_items")
-      .select("id,product_name,quantity,notes,kitchen_station_id")
-      .eq("organization_id", organizationId)
-      .eq("table_order_id", order.id).eq("status", "pending");
-
-    const byStation = new Map<string | null, any[]>();
-    (full ?? []).forEach((i: any) => {
-      const k = i.kitchen_station_id ?? null;
-      if (!byStation.has(k)) byStation.set(k, []);
-      byStation.get(k)!.push({ name: i.product_name, qty: Number(i.quantity), notes: i.notes });
-    });
-
-    const subSuffix = order.sub_label ? `${order.sub_label}` : "";
-    for (const [stationId, payload] of byStation) {
-      await supabase.from("kds_tickets").insert({
-        organization_id: organizationId,
-        location_id: order.location_id,
-        kitchen_station_id: stationId,
-        table_order_id: order.id,
-        dining_table_label: `${tableLabel}${subSuffix}`,
-        items: payload,
-        status: "pending",
-      });
-    }
-    const itemIds = (full ?? []).map((i: any) => i.id);
-    if (itemIds.length) {
-      await supabase.from("table_order_items").update({ status: "sent", sent_at: new Date().toISOString() })
-        .eq("organization_id", organizationId).in("id", itemIds);
-    }
-    await supabase.from("table_orders").update({ status: "sent" })
-      .eq("organization_id", organizationId).eq("id", order.id);
-    toast.success("Comanda enviada a cocina");
+    const { data, error } = await supabase.rpc("pos_dispatch_table_order", { p_order_id: order.id });
+    if (error) return toast.error(error.message);
+    const res = (data ?? {}) as { tickets?: number; print_jobs?: number };
+    toast.success(`Comanda enviada · ${res.tickets ?? 0} estación(es) · ${res.print_jobs ?? 0} impresión(es)`);
     load();
   };
 
