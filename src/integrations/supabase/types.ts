@@ -377,6 +377,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           expires_at: string | null
+          expiry_notified_stages: string[]
           id: string
           key_hash: string
           last_used_at: string | null
@@ -385,6 +386,8 @@ export type Database = {
           organization_id: string
           prefix: string
           revoked_at: string | null
+          rotated_from_key_id: string | null
+          rotated_to_key_id: string | null
           scopes: string[]
           updated_at: string
         }
@@ -393,6 +396,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
+          expiry_notified_stages?: string[]
           id?: string
           key_hash: string
           last_used_at?: string | null
@@ -401,6 +405,8 @@ export type Database = {
           organization_id: string
           prefix: string
           revoked_at?: string | null
+          rotated_from_key_id?: string | null
+          rotated_to_key_id?: string | null
           scopes?: string[]
           updated_at?: string
         }
@@ -409,6 +415,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
+          expiry_notified_stages?: string[]
           id?: string
           key_hash?: string
           last_used_at?: string | null
@@ -417,6 +424,8 @@ export type Database = {
           organization_id?: string
           prefix?: string
           revoked_at?: string | null
+          rotated_from_key_id?: string | null
+          rotated_to_key_id?: string | null
           scopes?: string[]
           updated_at?: string
         }
@@ -441,6 +450,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_tenant_entitlements_modules"
             referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "api_keys_rotated_from_key_id_fkey"
+            columns: ["rotated_from_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_rotated_to_key_id_fkey"
+            columns: ["rotated_to_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -11722,6 +11745,19 @@ export type Database = {
         Args: { p_allowed: string[]; p_ip: unknown }
         Returns: boolean
       }
+      api_key_mark_expiry_notified: {
+        Args: { p_id: string; p_stage: string }
+        Returns: undefined
+      }
+      api_key_rotate: {
+        Args: {
+          p_expires_in_days?: number
+          p_grace_days?: number
+          p_id: string
+          p_new_name?: string
+        }
+        Returns: Json
+      }
       api_key_usage_stats: {
         Args: { p_days?: number; p_org: string }
         Returns: {
@@ -11733,6 +11769,20 @@ export type Database = {
           p95_latency_ms: number
           prefix: string
           total_requests: number
+        }[]
+      }
+      api_keys_due_for_expiry_notice: {
+        Args: never
+        Returns: {
+          already_notified: string[]
+          days_left: number
+          expires_at: string
+          id: string
+          mode: string
+          name: string
+          organization_id: string
+          prefix: string
+          stage: string
         }[]
       }
       app_current_role: { Args: never; Returns: string }

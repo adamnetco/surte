@@ -98,6 +98,9 @@ project_id = "dimyhjzcwlgfczimqhet"
   [functions.notify-api-alert]
     verify_jwt = false
 
+  [functions.api-keys-expiry-notifier]
+    verify_jwt = false
+
 
 
 
