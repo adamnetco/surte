@@ -29,7 +29,7 @@ interface Props {
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const QUICK_NOTES = ["Sin cebolla", "Sin sal", "Sin picante", "Para llevar", "Bien cocido", "Término medio"];
 
-export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscount }: Props) {
+export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscount, selected, onSelect }: Props) {
   const [noteDraft, setNoteDraft] = useState(line.notes ?? "");
   const [discDraft, setDiscDraft] = useState(String(line.discountPct ?? 0));
   const hasNote = !!line.notes?.trim();
@@ -55,9 +55,14 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
 
   return (
     <div
-      className="bg-muted/40 rounded-lg p-2 space-y-1 animate-fade-in focus-within:ring-2 focus-within:ring-ring focus:outline-none"
+      className={`rounded-lg p-2 space-y-1 animate-fade-in focus:outline-none transition ${
+        selected
+          ? "bg-primary/10 ring-2 ring-primary"
+          : "bg-muted/40 focus-within:ring-2 focus-within:ring-ring"
+      }`}
       tabIndex={0}
       onKeyDown={handleKeyDown}
+      onClick={onSelect}
       role="group"
       aria-label={`${line.name}, cantidad ${line.quantity}. Teclas: + para sumar, - para restar, Supr para eliminar`}
     >
