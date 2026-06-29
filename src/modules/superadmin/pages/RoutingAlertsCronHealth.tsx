@@ -417,6 +417,55 @@ export default function RoutingAlertsCronHealth() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <History className="h-4 w-4" /> Timeline de eventos del cron ({events.length})
+            <Badge variant="outline" className="text-[10px] ml-1">SLA + auto-recuperación · {DAYS_WINDOW}d</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {events.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin eventos registrados — el cron está sano.</p>
+          ) : (
+            <ol className="relative border-l border-border ml-2 space-y-3">
+              {events.map((ev) => {
+                const isBreach = ev.kind === "routing_alerts_cron_sla_breach";
+                const sev = ev.severity;
+                const Icon = sev === "error" ? XCircle : sev === "warning" ? AlertTriangle : sev === "info" ? CheckCircle2 : Info;
+                const tone =
+                  sev === "error" ? "text-destructive bg-destructive/10 border-destructive/30"
+                  : sev === "warning" ? "text-amber-600 bg-amber-500/10 border-amber-500/30 dark:text-amber-400"
+                  : sev === "info" ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/30 dark:text-emerald-400"
+                  : "text-muted-foreground bg-muted border-border";
+                const p = ev.payload ?? {};
+                const label = isBreach
+                  ? `SLA en breach · ${p.hours_since_last_run ?? "?"}h sin corrida`
+                  : `Auto-recuperación · ${p.sent ?? 0} notificadas · ${p.skipped ?? 0} sin cambios${p.duration_ms ? ` · ${Math.round(p.duration_ms)}ms` : ""}`;
+                return (
+                  <li key={ev.id} className="ml-4">
+                    <span className={`absolute -left-[7px] mt-1 inline-flex h-3 w-3 rounded-full border ${tone}`} />
+                    <div className="flex items-start gap-2 flex-wrap">
+                      <Badge variant="outline" className={`text-[10px] gap-1 ${tone}`}>
+                        <Icon className="h-3 w-3" />
+                        {isBreach ? "SLA breach" : "Auto-recuperación"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(ev.created_at).toLocaleString("es-CO")}
+                      </span>
+                      <span className="text-sm">{label}</span>
+                      {p.error && (
+                        <span className="text-xs text-destructive break-all">· {String(p.error).slice(0, 140)}</span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
