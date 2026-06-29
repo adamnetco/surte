@@ -8,7 +8,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter } from "lucide-react";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter, ChevronDown, ChevronRight, ExternalLink, Building2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -71,6 +72,7 @@ export default function RoutingAlertsCronHealth() {
   const [events, setEvents] = useState<HealthEventRow[]>([]);
   const [tlKind, setTlKind] = useState<TimelineFilterKind>("all");
   const [tlSev, setTlSev] = useState<TimelineFilterSev>("all");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,16 +88,7 @@ export default function RoutingAlertsCronHealth() {
     const list = (notifs ?? []) as NotificationRow[];
     setRows(list);
 
-    const orgIds = Array.from(new Set(list.map((r) => r.organization_id)));
-    if (orgIds.length) {
-      const { data: orgsData } = await (supabase as any)
-        .from("organizations")
-        .select("id, name, slug")
-        .in("id", orgIds);
-      const map: Record<string, OrgRow> = {};
-      (orgsData ?? []).forEach((o: OrgRow) => { map[o.id] = o; });
-      setOrgs(map);
-    }
+    const orgIds = new Set<string>(list.map((r) => r.organization_id));
 
     const { data: evRows } = await (supabase as any)
       .from("health_events")
@@ -104,7 +97,25 @@ export default function RoutingAlertsCronHealth() {
       .gte("created_at", sinceIso)
       .order("created_at", { ascending: false })
       .limit(100);
-    setEvents((evRows ?? []) as HealthEventRow[]);
+    const evList = (evRows ?? []) as HealthEventRow[];
+    setEvents(evList);
+
+    // Recolecta org_ids referenciados en payloads (orgs[].id o organization_id sueltos)
+    for (const ev of evList) {
+      const p = ev.payload ?? {};
+      if (Array.isArray(p.orgs)) for (const o of p.orgs) { if (o?.id) orgIds.add(o.id); }
+      if (p.organization_id) orgIds.add(p.organization_id);
+    }
+
+    if (orgIds.size) {
+      const { data: orgsData } = await (supabase as any)
+        .from("organizations")
+        .select("id, name, slug")
+        .in("id", Array.from(orgIds));
+      const map: Record<string, OrgRow> = {};
+      (orgsData ?? []).forEach((o: OrgRow) => { map[o.id] = o; });
+      setOrgs(map);
+    }
 
     setLoading(false);
   }, []);
@@ -173,6 +184,15 @@ export default function RoutingAlertsCronHealth() {
       const results = (data as any)?.results ?? [];
       const sent = results.filter((r: any) => !r.skipped).length;
       const skipped = results.filter((r: any) => r.skipped).length;
+      const orgsBreakdown = results
+        .filter((r: any) => !r.skipped && r.organization_id)
+        .map((r: any) => ({
+          id: r.organization_id,
+          rules: r.rules_alerted ?? 0,
+          printers: r.printers_alerted ?? 0,
+          emails: r.emails ?? 0,
+          whatsapps: r.whatsapps ?? 0,
+        }));
       if (opts.auto) {
         toast.success(`Auto-recuperación · ${sent} orgs notificadas · ${skipped} sin cambios`);
         try {
@@ -183,6 +203,7 @@ export default function RoutingAlertsCronHealth() {
               triggered_by: "sla_critical",
               hours_since_last_run: Math.round(hoursSince),
               sent, skipped,
+              orgs: orgsBreakdown,
               duration_ms: Date.now() - startedAt,
             },
           });
@@ -511,6 +532,10 @@ export default function RoutingAlertsCronHealth() {
                     const label = isBreach
                       ? `SLA en breach · ${p.hours_since_last_run ?? "?"}h sin corrida`
                       : `Auto-recuperación · ${p.sent ?? 0} notificadas · ${p.skipped ?? 0} sin cambios${p.duration_ms ? ` · ${Math.round(p.duration_ms)}ms` : ""}`;
+                    const evOrgs: Array<{ id: string; rules?: number; printers?: number; emails?: number; whatsapps?: number }> =
+                      Array.isArray(p.orgs) ? p.orgs : (p.organization_id ? [{ id: p.organization_id }] : []);
+                    const canExpand = evOrgs.length > 0;
+                    const isOpen = !!expanded[ev.id];
                     return (
                       <li key={ev.id} className="ml-4">
                         <span className={`absolute -left-[7px] mt-1 inline-flex h-3 w-3 rounded-full border ${tone}`} />
@@ -526,7 +551,54 @@ export default function RoutingAlertsCronHealth() {
                           {p.error && (
                             <span className="text-xs text-destructive break-all">· {String(p.error).slice(0, 140)}</span>
                           )}
+                          {canExpand && (
+                            <button
+                              type="button"
+                              onClick={() => setExpanded((s) => ({ ...s, [ev.id]: !s[ev.id] }))}
+                              className="ml-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                              aria-expanded={isOpen}
+                            >
+                              {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                              <Building2 className="h-3 w-3" />
+                              {evOrgs.length} org{evOrgs.length === 1 ? "" : "s"}
+                            </button>
+                          )}
                         </div>
+                        {canExpand && isOpen && (
+                          <ul className="mt-2 ml-1 space-y-1 border-l border-border/60 pl-3">
+                            {evOrgs.map((o) => {
+                              const org = orgs[o.id];
+                              const slug = org?.slug;
+                              return (
+                                <li key={o.id} className="flex items-center gap-2 flex-wrap text-xs">
+                                  <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                                  {slug ? (
+                                    <Link
+                                      to={`/superadmin/t/${slug}`}
+                                      className="font-medium text-primary hover:underline inline-flex items-center gap-1"
+                                    >
+                                      {org?.name ?? slug}
+                                      <ExternalLink className="h-3 w-3" />
+                                    </Link>
+                                  ) : (
+                                    <span className="font-mono text-muted-foreground">{o.id.slice(0, 8)}…</span>
+                                  )}
+                                  {(o.rules != null || o.printers != null) && (
+                                    <span className="text-muted-foreground">
+                                      · {o.rules ?? 0} reglas · {o.printers ?? 0} impresoras
+                                    </span>
+                                  )}
+                                  {(o.emails || o.whatsapps) && (
+                                    <span className="text-muted-foreground inline-flex items-center gap-1">
+                                      {o.emails ? <><Mail className="h-3 w-3" />{o.emails}</> : null}
+                                      {o.whatsapps ? <><MessageCircle className="h-3 w-3" />{o.whatsapps}</> : null}
+                                    </span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
                       </li>
                     );
                   })}
