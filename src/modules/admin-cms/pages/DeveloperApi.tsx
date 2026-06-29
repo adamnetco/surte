@@ -28,11 +28,15 @@ const ALL_EVENTS = [
 export default function DeveloperApiPage() {
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id;
-  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries">("keys");
+  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries" | "usage">("keys");
   const [keys, setKeys] = useState<any[]>([]);
   const [endpoints, setEndpoints] = useState<any[]>([]);
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [stats, setStats] = useState<any[]>([]);
+  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [statsDays, setStatsDays] = useState(7);
   const [loading, setLoading] = useState(true);
+
   const [newKey, setNewKey] = useState<{ name: string; scopes: string[] }>({ name: "", scopes: ["pos_orders:read"] });
   const [newKeyResult, setNewKeyResult] = useState<{ prefix: string; secret: string } | null>(null);
   const [newWh, setNewWh] = useState<{ url: string; events: string[]; description: string }>({ url: "", events: [], description: "" });
