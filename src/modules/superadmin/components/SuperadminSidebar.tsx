@@ -30,6 +30,7 @@ const GLOBAL_ITEMS = [
   { to: "/superadmin/lifecycle", label: "Lifecycle emails", icon: Mail, desc: "Inscripciones · envíos · conversión por secuencia" },
   { to: "/superadmin/referrals", label: "Referidos", icon: Gift, desc: "KPIs · top referidores · expiración de créditos" },
   { to: "/superadmin/surveys", label: "NPS & CSAT", icon: Smile, desc: "Score NPS · CSAT promedio · detractores" },
+  { to: "/superadmin/routing-alerts-cron", label: "Cron alertas impresión", icon: HeartPulse, desc: "Salud diaria del cron · orgs notificadas · re-disparo manual" },
 ];
 
 const TENANT_ITEMS = [
