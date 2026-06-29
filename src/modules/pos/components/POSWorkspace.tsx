@@ -684,6 +684,18 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         einvoiceEnabled={resolutionSnap.status !== "unknown"}
       />
 
+      {/* Barra contextual: Lista de precios · Vendedor · Suspendidas (SoftwarePOS-like) */}
+      <POSContextualBar
+        organizationId={organizationId}
+        cashierName={cashierName}
+        priceListId={priceListId}
+        onPriceListChange={(id, name) => {
+          setPriceListId(id);
+          setPriceListName(name);
+        }}
+        parkedCount={parkedCount}
+      />
+
       {/* Tabs de categorías (60%) + Cliente (40%) */}
       <div className="flex items-stretch border-b bg-card">
         <div className="flex-1 min-w-0 border-r">
