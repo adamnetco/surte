@@ -4,6 +4,8 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { buildReceipt, buildKitchen, type TicketData } from "../lib/ticketBuilder";
+import { buildReceiptForChannel } from "../lib/printWithTemplate";
+import type { ReceiptChannel } from "@/modules/admin-cms/lib/receiptLayoutSchema";
 import { listAuthorizedUsbPrinters, printOnceUsb } from "../drivers/webusb";
 import { pingAgent, printViaAgent, getAgentCapabilities } from "../drivers/agent";
 import { isWebBluetoothSupported, requestBluetoothPrinter, printOnceBluetooth } from "../drivers/webbluetooth";
