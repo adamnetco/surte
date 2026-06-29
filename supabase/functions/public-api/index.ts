@@ -299,7 +299,7 @@ Deno.serve(async (req) => {
       paid_at: new Date().toISOString(),
       notes: body.notes ?? null,
       client_uuid: clientUuid,
-      metadata: { source: "public-api", key_prefix: prefix, external_ref: externalRef },
+      metadata: { source: "public-api", key_prefix: prefix, external_ref: externalRef, mode: apiMode, ...(apiMode === "test" ? { test: true } : {}) },
 
     }).select("id,ticket_number").single();
 
