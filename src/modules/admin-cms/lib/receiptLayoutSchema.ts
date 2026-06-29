@@ -74,6 +74,23 @@ export const sectionSchema = z.discriminatedUnion("type", [
     char: z.enum(["=", "-", ".", "*"]).default("-"),
   }),
   baseSection.extend({ type: z.literal("text"), value: z.string().default("") }),
+  // Slice 4 — comanda cocina: encabezado de estación + items sin precios.
+  baseSection.extend({
+    type: z.literal("station_header"),
+    fields: z.array(z.enum(["station", "table", "time", "channel", "cashier"])).default(["station", "table", "time"]),
+  }),
+  baseSection.extend({
+    type: z.literal("kitchen_items"),
+    showModifiers: z.boolean().default(true),
+    showNotes: z.boolean().default(true),
+    bigFont: z.boolean().default(true),
+  }),
+  // Slice 4 — vale de anulación (Ola 26 Slice 5): motivo + hash fiscal.
+  baseSection.extend({
+    type: z.literal("void_notice"),
+    showReason: z.boolean().default(true),
+    showFiscalHash: z.boolean().default(true),
+  }),
 ]);
 
 export type Section = z.infer<typeof sectionSchema>;
@@ -94,4 +111,7 @@ export const SECTION_LABEL: Record<SectionType, string> = {
   qr: "Código QR",
   divider: "Separador",
   text: "Texto libre",
+  station_header: "Encabezado estación",
+  kitchen_items: "Items cocina (sin precios)",
+  void_notice: "Aviso de anulación",
 };
