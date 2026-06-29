@@ -68,7 +68,7 @@ interface Product {
   image_url: string | null; stock: number;
   category_id?: string | null; sku?: string | null; gtin?: string | null;
 }
-interface Category { id: string; name: string; }
+interface Category { id: string; name: string; icon_name?: string | null; }
 type TicketLine = TicketLineData;
 interface Props {
   session: { id: string; location_id: string; cash_register_id: string; opening_amount: number; opened_at: string };
