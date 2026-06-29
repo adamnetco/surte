@@ -20,6 +20,7 @@ import { Plus, Trash2, Printer, Zap, Info, History } from "lucide-react";
 import { toast } from "sonner";
 import { RoutingSimulator } from "./RoutingSimulator";
 import { RuleJobsDialog } from "./RuleJobsDialog";
+import { RoutingHeatmap } from "./RoutingHeatmap";
 
 interface PrinterRow { id: string; name: string; role: string; }
 interface StationRow { id: string; name: string; default_printer_id?: string | null; }
