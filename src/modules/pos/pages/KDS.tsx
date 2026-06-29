@@ -94,10 +94,14 @@ export default function KDS() {
 
   const bump = async (t: Ticket) => {
     const next = t.status === "pending" ? "in_progress" : t.status === "in_progress" ? "ready" : "served";
-    const patch: Record<string, unknown> = { status: next, bumped_by: user!.id };
-    if (next === "in_progress") patch.started_at = new Date().toISOString();
-    if (next === "ready") patch.ready_at = new Date().toISOString();
-    if (next === "served") patch.served_at = new Date().toISOString();
+    const nowIso = new Date().toISOString();
+    const patch = {
+      status: next,
+      bumped_by: user!.id,
+      ...(next === "in_progress" ? { started_at: nowIso } : {}),
+      ...(next === "ready" ? { ready_at: nowIso } : {}),
+      ...(next === "served" ? { served_at: nowIso } : {}),
+    };
     const { error } = await supabase.from("kds_tickets").update(patch).eq("id", t.id).eq("organization_id", orgId!);
     if (error) return toast.error(error.message);
   };
