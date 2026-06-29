@@ -59,14 +59,30 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   const [docType, setDocType] = useState<string | null>(null);
   const [payments, setPayments] = useState<Pay[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [tipPct, setTipPct] = useState<number>(0);
+  const [tipCustom, setTipCustom] = useState<string>("");
   const firstAmountRef = useRef<HTMLInputElement>(null);
   const { role } = useAuth();
   const gate = usePosCobroGate(organizationId, docType);
+  const { config: tipCfg } = useTipConfig(organizationId);
   const isSuperadmin = role === "superadmin";
+
+  const tipEnabled = tipCfg.enabled && tipCfg.mode !== "off";
+  const tipAmount = useMemo(() => {
+    if (!tipEnabled) return 0;
+    if (tipCustom.trim() !== "") return Math.max(0, Math.round(Number(tipCustom) || 0));
+    return Math.round((total * tipPct) / 100);
+  }, [tipEnabled, tipPct, tipCustom, total]);
+  const grandTotal = total + tipAmount;
 
   useEffect(() => {
     if (open) {
-      setPayments([{ method: "efectivo", amount: total }]);
+      // pre-seleccionar % por defecto si las propinas están activas
+      const startPct = tipEnabled ? tipCfg.default_pct : 0;
+      const startTip = tipEnabled ? Math.round((total * startPct) / 100) : 0;
+      setTipPct(startPct);
+      setTipCustom("");
+      setPayments([{ method: "efectivo", amount: total + startTip }]);
       setSubmitting(false);
       // Focus + select del primer monto para tecleo inmediato.
       setTimeout(() => {
@@ -74,7 +90,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
         firstAmountRef.current?.select();
       }, 60);
     }
-  }, [open, total]);
+  }, [open, total, tipEnabled, tipCfg.default_pct]);
 
   // AC5: Ctrl+Shift+B activa override (solo superadmin, solo si está bloqueado).
   useEffect(() => {
