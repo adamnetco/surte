@@ -308,7 +308,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     }
   };
 
-  const { priceFor, hasOverrides } = usePriceListOverrides(organizationId, priceListId);
+  const { priceFor, hasOverrides, overrideCount } = usePriceListOverrides(organizationId, priceListId);
 
   // Al cambiar de lista, re-priceamos las líneas existentes para reflejar el contexto
   // (sin tocar cantidades ni notas — sólo unitPrice y total).
