@@ -1263,6 +1263,81 @@ export type Database = {
           },
         ]
       }
+      cash_session_seals: {
+        Row: {
+          cash_register_id: string
+          cash_session_id: string
+          created_at: string
+          current_hash: string
+          emitted_at: string
+          id: string
+          organization_id: string
+          payload: Json
+          prev_hash: string | null
+          sequence: number
+        }
+        Insert: {
+          cash_register_id: string
+          cash_session_id: string
+          created_at?: string
+          current_hash: string
+          emitted_at?: string
+          id?: string
+          organization_id: string
+          payload: Json
+          prev_hash?: string | null
+          sequence: number
+        }
+        Update: {
+          cash_register_id?: string
+          cash_session_id?: string
+          created_at?: string
+          current_hash?: string
+          emitted_at?: string
+          id?: string
+          organization_id?: string
+          payload?: Json
+          prev_hash?: string | null
+          sequence?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_session_seals_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_session_seals_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: true
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_session_seals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_session_seals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "cash_session_seals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       cash_sessions: {
         Row: {
           balances: Json
@@ -1273,6 +1348,7 @@ export type Database = {
           created_at: string
           difference: number | null
           expected_amount: number
+          fiscal_seal_id: string | null
           id: string
           location_id: string
           notes: string | null
@@ -1298,6 +1374,7 @@ export type Database = {
           created_at?: string
           difference?: number | null
           expected_amount?: number
+          fiscal_seal_id?: string | null
           id?: string
           location_id: string
           notes?: string | null
@@ -1323,6 +1400,7 @@ export type Database = {
           created_at?: string
           difference?: number | null
           expected_amount?: number
+          fiscal_seal_id?: string | null
           id?: string
           location_id?: string
           notes?: string | null
@@ -1345,6 +1423,13 @@ export type Database = {
             columns: ["cash_register_id"]
             isOneToOne: false
             referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_sessions_fiscal_seal_id_fkey"
+            columns: ["fiscal_seal_id"]
+            isOneToOne: false
+            referencedRelation: "cash_session_seals"
             referencedColumns: ["id"]
           },
           {
@@ -11854,6 +11939,19 @@ export type Database = {
       cash_session_compute_denom_hash: {
         Args: { p_session_id: string }
         Returns: string
+      }
+      cash_session_emit_seal: { Args: { _session_id: string }; Returns: string }
+      cash_session_verify_chain: {
+        Args: { _limit?: number; _register_id: string }
+        Returns: {
+          cash_session_id: string
+          current_hash: string
+          expected_prev_hash: string
+          ok: boolean
+          seal_id: string
+          sequence: number
+          stored_prev_hash: string
+        }[]
       }
       check_api_latency_alerts: {
         Args: { p_min_requests?: number; p_threshold_ms?: number }
