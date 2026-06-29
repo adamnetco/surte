@@ -28,7 +28,7 @@ const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const DIFF_THRESHOLD = 5_000; // COP — descuadre que dispara confirmación
 
 interface Totals {
-  cash: number; card: number; transfer: number; other: number; total: number; count: number;
+  cash: number; card: number; transfer: number; other: number; total: number; count: number; tips: number;
 }
 
 interface Denomination {
