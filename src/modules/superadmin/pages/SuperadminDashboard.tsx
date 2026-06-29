@@ -41,6 +41,7 @@ const FiscalSealsPanel = lazy(() => import("@/modules/superadmin/pages/FiscalSea
 const FiscalHub = lazy(() => import("@/modules/superadmin/pages/FiscalHub"));
 const FiscalCashBookPanel = lazy(() => import("@/modules/superadmin/pages/FiscalCashBookPanel"));
 const FiscalAdjustmentsPanel = lazy(() => import("@/modules/superadmin/pages/FiscalAdjustmentsPanel"));
+const RoutingAlertsCronHealth = lazy(() => import("@/modules/superadmin/pages/RoutingAlertsCronHealth"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -129,6 +130,7 @@ const SuperadminDashboard = () => {
                 <Route path="lifecycle" element={<LifecyclePanel />} />
                 <Route path="referrals" element={<ReferralsPanel />} />
                 <Route path="surveys" element={<SurveysPanel />} />
+                <Route path="routing-alerts-cron" element={<RoutingAlertsCronHealth />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
