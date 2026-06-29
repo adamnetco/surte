@@ -41,6 +41,7 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
   const [search, setSearch] = useState("");
   const [tableLabel, setTableLabel] = useState("");
   const [splitting, setSplitting] = useState(false);
+  const [voidItem, setVoidItem] = useState<Item | null>(null);
 
   const order = useMemo(
     () => orders.find((o) => o.id === activeOrderId) ?? null,
