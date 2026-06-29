@@ -493,6 +493,8 @@ export default function DeveloperApiPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {tab === "alerts" && <ApiAlertsPanel orgId={orgId} />}
     </div>
   );
 }
