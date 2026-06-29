@@ -281,6 +281,41 @@ export default function RoutingAlertsCronHealth() {
     return parts.join(" · ") || "cambio menor";
   };
 
+  // Slice CC — derivados: filtrado + CSV.
+  const auditFiltered = useMemo(() => {
+    const q = auditSearch.trim().toLowerCase();
+    return auditRows.filter((r) => {
+      if (auditActionFilter !== "all" && r.action !== auditActionFilter) return false;
+      if (!q) return true;
+      const actorName = r.actor_id ? auditActors[r.actor_id]?.name ?? "" : "system";
+      const hay = `${r.preset_name ?? ""} ${actorName} ${r.actor_id ?? ""} ${summarizeDiff(r)}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [auditRows, auditActionFilter, auditSearch, auditActors]);
+
+  const exportAuditCsv = useCallback(() => {
+    const esc = (v: any) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const headers = ["created_at", "action", "preset_name", "actor", "summary"];
+    const lines = [headers.join(",")];
+    for (const r of auditFiltered) {
+      const actor = r.actor_id ? auditActors[r.actor_id]?.name ?? r.actor_id : "system";
+      lines.push([r.created_at, r.action, r.preset_name ?? "", actor, summarizeDiff(r)].map(esc).join(","));
+    }
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `routing-preset-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Exportadas ${auditFiltered.length} filas`);
+  }, [auditFiltered, auditActors]);
+
+
+
 
 
   // Auto-apply preset on mount when URL has no filter params.
