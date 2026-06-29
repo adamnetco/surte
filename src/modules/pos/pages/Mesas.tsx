@@ -48,7 +48,7 @@ export default function Mesas() {
       supabase.from("dining_areas").select("id,name,color").eq("organization_id", orgId).eq("is_active", true).order("sort_order"),
       supabase.from("dining_tables").select("id,label,capacity,pos_x,pos_y,width,height,shape,status,dining_area_id")
         .eq("organization_id", orgId).eq("is_active", true).order("label"),
-      supabase.from("table_orders").select("id,dining_table_id,total,opened_at")
+      supabase.from("table_orders").select("id,dining_table_id,total,opened_at,sub_label")
         .eq("organization_id", orgId).in("status", ["open","sent","billed"]),
     ]);
     setAreas(a ?? []);
