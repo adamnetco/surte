@@ -117,6 +117,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
   const [ticketNote, setTicketNote] = useState("");
   const [globalDiscPct, setGlobalDiscPct] = useState(0);
+  const [priceListId, setPriceListId] = useState<string | null>(null);
+  const [priceListName, setPriceListName] = useState<string>("Pública");
+  const [parkedCount, setParkedCount] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const sync = useSyncService();
