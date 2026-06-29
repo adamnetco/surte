@@ -298,6 +298,15 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
         rules={rules}
       />
 
+      <RoutingHeatmap
+        organizationId={organizationId}
+        printers={printers}
+        rules={rules}
+        products={products}
+        categories={categories}
+        stations={stations}
+      />
+
       <RuleJobsDialog
         ruleId={drillRule?.id ?? null}
         ruleLabel={drillRule?.label ?? ""}
