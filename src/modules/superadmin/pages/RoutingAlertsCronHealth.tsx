@@ -8,11 +8,16 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock } from "lucide-react";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 const SLA_HOURS = 24;
 const SLA_GRACE_HOURS = 36; // umbral crítico → registra health_event
+const AUTO_RECOVERY_LS_KEY = "routing_alerts_auto_recovery_enabled";
+const AUTO_RECOVERY_LAST_ATTEMPT_KEY = "routing_alerts_auto_recovery_last_attempt";
+const AUTO_RECOVERY_COOLDOWN_HOURS = 6;
 
 interface NotificationRow {
   id: string;
