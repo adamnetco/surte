@@ -15,7 +15,7 @@ interface Table {
   id: string; label: string; capacity: number; pos_x: number; pos_y: number;
   width: number; height: number; shape: string; status: string; dining_area_id: string | null;
 }
-interface OpenOrder { id: string; dining_table_id: string | null; total: number; opened_at: string; }
+interface OpenOrder { id: string; dining_table_id: string | null; total: number; opened_at: string; sub_label: string | null; }
 
 const STATUS_BG: Record<string, string> = {
   available: "bg-secondary/15 border-secondary/40 text-secondary-foreground",
@@ -48,7 +48,7 @@ export default function Mesas() {
       supabase.from("dining_areas").select("id,name,color").eq("organization_id", orgId).eq("is_active", true).order("sort_order"),
       supabase.from("dining_tables").select("id,label,capacity,pos_x,pos_y,width,height,shape,status,dining_area_id")
         .eq("organization_id", orgId).eq("is_active", true).order("label"),
-      supabase.from("table_orders").select("id,dining_table_id,total,opened_at")
+      supabase.from("table_orders").select("id,dining_table_id,total,opened_at,sub_label")
         .eq("organization_id", orgId).in("status", ["open","sent","billed"]),
     ]);
     setAreas(a ?? []);
@@ -81,9 +81,16 @@ export default function Mesas() {
     [tables, activeArea]
   );
 
-  const orderByTable = useMemo(() => {
-    const m = new Map<string, OpenOrder>();
-    openOrders.forEach(o => { if (o.dining_table_id) m.set(o.dining_table_id, o); });
+  const ordersByTable = useMemo(() => {
+    const m = new Map<string, OpenOrder[]>();
+    openOrders.forEach((o) => {
+      if (!o.dining_table_id) return;
+      const arr = m.get(o.dining_table_id) ?? [];
+      arr.push(o);
+      m.set(o.dining_table_id, arr);
+    });
+    // Stable order: sub_label asc (null first), then by opened_at
+    m.forEach((arr) => arr.sort((a, b) => (a.sub_label ?? "").localeCompare(b.sub_label ?? "")));
     return m;
   }, [openOrders]);
 
@@ -113,8 +120,8 @@ export default function Mesas() {
   }
 
   const openTable = async (t: Table) => {
-    const existing = orderByTable.get(t.id);
-    if (existing) { setOpenTableId(t.id); return; }
+    const existing = ordersByTable.get(t.id);
+    if (existing && existing.length) { setOpenTableId(t.id); return; }
     // create open order
     const { data, error } = await supabase.from("table_orders").insert({
       organization_id: orgId,
@@ -153,8 +160,10 @@ export default function Mesas() {
             <p className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Sin mesas en esta zona</p>
           )}
           {filtered.map(t => {
-            const order = orderByTable.get(t.id);
-            const status = order ? "occupied" : t.status;
+            const tableOrders = ordersByTable.get(t.id) ?? [];
+            const totalAll = tableOrders.reduce((s, o) => s + Number(o.total), 0);
+            const status = tableOrders.length > 0 ? "occupied" : t.status;
+            const splits = tableOrders.length > 1 ? tableOrders.map((o) => o.sub_label ?? "·") : null;
             return (
               <button
                 key={t.id}
@@ -162,13 +171,21 @@ export default function Mesas() {
                 className={`absolute rounded-xl border-2 p-2 flex flex-col items-center justify-center transition hover:scale-105 active:scale-95 ${STATUS_BG[status] ?? STATUS_BG.available} ${t.shape === "round" ? "rounded-full" : ""}`}
                 style={{ left: t.pos_x, top: t.pos_y, width: t.width, height: t.height }}
               >
-                <span className="font-bold text-sm">{t.label}</span>
+                <span className="font-bold text-sm flex items-baseline gap-0.5">
+                  {t.label}
+                  {splits && (
+                    <span className="text-[9px] font-mono opacity-70">
+                      {splits.join("/")}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[10px] flex items-center gap-0.5 opacity-70">
                   <Users className="w-3 h-3" />{t.capacity}
                 </span>
-                {order && (
+                {tableOrders.length > 0 && (
                   <span className="text-[10px] font-semibold mt-0.5">
-                    ${Math.round(Number(order.total)).toLocaleString("es-CO")}
+                    ${Math.round(totalAll).toLocaleString("es-CO")}
+                    {tableOrders.length > 1 && <span className="ml-1 opacity-70">({tableOrders.length})</span>}
                   </span>
                 )}
               </button>

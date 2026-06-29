@@ -10351,9 +10351,11 @@ export type Database = {
           order_number: number
           organization_id: string
           paid_at: string | null
+          parent_table_order_id: string | null
           pos_order_id: string | null
           service_type_key: string
           status: string
+          sub_label: string | null
           subtotal: number
           tip: number
           total: number
@@ -10378,9 +10380,11 @@ export type Database = {
           order_number?: number
           organization_id: string
           paid_at?: string | null
+          parent_table_order_id?: string | null
           pos_order_id?: string | null
           service_type_key?: string
           status?: string
+          sub_label?: string | null
           subtotal?: number
           tip?: number
           total?: number
@@ -10405,9 +10409,11 @@ export type Database = {
           order_number?: number
           organization_id?: string
           paid_at?: string | null
+          parent_table_order_id?: string | null
           pos_order_id?: string | null
           service_type_key?: string
           status?: string
+          sub_label?: string | null
           subtotal?: number
           tip?: number
           total?: number
@@ -10427,6 +10433,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_orders_parent_table_order_id_fkey"
+            columns: ["parent_table_order_id"]
+            isOneToOne: false
+            referencedRelation: "table_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -12621,6 +12634,7 @@ export type Database = {
         }
         Returns: number
       }
+      next_sub_label: { Args: { _dining_table_id: string }; Returns: string }
       nps_category: { Args: { score: number }; Returns: string }
       open_fiscal_period: {
         Args: { _end: string; _name: string; _org: string; _start: string }
@@ -12904,6 +12918,7 @@ export type Database = {
         Args: { p_cancel: boolean; p_org_id: string }
         Returns: Json
       }
+      split_table_order: { Args: { _source: string }; Returns: string }
       submit_survey_response: {
         Args: { p_comment?: string; p_invite_id: string; p_score: number }
         Returns: string
@@ -12971,6 +12986,10 @@ export type Database = {
       }
       survey_mark_csm_alerted: {
         Args: { p_response_id: string }
+        Returns: undefined
+      }
+      transfer_table_item: {
+        Args: { _dest_order: string; _item: string }
         Returns: undefined
       }
       transition_tenant_lifecycle: {
