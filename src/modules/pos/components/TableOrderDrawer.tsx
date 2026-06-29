@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Minus, Trash2, Send, FileText, SplitSquareHorizontal, ArrowRightLeft } from "lucide-react";
+import { Search, Plus, Minus, Trash2, Send, FileText, SplitSquareHorizontal, ArrowRightLeft, Ban } from "lucide-react";
 import { toast } from "sonner";
+import VoidItemDialog from "./VoidItemDialog";
 
 interface Props {
   tableId: string;
@@ -40,6 +41,7 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
   const [search, setSearch] = useState("");
   const [tableLabel, setTableLabel] = useState("");
   const [splitting, setSplitting] = useState(false);
+  const [voidItem, setVoidItem] = useState<Item | null>(null);
 
   const order = useMemo(
     () => orders.find((o) => o.id === activeOrderId) ?? null,
@@ -308,12 +310,24 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
                         </DropdownMenu>
                       )}
                       {it.status === "pending" && (
-                        <button onClick={() => changeQty(it, -it.quantity)} className="text-muted-foreground hover:text-destructive">
+                        <button onClick={() => changeQty(it, -it.quantity)} className="text-muted-foreground hover:text-destructive" title="Quitar (no enviado)">
                           <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {it.status !== "cancelled" && (
+                        <button
+                          onClick={() => setVoidItem(it)}
+                          className="text-muted-foreground hover:text-destructive"
+                          title="Anular con vale fiscal"
+                        >
+                          <Ban className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
                   </div>
+                  {it.status === "cancelled" && (
+                    <div className="text-[10px] text-destructive font-mono">ANULADO · vale fiscal emitido</div>
+                  )}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => changeQty(it, -1)} disabled={it.status !== "pending"}>
@@ -348,6 +362,12 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
           </div>
         </div>
       </SheetContent>
+      <VoidItemDialog
+        open={!!voidItem}
+        onOpenChange={(v) => !v && setVoidItem(null)}
+        item={voidItem}
+        onVoided={() => { setVoidItem(null); load(); }}
+      />
     </Sheet>
   );
 }
