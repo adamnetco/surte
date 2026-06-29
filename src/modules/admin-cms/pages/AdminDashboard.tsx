@@ -91,6 +91,7 @@ const allTabs = [
   { id: "printers", label: "Impresoras", icon: Printer, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
   { id: "kitchen-routing", label: "Cocina", icon: ChefHat, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
   { id: "print-fleet", label: "Fleet impresión", icon: Radio, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
+  { id: "print-jobs", label: "Inspector impresión", icon: FileText, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
 ];
 
 class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
