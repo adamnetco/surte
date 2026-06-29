@@ -238,6 +238,26 @@ export default function DeveloperApiPage() {
               </p>
             </div>
 
+            <div>
+              <Label>Modo</Label>
+              <div className="mt-1 flex gap-2">
+                {(["live", "test"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setNewKey((s) => ({ ...s, mode: m }))}
+                    className={`rounded-md border px-3 py-1.5 text-xs ${newKey.mode === m ? "border-primary bg-primary/10 font-semibold" : "border-border bg-background"}`}
+                  >
+                    {m === "live" ? "🚀 Producción (live)" : "🧪 Pruebas (test)"}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Las keys <code>test</code> registran tráfico segregado y bloquean la emisión real de facturas DIAN.
+              </p>
+            </div>
+
+
             <div className="flex justify-end">
               <Button onClick={createKey} disabled={!newKey.name.trim()}>
                 <Plus className="mr-1 h-4 w-4" /> Crear
