@@ -33,6 +33,7 @@ import {
 } from "@/modules/offline/lib/catalog";
 import { setMeta, getMeta } from "@/modules/offline/lib/db";
 import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
+import { usePriceListOverrides } from "@/modules/pos/hooks/usePriceListOverrides";
 import { useRecentProducts } from "@/modules/pos/hooks/useRecentProducts";
 import { useRecentActions, type RecentAction } from "@/modules/pos/hooks/useRecentActions";
 import { useSyncService } from "@/modules/integrations/sync/useSyncService";
