@@ -930,6 +930,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
 
 
+          <POSActionRail
+            hasSelection={!!selectedLine}
+            onMultiply={railMultiply}
+            onCut={railCut}
+            onComment={railComment}
+            onDiscount={railDiscount}
+            onDelete={railDelete}
+          />
+
           <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
             {ticket.length === 0 ? (
               <div className="text-center py-10 px-4">
@@ -944,18 +953,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <TicketLineRow
                   key={l.productId}
                   line={l}
+                  selected={selectedLineId === l.productId}
+                  onSelect={() => setSelectedLineId(l.productId)}
                   onQty={(d) => updateQty(l.productId, d)}
                   onRemove={() => removeLine(l.productId)}
-                  onNotes={(notes) =>
-                    setTicket((prev) => prev.map((x) => (x.productId === l.productId ? { ...x, notes } : x)))
-                  }
-                  onDiscount={(pct) =>
-                    setTicket((prev) => prev.map((x) => (x.productId === l.productId ? { ...x, discountPct: pct } : x)))
-                  }
+                  onNotes={(notes) => setLineNotes(l.productId, notes)}
+                  onDiscount={(pct) => setLineDiscount(l.productId, pct)}
                 />
               ))
             )}
           </div>
+
 
           <div className="border-t p-3 space-y-2 bg-card">
             {/* Totales */}
