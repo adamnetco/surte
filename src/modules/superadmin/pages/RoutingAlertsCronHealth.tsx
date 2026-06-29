@@ -64,10 +64,12 @@ export default function RoutingAlertsCronHealth() {
     return window.localStorage.getItem(AUTO_RECOVERY_LS_KEY) === "1";
   });
   const [autoAttempted, setAutoAttempted] = useState(false);
+  const [events, setEvents] = useState<HealthEventRow[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     const since = new Date(Date.now() - DAYS_WINDOW * 86400000).toISOString().slice(0, 10);
+    const sinceIso = new Date(Date.now() - DAYS_WINDOW * 86400000).toISOString();
     const { data: notifs, error } = await (supabase as any)
       .from("routing_alert_notifications")
       .select("id, organization_id, target_kind, target_id, notified_on, channel, recipients_count, created_at")
