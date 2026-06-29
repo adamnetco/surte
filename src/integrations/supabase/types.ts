@@ -9210,6 +9210,149 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          confirmed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          deposit_amount: number
+          deposit_paid_at: string | null
+          deposit_status: string
+          dining_area_id: string | null
+          dining_table_id: string | null
+          ends_at: string
+          id: string
+          internal_notes: string | null
+          location_id: string | null
+          metadata: Json
+          notes: string | null
+          organization_id: string
+          party_size: number
+          seated_at: string | null
+          source: string
+          starts_at: string
+          status: string
+          table_order_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          deposit_amount?: number
+          deposit_paid_at?: string | null
+          deposit_status?: string
+          dining_area_id?: string | null
+          dining_table_id?: string | null
+          ends_at: string
+          id?: string
+          internal_notes?: string | null
+          location_id?: string | null
+          metadata?: Json
+          notes?: string | null
+          organization_id: string
+          party_size: number
+          seated_at?: string | null
+          source?: string
+          starts_at: string
+          status?: string
+          table_order_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          deposit_amount?: number
+          deposit_paid_at?: string | null
+          deposit_status?: string
+          dining_area_id?: string | null
+          dining_table_id?: string | null
+          ends_at?: string
+          id?: string
+          internal_notes?: string | null
+          location_id?: string | null
+          metadata?: Json
+          notes?: string | null
+          organization_id?: string
+          party_size?: number
+          seated_at?: string | null
+          source?: string
+          starts_at?: string
+          status?: string
+          table_order_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_dining_area_id_fkey"
+            columns: ["dining_area_id"]
+            isOneToOne: false
+            referencedRelation: "dining_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_dining_table_id_fkey"
+            columns: ["dining_table_id"]
+            isOneToOne: false
+            referencedRelation: "dining_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "reservations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "reservations_table_order_id_fkey"
+            columns: ["table_order_id"]
+            isOneToOne: false
+            referencedRelation: "table_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routing_alert_mutes: {
         Row: {
           created_at: string
@@ -13458,6 +13601,39 @@ export type Database = {
           _target_org: string
         }
         Returns: Json
+      }
+      reservation_check_availability: {
+        Args: {
+          _ends_at: string
+          _exclude_reservation_id?: string
+          _location_id?: string
+          _org_id: string
+          _party_size: number
+          _starts_at: string
+        }
+        Returns: {
+          area_name: string
+          capacity: number
+          dining_area_id: string
+          dining_table_id: string
+          label: string
+        }[]
+      }
+      reservation_day_agenda: {
+        Args: { _day: string; _location_id?: string; _org_id: string }
+        Returns: {
+          customer_name: string
+          deposit_amount: number
+          deposit_status: string
+          dining_table_id: string
+          ends_at: string
+          id: string
+          party_size: number
+          source: string
+          starts_at: string
+          status: string
+          table_label: string
+        }[]
       }
       resolve_entitlements: { Args: { p_org_id: string }; Returns: Json }
       resolve_limit: {

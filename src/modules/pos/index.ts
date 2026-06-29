@@ -15,6 +15,7 @@ export { default as PosHubPage } from "./pages/PosHub";
 export { default as KDSPage } from "./pages/KDS";
 export { default as MenuPage } from "./pages/MenuPage";
 export { default as MesasPage } from "./pages/Mesas";
+export { default as ReservasPage } from "./pages/Reservas";
 
 // Hooks de configuración POS reutilizados por el admin
 export { usePOSModes } from "./hooks/usePOSModes";
