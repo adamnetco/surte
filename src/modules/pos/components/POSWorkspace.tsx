@@ -68,7 +68,7 @@ interface Product {
   image_url: string | null; stock: number;
   category_id?: string | null; sku?: string | null; gtin?: string | null;
 }
-interface Category { id: string; name: string; }
+interface Category { id: string; name: string; icon_name?: string | null; }
 type TicketLine = TicketLineData;
 interface Props {
   session: { id: string; location_id: string; cash_register_id: string; opening_amount: number; opened_at: string };
@@ -196,7 +196,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           setProducts(cached as Product[]);
           setLoading(false);
         }
-        if (cats.length) setCategories(cats.map((c) => ({ id: c.id, name: c.name })));
+        if (cats.length) setCategories(cats.map((c: any) => ({ id: c.id, name: c.name, icon_name: c.icon_name ?? null })));
       } catch { /* no cache */ }
 
       try {
@@ -210,7 +210,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         await refreshCatalogCache();
         const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
         if (fresh.length) setProducts(fresh as Product[]);
-        if (freshCats.length) setCategories(freshCats.map((c) => ({ id: c.id, name: c.name })));
+        if (freshCats.length) setCategories(freshCats.map((c: any) => ({ id: c.id, name: c.name, icon_name: c.icon_name ?? null })));
         setCatalogError(null);
       } catch (err: any) {
         // offline o falla de red: usamos cache si existe
@@ -760,7 +760,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                       await refreshCatalogCache();
                       const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
                       setProducts(fresh as Product[]);
-                      setCategories(freshCats.map((c) => ({ id: c.id, name: c.name })));
+                      setCategories(freshCats.map((c: any) => ({ id: c.id, name: c.name, icon_name: c.icon_name ?? null })));
                       setCatalogError(null);
                     } catch (e: any) {
                       setCatalogError(e?.message || "Error de red");
