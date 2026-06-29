@@ -278,7 +278,11 @@ export default function DeveloperApiPage() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{k.name}</span>
+                          {k.mode === "test"
+                            ? <Badge variant="outline" className="border-amber-500 text-amber-700">🧪 test</Badge>
+                            : <Badge variant="outline" className="border-emerald-500 text-emerald-700">🚀 live</Badge>}
                           {k.revoked_at ? <Badge variant="destructive">Revocada</Badge> : <Badge>Activa</Badge>}
+
                         </div>
                         <code className="text-xs text-muted-foreground">{k.prefix}…</code>
                         <span className="ml-2 text-xs text-muted-foreground">
