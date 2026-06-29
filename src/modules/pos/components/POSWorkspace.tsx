@@ -50,6 +50,7 @@ import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import POSCustomerPicker from "./POSCustomerPicker";
+import POSContextualBar from "./POSContextualBar";
 import TableGridSheet from "./TableGridSheet";
 import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
@@ -116,6 +117,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
   const [ticketNote, setTicketNote] = useState("");
   const [globalDiscPct, setGlobalDiscPct] = useState(0);
+  const [priceListId, setPriceListId] = useState<string | null>(null);
+  const [priceListName, setPriceListName] = useState<string>("Pública");
+  const [parkedCount, setParkedCount] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const sync = useSyncService();
@@ -186,6 +190,31 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       if (data?.full_name) setCashierName(data.full_name);
     })();
   }, [userId]);
+
+  // Conteo de tickets suspendidos (refrescado en cambio de session/org)
+  useEffect(() => {
+    let cancel = false;
+    const load = async () => {
+      const { count } = await (supabase as any)
+        .from("parked_tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId);
+      if (!cancel) setParkedCount(count ?? 0);
+    };
+    load();
+    const ch = (supabase as any)
+      .channel(`parked-${organizationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "parked_tickets", filter: `organization_id=eq.${organizationId}` },
+        load
+      )
+      .subscribe();
+    return () => {
+      cancel = true;
+      (supabase as any).removeChannel(ch);
+    };
+  }, [organizationId]);
 
   const ticketCacheKey = `pos_ticket:${session.id}`;
 
@@ -653,6 +682,18 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       <ResolutionStatusBanner
         snapshot={resolutionSnap}
         einvoiceEnabled={resolutionSnap.status !== "unknown"}
+      />
+
+      {/* Barra contextual: Lista de precios · Vendedor · Suspendidas (SoftwarePOS-like) */}
+      <POSContextualBar
+        organizationId={organizationId}
+        cashierName={cashierName}
+        priceListId={priceListId}
+        onPriceListChange={(id, name) => {
+          setPriceListId(id);
+          setPriceListName(name);
+        }}
+        parkedCount={parkedCount}
       />
 
       {/* Tabs de categorías (60%) + Cliente (40%) */}
