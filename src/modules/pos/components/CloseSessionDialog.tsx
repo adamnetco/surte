@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Coins, Banknote, Wand2, Loader2 } from "lucide-react";
+import { Coins, Banknote, Wand2, Loader2, Eye, EyeOff, Camera, X } from "lucide-react";
 import { errorToMessage } from "@/lib/errors";
+import { Switch } from "@/components/ui/switch";
 
 interface Props {
   open: boolean;
