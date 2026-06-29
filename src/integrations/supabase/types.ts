@@ -9326,6 +9326,33 @@ export type Database = {
           },
         ]
       }
+      routing_alert_timeline_presets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          filters: Json
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          filters?: Json
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          filters?: Json
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       saas_plans: {
         Row: {
           created_at: string
