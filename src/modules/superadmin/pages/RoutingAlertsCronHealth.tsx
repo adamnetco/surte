@@ -219,7 +219,12 @@ export default function RoutingAlertsCronHealth() {
           <h1 className="font-heading font-bold text-xl">Salud del cron de alertas</h1>
           <Badge variant="outline" className="text-[10px]">notify-routing-alerts-daily · 08:00 UTC</Badge>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-md border px-2 py-1">
+            <Wand2 className="h-3.5 w-3.5 text-muted-foreground" />
+            <Label htmlFor="auto-recovery" className="text-xs cursor-pointer">Auto-recuperación</Label>
+            <Switch id="auto-recovery" checked={autoRecovery} onCheckedChange={toggleAutoRecovery} />
+          </div>
           <Button size="sm" variant="outline" onClick={runManual} disabled={running || loading}>
             <Play className={`h-4 w-4 mr-1 ${running ? "animate-pulse" : ""}`} /> Disparar ahora
           </Button>
