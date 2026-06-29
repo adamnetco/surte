@@ -10,6 +10,7 @@ import {
 import { Search, Plus, Minus, Trash2, Send, FileText, SplitSquareHorizontal, ArrowRightLeft, Ban } from "lucide-react";
 import { toast } from "sonner";
 import VoidItemDialog from "./VoidItemDialog";
+import POSSplitBillSheet from "./POSSplitBillSheet";
 
 interface Props {
   tableId: string;
