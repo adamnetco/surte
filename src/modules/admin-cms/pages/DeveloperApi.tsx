@@ -545,6 +545,42 @@ export default function DeveloperApiPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!inspectDelivery} onOpenChange={(o) => !o && setInspectDelivery(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base">Detalle de envío</DialogTitle>
+          </DialogHeader>
+          {inspectDelivery && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <div><span className="text-muted-foreground">Evento:</span> <code className="text-xs">{inspectDelivery.event_type}</code></div>
+                <div><span className="text-muted-foreground">Estado:</span> {inspectDelivery.status}</div>
+                <div><span className="text-muted-foreground">Intentos:</span> {inspectDelivery.attempt_count}</div>
+                <div><span className="text-muted-foreground">Último status:</span> {inspectDelivery.last_status_code ?? "—"}</div>
+              </div>
+              <div>
+                <Label className="text-xs">Payload</Label>
+                <pre className="max-h-60 overflow-auto rounded-md border bg-muted/30 p-2 text-xs">{JSON.stringify(inspectDelivery.payload, null, 2)}</pre>
+              </div>
+              {inspectDelivery.last_response && (
+                <div>
+                  <Label className="text-xs">Última respuesta</Label>
+                  <pre className="max-h-40 overflow-auto rounded-md border bg-muted/30 p-2 text-xs whitespace-pre-wrap">{inspectDelivery.last_response}</pre>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setInspectDelivery(null)}>Cerrar</Button>
+            {inspectDelivery && (
+              <Button onClick={() => { replayDelivery(inspectDelivery.id); setInspectDelivery(null); }}>
+                <RefreshCw className="mr-2 h-4 w-4" /> Reintentar ahora
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {tab === "alerts" && <ApiAlertsPanel orgId={orgId} />}
     </div>
   );
