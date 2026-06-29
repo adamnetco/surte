@@ -12652,6 +12652,7 @@ export type Database = {
         Args: { _limit_key: string; _org_id: string; _period?: string }
         Returns: Json
       }
+      pos_dispatch_table_order: { Args: { p_order_id: string }; Returns: Json }
       post_journal_entry: {
         Args: {
           p_entry_date: string
