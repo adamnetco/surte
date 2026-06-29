@@ -232,6 +232,9 @@ export default function RoutingAlertsCronHealth() {
   const [auditRows, setAuditRows] = useState<PresetAuditRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditActors, setAuditActors] = useState<Record<string, { name: string }>>({});
+  // Slice CC — filtros + export CSV del audit log.
+  const [auditActionFilter, setAuditActionFilter] = useState<"all" | "create" | "update" | "delete">("all");
+  const [auditSearch, setAuditSearch] = useState("");
   const loadAudit = useCallback(async () => {
     setAuditLoading(true);
     const { data, error } = await (supabase as any)
