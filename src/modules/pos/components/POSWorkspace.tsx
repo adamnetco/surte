@@ -408,7 +408,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       ];
     });
     if (sticky) setStickyNotes([]);
+    // Feedback móvil: si el ticket está colapsado, confirmar y ofrecer expandir.
+    if (isMobile && !mobileTicketExpanded) {
+      toast.success(`+ ${p.name}`, {
+        duration: 1400,
+        action: { label: "Ver ticket", onClick: () => setMobileTicketExpanded(true) },
+      });
+    }
   };
+
 
   const addProduct = (p: Product) => {
     // Slice 3-food: si el producto tiene modifier_groups, abrir picker antes de añadir.
