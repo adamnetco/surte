@@ -28,8 +28,12 @@ interface Pay { method: MethodKey; amount: number; reference?: string }
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Subtotal antes de propina */
   total: number;
-  onConfirm: (payments: Pay[], meta: { docType: string | null }) => void | Promise<void>;
+  onConfirm: (
+    payments: Pay[],
+    meta: { docType: string | null; tip: number }
+  ) => void | Promise<void>;
   organizationId?: string;
   hasCustomerId?: boolean;
 }
