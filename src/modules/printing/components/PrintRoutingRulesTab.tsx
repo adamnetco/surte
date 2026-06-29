@@ -242,7 +242,7 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
                 <TableHead>Imprime</TableHead>
                 <TableHead className="w-[80px]">Copias</TableHead>
                 <TableHead className="w-[100px]">Activa</TableHead>
-                <TableHead className="w-[60px]"></TableHead>
+                <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
