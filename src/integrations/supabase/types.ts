@@ -7724,6 +7724,73 @@ export type Database = {
           },
         ]
       }
+      print_agents: {
+        Row: {
+          agent_code: string
+          capabilities: Json
+          created_at: string
+          id: string
+          label: string | null
+          last_ip: string | null
+          last_seen_at: string | null
+          organization_id: string
+          printer_ids: string[]
+          secret_hash: string
+          updated_at: string
+          version: string | null
+        }
+        Insert: {
+          agent_code: string
+          capabilities?: Json
+          created_at?: string
+          id?: string
+          label?: string | null
+          last_ip?: string | null
+          last_seen_at?: string | null
+          organization_id: string
+          printer_ids?: string[]
+          secret_hash: string
+          updated_at?: string
+          version?: string | null
+        }
+        Update: {
+          agent_code?: string
+          capabilities?: Json
+          created_at?: string
+          id?: string
+          label?: string | null
+          last_ip?: string | null
+          last_seen_at?: string | null
+          organization_id?: string
+          printer_ids?: string[]
+          secret_hash?: string
+          updated_at?: string
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "print_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       print_jobs: {
         Row: {
           attempts: number
@@ -11603,6 +11670,79 @@ export type Database = {
         }
         Relationships: []
       }
+      print_agents_status: {
+        Row: {
+          agent_code: string | null
+          capabilities: Json | null
+          created_at: string | null
+          id: string | null
+          label: string | null
+          last_ip: string | null
+          last_seen_at: string | null
+          organization_id: string | null
+          printer_ids: string[] | null
+          seconds_since_seen: number | null
+          secret_hash: string | null
+          status: string | null
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          agent_code?: string | null
+          capabilities?: Json | null
+          created_at?: string | null
+          id?: string | null
+          label?: string | null
+          last_ip?: string | null
+          last_seen_at?: string | null
+          organization_id?: string | null
+          printer_ids?: string[] | null
+          seconds_since_seen?: never
+          secret_hash?: string | null
+          status?: never
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          agent_code?: string | null
+          capabilities?: Json | null
+          created_at?: string | null
+          id?: string | null
+          label?: string | null
+          last_ip?: string | null
+          last_seen_at?: string | null
+          organization_id?: string | null
+          printer_ids?: string[] | null
+          seconds_since_seen?: never
+          secret_hash?: string | null
+          status?: never
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "print_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       products_public: {
         Row: {
           availability: string | null
@@ -12856,6 +12996,27 @@ export type Database = {
           p_reference_type: string
         }
         Returns: string
+      }
+      print_agent_register: {
+        Args: {
+          p_code: string
+          p_label?: string
+          p_org: string
+          p_printer_ids?: string[]
+        }
+        Returns: {
+          agent_id: string
+          secret: string
+        }[]
+      }
+      print_agent_touch: {
+        Args: {
+          p_agent_id: string
+          p_capabilities: Json
+          p_ip: string
+          p_version: string
+        }
+        Returns: undefined
       }
       process_referral_qualification: {
         Args: { p_paid_amount: number; p_referee_org_id: string }

@@ -1,0 +1,1 @@
+ALTER VIEW public.print_agents_status SET (security_invoker = true);
