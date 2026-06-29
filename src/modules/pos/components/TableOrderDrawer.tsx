@@ -181,23 +181,34 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
 
   const closeBill = async () => {
     if (!order) return;
-    const remaining = orders.filter((o) => o.id !== order.id).length;
-    const msg = remaining > 0
-      ? `¿Cerrar esta sub-cuenta? Quedan ${remaining} sub-cuenta(s) abierta(s) en la mesa.`
-      : "¿Cerrar y liberar mesa? (cobrar en POS)";
-    if (!confirm(msg)) return;
-    await supabase.from("table_orders").update({ status: "paid", paid_at: new Date().toISOString() })
-      .eq("organization_id", organizationId).eq("id", order.id);
-    if (remaining === 0) {
-      await supabase.from("dining_tables").update({ status: "available" })
-        .eq("organization_id", organizationId).eq("id", tableId);
-      toast.success("Mesa liberada");
-      onClose();
-    } else {
-      toast.success("Sub-cuenta cerrada");
-      await load();
+    const billable = items.filter((i) => i.status !== "cancelled");
+    if (billable.length === 0) return toast.info("No hay items para cobrar");
+    const pendingCount = items.filter((i) => i.status === "pending").length;
+    if (pendingCount > 0) {
+      if (!confirm(`Hay ${pendingCount} item(s) sin enviar a cocina. ¿Cobrar de todos modos?`)) return;
     }
+    const remaining = orders.filter((o) => o.id !== order.id).length;
+    // Hand off to POS workspace: items + table context. POS marca paid + libera mesa al cobrar.
+    window.dispatchEvent(new CustomEvent("pos:bill-table-order", {
+      detail: {
+        tableOrderId: order.id,
+        tableId,
+        tableLabel: `${tableLabel}${order.sub_label ?? ""}`,
+        releaseTableOnPaid: remaining === 0,
+        items: billable.map((it) => ({
+          productId: it.product_id,
+          name: it.product_name,
+          quantity: it.quantity,
+          unitPrice: Number(it.unit_price),
+          total: Number(it.total),
+          notes: it.notes ?? undefined,
+        })),
+      },
+    }));
+    toast.success(`Mesa ${tableLabel}${order.sub_label ?? ""} cargada en POS — completa el cobro`);
+    onClose();
   };
+
 
   const otherOrders = orders.filter((o) => o.id !== activeOrderId);
 
