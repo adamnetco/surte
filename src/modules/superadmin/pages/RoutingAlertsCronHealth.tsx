@@ -91,6 +91,34 @@ export default function RoutingAlertsCronHealth() {
   const [tlOrg, setTlOrg] = useState<string>(() => searchParams.get("org") ?? "all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  // Slice X — Presets de filtros guardados por usuario (localStorage).
+  type TimelinePreset = { name: string; kind: TimelineFilterKind; sev: TimelineFilterSev; org: string };
+  const PRESETS_LS_KEY = "routing_alerts_timeline_presets_v1";
+  const [presets, setPresets] = useState<TimelinePreset[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(window.localStorage.getItem(PRESETS_LS_KEY) ?? "[]"); } catch { return []; }
+  });
+  const persistPresets = (next: TimelinePreset[]) => {
+    setPresets(next);
+    try { window.localStorage.setItem(PRESETS_LS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+  const savePreset = () => {
+    const name = window.prompt("Nombre del preset:", "")?.trim();
+    if (!name) return;
+    const next = presets.filter((p) => p.name !== name).concat({ name, kind: tlKind, sev: tlSev, org: tlOrg });
+    persistPresets(next);
+    toast.success(`Preset "${name}" guardado`);
+  };
+  const applyPreset = (p: TimelinePreset) => {
+    setTlKind(p.kind); setTlSev(p.sev); setTlOrg(p.org);
+    toast.message(`Preset "${p.name}" aplicado`);
+  };
+  const deletePreset = (name: string) => {
+    persistPresets(presets.filter((p) => p.name !== name));
+    toast.success(`Preset "${name}" eliminado`);
+  };
+  const hasActiveFilters = !(tlKind === "all" && tlSev === "all" && tlOrg === "all");
+
   // Sync filter state → URL query params (shareable deep-link).
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
