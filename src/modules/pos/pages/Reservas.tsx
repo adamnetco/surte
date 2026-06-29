@@ -66,67 +66,81 @@ export default function ReservasPage() {
         </div>
       </header>
 
-      {isLoading ? (
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}
-        </div>
-      ) : !rows || rows.length === 0 ? (
-        <Card className="p-12 text-center text-muted-foreground border-dashed">
-          <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p>Sin reservas para {format(new Date(day + "T00:00"), "PPP")}</p>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {rows.map((r) => (
-            <Card key={r.id} className="p-4 flex flex-wrap items-center gap-4">
-              <div className="text-center w-20">
-                <div className="text-2xl font-bold tabular-nums">{format(new Date(r.starts_at), "HH:mm")}</div>
-                <div className="text-xs text-muted-foreground">{format(new Date(r.ends_at), "HH:mm")}</div>
-              </div>
-              <div className="flex-1 min-w-[200px]">
-                <div className="font-medium">{r.customer_name}</div>
-                <div className="text-sm text-muted-foreground">
-                  {r.party_size} pers · Mesa {r.table_label ?? "—"} · {r.source}
-                </div>
-              </div>
-              <Badge variant="outline" className={STATUS_COLOR[r.status]}>{STATUS_LABEL[r.status]}</Badge>
-              {r.deposit_amount > 0 && (
-                <Badge variant="outline" className="gap-1">
-                  Depósito {r.deposit_status === "paid" ? "✓" : "⏳"} ${Number(r.deposit_amount).toLocaleString("es-CO")}
-                </Badge>
-              )}
-              <div className="flex gap-1">
-                {r.status === "confirmed" && (
-                  <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: r.id, status: "seated" })}>
-                    <UserCheck className="h-3.5 w-3.5 mr-1" /> Sentar
-                  </Button>
-                )}
-                {r.status === "seated" && (
-                  <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: r.id, status: "completed" })}>
-                    <Check className="h-3.5 w-3.5 mr-1" /> Completar
-                  </Button>
-                )}
-                {["pending", "confirmed"].includes(r.status) && (
-                  <>
-                    <Button size="sm" variant="ghost" onClick={() => updateStatus.mutate({ id: r.id, status: "no_show" })} title="No show">
-                      <AlertCircle className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => {
-                      const reason = window.prompt("Motivo de cancelación") ?? undefined;
-                      updateStatus.mutate({ id: r.id, status: "cancelled", cancel_reason: reason });
-                    }}>
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </>
-                )}
-              </div>
+      <Tabs defaultValue="lista" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="lista">Lista</TabsTrigger>
+          <TabsTrigger value="plano">Plano</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="lista" className="mt-0">
+          {isLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}
+            </div>
+          ) : !rows || rows.length === 0 ? (
+            <Card className="p-12 text-center text-muted-foreground border-dashed">
+              <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p>Sin reservas para {format(new Date(day + "T00:00"), "PPP")}</p>
             </Card>
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="space-y-2">
+              {rows.map((r) => (
+                <Card key={r.id} className="p-4 flex flex-wrap items-center gap-4">
+                  <div className="text-center w-20">
+                    <div className="text-2xl font-bold tabular-nums">{format(new Date(r.starts_at), "HH:mm")}</div>
+                    <div className="text-xs text-muted-foreground">{format(new Date(r.ends_at), "HH:mm")}</div>
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="font-medium">{r.customer_name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {r.party_size} pers · Mesa {r.table_label ?? "—"} · {r.source}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className={STATUS_COLOR[r.status]}>{STATUS_LABEL[r.status]}</Badge>
+                  {r.deposit_amount > 0 && (
+                    <Badge variant="outline" className="gap-1">
+                      Depósito {r.deposit_status === "paid" ? "✓" : "⏳"} ${Number(r.deposit_amount).toLocaleString("es-CO")}
+                    </Badge>
+                  )}
+                  <div className="flex gap-1">
+                    {r.status === "confirmed" && (
+                      <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: r.id, status: "seated" })}>
+                        <UserCheck className="h-3.5 w-3.5 mr-1" /> Sentar
+                      </Button>
+                    )}
+                    {r.status === "seated" && (
+                      <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: r.id, status: "completed" })}>
+                        <Check className="h-3.5 w-3.5 mr-1" /> Completar
+                      </Button>
+                    )}
+                    {["pending", "confirmed"].includes(r.status) && (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => updateStatus.mutate({ id: r.id, status: "no_show" })} title="No show">
+                          <AlertCircle className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          const reason = window.prompt("Motivo de cancelación") ?? undefined;
+                          updateStatus.mutate({ id: r.id, status: "cancelled", cancel_reason: reason });
+                        }}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="plano" className="mt-0">
+          <ReservationsFloorMap reservations={rows ?? []} isLoading={isLoading} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
+
 
 function NewReservationSheet({ defaultDay }: { defaultDay: string }) {
   const [open, setOpen] = useState(false);
