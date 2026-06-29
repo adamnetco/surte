@@ -40,6 +40,7 @@ const SurveysPanel = lazy(() => import("@/modules/superadmin/pages/SurveysPanel"
 const FiscalSealsPanel = lazy(() => import("@/modules/superadmin/pages/FiscalSealsPanel"));
 const FiscalHub = lazy(() => import("@/modules/superadmin/pages/FiscalHub"));
 const FiscalCashBookPanel = lazy(() => import("@/modules/superadmin/pages/FiscalCashBookPanel"));
+const FiscalAdjustmentsPanel = lazy(() => import("@/modules/superadmin/pages/FiscalAdjustmentsPanel"));
 
 const SyncSection = () => (
   <div className="space-y-4">
