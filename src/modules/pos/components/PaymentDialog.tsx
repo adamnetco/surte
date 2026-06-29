@@ -316,7 +316,11 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
           </Button>
 
           <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
-            <div className="flex justify-between"><span className="text-muted-foreground">Total</span><span className="tabular-nums">{COP(total)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{COP(total)}</span></div>
+            {tipAmount > 0 && (
+              <div className="flex justify-between"><span className="text-muted-foreground">Propina</span><span className="tabular-nums">{COP(tipAmount)}</span></div>
+            )}
+            <div className="flex justify-between font-semibold"><span>Total a cobrar</span><span className="tabular-nums">{COP(grandTotal)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Recibido</span><span className="tabular-nums">{COP(sum)}</span></div>
             {pending > 0 && (
               <div className="flex justify-between font-semibold text-destructive">
