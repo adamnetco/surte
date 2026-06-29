@@ -62,8 +62,9 @@ export default function DeveloperApiPage() {
       supabase.from("webhook_endpoints").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }),
       supabase.from("webhook_deliveries").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(50),
       supabase.rpc("api_key_usage_stats", { p_org: orgId, p_days: statsDays }),
-      supabase.from("api_request_logs").select("id,key_prefix,method,path,status_code,latency_ms,error_code,created_at")
+      supabase.from("api_request_logs").select("id,key_prefix,method,path,status_code,latency_ms,error_code,created_at,mode")
         .eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
+
     ]);
     setKeys(k.data ?? []);
     setEndpoints(e.data ?? []);
