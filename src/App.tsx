@@ -67,6 +67,7 @@ const Innapsis = lazy(() => import("./modules/admin-cms").then((m) => ({ default
 const InnapsisDetail = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisDetailPage })));
 const InnapsisResumen = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisResumenPage })));
 const DeveloperApi = lazy(() => import("./modules/admin-cms/pages/DeveloperApi"));
+const ReceiptTemplates = lazy(() => import("./modules/admin-cms/pages/ReceiptTemplatesPage"));
 
 const MisPedidos = lazy(() => import("./pages/MisPedidos"));
 const Perfil = lazy(() => import("./pages/Perfil"));
