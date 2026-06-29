@@ -26,7 +26,7 @@ interface TableOrder {
   parent_table_order_id: string | null;
 }
 interface Item {
-  id: string; product_name: string; quantity: number; unit_price: number; total: number; status: string; notes: string | null;
+  id: string; product_id: string | null; product_name: string; quantity: number; unit_price: number; total: number; status: string; notes: string | null;
 }
 interface Product { id: string; name: string; price: number; }
 
