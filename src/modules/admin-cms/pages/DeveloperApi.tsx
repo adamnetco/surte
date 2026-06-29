@@ -184,6 +184,7 @@ export default function DeveloperApiPage() {
           { k: "webhooks", label: "Webhooks", icon: Webhook },
           { k: "deliveries", label: "Envíos recientes", icon: Clock },
           { k: "usage", label: "Uso & logs", icon: BarChart3 },
+          { k: "metrics", label: "Métricas", icon: Activity },
           { k: "alerts", label: "Alertas", icon: Bell },
 
         ].map((t) => {
