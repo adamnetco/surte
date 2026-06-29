@@ -558,6 +558,28 @@ export default function RoutingAlertsCronHealth() {
             >
               <Download className="h-3.5 w-3.5 mr-1" /> CSV
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const params = new URLSearchParams();
+                if (tlKind !== "all") params.set("kind", tlKind);
+                if (tlSev !== "all") params.set("sev", tlSev);
+                if (tlOrg !== "all") params.set("org", tlOrg);
+                const qs = params.toString();
+                const url = `${window.location.origin}${window.location.pathname}${qs ? `?${qs}` : ""}`;
+                try {
+                  await navigator.clipboard.writeText(url);
+                  toast.success("Link copiado al portapapeles");
+                } catch {
+                  toast.error("No se pudo copiar el link");
+                }
+              }}
+              disabled={tlKind === "all" && tlSev === "all" && tlOrg === "all"}
+              title="Copiar link compartible con los filtros actuales"
+            >
+              <Link2 className="h-3.5 w-3.5 mr-1" /> Link
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
