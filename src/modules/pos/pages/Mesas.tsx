@@ -15,7 +15,7 @@ interface Table {
   id: string; label: string; capacity: number; pos_x: number; pos_y: number;
   width: number; height: number; shape: string; status: string; dining_area_id: string | null;
 }
-interface OpenOrder { id: string; dining_table_id: string | null; total: number; opened_at: string; }
+interface OpenOrder { id: string; dining_table_id: string | null; total: number; opened_at: string; sub_label: string | null; }
 
 const STATUS_BG: Record<string, string> = {
   available: "bg-secondary/15 border-secondary/40 text-secondary-foreground",
