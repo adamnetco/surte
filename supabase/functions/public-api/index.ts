@@ -46,9 +46,35 @@ function errBody(code: string, message: string, extra: Record<string, unknown> =
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const t0 = performance.now();
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const ua = req.headers.get("user-agent")?.slice(0, 200) ?? null;
+  const logCtx: { orgId?: string; keyId?: string; prefix?: string; path?: string } = {};
+  const sbLog = createClient(SUPABASE_URL, SERVICE_KEY);
+  const writeLog = async (status: number, errorCode?: string) => {
+    if (!logCtx.orgId) return;
+    try {
+      await sbLog.from("api_request_logs").insert({
+        organization_id: logCtx.orgId,
+        api_key_id: logCtx.keyId ?? null,
+        key_prefix: logCtx.prefix ?? null,
+        method: req.method,
+        path: logCtx.path ?? new URL(req.url).pathname,
+        status_code: status,
+        latency_ms: Math.round(performance.now() - t0),
+        ip, user_agent: ua,
+        error_code: errorCode ?? null,
+      });
+    } catch { /* never break the response on log failure */ }
+  };
+  const respond = async (res: Response, errorCode?: string) => {
+    await writeLog(res.status, errorCode);
+    return res;
+  };
   if (req.method !== "GET" && req.method !== "POST") {
-    return json(errBody("METHOD_NOT_ALLOWED", "Only GET and POST supported"), 405);
+    return respond(json(errBody("METHOD_NOT_ALLOWED", "Only GET and POST supported"), 405), "METHOD_NOT_ALLOWED");
   }
+
 
   // ---- Auth ----
   const auth = req.headers.get("authorization") ?? "";
