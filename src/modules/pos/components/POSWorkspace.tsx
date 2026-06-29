@@ -131,6 +131,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [parkedCount, setParkedCount] = useState(0);
   // Mobile: ticket colapsado por defecto para maximizar catálogo. Totales/Cobrar siempre visibles.
   const [mobileTicketExpanded, setMobileTicketExpanded] = useState(false);
+  const isMobile = useIsMobile();
   // === Cobro de mesa ===
   // Cuando el usuario pulsa "Cobrar" en TableOrderDrawer, el ticket de mesa se
   // carga aquí y guardamos el contexto para liberar la mesa al finalizar la venta.
