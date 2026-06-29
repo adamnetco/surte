@@ -109,6 +109,23 @@ export default function DeveloperApiPage() {
     load();
   };
 
+  const rotateKey = async (id: string, name: string) => {
+    const grace = prompt(`Rotar "${name}". Días de gracia para la clave antigua (default 7):`, "7");
+    if (grace === null) return;
+    const graceDays = Math.max(0, parseInt(grace || "7", 10) || 7);
+    const { data, error } = await supabase.rpc("api_key_rotate", {
+      p_id: id, p_grace_days: graceDays, p_new_name: null, p_expires_in_days: 365,
+    });
+    if (error) return toast.error(error.message);
+    const r = data as { new_token: string; old_grace_until: string };
+    setNewKeyResult({
+      prefix: r.new_token.split("_").slice(0, 2).join("_"),
+      secret: r.new_token.split("_").slice(2).join("_"),
+    });
+    toast.success(`Rotada. Clave antigua activa hasta ${new Date(r.old_grace_until).toLocaleString()}`);
+    load();
+  };
+
   const createEndpoint = async () => {
     if (!orgId || !newWh.url.trim()) return;
     const secret = Array.from(crypto.getRandomValues(new Uint8Array(24)))
