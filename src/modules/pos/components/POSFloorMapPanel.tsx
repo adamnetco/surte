@@ -1,10 +1,9 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { useMemo, useState } from "react";
 import { Users, Clock, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import TableOrderDrawer from "./TableOrderDrawer";
+import { useTablesFloor } from "../hooks/useTablesFloor";
 
 /**
  * POSFloorMapPanel — vista embebida de mesas dentro del workspace POS
