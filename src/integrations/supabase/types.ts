@@ -257,6 +257,7 @@ export type Database = {
           kind: string
           message: string
           metadata: Json
+          notified_at: string | null
           organization_id: string
           resolved_at: string | null
           severity: string
@@ -273,6 +274,7 @@ export type Database = {
           kind: string
           message: string
           metadata?: Json
+          notified_at?: string | null
           organization_id: string
           resolved_at?: string | null
           severity?: string
@@ -289,6 +291,7 @@ export type Database = {
           kind?: string
           message?: string
           metadata?: Json
+          notified_at?: string | null
           organization_id?: string
           resolved_at?: string | null
           severity?: string
@@ -11657,6 +11660,7 @@ export type Database = {
           kind: string
           message: string
           metadata: Json
+          notified_at: string | null
           organization_id: string
           resolved_at: string | null
           severity: string
