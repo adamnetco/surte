@@ -108,6 +108,58 @@ export function ReceiptPreview({ template, order }: Props) {
               {center(s.value ?? template.footer_text ?? "", width)}
             </pre>
           );
+        case "station_header": {
+          const f = s.fields ?? ["station", "table", "time"];
+          const rows: string[] = [];
+          if (f.includes("station") && order.station) rows.push(center(`** ${order.station} **`, width));
+          if (f.includes("table") && order.table) rows.push(pad("Mesa:", order.table, width));
+          if (f.includes("time") && order.time) rows.push(pad("Hora:", order.time, width));
+          if (f.includes("channel")) rows.push(pad("Canal:", order.channel, width));
+          if (f.includes("cashier")) rows.push(pad("Cajero:", order.cashier, width));
+          return (
+            <pre key={s.id ?? idx} className="whitespace-pre font-bold" style={{ fontSize: "1.2em" }}>
+              {rows.join("\n")}
+            </pre>
+          );
+        }
+        case "kitchen_items": {
+          const showMods = s.showModifiers !== false;
+          const showNotes = s.showNotes !== false;
+          const rows: string[] = [];
+          for (const it of order.items) {
+            rows.push(`${it.qty}x ${it.name.toUpperCase()}`);
+            if (showMods && it.modifiers) for (const m of it.modifiers) rows.push("   » " + m);
+            if (showNotes && it.notes) rows.push("   ! " + it.notes);
+          }
+          return (
+            <pre
+              key={s.id ?? idx}
+              className="whitespace-pre font-bold"
+              style={s.bigFont !== false ? { fontSize: "1.35em", lineHeight: 1.3 } : undefined}
+            >
+              {rows.join("\n")}
+            </pre>
+          );
+        }
+        case "void_notice": {
+          const rows: string[] = [];
+          rows.push(center("*** ANULACIÓN ***", width));
+          rows.push("");
+          if (order.original_order) rows.push(pad("Orden orig.:", order.original_order, width));
+          if (s.showReason !== false && order.void_reason) {
+            rows.push("Motivo:");
+            rows.push(order.void_reason);
+          }
+          if (s.showFiscalHash !== false && order.fiscal_hash) {
+            rows.push("");
+            rows.push(pad("Hash:", order.fiscal_hash, width));
+          }
+          return (
+            <pre key={s.id ?? idx} className="whitespace-pre font-bold">
+              {rows.join("\n")}
+            </pre>
+          );
+        }
         default:
           return null;
       }

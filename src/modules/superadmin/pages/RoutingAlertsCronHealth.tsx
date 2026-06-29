@@ -232,6 +232,9 @@ export default function RoutingAlertsCronHealth() {
   const [auditRows, setAuditRows] = useState<PresetAuditRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditActors, setAuditActors] = useState<Record<string, { name: string }>>({});
+  // Slice CC — filtros + export CSV del audit log.
+  const [auditActionFilter, setAuditActionFilter] = useState<"all" | "create" | "update" | "delete">("all");
+  const [auditSearch, setAuditSearch] = useState("");
   const loadAudit = useCallback(async () => {
     setAuditLoading(true);
     const { data, error } = await (supabase as any)
@@ -277,6 +280,41 @@ export default function RoutingAlertsCronHealth() {
     }
     return parts.join(" · ") || "cambio menor";
   };
+
+  // Slice CC — derivados: filtrado + CSV.
+  const auditFiltered = useMemo(() => {
+    const q = auditSearch.trim().toLowerCase();
+    return auditRows.filter((r) => {
+      if (auditActionFilter !== "all" && r.action !== auditActionFilter) return false;
+      if (!q) return true;
+      const actorName = r.actor_id ? auditActors[r.actor_id]?.name ?? "" : "system";
+      const hay = `${r.preset_name ?? ""} ${actorName} ${r.actor_id ?? ""} ${summarizeDiff(r)}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [auditRows, auditActionFilter, auditSearch, auditActors]);
+
+  const exportAuditCsv = useCallback(() => {
+    const esc = (v: any) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const headers = ["created_at", "action", "preset_name", "actor", "summary"];
+    const lines = [headers.join(",")];
+    for (const r of auditFiltered) {
+      const actor = r.actor_id ? auditActors[r.actor_id]?.name ?? r.actor_id : "system";
+      lines.push([r.created_at, r.action, r.preset_name ?? "", actor, summarizeDiff(r)].map(esc).join(","));
+    }
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `routing-preset-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Exportadas ${auditFiltered.length} filas`);
+  }, [auditFiltered, auditActors]);
+
+
 
 
 
@@ -967,19 +1005,47 @@ export default function RoutingAlertsCronHealth() {
                     Últimos 50 cambios (creación, edición, eliminación, default de equipo) registrados automáticamente.
                   </SheetDescription>
                 </SheetHeader>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{auditRows.length} eventos</span>
-                  <Button size="sm" variant="ghost" onClick={loadAudit} disabled={auditLoading}>
-                    <RefreshCcw className={`h-3.5 w-3.5 mr-1 ${auditLoading ? "animate-spin" : ""}`} />
-                    Refrescar
-                  </Button>
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {auditFiltered.length}/{auditRows.length} eventos
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="ghost" onClick={loadAudit} disabled={auditLoading} title="Refrescar">
+                      <RefreshCcw className={`h-3.5 w-3.5 ${auditLoading ? "animate-spin" : ""}`} />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={exportAuditCsv} disabled={auditFiltered.length === 0} title="Exportar CSV">
+                      <Download className="h-3.5 w-3.5 mr-1" /> CSV
+                    </Button>
+                  </div>
+                </div>
+                {/* Slice CC — filtros de audit */}
+                <div className="mt-3 grid grid-cols-[140px_1fr] gap-2">
+                  <Select value={auditActionFilter} onValueChange={(v) => setAuditActionFilter(v as any)}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las acciones</SelectItem>
+                      <SelectItem value="create">Creadas</SelectItem>
+                      <SelectItem value="update">Editadas</SelectItem>
+                      <SelectItem value="delete">Eliminadas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <input
+                    type="search"
+                    value={auditSearch}
+                    onChange={(e) => setAuditSearch(e.target.value)}
+                    placeholder="Buscar nombre, autor o diff…"
+                    className="h-8 px-2 text-xs rounded-md border border-input bg-background"
+                    aria-label="Buscar en audit log"
+                  />
                 </div>
                 <ol className="mt-3 space-y-2">
                   {auditLoading && <li className="text-xs text-muted-foreground">Cargando…</li>}
-                  {!auditLoading && auditRows.length === 0 && (
-                    <li className="text-xs text-muted-foreground">Sin actividad registrada.</li>
+                  {!auditLoading && auditFiltered.length === 0 && (
+                    <li className="text-xs text-muted-foreground">
+                      {auditRows.length === 0 ? "Sin actividad registrada." : "Ningún evento coincide con los filtros."}
+                    </li>
                   )}
-                  {auditRows.map((r) => {
+                  {auditFiltered.map((r) => {
                     const actor = r.actor_id ? auditActors[r.actor_id]?.name ?? r.actor_id.slice(0, 8) : "system";
                     const tone =
                       r.action === "create" ? "border-emerald-400/40 bg-emerald-50/40 dark:bg-emerald-950/20"
