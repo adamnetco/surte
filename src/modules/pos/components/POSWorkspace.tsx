@@ -608,6 +608,38 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Catálogo */}
         <div className="flex-1 flex flex-col min-h-0">
+          {isFood && (
+            <div className="flex items-center gap-1 px-2.5 py-1.5 bg-card border-b">
+              <div className="inline-flex rounded-md border bg-muted/30 p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setCatalogView("tables")}
+                  className={`h-7 px-3 rounded-sm inline-flex items-center gap-1.5 transition ${
+                    catalogView === "tables" ? "bg-card shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <UtensilsIcon className="w-3.5 h-3.5" /> Mesas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCatalogView("catalog")}
+                  className={`h-7 px-3 rounded-sm inline-flex items-center gap-1.5 transition ${
+                    catalogView === "catalog" ? "bg-card shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" /> Catálogo
+                </button>
+              </div>
+              <span className="text-[10px] text-muted-foreground ml-2 hidden md:inline">
+                {catalogView === "tables" ? "Selecciona una mesa para abrir su cuenta" : "Venta directa de mostrador"}
+              </span>
+            </div>
+          )}
+
+          {isFood && catalogView === "tables" ? (
+            <POSFloorMapPanel organizationId={organizationId} userId={userId} />
+          ) : (
+          <>
           <div className="p-2.5 bg-card border-b flex gap-2 items-center">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
