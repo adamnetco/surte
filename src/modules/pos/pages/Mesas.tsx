@@ -160,8 +160,10 @@ export default function Mesas() {
             <p className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Sin mesas en esta zona</p>
           )}
           {filtered.map(t => {
-            const order = orderByTable.get(t.id);
-            const status = order ? "occupied" : t.status;
+            const tableOrders = ordersByTable.get(t.id) ?? [];
+            const totalAll = tableOrders.reduce((s, o) => s + Number(o.total), 0);
+            const status = tableOrders.length > 0 ? "occupied" : t.status;
+            const splits = tableOrders.length > 1 ? tableOrders.map((o) => o.sub_label ?? "·") : null;
             return (
               <button
                 key={t.id}
@@ -169,13 +171,21 @@ export default function Mesas() {
                 className={`absolute rounded-xl border-2 p-2 flex flex-col items-center justify-center transition hover:scale-105 active:scale-95 ${STATUS_BG[status] ?? STATUS_BG.available} ${t.shape === "round" ? "rounded-full" : ""}`}
                 style={{ left: t.pos_x, top: t.pos_y, width: t.width, height: t.height }}
               >
-                <span className="font-bold text-sm">{t.label}</span>
+                <span className="font-bold text-sm flex items-baseline gap-0.5">
+                  {t.label}
+                  {splits && (
+                    <span className="text-[9px] font-mono opacity-70">
+                      {splits.join("/")}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[10px] flex items-center gap-0.5 opacity-70">
                   <Users className="w-3 h-3" />{t.capacity}
                 </span>
-                {order && (
+                {tableOrders.length > 0 && (
                   <span className="text-[10px] font-semibold mt-0.5">
-                    ${Math.round(Number(order.total)).toLocaleString("es-CO")}
+                    ${Math.round(totalAll).toLocaleString("es-CO")}
+                    {tableOrders.length > 1 && <span className="ml-1 opacity-70">({tableOrders.length})</span>}
                   </span>
                 )}
               </button>
