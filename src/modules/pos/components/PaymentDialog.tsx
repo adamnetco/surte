@@ -8,6 +8,7 @@ import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight, ShieldA
 import { Link } from "react-router-dom";
 import DocumentTypeSelector from "./DocumentTypeSelector";
 import { usePosCobroGate } from "@/modules/pos/hooks/usePosCobroGate";
+import { useTipConfig } from "@/modules/pos/hooks/useTipConfig";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
@@ -27,8 +28,12 @@ interface Pay { method: MethodKey; amount: number; reference?: string }
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Subtotal antes de propina */
   total: number;
-  onConfirm: (payments: Pay[], meta: { docType: string | null }) => void | Promise<void>;
+  onConfirm: (
+    payments: Pay[],
+    meta: { docType: string | null; tip: number }
+  ) => void | Promise<void>;
   organizationId?: string;
   hasCustomerId?: boolean;
 }
@@ -54,14 +59,30 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   const [docType, setDocType] = useState<string | null>(null);
   const [payments, setPayments] = useState<Pay[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [tipPct, setTipPct] = useState<number>(0);
+  const [tipCustom, setTipCustom] = useState<string>("");
   const firstAmountRef = useRef<HTMLInputElement>(null);
   const { role } = useAuth();
   const gate = usePosCobroGate(organizationId, docType);
+  const { config: tipCfg } = useTipConfig(organizationId);
   const isSuperadmin = role === "superadmin";
+
+  const tipEnabled = tipCfg.enabled && tipCfg.mode !== "off";
+  const tipAmount = useMemo(() => {
+    if (!tipEnabled) return 0;
+    if (tipCustom.trim() !== "") return Math.max(0, Math.round(Number(tipCustom) || 0));
+    return Math.round((total * tipPct) / 100);
+  }, [tipEnabled, tipPct, tipCustom, total]);
+  const grandTotal = total + tipAmount;
 
   useEffect(() => {
     if (open) {
-      setPayments([{ method: "efectivo", amount: total }]);
+      // pre-seleccionar % por defecto si las propinas están activas
+      const startPct = tipEnabled ? tipCfg.default_pct : 0;
+      const startTip = tipEnabled ? Math.round((total * startPct) / 100) : 0;
+      setTipPct(startPct);
+      setTipCustom("");
+      setPayments([{ method: "efectivo", amount: total + startTip }]);
       setSubmitting(false);
       // Focus + select del primer monto para tecleo inmediato.
       setTimeout(() => {
@@ -69,7 +90,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
         firstAmountRef.current?.select();
       }, 60);
     }
-  }, [open, total]);
+  }, [open, total, tipEnabled, tipCfg.default_pct]);
 
   // AC5: Ctrl+Shift+B activa override (solo superadmin, solo si está bloqueado).
   useEffect(() => {
@@ -94,8 +115,8 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   }, [open, isSuperadmin, gate.canCharge, gate]);
 
   const sum = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-  const change = Math.max(0, sum - total);
-  const pending = Math.max(0, total - sum);
+  const change = Math.max(0, sum - grandTotal);
+  const pending = Math.max(0, grandTotal - sum);
   const paymentsOk = payments.every((p) => p.amount > 0) && pending <= 0;
   const canConfirm = !submitting && paymentsOk && gate.canCharge;
 
@@ -110,11 +131,20 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
     setPayments((prev) => prev.map((p, j) => (j === i ? { ...p, ...patch } : p)));
   };
 
+  const applyTipPct = (pct: number) => {
+    setTipPct(pct);
+    setTipCustom("");
+    // Si solo hay un pago en efectivo, ajustamos su monto al nuevo grand total
+    setPayments(prev => prev.length === 1 && prev[0].method === "efectivo"
+      ? [{ ...prev[0], amount: total + Math.round((total * pct) / 100) }]
+      : prev);
+  };
+
   const doConfirm = async () => {
     if (!canConfirm) return;
     setSubmitting(true);
     try {
-      await onConfirm(payments.filter((p) => p.amount > 0), { docType });
+      await onConfirm(payments.filter((p) => p.amount > 0), { docType, tip: tipAmount });
     } catch {
       setSubmitting(false);
     }
@@ -132,7 +162,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
       <DialogContent className="max-w-md" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between gap-2">
-            <span>Cobrar {COP(total)}</span>
+            <span>Cobrar {COP(grandTotal)}</span>
             <span className={`text-[11px] font-semibold px-2 py-1 rounded-md border ${statusBadge.cls}`}>
               {statusBadge.label}
             </span>
@@ -149,9 +179,49 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
               compact
             />
           )}
+
+          {tipEnabled && (
+            <div className="rounded-lg border bg-card p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Propina</Label>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {COP(tipAmount)} {tipAmount > 0 && tipCustom === "" && `· ${tipPct}%`}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => applyTipPct(0)}
+                  aria-pressed={tipPct === 0 && tipCustom === ""}
+                  className={`px-2.5 h-7 rounded-md border text-[11px] font-semibold ${tipPct === 0 && tipCustom === "" ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-border"}`}
+                >
+                  Sin propina
+                </button>
+                {tipCfg.presets.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => applyTipPct(p)}
+                    aria-pressed={tipPct === p && tipCustom === ""}
+                    className={`px-2.5 h-7 rounded-md border text-[11px] font-semibold ${tipPct === p && tipCustom === "" ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-border"}`}
+                  >
+                    {p}%
+                  </button>
+                ))}
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Otro $"
+                  value={tipCustom}
+                  onChange={(e) => { setTipCustom(e.target.value); setTipPct(0); }}
+                  className="h-7 w-24 text-[11px]"
+                />
+              </div>
+            </div>
+          )}
           {payments.map((p, i) => {
             const amountId = `pay-amount-${i}`;
-            const remaining = Math.max(0, total - (sum - (Number(p.amount) || 0)));
+            const remaining = Math.max(0, grandTotal - (sum - (Number(p.amount) || 0)));
             const quick = p.method === "efectivo" ? suggestedQuickAmounts(remaining) : [];
 
             return (
@@ -246,7 +316,11 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
           </Button>
 
           <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
-            <div className="flex justify-between"><span className="text-muted-foreground">Total</span><span className="tabular-nums">{COP(total)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{COP(total)}</span></div>
+            {tipAmount > 0 && (
+              <div className="flex justify-between"><span className="text-muted-foreground">Propina</span><span className="tabular-nums">{COP(tipAmount)}</span></div>
+            )}
+            <div className="flex justify-between font-semibold"><span>Total a cobrar</span><span className="tabular-nums">{COP(grandTotal)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Recibido</span><span className="tabular-nums">{COP(sum)}</span></div>
             {pending > 0 && (
               <div className="flex justify-between font-semibold text-destructive">

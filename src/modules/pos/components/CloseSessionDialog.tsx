@@ -28,7 +28,7 @@ const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const DIFF_THRESHOLD = 5_000; // COP — descuadre que dispara confirmación
 
 interface Totals {
-  cash: number; card: number; transfer: number; other: number; total: number; count: number;
+  cash: number; card: number; transfer: number; other: number; total: number; count: number; tips: number;
 }
 
 interface Denomination {
@@ -38,7 +38,7 @@ interface Denomination {
 }
 
 export default function CloseSessionDialog({ open, onOpenChange, sessionId, openingAmount, organizationId, userId, onClosed }: Props) {
-  const [totals, setTotals] = useState<Totals>({ cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: 0 });
+  const [totals, setTotals] = useState<Totals>({ cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: 0, tips: 0 });
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -57,16 +57,19 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
     setLoading(true);
     (async () => {
       try {
-        const [{ data: pays }, { count }, { data: dens }] = await Promise.all([
+        const [{ data: pays }, { count }, { data: dens }, { data: tipsRows }] = await Promise.all([
           supabase.from("pos_payments").select("method,amount")
             .eq("organization_id", organizationId).eq("cash_session_id", sessionId),
           supabase.from("pos_orders").select("id", { count: "exact", head: true })
             .eq("organization_id", organizationId).eq("cash_session_id", sessionId).eq("status", "paid"),
           supabase.from("cash_denominations").select("id,value,kind")
             .eq("currency", "COP").eq("is_active", true).order("value", { ascending: false }),
+          supabase.from("pos_orders").select("tip")
+            .eq("organization_id", organizationId).eq("cash_session_id", sessionId).eq("status", "paid"),
         ]);
 
-        const t: Totals = { cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: count ?? 0 };
+        const tipsTotal = (tipsRows ?? []).reduce((s, r: { tip: number | null }) => s + Number(r.tip ?? 0), 0);
+        const t: Totals = { cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: count ?? 0, tips: tipsTotal };
         (pays ?? []).forEach((p: any) => {
           const a = Number(p.amount);
           t.total += a;
@@ -274,6 +277,9 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
                 <Row label="Tarjeta" value={COP(totals.card)} />
                 <Row label="Transferencia/Wallets" value={COP(totals.transfer)} />
                 <Row label="Otros" value={COP(totals.other)} />
+                {totals.tips > 0 && (
+                  <Row label="Propinas (incl. en ventas)" value={COP(totals.tips)} />
+                )}
                 <hr className="my-1" />
                 <Row label="Ventas totales" value={COP(totals.total)} bold />
                 {(!blindMode || revealed) && <>
