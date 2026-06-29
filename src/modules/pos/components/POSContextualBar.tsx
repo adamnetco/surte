@@ -23,6 +23,8 @@ interface Props {
   onPriceListChange: (id: string | null, name: string) => void;
   parkedCount?: number;
   onOpenParked?: () => void;
+  /** Slice 7: nº de productos con precio override activo */
+  overrideCount?: number;
 }
 
 /**
@@ -37,6 +39,7 @@ export default function POSContextualBar({
   onPriceListChange,
   parkedCount = 0,
   onOpenParked,
+  overrideCount = 0,
 }: Props) {
   const [lists, setLists] = useState<PriceList[]>([]);
 
