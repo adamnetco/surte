@@ -29,6 +29,7 @@ interface PrintJobRow {
   escpos_b64: string | null;
   status: string;
   attempts: number;
+  channel?: string | null;
 }
 
 export function usePrintQueue({ organizationId, managedPrinterIds, enabled = true }: UsePrintQueueOpts) {
