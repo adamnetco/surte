@@ -1052,7 +1052,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <button
                 type="button"
                 onClick={() => setMobileTicketExpanded((v) => !v)}
-                className="ml-auto lg:hidden inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground px-2 py-1 rounded-md border border-border"
+                className={`ml-auto lg:hidden inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md border transition ${
+                  !mobileTicketExpanded && ticket.length > 0
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
                 aria-expanded={mobileTicketExpanded}
                 aria-label={mobileTicketExpanded ? "Colapsar ticket" : "Ver ítems del ticket"}
               >
