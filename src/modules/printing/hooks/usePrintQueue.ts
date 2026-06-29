@@ -185,13 +185,13 @@ async function renderJobFromOrder(job: PrintJobRow, printer: any): Promise<Uint8
 
     // 1) Intentar plantilla declarativa del canal `kitchen` (compartida con el preview 80mm).
     try {
-      const { builder, templateId } = await buildReceiptForChannel({
+      const { builder, hasLayout } = await buildReceiptForChannel({
         orgId: order.organization_id,
         channel: "kitchen",
         ticket: kitchenTicket,
         paperMm: mm,
       });
-      if (templateId) return builder.build();
+      if (hasLayout) return builder.build();
     } catch (e) {
       console.warn("[printing] kitchen template falló, usando builder legacy:", e);
     }
