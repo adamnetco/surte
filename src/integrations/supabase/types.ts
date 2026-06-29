@@ -257,6 +257,7 @@ export type Database = {
           kind: string
           message: string
           metadata: Json
+          mode: string
           notified_at: string | null
           organization_id: string
           resolved_at: string | null
@@ -274,6 +275,7 @@ export type Database = {
           kind: string
           message: string
           metadata?: Json
+          mode?: string
           notified_at?: string | null
           organization_id: string
           resolved_at?: string | null
@@ -291,6 +293,7 @@ export type Database = {
           kind?: string
           message?: string
           metadata?: Json
+          mode?: string
           notified_at?: string | null
           organization_id?: string
           resolved_at?: string | null
@@ -377,6 +380,7 @@ export type Database = {
           id: string
           key_hash: string
           last_used_at: string | null
+          mode: string
           name: string
           organization_id: string
           prefix: string
@@ -392,6 +396,7 @@ export type Database = {
           id?: string
           key_hash: string
           last_used_at?: string | null
+          mode?: string
           name: string
           organization_id: string
           prefix: string
@@ -407,6 +412,7 @@ export type Database = {
           id?: string
           key_hash?: string
           last_used_at?: string | null
+          mode?: string
           name?: string
           organization_id?: string
           prefix?: string
@@ -448,6 +454,7 @@ export type Database = {
           key_prefix: string | null
           latency_ms: number | null
           method: string
+          mode: string
           organization_id: string
           path: string
           status_code: number
@@ -462,6 +469,7 @@ export type Database = {
           key_prefix?: string | null
           latency_ms?: number | null
           method: string
+          mode?: string
           organization_id: string
           path: string
           status_code: number
@@ -476,6 +484,7 @@ export type Database = {
           key_prefix?: string | null
           latency_ms?: number | null
           method?: string
+          mode?: string
           organization_id?: string
           path?: string
           status_code?: number
@@ -11011,6 +11020,7 @@ export type Database = {
           last_attempt_at: string | null
           last_response: string | null
           last_status_code: number | null
+          mode: string
           next_attempt_at: string
           organization_id: string
           payload: Json
@@ -11026,6 +11036,7 @@ export type Database = {
           last_attempt_at?: string | null
           last_response?: string | null
           last_status_code?: number | null
+          mode?: string
           next_attempt_at?: string
           organization_id: string
           payload: Json
@@ -11041,6 +11052,7 @@ export type Database = {
           last_attempt_at?: string | null
           last_response?: string | null
           last_status_code?: number | null
+          mode?: string
           next_attempt_at?: string
           organization_id?: string
           payload?: Json
@@ -11681,6 +11693,7 @@ export type Database = {
           kind: string
           message: string
           metadata: Json
+          mode: string
           notified_at: string | null
           organization_id: string
           resolved_at: string | null
@@ -11702,7 +11715,7 @@ export type Database = {
         Returns: Json
       }
       api_key_consume: {
-        Args: { p_hash: string; p_max_per_min?: number; p_prefix: string }
+        Args: { p_hash: string; p_max_per_min: number; p_prefix: string }
         Returns: Json
       }
       api_key_ip_allowed: {
