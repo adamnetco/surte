@@ -271,9 +271,15 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
                     <TableCell>{r.copies}</TableCell>
                     <TableCell><Switch checked={r.is_active} onCheckedChange={(v) => toggleActive(r, v)} /></TableCell>
                     <TableCell>
-                      <Button size="icon" variant="ghost" onClick={() => removeRule(r.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" title="Ver jobs recientes"
+                          onClick={() => setDrillRule({ id: r.id, label: `${t.kind}: ${t.label}` })}>
+                          <History className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => removeRule(r.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
