@@ -75,6 +75,19 @@ Deno.serve(async (req) => {
   if (req.method !== "GET" && req.method !== "POST") {
     return respond(json(errBody("METHOD_NOT_ALLOWED", "Only GET and POST supported"), 405), "METHOD_NOT_ALLOWED");
   }
+
+  // ---- Per-IP rate limit (cheap pre-auth shield against floods) ----
+  if (ip) {
+    const { data: ipR } = await sbLog.rpc("api_ip_consume", { p_ip: ip, p_limit: 600, p_window_seconds: 60 });
+    const ipRes = ipR as { allowed: boolean; remaining: number; limit: number; reset_at: string } | null;
+    if (ipRes && !ipRes.allowed) {
+      return respond(json(
+        errBody("IP_RATE_LIMIT_EXCEEDED", `Too many requests from this IP (limit ${ipRes.limit}/min)`, { retry_after_seconds: 60 }),
+        429,
+        { "retry-after": "60", "x-ratelimit-ip-limit": String(ipRes.limit), "x-ratelimit-ip-remaining": "0" },
+      ), "IP_RATE_LIMIT_EXCEEDED");
+    }
+  }
   logCtx.path = new URL(req.url).pathname;
 
   // ---- Auth ----
