@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter, ChevronDown, ChevronRight, ExternalLink, Building2, Link2, Bookmark, BookmarkPlus, Trash2 } from "lucide-react";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter, ChevronDown, ChevronRight, ExternalLink, Building2, Link2, Bookmark, BookmarkPlus, Trash2, Star } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
