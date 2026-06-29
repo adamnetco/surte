@@ -188,7 +188,21 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
           .eq("organization_id", organizationId).eq("id", sessionId);
       }
 
-      toast.success("Caja cerrada");
+      // Ola 25 · Slice 2 — recupera el sello fiscal emitido por el trigger
+      const { data: sealRow } = await supabase
+        .from("cash_session_seals")
+        .select("sequence,current_hash")
+        .eq("cash_session_id", sessionId)
+        .maybeSingle();
+
+      if (sealRow?.current_hash) {
+        toast.success("Caja cerrada · Sello fiscal emitido", {
+          description: `#${sealRow.sequence} · hash ${String(sealRow.current_hash).slice(0, 12)}…`,
+          duration: 8000,
+        });
+      } else {
+        toast.success("Caja cerrada");
+      }
       onOpenChange(false);
       onClosed();
     } catch (e) {
