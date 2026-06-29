@@ -8,8 +8,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter, ChevronDown, ChevronRight, ExternalLink, Building2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter, ChevronDown, ChevronRight, ExternalLink, Building2, Link2 } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -71,10 +71,30 @@ export default function RoutingAlertsCronHealth() {
   });
   const [autoAttempted, setAutoAttempted] = useState(false);
   const [events, setEvents] = useState<HealthEventRow[]>([]);
-  const [tlKind, setTlKind] = useState<TimelineFilterKind>("all");
-  const [tlSev, setTlSev] = useState<TimelineFilterSev>("all");
-  const [tlOrg, setTlOrg] = useState<string>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tlKind, setTlKind] = useState<TimelineFilterKind>(() => {
+    const v = searchParams.get("kind");
+    return v === "sla" || v === "auto" ? v : "all";
+  });
+  const [tlSev, setTlSev] = useState<TimelineFilterSev>(() => {
+    const v = searchParams.get("sev");
+    return v === "info" || v === "warning" || v === "error" ? v : "all";
+  });
+  const [tlOrg, setTlOrg] = useState<string>(() => searchParams.get("org") ?? "all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  // Sync filter state → URL query params (shareable deep-link).
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const set = (k: string, v: string) => { if (v && v !== "all") next.set(k, v); else next.delete(k); };
+    set("kind", tlKind);
+    set("sev", tlSev);
+    set("org", tlOrg);
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tlKind, tlSev, tlOrg]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -537,6 +557,28 @@ export default function RoutingAlertsCronHealth() {
               }}
             >
               <Download className="h-3.5 w-3.5 mr-1" /> CSV
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const params = new URLSearchParams();
+                if (tlKind !== "all") params.set("kind", tlKind);
+                if (tlSev !== "all") params.set("sev", tlSev);
+                if (tlOrg !== "all") params.set("org", tlOrg);
+                const qs = params.toString();
+                const url = `${window.location.origin}${window.location.pathname}${qs ? `?${qs}` : ""}`;
+                try {
+                  await navigator.clipboard.writeText(url);
+                  toast.success("Link copiado al portapapeles");
+                } catch {
+                  toast.error("No se pudo copiar el link");
+                }
+              }}
+              disabled={tlKind === "all" && tlSev === "all" && tlOrg === "all"}
+              title="Copiar link compartible con los filtros actuales"
+            >
+              <Link2 className="h-3.5 w-3.5 mr-1" /> Link
             </Button>
           </div>
         </CardHeader>
