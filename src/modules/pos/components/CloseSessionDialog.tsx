@@ -169,7 +169,7 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
           arqueo_photo_url: photoPath,
           arqueo_confirmed_at: new Date().toISOString(),
           arqueo_confirmed_by: userId,
-        })
+        } as any)
         .eq("organization_id", organizationId)
         .eq("id", sessionId);
       if (upErr) throw upErr;
@@ -181,10 +181,10 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
       if (error) throw error;
 
       // Calcula y persiste hash determinístico del conteo
-      const { data: hash } = await supabase.rpc("cash_session_compute_denom_hash", { p_session_id: sessionId });
+      const { data: hash } = await (supabase.rpc as any)("cash_session_compute_denom_hash", { p_session_id: sessionId });
       if (hash) {
         await supabase.from("cash_sessions")
-          .update({ denominations_hash: hash as string })
+          .update({ denominations_hash: hash as string } as any)
           .eq("organization_id", organizationId).eq("id", sessionId);
       }
 
