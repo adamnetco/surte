@@ -312,12 +312,32 @@ export default function DeveloperApiPage() {
                             ))}
                           </div>
                         )}
+                        {k.expires_at && (() => {
+                          const days = Math.ceil((new Date(k.expires_at).getTime() - Date.now()) / 86400000);
+                          if (k.revoked_at) return null;
+                          if (days < 0) return <Badge variant="destructive" className="ml-2 text-[10px]">Expirada</Badge>;
+                          if (days <= 14) {
+                            const tone = days <= 1 ? "bg-red-100 text-red-700" : days <= 7 ? "bg-orange-100 text-orange-700" : "bg-amber-100 text-amber-700";
+                            return <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] ${tone}`}>expira en {days}d</span>;
+                          }
+                          return <span className="ml-2 text-[10px] text-muted-foreground">expira {new Date(k.expires_at).toLocaleDateString()}</span>;
+                        })()}
+                        {k.rotated_to_key_id && (
+                          <Badge variant="outline" className="ml-2 border-blue-500 text-blue-700 text-[10px]">Rotada</Badge>
+                        )}
                       </div>
-                      {!k.revoked_at && (
-                        <Button size="sm" variant="ghost" onClick={() => revokeKey(k.id)}>
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      )}
+                      <div className="flex gap-1">
+                        {!k.revoked_at && !k.rotated_to_key_id && (
+                          <Button size="sm" variant="outline" onClick={() => rotateKey(k.id, k.name)}>
+                            Rotar
+                          </Button>
+                        )}
+                        {!k.revoked_at && (
+                          <Button size="sm" variant="ghost" onClick={() => revokeKey(k.id)}>
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>
