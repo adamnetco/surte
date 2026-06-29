@@ -39,5 +39,6 @@ export async function buildReceiptForChannel({
     // ignore — fallback al builder por defecto
   }
   const builder = buildReceipt(ticket, paperMm, layout);
-  return { builder, templateId, paperMm };
+  return { builder, templateId, paperMm, hasLayout: !!layout };
 }
+
