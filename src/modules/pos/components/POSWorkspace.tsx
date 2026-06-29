@@ -1021,8 +1021,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           )}
         </div>
 
-        {/* Ticket (sticky card en desktop) */}
-        <aside className="lg:w-[380px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col max-h-[55dvh] lg:max-h-none">
+        {/* Ticket (sticky card en desktop; en móvil colapsable con footer fijo) */}
+        <aside
+          className={`bg-card border-t lg:border-t-0 lg:border-l flex flex-col lg:w-[380px] lg:max-h-none ${
+            mobileTicketExpanded ? "max-h-[70dvh]" : "max-h-none"
+          }`}
+        >
           {/* Header con chip de modo + contexto (mesa/cliente) */}
           <div className="p-3 border-b space-y-2">
             <div className="flex items-center gap-2">
@@ -1035,7 +1039,18 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 {POS_MODES[saleMode].short}
                 {saleMode === "mesa" && tableLabel && ` · ${tableLabel}`}
               </span>
-              <span className="ml-auto text-[11px] text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setMobileTicketExpanded((v) => !v)}
+                className="ml-auto lg:hidden inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground px-2 py-1 rounded-md border border-border"
+                aria-expanded={mobileTicketExpanded}
+                aria-label={mobileTicketExpanded ? "Colapsar ticket" : "Ver ítems del ticket"}
+              >
+                <span className="tabular-nums">{ticket.length}</span>
+                <span className="hidden xs:inline">{ticket.length === 1 ? "ítem" : "ítems"}</span>
+                {mobileTicketExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+              </button>
+              <span className="hidden lg:inline ml-auto text-[11px] text-muted-foreground">
                 {ticket.length} {ticket.length === 1 ? "ítem" : "ítems"}
               </span>
             </div>
