@@ -256,6 +256,7 @@ export default function RoutingAlertsCronHealth() {
                 : `Sin notificaciones en los últimos ${DAYS_WINDOW} días.`}
               {" · "}umbral {SLA_HOURS}h.
               {slaCritical && " Se registró un health_event automático."}
+              {slaCritical && autoRecovery && " · Auto-recuperación activa (cooldown 6h)."}
             </p>
           </div>
           <Button size="sm" variant={slaCritical ? "destructive" : "outline"} onClick={runManual} disabled={running}>
