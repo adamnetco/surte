@@ -83,7 +83,7 @@ export function PrintJobsInspectorTab({ organizationId }: Props) {
     queryFn: async () => {
       let q = (supabase as any)
         .from("print_jobs")
-        .select("id,printer_id,pos_order_id,kind,status,attempts,copies,last_error,created_at,processed_at,parent_job_id,template_id,channel,reprint_count,reprint_reason")
+        .select("id,printer_id,pos_order_id,kind,status,attempts,copies,last_error,created_at,processed_at,parent_job_id,template_id,channel,reprint_count,reprint_reason,payload")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
         .limit(150);
