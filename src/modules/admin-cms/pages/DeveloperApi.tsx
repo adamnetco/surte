@@ -88,13 +88,17 @@ export default function DeveloperApiPage() {
     });
     if (error) return toast.error("No se pudo crear", { description: error.message });
     const created = data as any;
-    if (ips.length > 0 && created?.id) {
-      await supabase.from("api_keys").update({ allowed_ips: ips }).eq("id", created.id);
+    const patch: Record<string, unknown> = {};
+    if (ips.length > 0) patch.allowed_ips = ips;
+    if (newKey.mode === "test") patch.mode = "test";
+    if (Object.keys(patch).length > 0 && created?.id) {
+      await supabase.from("api_keys").update(patch).eq("id", created.id);
     }
     setNewKeyResult({ prefix: created.prefix, secret: created.secret });
-    setNewKey({ name: "", scopes: ["pos_orders:read"], allowed_ips: "" });
+    setNewKey({ name: "", scopes: ["pos_orders:read"], allowed_ips: "", mode: "live" });
     load();
   };
+
 
   const revokeKey = async (id: string) => {
     if (!confirm("¿Revocar esta clave? No podrá deshacerse.")) return;
