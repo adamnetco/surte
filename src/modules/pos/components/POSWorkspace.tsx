@@ -88,6 +88,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const { isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [ticket, setTicket] = useState<TicketLine[]>([]);
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [payOpen, setPayOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
