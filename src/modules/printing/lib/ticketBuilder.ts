@@ -50,8 +50,9 @@ const fmtMoney = (n: number) => COP.format(n).replace("COP", "$").trim();
 const fmtDate = (d: string | Date) =>
   new Date(d).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short", hour12: false });
 
-/** Recibo cliente (58 o 80mm). */
-export function buildReceipt(t: TicketData, paperMm: 58 | 80 = 80): EscPosBuilder {
+/** Recibo cliente (58 o 80mm). Si recibe `layout`, usa el motor declarativo. */
+export function buildReceipt(t: TicketData, paperMm: 58 | 80 = 80, layout?: Layout): EscPosBuilder {
+  if (layout) return renderLayout(layout, t, { paperMm });
   const width: Width = charsForWidth(paperMm);
   const b = new EscPosBuilder({ width });
   b.init();
