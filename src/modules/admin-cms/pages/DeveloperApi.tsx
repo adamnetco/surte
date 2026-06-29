@@ -63,7 +63,7 @@ export default function DeveloperApiPage() {
     });
     if (error) return toast.error("No se pudo crear", { description: error.message });
     setNewKeyResult({ prefix: (data as any).prefix, secret: (data as any).secret });
-    setNewKey({ name: "", scopes: ["read"] });
+    setNewKey({ name: "", scopes: ["pos_orders:read"] });
     load();
   };
 
