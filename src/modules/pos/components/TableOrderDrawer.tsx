@@ -381,6 +381,18 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
         item={voidItem}
         onVoided={() => { setVoidItem(null); load(); }}
       />
+      {order && (
+        <POSSplitBillSheet
+          open={splitSheetOpen}
+          onOpenChange={setSplitSheetOpen}
+          tableLabel={tableLabel}
+          sourceOrderId={order.id}
+          items={items}
+          otherOrders={otherOrders.map((o) => ({ id: o.id, sub_label: o.sub_label, total: o.total }))}
+          total={order.total}
+          onDone={load}
+        />
+      )}
     </Sheet>
   );
 }
