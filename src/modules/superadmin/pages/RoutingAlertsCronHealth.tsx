@@ -725,28 +725,46 @@ export default function RoutingAlertsCronHealth() {
                     Aún no hay presets del equipo.
                   </div>
                 )}
-                {teamPresets.map((p) => (
+                {teamPresets.map((p) => {
+                  const ref = `team:${p.id}`;
+                  const isDefault = defaultPresetRef === ref;
+                  return (
                   <DropdownMenuItem
                     key={p.id}
                     onSelect={(e) => { e.preventDefault(); applyPreset(p); }}
                     className="flex items-center justify-between gap-2"
                   >
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm truncate">{p.name}</span>
+                      <span className="text-sm truncate flex items-center gap-1">
+                        {isDefault && <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />}
+                        {p.name}
+                      </span>
                       <span className="text-[10px] text-muted-foreground truncate">
                         {p.kind}·{p.sev}{p.org !== "all" ? `·${orgs[p.org]?.slug ?? p.org.slice(0, 6)}` : ""}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); deleteTeamPreset(p.id, p.name); }}
-                      className="text-muted-foreground hover:text-destructive shrink-0"
-                      aria-label={`Eliminar preset de equipo ${p.name}`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleDefaultPreset(ref, p.name); }}
+                        className={isDefault ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground hover:text-amber-500"}
+                        aria-label={isDefault ? `Quitar preset por defecto ${p.name}` : `Marcar ${p.name} como preset por defecto`}
+                        title={isDefault ? "Quitar como preset por defecto" : "Marcar como preset por defecto"}
+                      >
+                        <Star className={`h-3.5 w-3.5 ${isDefault ? "fill-amber-400" : ""}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); deleteTeamPreset(p.id, p.name); }}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label={`Eliminar preset de equipo ${p.name}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </DropdownMenuItem>
-                ))}
+                  );
+                })}
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs">Mis presets (este navegador)</DropdownMenuLabel>
                 <DropdownMenuSeparator />
