@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 
 const ALL_EVENTS = [
@@ -28,11 +28,15 @@ const ALL_EVENTS = [
 export default function DeveloperApiPage() {
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id;
-  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries">("keys");
+  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries" | "usage">("keys");
   const [keys, setKeys] = useState<any[]>([]);
   const [endpoints, setEndpoints] = useState<any[]>([]);
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [stats, setStats] = useState<any[]>([]);
+  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [statsDays, setStatsDays] = useState(7);
   const [loading, setLoading] = useState(true);
+
   const [newKey, setNewKey] = useState<{ name: string; scopes: string[] }>({ name: "", scopes: ["pos_orders:read"] });
   const [newKeyResult, setNewKeyResult] = useState<{ prefix: string; secret: string } | null>(null);
   const [newWh, setNewWh] = useState<{ url: string; events: string[]; description: string }>({ url: "", events: [], description: "" });
@@ -41,18 +45,24 @@ export default function DeveloperApiPage() {
   const load = async () => {
     if (!orgId) return;
     setLoading(true);
-    const [k, e, d] = await Promise.all([
+    const [k, e, d, s, l] = await Promise.all([
       supabase.from("api_keys").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }),
       supabase.from("webhook_endpoints").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }),
       supabase.from("webhook_deliveries").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(50),
+      supabase.rpc("api_key_usage_stats", { p_org: orgId, p_days: statsDays }),
+      supabase.from("api_request_logs").select("id,key_prefix,method,path,status_code,latency_ms,error_code,created_at")
+        .eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
     ]);
     setKeys(k.data ?? []);
     setEndpoints(e.data ?? []);
     setDeliveries(d.data ?? []);
+    setStats((s.data as any[]) ?? []);
+    setRecentLogs(l.data ?? []);
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId, statsDays]);
+
 
   const createKey = async () => {
     if (!orgId || !newKey.name.trim()) return;
@@ -130,6 +140,8 @@ export default function DeveloperApiPage() {
           { k: "keys", label: "API keys", icon: Key },
           { k: "webhooks", label: "Webhooks", icon: Webhook },
           { k: "deliveries", label: "Envíos recientes", icon: Clock },
+          { k: "usage", label: "Uso & logs", icon: BarChart3 },
+
         ].map((t) => {
           const Icon = t.icon;
           return (
@@ -314,6 +326,102 @@ export default function DeveloperApiPage() {
           </CardContent>
         </Card>
       )}
+
+      {tab === "usage" && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-base">Uso por API key (últimos {statsDays} días)</CardTitle>
+              <div className="flex gap-1">
+                {[1, 7, 30].map((d) => (
+                  <Button key={d} size="sm" variant={statsDays === d ? "default" : "outline"} onClick={() => setStatsDays(d)}>
+                    {d}d
+                  </Button>
+                ))}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-24 w-full" />
+              ) : stats.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aún no hay invocaciones registradas.</p>
+              ) : (
+                <ul className="divide-y rounded-lg border">
+                  {stats.map((s) => {
+                    const total = Number(s.total_requests ?? 0);
+                    const errors = Number(s.errors ?? 0);
+                    const errPct = total > 0 ? Math.round((errors / total) * 1000) / 10 : 0;
+                    return (
+                      <li key={s.api_key_id} className="grid grid-cols-2 gap-2 p-3 text-sm md:grid-cols-6">
+                        <div className="col-span-2">
+                          <div className="font-medium">{s.name}</div>
+                          <code className="text-xs text-muted-foreground">{s.prefix}…</code>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">Requests</div>
+                          <div className="font-mono">{total.toLocaleString("es-CO")}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">Errores</div>
+                          <div className={`font-mono ${errPct > 5 ? "text-red-600" : ""}`}>{errPct}%</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">p50 / p95 ms</div>
+                          <div className="font-mono">
+                            {s.p50_latency_ms ? Math.round(Number(s.p50_latency_ms)) : "—"} / {s.p95_latency_ms ? Math.round(Number(s.p95_latency_ms)) : "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">Último uso</div>
+                          <div className="text-xs">{s.last_used_at ? new Date(s.last_used_at).toLocaleString("es-CO") : "—"}</div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Últimas 100 invocaciones</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-24 w-full" />
+              ) : recentLogs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sin logs aún.</p>
+              ) : (
+                <ul className="divide-y rounded-lg border text-sm">
+                  {recentLogs.map((l) => (
+                    <li key={l.id} className="flex flex-wrap items-center gap-3 p-2">
+                      {l.status_code < 400 ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      ) : l.status_code === 429 ? (
+                        <Clock className="h-4 w-4 text-amber-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      )}
+                      <Badge variant="outline" className="font-mono text-xs">{l.method}</Badge>
+                      <code className="text-xs">{l.path}</code>
+                      <Badge variant={l.status_code >= 500 ? "destructive" : "outline"} className="text-xs">{l.status_code}</Badge>
+                      {l.error_code && <code className="text-xs text-red-600">{l.error_code}</code>}
+                      <span className="text-xs text-muted-foreground">{l.latency_ms ?? "—"} ms</span>
+                      <code className="text-xs text-muted-foreground">{l.key_prefix}</code>
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {new Date(l.created_at).toLocaleString("es-CO")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+
 
       {/* Reveal new key once */}
       <Dialog open={!!newKeyResult} onOpenChange={(o) => !o && setNewKeyResult(null)}>

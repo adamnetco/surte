@@ -34,38 +34,66 @@ async function sha256Hex(s: string): Promise<string> {
 }
 
 function json(body: unknown, status = 200, extra: Record<string, string> = {}) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "content-type": "application/json", ...extra },
-  });
+  const headers: Record<string, string> = { ...corsHeaders, "content-type": "application/json", ...extra };
+  const code = (body as any)?.error?.code;
+  if (code) headers["x-internal-error-code"] = String(code);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 function errBody(code: string, message: string, extra: Record<string, unknown> = {}) {
   return { error: { code, message, ...extra } };
 }
 
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const t0 = performance.now();
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const ua = req.headers.get("user-agent")?.slice(0, 200) ?? null;
+  const logCtx: { orgId?: string; keyId?: string; prefix?: string; path?: string } = {};
+  const sbLog = createClient(SUPABASE_URL, SERVICE_KEY);
+  const writeLog = async (status: number, errorCode?: string) => {
+    if (!logCtx.orgId) return;
+    try {
+      await sbLog.from("api_request_logs").insert({
+        organization_id: logCtx.orgId,
+        api_key_id: logCtx.keyId ?? null,
+        key_prefix: logCtx.prefix ?? null,
+        method: req.method,
+        path: logCtx.path ?? new URL(req.url).pathname,
+        status_code: status,
+        latency_ms: Math.round(performance.now() - t0),
+        ip, user_agent: ua,
+        error_code: errorCode ?? null,
+      });
+    } catch { /* never break the response on log failure */ }
+  };
+  const respond = async (res: Response, errorCode?: string) => {
+    await writeLog(res.status, errorCode);
+    return res;
+  };
   if (req.method !== "GET" && req.method !== "POST") {
-    return json(errBody("METHOD_NOT_ALLOWED", "Only GET and POST supported"), 405);
+    return respond(json(errBody("METHOD_NOT_ALLOWED", "Only GET and POST supported"), 405), "METHOD_NOT_ALLOWED");
   }
+  logCtx.path = new URL(req.url).pathname;
 
   // ---- Auth ----
   const auth = req.headers.get("authorization") ?? "";
   const m = auth.match(/^Bearer\s+(sk_[A-Za-z0-9]+_[A-Za-z0-9_-]+)$/);
-  if (!m) return json(errBody("UNAUTHORIZED", "Missing or malformed Bearer token"), 401);
+  if (!m) return respond(json(errBody("UNAUTHORIZED", "Missing or malformed Bearer token"), 401), "UNAUTHORIZED");
   const token = m[1];
   const parts = token.split("_");
-  if (parts.length < 3) return json(errBody("UNAUTHORIZED", "Malformed key"), 401);
+  if (parts.length < 3) return respond(json(errBody("UNAUTHORIZED", "Malformed key"), 401), "UNAUTHORIZED");
   const prefix = `${parts[0]}_${parts[1]}`;
   const secret = parts.slice(2).join("_");
   const hash = await sha256Hex(secret);
+  logCtx.prefix = prefix;
 
   const sb = createClient(SUPABASE_URL, SERVICE_KEY);
   const { data: consume, error: rpcErr } = await sb.rpc("api_key_consume", {
     p_prefix: prefix, p_hash: hash, p_max_per_min: MAX_PER_MIN,
   });
-  if (rpcErr) return json(errBody("INTERNAL", rpcErr.message), 500);
+  if (rpcErr) return respond(json(errBody("INTERNAL", rpcErr.message), 500), "INTERNAL");
   const c = consume as { ok: boolean; reason?: string; organization_id?: string; scopes?: string[]; limit?: number; remaining?: number; reset_at?: string };
 
   const rlHeaders: Record<string, string> = c.limit
@@ -76,25 +104,36 @@ Deno.serve(async (req) => {
       }
     : {};
 
+  if (c.organization_id) {
+    logCtx.orgId = c.organization_id;
+    // Look up key id (best-effort) for per-key analytics
+    const { data: keyRow } = await sb.from("api_keys").select("id").eq("prefix", prefix).maybeSingle();
+    if (keyRow) logCtx.keyId = keyRow.id;
+  }
+
   if (!c.ok) {
     if (c.reason === "rate_limited") {
-      return json(errBody("RATE_LIMIT_EXCEEDED", `Limit ${MAX_PER_MIN} req/min`, { retry_after_seconds: 60 }), 429, {
+      return respond(json(errBody("RATE_LIMIT_EXCEEDED", `Limit ${MAX_PER_MIN} req/min`, { retry_after_seconds: 60 }), 429, {
         ...rlHeaders, "retry-after": "60",
-      });
+      }), "RATE_LIMIT_EXCEEDED");
     }
-    return json(errBody("UNAUTHORIZED", `Key ${c.reason}`), 401);
+    return respond(json(errBody("UNAUTHORIZED", `Key ${c.reason}`), 401), "UNAUTHORIZED");
   }
 
   const orgId = c.organization_id!;
   const scopes = c.scopes ?? [];
   const need = (scope: string) => scopes.includes("*") || scopes.includes(scope);
 
-  // ---- Routing ----
+  // ---- Routing (wrapped so we can log every response) ----
   const url = new URL(req.url);
   const path = url.pathname.replace(/^.*\/public-api/, "").replace(/^\/v1/, "") || "/";
+  logCtx.path = path;
+
+  const response = await (async (): Promise<Response> => {
 
   // -------- GET --------
   if (req.method === "GET") {
+
     const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "50"), 200);
     const since = url.searchParams.get("since");
 
@@ -286,4 +325,9 @@ Deno.serve(async (req) => {
   }
 
   return json(errBody("NOT_FOUND", `Unknown route ${path}`), 404, rlHeaders);
+  })();
+
+  await writeLog(response.status, response.headers.get("x-internal-error-code") ?? undefined);
+  return response;
 });
+
