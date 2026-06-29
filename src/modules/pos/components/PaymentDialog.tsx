@@ -162,7 +162,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
       <DialogContent className="max-w-md" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between gap-2">
-            <span>Cobrar {COP(total)}</span>
+            <span>Cobrar {COP(grandTotal)}</span>
             <span className={`text-[11px] font-semibold px-2 py-1 rounded-md border ${statusBadge.cls}`}>
               {statusBadge.label}
             </span>
@@ -178,6 +178,46 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
               hasCustomerId={hasCustomerId}
               compact
             />
+          )}
+
+          {tipEnabled && (
+            <div className="rounded-lg border bg-card p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Propina</Label>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {COP(tipAmount)} {tipAmount > 0 && tipCustom === "" && `· ${tipPct}%`}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => applyTipPct(0)}
+                  aria-pressed={tipPct === 0 && tipCustom === ""}
+                  className={`px-2.5 h-7 rounded-md border text-[11px] font-semibold ${tipPct === 0 && tipCustom === "" ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-border"}`}
+                >
+                  Sin propina
+                </button>
+                {tipCfg.presets.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => applyTipPct(p)}
+                    aria-pressed={tipPct === p && tipCustom === ""}
+                    className={`px-2.5 h-7 rounded-md border text-[11px] font-semibold ${tipPct === p && tipCustom === "" ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-border"}`}
+                  >
+                    {p}%
+                  </button>
+                ))}
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Otro $"
+                  value={tipCustom}
+                  onChange={(e) => { setTipCustom(e.target.value); setTipPct(0); }}
+                  className="h-7 w-24 text-[11px]"
+                />
+              </div>
+            </div>
           )}
           {payments.map((p, i) => {
             const amountId = `pay-amount-${i}`;
