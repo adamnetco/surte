@@ -43,6 +43,7 @@ const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersMan
 const KitchenRoutingTab = lazy(() => import("@/modules/printing/components/KitchenRoutingTab").then(m => ({ default: m.KitchenRoutingTab })));
 const PrintFleetTab = lazy(() => import("@/modules/printing/components/PrintFleetTab").then(m => ({ default: m.PrintFleetTab })));
 const PrintJobsInspectorTab = lazy(() => import("@/modules/printing/components/PrintJobsInspectorTab").then(m => ({ default: m.PrintJobsInspectorTab })));
+const PrintRoutingRulesTab = lazy(() => import("@/modules/printing/components/PrintRoutingRulesTab").then(m => ({ default: m.PrintRoutingRulesTab })));
 
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
