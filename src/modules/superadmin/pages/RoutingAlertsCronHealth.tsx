@@ -773,6 +773,7 @@ export default function RoutingAlertsCronHealth() {
                 {teamPresets.map((p) => {
                   const ref = `team:${p.id}`;
                   const isDefault = defaultPresetRef === ref;
+                  const isTeamDefault = !!p.is_team_default;
                   return (
                   <DropdownMenuItem
                     key={p.id}
@@ -781,20 +782,31 @@ export default function RoutingAlertsCronHealth() {
                   >
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm truncate flex items-center gap-1">
+                        {isTeamDefault && <Pin className="h-3 w-3 fill-sky-400 text-sky-500 shrink-0" />}
                         {isDefault && <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />}
                         {p.name}
                       </span>
                       <span className="text-[10px] text-muted-foreground truncate">
                         {p.kind}·{p.sev}{p.org !== "all" ? `·${orgs[p.org]?.slug ?? p.org.slice(0, 6)}` : ""}
+                        {isTeamDefault && <span className="ml-1 text-sky-600">· default equipo</span>}
                       </span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleTeamDefault(p.id, p.name, isTeamDefault); }}
+                        className={isTeamDefault ? "text-sky-600 hover:text-sky-700" : "text-muted-foreground hover:text-sky-600"}
+                        aria-label={isTeamDefault ? `Quitar default del equipo para ${p.name}` : `Marcar ${p.name} como default del equipo`}
+                        title={isTeamDefault ? "Quitar default del equipo" : "Marcar como default del equipo (compartido)"}
+                      >
+                        <Pin className={`h-3.5 w-3.5 ${isTeamDefault ? "fill-sky-400" : ""}`} />
+                      </button>
+                      <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); toggleDefaultPreset(ref, p.name); }}
                         className={isDefault ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground hover:text-amber-500"}
                         aria-label={isDefault ? `Quitar preset por defecto ${p.name}` : `Marcar ${p.name} como preset por defecto`}
-                        title={isDefault ? "Quitar como preset por defecto" : "Marcar como preset por defecto"}
+                        title={isDefault ? "Quitar como preset por defecto (personal)" : "Marcar como preset por defecto (personal)"}
                       >
                         <Star className={`h-3.5 w-3.5 ${isDefault ? "fill-amber-400" : ""}`} />
                       </button>
