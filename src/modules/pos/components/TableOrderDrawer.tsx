@@ -310,12 +310,24 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
                         </DropdownMenu>
                       )}
                       {it.status === "pending" && (
-                        <button onClick={() => changeQty(it, -it.quantity)} className="text-muted-foreground hover:text-destructive">
+                        <button onClick={() => changeQty(it, -it.quantity)} className="text-muted-foreground hover:text-destructive" title="Quitar (no enviado)">
                           <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {it.status !== "cancelled" && (
+                        <button
+                          onClick={() => setVoidItem(it)}
+                          className="text-muted-foreground hover:text-destructive"
+                          title="Anular con vale fiscal"
+                        >
+                          <Ban className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
                   </div>
+                  {it.status === "cancelled" && (
+                    <div className="text-[10px] text-destructive font-mono">ANULADO · vale fiscal emitido</div>
+                  )}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => changeQty(it, -1)} disabled={it.status !== "pending"}>
