@@ -330,13 +330,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceListId]);
 
-  const addProduct = (p: Product) => {
+  const pushLine = (p: Product, unitPriceOverride?: number, extraNotes?: string) => {
     pushRecent(p.id);
-    const unit = priceFor(p.id, Number(p.price));
-    // Slice 2-food: consumir sticky notes (quick mods) en el próximo add
+    const unit = unitPriceOverride ?? priceFor(p.id, Number(p.price));
     const sticky = stickyNotes.length > 0 ? stickyNotes.join(" · ") : "";
+    const notes = [extraNotes, sticky].filter(Boolean).join(" · ");
     setTicket((prev) => {
-      const i = prev.findIndex((l) => l.productId === p.id && !sticky);
+      // Si lleva modificadores o notas, NUNCA agrupar (cada línea es única).
+      const i = !notes
+        ? prev.findIndex((l) => l.productId === p.id && !l.notes)
+        : -1;
       if (i >= 0) {
         const copy = [...prev];
         copy[i] = {
@@ -352,12 +355,22 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         {
           productId: p.id, name: p.name, unitPrice: unit,
           quantity: 1, total: unit, addedAt: Date.now(),
-          ...(sticky ? { notes: sticky } : {}),
+          ...(notes ? { notes } : {}),
         },
       ];
     });
     if (sticky) setStickyNotes([]);
   };
+
+  const addProduct = (p: Product) => {
+    // Slice 3-food: si el producto tiene modifier_groups, abrir picker antes de añadir.
+    if (isFood && productsWithMods.has(p.id)) {
+      setModPickerProduct(p);
+      return;
+    }
+    pushLine(p);
+  };
+
 
   const recentProducts = useMemo(
     () => recentIds.map((id) => products.find((p) => p.id === id)).filter(Boolean) as Product[],
