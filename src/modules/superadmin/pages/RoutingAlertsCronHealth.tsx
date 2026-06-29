@@ -94,7 +94,7 @@ export default function RoutingAlertsCronHealth() {
   // Slice X — Presets personales (localStorage).
   // Slice Y — Presets de equipo compartidos vía DB (routing_alert_timeline_presets).
   type TimelinePreset = { name: string; kind: TimelineFilterKind; sev: TimelineFilterSev; org: string };
-  type TeamPreset = TimelinePreset & { id: string };
+  type TeamPreset = TimelinePreset & { id: string; is_team_default?: boolean };
   const PRESETS_LS_KEY = "routing_alerts_timeline_presets_v1";
   const [presets, setPresets] = useState<TimelinePreset[]>(() => {
     if (typeof window === "undefined") return [];
@@ -108,7 +108,7 @@ export default function RoutingAlertsCronHealth() {
   const loadTeamPresets = useCallback(async () => {
     const { data, error } = await (supabase as any)
       .from("routing_alert_timeline_presets")
-      .select("id, name, filters")
+      .select("id, name, filters, is_team_default")
       .order("name", { ascending: true });
     if (error) return;
     setTeamPresets((data ?? []).map((r: any) => ({
@@ -117,6 +117,7 @@ export default function RoutingAlertsCronHealth() {
       kind: r.filters?.kind ?? "all",
       sev: r.filters?.sev ?? "all",
       org: r.filters?.org ?? "all",
+      is_team_default: !!r.is_team_default,
     })));
   }, []);
   useEffect(() => { loadTeamPresets(); }, [loadTeamPresets]);
