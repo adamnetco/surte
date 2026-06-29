@@ -23,12 +23,13 @@ export default function ReceiptTemplatesPage() {
   const template = localTpl && localTpl.id === serverTpl?.id ? localTpl : serverTpl ?? null;
   const order = useMemo(() => buildMockOrder(channel), [channel]);
 
+  useEffect(() => {
+    document.title = "Plantillas de recibo · SistecPOS";
+  }, []);
+
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
-      <Helmet>
-        <title>Plantillas de recibo · SistecPOS</title>
-        <meta name="description" content="Diseñador visual de recibos POS 80mm con preview en vivo, por canal de venta." />
-      </Helmet>
+
 
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Plantillas de recibo</h1>
