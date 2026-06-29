@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, Users, Package, Truck, BarChart3, FileText,
   Utensils, ChefHat, CalendarClock, Coins, Boxes, Receipt,
-  Plus, MoreHorizontal, BookOpen,
+  Plus, MoreHorizontal, BookOpen, Keyboard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -70,10 +70,12 @@ const TONE_BG: Record<NonNullable<RibbonItem["tone"]>, string> = {
 interface Props {
   /** Acción inline tipo "Cliente Nuevo +" / "Artículo Nuevo +" (Quick Create). */
   onQuickCreate?: () => void;
+  /** Abre el cheat-sheet de atajos del POS. */
+  onShowHotkeys?: () => void;
   className?: string;
 }
 
-export default function POSTopRibbon({ onQuickCreate, className }: Props) {
+export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentOrg, hasModule } = useOrganization();
