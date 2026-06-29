@@ -65,6 +65,7 @@ import type { PosMode } from "@/modules/pos/lib/posModes";
 import type { POSCustomer } from "@/modules/pos/lib/posCustomer";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import POSFloorMapPanel from "./POSFloorMapPanel";
 import { Utensils as UtensilsIcon, LayoutGrid } from "lucide-react";
 
@@ -130,6 +131,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [parkedCount, setParkedCount] = useState(0);
   // Mobile: ticket colapsado por defecto para maximizar catálogo. Totales/Cobrar siempre visibles.
   const [mobileTicketExpanded, setMobileTicketExpanded] = useState(false);
+  const isMobile = useIsMobile();
   // === Cobro de mesa ===
   // Cuando el usuario pulsa "Cobrar" en TableOrderDrawer, el ticket de mesa se
   // carga aquí y guardamos el contexto para liberar la mesa al finalizar la venta.
@@ -406,7 +408,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       ];
     });
     if (sticky) setStickyNotes([]);
+    // Feedback móvil: si el ticket está colapsado, confirmar y ofrecer expandir.
+    if (isMobile && !mobileTicketExpanded) {
+      toast.success(`+ ${p.name}`, {
+        duration: 1400,
+        action: { label: "Ver ticket", onClick: () => setMobileTicketExpanded(true) },
+      });
+    }
   };
+
 
   const addProduct = (p: Product) => {
     // Slice 3-food: si el producto tiene modifier_groups, abrir picker antes de añadir.
@@ -1042,7 +1052,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <button
                 type="button"
                 onClick={() => setMobileTicketExpanded((v) => !v)}
-                className="ml-auto lg:hidden inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground px-2 py-1 rounded-md border border-border"
+                className={`ml-auto lg:hidden inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md border transition ${
+                  !mobileTicketExpanded && ticket.length > 0
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
                 aria-expanded={mobileTicketExpanded}
                 aria-label={mobileTicketExpanded ? "Colapsar ticket" : "Ver ítems del ticket"}
               >
