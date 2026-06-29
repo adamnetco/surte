@@ -317,8 +317,55 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     );
   };
 
-  const removeLine = (productId: string) =>
+  const removeLine = (productId: string) => {
     setTicket((prev) => prev.filter((l) => l.productId !== productId));
+    setSelectedLineId((cur) => (cur === productId ? null : cur));
+  };
+
+  const setLineQty = (productId: string, qty: number) =>
+    setTicket((prev) =>
+      prev.flatMap((l) => {
+        if (l.productId !== productId) return [l];
+        if (qty <= 0) return [];
+        return [{ ...l, quantity: qty, total: qty * l.unitPrice }];
+      })
+    );
+  const setLineNotes = (productId: string, notes: string) =>
+    setTicket((prev) => prev.map((x) => (x.productId === productId ? { ...x, notes } : x)));
+  const setLineDiscount = (productId: string, pct: number) =>
+    setTicket((prev) =>
+      prev.map((x) => (x.productId === productId ? { ...x, discountPct: Math.max(0, Math.min(100, pct)) } : x))
+    );
+
+  // === Acciones del Action Rail (línea seleccionada) ===
+  const selectedLine = useMemo(
+    () => ticket.find((l) => l.productId === selectedLineId) ?? null,
+    [ticket, selectedLineId],
+  );
+  const railMultiply = () => {
+    if (!selectedLine) return;
+    const raw = window.prompt(`Cantidad para "${selectedLine.name}"`, String(selectedLine.quantity));
+    if (raw == null) return;
+    const n = Math.max(0, Math.floor(Number(raw.replace(",", ".")) || 0));
+    setLineQty(selectedLine.productId, n);
+  };
+  const railCut = () => selectedLine && updateQty(selectedLine.productId, -1);
+  const railComment = () => {
+    if (!selectedLine) return;
+    const raw = window.prompt(`Nota para "${selectedLine.name}"`, selectedLine.notes ?? "");
+    if (raw == null) return;
+    setLineNotes(selectedLine.productId, raw.slice(0, 140).trim());
+  };
+  const railDiscount = () => {
+    if (!selectedLine) return;
+    const raw = window.prompt(`Descuento % para "${selectedLine.name}" (0-100)`, String(selectedLine.discountPct ?? 0));
+    if (raw == null) return;
+    setLineDiscount(selectedLine.productId, Number(raw.replace(",", ".")) || 0);
+  };
+  const railDelete = () => {
+    if (!selectedLine) return;
+    if (window.confirm(`¿Eliminar "${selectedLine.name}" del ticket?`)) removeLine(selectedLine.productId);
+  };
 
   // ===== Scanner handler =====
   const handleScan = (code: string) => {
