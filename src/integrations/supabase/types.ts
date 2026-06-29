@@ -11936,6 +11936,36 @@ export type Database = {
         Args: { _action_id: string; _reason?: string }
         Returns: Json
       }
+      cash_book_auxiliary: {
+        Args: {
+          _from: string
+          _org_id: string
+          _register_id?: string
+          _to: string
+        }
+        Returns: {
+          closed_at: string
+          closing_amount: number
+          difference: number
+          expected_amount: number
+          fiscal_seal_hash: string
+          fiscal_seal_seq: number
+          location_name: string
+          notes: string
+          opened_at: string
+          opening_amount: number
+          register_id: string
+          register_name: string
+          session_id: string
+          status: string
+          ticket_count: number
+          total_card: number
+          total_cash: number
+          total_other: number
+          total_sales: number
+          total_transfer: number
+        }[]
+      }
       cash_session_compute_denom_hash: {
         Args: { p_session_id: string }
         Returns: string
