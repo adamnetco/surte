@@ -226,8 +226,9 @@ Deno.serve(async (req) => {
       sale_mode: "api",
       paid_at: new Date().toISOString(),
       notes: body.notes ?? null,
-      external_ref: externalRef,
-      metadata: { source: "public-api", key_prefix: prefix },
+      client_uuid: clientUuid,
+      metadata: { source: "public-api", key_prefix: prefix, external_ref: externalRef },
+
     }).select("id,ticket_number").single();
 
     if (oErr || !order) {
