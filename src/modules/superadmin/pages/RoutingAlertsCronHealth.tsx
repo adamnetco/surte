@@ -91,23 +91,58 @@ export default function RoutingAlertsCronHealth() {
   const [tlOrg, setTlOrg] = useState<string>(() => searchParams.get("org") ?? "all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  // Slice X — Presets de filtros guardados por usuario (localStorage).
+  // Slice X — Presets personales (localStorage).
+  // Slice Y — Presets de equipo compartidos vía DB (routing_alert_timeline_presets).
   type TimelinePreset = { name: string; kind: TimelineFilterKind; sev: TimelineFilterSev; org: string };
+  type TeamPreset = TimelinePreset & { id: string };
   const PRESETS_LS_KEY = "routing_alerts_timeline_presets_v1";
   const [presets, setPresets] = useState<TimelinePreset[]>(() => {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(window.localStorage.getItem(PRESETS_LS_KEY) ?? "[]"); } catch { return []; }
   });
+  const [teamPresets, setTeamPresets] = useState<TeamPreset[]>([]);
   const persistPresets = (next: TimelinePreset[]) => {
     setPresets(next);
     try { window.localStorage.setItem(PRESETS_LS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
   };
-  const savePreset = () => {
-    const name = window.prompt("Nombre del preset:", "")?.trim();
+  const loadTeamPresets = useCallback(async () => {
+    const { data, error } = await (supabase as any)
+      .from("routing_alert_timeline_presets")
+      .select("id, name, filters")
+      .order("name", { ascending: true });
+    if (error) return;
+    setTeamPresets((data ?? []).map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      kind: r.filters?.kind ?? "all",
+      sev: r.filters?.sev ?? "all",
+      org: r.filters?.org ?? "all",
+    })));
+  }, []);
+  useEffect(() => { loadTeamPresets(); }, [loadTeamPresets]);
+
+  const savePreset = async (scope: "personal" | "team") => {
+    const name = window.prompt(
+      scope === "team" ? "Nombre del preset (compartido con el equipo):" : "Nombre del preset personal:",
+      ""
+    )?.trim();
     if (!name) return;
-    const next = presets.filter((p) => p.name !== name).concat({ name, kind: tlKind, sev: tlSev, org: tlOrg });
-    persistPresets(next);
-    toast.success(`Preset "${name}" guardado`);
+    if (scope === "personal") {
+      const next = presets.filter((p) => p.name !== name).concat({ name, kind: tlKind, sev: tlSev, org: tlOrg });
+      persistPresets(next);
+      toast.success(`Preset "${name}" guardado`);
+      return;
+    }
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await (supabase as any)
+      .from("routing_alert_timeline_presets")
+      .upsert(
+        { name, filters: { kind: tlKind, sev: tlSev, org: tlOrg }, created_by: u?.user?.id },
+        { onConflict: "name" }
+      );
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Preset de equipo "${name}" guardado`);
+    loadTeamPresets();
   };
   const applyPreset = (p: TimelinePreset) => {
     setTlKind(p.kind); setTlSev(p.sev); setTlOrg(p.org);
@@ -117,7 +152,15 @@ export default function RoutingAlertsCronHealth() {
     persistPresets(presets.filter((p) => p.name !== name));
     toast.success(`Preset "${name}" eliminado`);
   };
+  const deleteTeamPreset = async (id: string, name: string) => {
+    const { error } = await (supabase as any)
+      .from("routing_alert_timeline_presets").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Preset de equipo "${name}" eliminado`);
+    loadTeamPresets();
+  };
   const hasActiveFilters = !(tlKind === "all" && tlSev === "all" && tlOrg === "all");
+  const totalPresetsCount = presets.length + teamPresets.length;
 
   // Sync filter state → URL query params (shareable deep-link).
   useEffect(() => {
@@ -620,17 +663,49 @@ export default function RoutingAlertsCronHealth() {
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" title="Presets de filtros">
                   <Bookmark className="h-3.5 w-3.5 mr-1" /> Presets
-                  {presets.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{presets.length}</Badge>
+                  {totalPresetsCount > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{totalPresetsCount}</Badge>
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel className="text-xs">Presets guardados</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuLabel className="text-xs flex items-center gap-1">
+                  <Building2 className="h-3 w-3" /> Equipo (compartidos)
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {teamPresets.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    Aún no hay presets del equipo.
+                  </div>
+                )}
+                {teamPresets.map((p) => (
+                  <DropdownMenuItem
+                    key={p.id}
+                    onSelect={(e) => { e.preventDefault(); applyPreset(p); }}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm truncate">{p.name}</span>
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        {p.kind}·{p.sev}{p.org !== "all" ? `·${orgs[p.org]?.slug ?? p.org.slice(0, 6)}` : ""}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); deleteTeamPreset(p.id, p.name); }}
+                      className="text-muted-foreground hover:text-destructive shrink-0"
+                      aria-label={`Eliminar preset de equipo ${p.name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs">Mis presets (este navegador)</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {presets.length === 0 && (
-                  <div className="px-2 py-2 text-xs text-muted-foreground">
-                    Aún no hay presets. Guarda los filtros actuales para reutilizarlos.
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    Aún no hay presets personales.
                   </div>
                 )}
                 {presets.map((p) => (
@@ -657,11 +732,18 @@ export default function RoutingAlertsCronHealth() {
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onSelect={(e) => { e.preventDefault(); savePreset(); }}
+                  onSelect={(e) => { e.preventDefault(); savePreset("personal"); }}
                   disabled={!hasActiveFilters}
                 >
                   <BookmarkPlus className="h-3.5 w-3.5 mr-2" />
-                  Guardar filtros actuales
+                  Guardar como personal
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(e) => { e.preventDefault(); savePreset("team"); }}
+                  disabled={!hasActiveFilters}
+                >
+                  <Building2 className="h-3.5 w-3.5 mr-2" />
+                  Guardar y compartir con equipo
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
