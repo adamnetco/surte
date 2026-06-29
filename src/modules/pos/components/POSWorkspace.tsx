@@ -43,6 +43,7 @@ import POSTopRibbon from "./POSTopRibbon";
 import POSQuickCreate from "./POSQuickCreate";
 import POSRibbonHotkeysSheet from "./POSRibbonHotkeysSheet";
 import POSRightRail from "./POSRightRail";
+import POSActionRail from "./POSActionRail";
 import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
 import POSCommandPalette from "./POSCommandPalette";
