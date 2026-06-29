@@ -152,7 +152,7 @@ export default function POSFloorMapPanel({ organizationId, userId }: Props) {
           tableId={openTableId}
           organizationId={organizationId}
           userId={userId}
-          onClose={() => { setOpenTableId(null); load(); }}
+          onClose={() => { setOpenTableId(null); reload(); }}
         />
       )}
     </div>
