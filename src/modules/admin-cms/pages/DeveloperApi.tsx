@@ -204,8 +204,10 @@ export default function DeveloperApiPage() {
                       <code>{sc}</code>
                     </label>
                   ))}
+                </div>
               </div>
             </div>
+
 
             <div>
               <Label>IP allowlist (opcional)</Label>
