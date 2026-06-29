@@ -29,7 +29,7 @@ const ALL_EVENTS = [
 export default function DeveloperApiPage() {
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id;
-  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries" | "usage">("keys");
+  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries" | "usage" | "alerts">("keys");
   const [keys, setKeys] = useState<any[]>([]);
   const [endpoints, setEndpoints] = useState<any[]>([]);
   const [deliveries, setDeliveries] = useState<any[]>([]);
