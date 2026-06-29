@@ -8,8 +8,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell } from "lucide-react";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock } from "lucide-react";
 import { toast } from "sonner";
+
+const SLA_HOURS = 24;
+const SLA_GRACE_HOURS = 36; // umbral crítico → registra health_event
 
 interface NotificationRow {
   id: string;
@@ -94,6 +97,36 @@ export default function RoutingAlertsCronHealth() {
   const ranToday = days.find((d) => d.day === today);
   const totalOrgs = useMemo(() => new Set(rows.map((r) => r.organization_id)).size, [rows]);
 
+  // SLA: horas desde la última notificación registrada (proxy de "última corrida con efecto").
+  const lastRunAt = useMemo(() => {
+    if (!rows.length) return null;
+    return rows.reduce((max, r) => (r.created_at > max ? r.created_at : max), rows[0].created_at);
+  }, [rows]);
+  const hoursSince = useMemo(() => {
+    if (!lastRunAt) return Infinity;
+    return (Date.now() - new Date(lastRunAt).getTime()) / 3600000;
+  }, [lastRunAt]);
+  const slaBreach = hoursSince > SLA_HOURS;
+  const slaCritical = hoursSince > SLA_GRACE_HOURS;
+
+  // Registro automático del breach crítico en health_events (best-effort, una vez por carga).
+  useEffect(() => {
+    if (loading || !slaCritical) return;
+    (async () => {
+      try {
+        await (supabase as any).from("health_events").insert({
+          kind: "routing_alerts_cron_sla_breach",
+          severity: "warning",
+          payload: {
+            hours_since_last_run: Math.round(hoursSince),
+            last_run_at: lastRunAt,
+            sla_hours: SLA_HOURS,
+          },
+        });
+      } catch { /* silent */ }
+    })();
+  }, [loading, slaCritical, hoursSince, lastRunAt]);
+
   const runManual = async () => {
     if (!window.confirm("Disparar manualmente el cron global de alertas? Iterará todas las organizaciones (respeta mutes y dedupe diario).")) return;
     setRunning(true);
@@ -134,6 +167,36 @@ export default function RoutingAlertsCronHealth() {
           </Button>
         </div>
       </div>
+
+      {slaBreach && !loading && (
+        <div
+          role="alert"
+          className={`rounded-lg border p-4 flex items-start gap-3 ${
+            slaCritical
+              ? "border-destructive/40 bg-destructive/5 text-destructive"
+              : "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400"
+          }`}
+        >
+          <ShieldAlert className="h-5 w-5 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm">
+              {slaCritical ? "SLA crítico" : "SLA en riesgo"} · cron sin actividad hace{" "}
+              {isFinite(hoursSince) ? `${Math.round(hoursSince)}h` : "—"}
+            </p>
+            <p className="text-xs opacity-90 mt-0.5 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {lastRunAt
+                ? `Última notificación: ${new Date(lastRunAt).toLocaleString("es-CO")}`
+                : `Sin notificaciones en los últimos ${DAYS_WINDOW} días.`}
+              {" · "}umbral {SLA_HOURS}h.
+              {slaCritical && " Se registró un health_event automático."}
+            </p>
+          </div>
+          <Button size="sm" variant={slaCritical ? "destructive" : "outline"} onClick={runManual} disabled={running}>
+            <Play className={`h-4 w-4 mr-1 ${running ? "animate-pulse" : ""}`} /> Disparar ahora
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
