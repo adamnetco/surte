@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { Receipt, ShieldCheck, BookOpen, FileDown, Banknote, Inbox, ArrowRight } from "lucide-react";
+import { Receipt, ShieldCheck, BookOpen, FileDown, Banknote, Inbox, ArrowRight, Lock } from "lucide-react";
 
 interface Feature {
   to: string;
