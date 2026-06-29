@@ -18,7 +18,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  AlertTriangle, Printer as PrinterIcon, RefreshCcw, ShieldAlert, BellOff, Bell,
+  AlertTriangle, Printer as PrinterIcon, RefreshCcw, ShieldAlert, BellOff, Bell, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 
