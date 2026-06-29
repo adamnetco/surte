@@ -13,16 +13,6 @@ import { useTablesFloor } from "../hooks/useTablesFloor";
  * picking rápido, no diseño (ese vive en /mesas).
  */
 
-interface Area { id: string; name: string; color: string | null; }
-interface Table {
-  id: string; label: string; capacity: number;
-  status: string; dining_area_id: string | null;
-}
-interface OpenOrder {
-  id: string; dining_table_id: string | null;
-  total: number; opened_at: string; sub_label: string | null;
-}
-
 const STATUS_STYLES: Record<string, { bg: string; ring: string; label: string }> = {
   available: { bg: "bg-emerald-500/10 hover:bg-emerald-500/20",  ring: "ring-emerald-500/30",  label: "Libre" },
   occupied:  { bg: "bg-amber-500/15 hover:bg-amber-500/25",      ring: "ring-amber-500/50",    label: "Ocupada" },
@@ -42,55 +32,15 @@ interface Props {
 }
 
 export default function POSFloorMapPanel({ organizationId, userId }: Props) {
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [tables, setTables] = useState<Table[]>([]);
-  const [openOrders, setOpenOrders] = useState<OpenOrder[]>([]);
+  const { areas, tables, primaryOrderByTable: ordersByTable, loading, reload } =
+    useTablesFloor(organizationId);
   const [activeArea, setActiveArea] = useState<string | "all">("all");
-  const [loading, setLoading] = useState(true);
   const [openTableId, setOpenTableId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!organizationId) return;
-    setLoading(true);
-    const [{ data: a }, { data: t }, { data: o }] = await Promise.all([
-      supabase.from("dining_areas")
-        .select("id,name,color").eq("organization_id", organizationId)
-        .eq("is_active", true).order("sort_order"),
-      supabase.from("dining_tables")
-        .select("id,label,capacity,status,dining_area_id")
-        .eq("organization_id", organizationId).eq("is_active", true).order("label"),
-      supabase.from("table_orders")
-        .select("id,dining_table_id,total,opened_at,sub_label")
-        .eq("organization_id", organizationId).in("status", ["open", "sent", "billed"]),
-    ]);
-    setAreas((a as Area[]) ?? []);
-    setTables((t as Table[]) ?? []);
-    setOpenOrders((o as OpenOrder[]) ?? []);
-    setLoading(false);
-  }, [organizationId]);
-
-  useEffect(() => { load(); }, [load]);
-
-  // Realtime: refrescar al haber cambios en table_orders o status de mesas.
-  useEffect(() => {
-    if (!organizationId) return;
-    const ch = supabase
-      .channel(uniqueTopic("pos-floor"))
-      .on("postgres_changes", { event: "*", schema: "public", table: "table_orders", filter: `organization_id=eq.${organizationId}` }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${organizationId}` }, load)
-      .subscribe();
-    return () => { safeRemoveChannel(ch); };
-  }, [organizationId, load]);
 
   const filtered = useMemo(
     () => activeArea === "all" ? tables : tables.filter(t => t.dining_area_id === activeArea),
     [tables, activeArea],
   );
-  const ordersByTable = useMemo(() => {
-    const m = new Map<string, OpenOrder>();
-    openOrders.forEach(o => { if (o.dining_table_id) m.set(o.dining_table_id, o); });
-    return m;
-  }, [openOrders]);
 
   if (loading) {
     return (
