@@ -54,6 +54,8 @@ import POSCustomerPicker from "./POSCustomerPicker";
 import POSContextualBar from "./POSContextualBar";
 import TableGridSheet from "./TableGridSheet";
 import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
+import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
+import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithModifiers";
 import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/modules/pos/hooks/usePOSModes";
