@@ -230,6 +230,44 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     };
   }, [organizationId]);
 
+  // Listener: cargar items de una mesa al pulsar "Cobrar" en TableOrderDrawer.
+  // Reemplaza el ticket actual (avisando si tiene contenido) y cambia a vista catálogo.
+  useEffect(() => {
+    const onBill = (ev: Event) => {
+      const detail = (ev as CustomEvent).detail as {
+        tableOrderId: string; tableId: string; tableLabel: string; releaseTableOnPaid: boolean;
+        items: Array<{ productId: string | null; name: string; quantity: number; unitPrice: number; total: number; notes?: string }>;
+      };
+      if (!detail?.items?.length) return;
+      if (ticket.length > 0 && !confirm("Hay un ticket activo. ¿Reemplazarlo con la cuenta de la mesa?")) return;
+      const now = Date.now();
+      const lines: TicketLine[] = detail.items.map((it, i) => ({
+        productId: it.productId ?? `table:${detail.tableOrderId}:${i}`,
+        name: it.name,
+        unitPrice: it.unitPrice,
+        quantity: it.quantity,
+        total: it.total,
+        addedAt: now + i,
+        ...(it.notes ? { notes: it.notes } : {}),
+      }));
+      setTicket(lines);
+      setTableLabel(detail.tableLabel);
+      setActiveTableOrder({
+        tableOrderId: detail.tableOrderId,
+        tableId: detail.tableId,
+        tableLabel: detail.tableLabel,
+        releaseTableOnPaid: detail.releaseTableOnPaid,
+      });
+      setCatalogView("catalog");
+      toast.info(`Mesa ${detail.tableLabel} lista para cobrar`);
+    };
+    window.addEventListener("pos:bill-table-order", onBill as EventListener);
+    return () => window.removeEventListener("pos:bill-table-order", onBill as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticket.length]);
+
+
+
   const ticketCacheKey = `pos_ticket:${session.id}`;
 
   // Hydrate catalog + persisted ticket
