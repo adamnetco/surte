@@ -67,3 +67,4 @@
 
 - [Ola 6 First Login Tour](mem://features/ola-6-first-login-tour) — FirstLoginTour casero (sin driver.js) con spotlight + tooltip portal, anclajes data-tour, dispara una vez por user+org en /admin
 - [SitricPOS + SoftwarePOS + Alegra patterns](mem://references/sitricpos-softwarepos-patterns) — 15 capturas: multi-ticket tabs, customer display XL (7-seg), payment tiles XL configurables, action rail coloreado, hotkeys F-key visibles, floor map por defecto en food, strip categorías con iconos. Mapping por business_type para refactor /pos/vender.
+- [Ola 7.5 RightRail Audit](mem://features/ola-7-5-rail-audit) — POSRightRail post-TopRibbon: removidos Suspender (duplica F8) y Atajos (duplica `?`); quedan NC, Ventas día, Cajón, Sync+badge, Recientes y Cierre Z.

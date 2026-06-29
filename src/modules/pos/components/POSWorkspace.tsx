@@ -329,8 +329,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const addProduct = (p: Product) => {
     pushRecent(p.id);
     const unit = priceFor(p.id, Number(p.price));
+    // Slice 2-food: consumir sticky notes (quick mods) en el próximo add
+    const sticky = stickyNotes.length > 0 ? stickyNotes.join(" · ") : "";
     setTicket((prev) => {
-      const i = prev.findIndex((l) => l.productId === p.id);
+      const i = prev.findIndex((l) => l.productId === p.id && !sticky);
       if (i >= 0) {
         const copy = [...prev];
         copy[i] = {
@@ -346,9 +348,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         {
           productId: p.id, name: p.name, unitPrice: unit,
           quantity: 1, total: unit, addedAt: Date.now(),
+          ...(sticky ? { notes: sticky } : {}),
         },
       ];
     });
+    if (sticky) setStickyNotes([]);
   };
 
   const recentProducts = useMemo(
