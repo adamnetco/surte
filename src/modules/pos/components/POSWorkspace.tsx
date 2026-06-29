@@ -54,6 +54,8 @@ import POSCustomerPicker from "./POSCustomerPicker";
 import POSContextualBar from "./POSContextualBar";
 import TableGridSheet from "./TableGridSheet";
 import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
+import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
+import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithModifiers";
 import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/modules/pos/hooks/usePOSModes";
@@ -116,6 +118,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [tableSheetOpen, setTableSheetOpen] = useState(false);
   const [quickModsOpen, setQuickModsOpen] = useState(false);
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
+  const [modPickerProduct, setModPickerProduct] = useState<Product | null>(null);
+  const productsWithMods = useProductsWithModifiers(organizationId);
   const [driver, setDriver] = useState<DriverInfo | null>(null); // para modo domicilio
   const [driverSheetOpen, setDriverSheetOpen] = useState(false);
   const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
@@ -326,13 +330,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceListId]);
 
-  const addProduct = (p: Product) => {
+  const pushLine = (p: Product, unitPriceOverride?: number, extraNotes?: string) => {
     pushRecent(p.id);
-    const unit = priceFor(p.id, Number(p.price));
-    // Slice 2-food: consumir sticky notes (quick mods) en el próximo add
+    const unit = unitPriceOverride ?? priceFor(p.id, Number(p.price));
     const sticky = stickyNotes.length > 0 ? stickyNotes.join(" · ") : "";
+    const notes = [extraNotes, sticky].filter(Boolean).join(" · ");
     setTicket((prev) => {
-      const i = prev.findIndex((l) => l.productId === p.id && !sticky);
+      // Si lleva modificadores o notas, NUNCA agrupar (cada línea es única).
+      const i = !notes
+        ? prev.findIndex((l) => l.productId === p.id && !l.notes)
+        : -1;
       if (i >= 0) {
         const copy = [...prev];
         copy[i] = {
@@ -348,12 +355,22 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         {
           productId: p.id, name: p.name, unitPrice: unit,
           quantity: 1, total: unit, addedAt: Date.now(),
-          ...(sticky ? { notes: sticky } : {}),
+          ...(notes ? { notes } : {}),
         },
       ];
     });
     if (sticky) setStickyNotes([]);
   };
+
+  const addProduct = (p: Product) => {
+    // Slice 3-food: si el producto tiene modifier_groups, abrir picker antes de añadir.
+    if (isFood && productsWithMods.has(p.id)) {
+      setModPickerProduct(p);
+      return;
+    }
+    pushLine(p);
+  };
+
 
   const recentProducts = useMemo(
     () => recentIds.map((id) => products.find((p) => p.id === id)).filter(Boolean) as Product[],
@@ -1267,6 +1284,19 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         tableLabel={tableLabel || null}
         onApply={(notes) => setStickyNotes(notes)}
       />
+
+      <POSModifiersPickerSheet
+        open={!!modPickerProduct}
+        onOpenChange={(o) => { if (!o) setModPickerProduct(null); }}
+        product={modPickerProduct}
+        onConfirm={(adj, summary) => {
+          if (!modPickerProduct) return;
+          const base = priceFor(modPickerProduct.id, Number(modPickerProduct.price));
+          pushLine(modPickerProduct, base + adj, summary);
+          setModPickerProduct(null);
+        }}
+      />
+
 
       <DriverPickerSheet
         open={driverSheetOpen}
