@@ -280,6 +280,14 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
           </Table>
         )}
       </Card>
+
+      <RoutingSimulator
+        printers={printers}
+        stations={stations}
+        categories={categories}
+        products={products}
+        rules={rules}
+      />
     </div>
   );
 }
