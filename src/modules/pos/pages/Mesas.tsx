@@ -64,7 +64,7 @@ export default function Mesas() {
     );
   }
 
-  const openTable = async (t: Table) => {
+  const openTable = async (t: FloorTable) => {
     const existing = ordersByTable.get(t.id);
     if (existing && existing.length) { setOpenTableId(t.id); return; }
     // create open order
