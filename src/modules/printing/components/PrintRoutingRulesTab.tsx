@@ -296,6 +296,14 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
         products={products}
         rules={rules}
       />
+
+      <RuleJobsDialog
+        ruleId={drillRule?.id ?? null}
+        ruleLabel={drillRule?.label ?? ""}
+        organizationId={organizationId}
+        printers={printers}
+        onClose={() => setDrillRule(null)}
+      />
     </div>
   );
 }
