@@ -10,6 +10,7 @@ import {
 import { Search, Plus, Minus, Trash2, Send, FileText, SplitSquareHorizontal, ArrowRightLeft, Ban } from "lucide-react";
 import { toast } from "sonner";
 import VoidItemDialog from "./VoidItemDialog";
+import POSSplitBillSheet from "./POSSplitBillSheet";
 
 interface Props {
   tableId: string;
@@ -41,6 +42,7 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
   const [search, setSearch] = useState("");
   const [tableLabel, setTableLabel] = useState("");
   const [splitting, setSplitting] = useState(false);
+  const [splitSheetOpen, setSplitSheetOpen] = useState(false);
   const [voidItem, setVoidItem] = useState<Item | null>(null);
 
   const order = useMemo(
@@ -238,11 +240,22 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
                 size="sm"
                 variant="outline"
                 className="h-7 text-xs"
-                onClick={splitOrder}
-                disabled={splitting || !order}
+                onClick={() => setSplitSheetOpen(true)}
+                disabled={!order}
+                title="Dividir por items o partes iguales"
               >
                 <SplitSquareHorizontal className="w-3.5 h-3.5 mr-1" />
                 Dividir
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs"
+                onClick={splitOrder}
+                disabled={splitting || !order}
+                title="Nueva sub-cuenta vacía"
+              >
+                +
               </Button>
             </div>
           )}
@@ -368,6 +381,18 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
         item={voidItem}
         onVoided={() => { setVoidItem(null); load(); }}
       />
+      {order && (
+        <POSSplitBillSheet
+          open={splitSheetOpen}
+          onOpenChange={setSplitSheetOpen}
+          tableLabel={tableLabel}
+          sourceOrderId={order.id}
+          items={items}
+          otherOrders={otherOrders.map((o) => ({ id: o.id, sub_label: o.sub_label, total: o.total }))}
+          total={order.total}
+          onDone={load}
+        />
+      )}
     </Sheet>
   );
 }
