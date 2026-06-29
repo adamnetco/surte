@@ -184,6 +184,15 @@ export default function RoutingAlertsCronHealth() {
       const results = (data as any)?.results ?? [];
       const sent = results.filter((r: any) => !r.skipped).length;
       const skipped = results.filter((r: any) => r.skipped).length;
+      const orgsBreakdown = results
+        .filter((r: any) => !r.skipped && r.organization_id)
+        .map((r: any) => ({
+          id: r.organization_id,
+          rules: r.rules_alerted ?? 0,
+          printers: r.printers_alerted ?? 0,
+          emails: r.emails ?? 0,
+          whatsapps: r.whatsapps ?? 0,
+        }));
       if (opts.auto) {
         toast.success(`Auto-recuperación · ${sent} orgs notificadas · ${skipped} sin cambios`);
         try {
@@ -194,6 +203,7 @@ export default function RoutingAlertsCronHealth() {
               triggered_by: "sla_critical",
               hours_since_last_run: Math.round(hoursSince),
               sent, skipped,
+              orgs: orgsBreakdown,
               duration_ms: Date.now() - startedAt,
             },
           });
