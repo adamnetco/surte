@@ -383,14 +383,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const payingRef = useRef(false);
   const handlePaid = async (
     payments: { method: string; amount: number; reference?: string }[],
-    meta: { docType: string | null } = { docType: null },
+    meta: { docType: string | null; tip?: number } = { docType: null, tip: 0 },
   ) => {
     if (payingRef.current) return;
     if (!ticket.length) { toast.error("El ticket está vacío"); return; }
     payingRef.current = true;
 
-    const snapshotTotal = totals.total;
+    const tipAmount = Math.max(0, Math.round(meta.tip ?? 0));
     const snapshotSubtotal = totals.subtotal;
+    const snapshotTotal = totals.total + tipAmount;
     const snapshotItems = ticket;
     const amountPaid = payments.reduce((s, p) => s + p.amount, 0);
     const change = Math.max(0, amountPaid - snapshotTotal);
@@ -401,6 +402,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       cash_session_id: session.id,
       cashier_id: userId,
       subtotal: snapshotSubtotal,
+      tip: tipAmount,
       total: snapshotTotal,
       amount_paid: amountPaid,
       change_due: change,
