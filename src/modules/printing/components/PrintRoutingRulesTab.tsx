@@ -16,9 +16,10 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Printer, Zap, Info } from "lucide-react";
+import { Plus, Trash2, Printer, Zap, Info, History } from "lucide-react";
 import { toast } from "sonner";
 import { RoutingSimulator } from "./RoutingSimulator";
+import { RuleJobsDialog } from "./RuleJobsDialog";
 
 interface PrinterRow { id: string; name: string; role: string; }
 interface StationRow { id: string; name: string; default_printer_id?: string | null; }
@@ -55,6 +56,7 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
     copies: 1,
     priority: 100,
   });
+  const [drillRule, setDrillRule] = useState<{ id: string; label: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -240,7 +242,7 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
                 <TableHead>Imprime</TableHead>
                 <TableHead className="w-[80px]">Copias</TableHead>
                 <TableHead className="w-[100px]">Activa</TableHead>
-                <TableHead className="w-[60px]"></TableHead>
+                <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -269,9 +271,15 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
                     <TableCell>{r.copies}</TableCell>
                     <TableCell><Switch checked={r.is_active} onCheckedChange={(v) => toggleActive(r, v)} /></TableCell>
                     <TableCell>
-                      <Button size="icon" variant="ghost" onClick={() => removeRule(r.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" title="Ver jobs recientes"
+                          onClick={() => setDrillRule({ id: r.id, label: `${t.kind}: ${t.label}` })}>
+                          <History className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => removeRule(r.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -287,6 +295,14 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
         categories={categories}
         products={products}
         rules={rules}
+      />
+
+      <RuleJobsDialog
+        ruleId={drillRule?.id ?? null}
+        ruleLabel={drillRule?.label ?? ""}
+        organizationId={organizationId}
+        printers={printers}
+        onClose={() => setDrillRule(null)}
       />
     </div>
   );
