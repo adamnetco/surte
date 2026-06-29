@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter, ChevronDown, ChevronRight, ExternalLink, Building2, Link2, Bookmark, BookmarkPlus, Trash2, Star } from "lucide-react";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter, ChevronDown, ChevronRight, ExternalLink, Building2, Link2, Bookmark, BookmarkPlus, Trash2, Star, Pin } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,7 +94,7 @@ export default function RoutingAlertsCronHealth() {
   // Slice X — Presets personales (localStorage).
   // Slice Y — Presets de equipo compartidos vía DB (routing_alert_timeline_presets).
   type TimelinePreset = { name: string; kind: TimelineFilterKind; sev: TimelineFilterSev; org: string };
-  type TeamPreset = TimelinePreset & { id: string };
+  type TeamPreset = TimelinePreset & { id: string; is_team_default?: boolean };
   const PRESETS_LS_KEY = "routing_alerts_timeline_presets_v1";
   const [presets, setPresets] = useState<TimelinePreset[]>(() => {
     if (typeof window === "undefined") return [];
@@ -108,7 +108,7 @@ export default function RoutingAlertsCronHealth() {
   const loadTeamPresets = useCallback(async () => {
     const { data, error } = await (supabase as any)
       .from("routing_alert_timeline_presets")
-      .select("id, name, filters")
+      .select("id, name, filters, is_team_default")
       .order("name", { ascending: true });
     if (error) return;
     setTeamPresets((data ?? []).map((r: any) => ({
@@ -117,6 +117,7 @@ export default function RoutingAlertsCronHealth() {
       kind: r.filters?.kind ?? "all",
       sev: r.filters?.sev ?? "all",
       org: r.filters?.org ?? "all",
+      is_team_default: !!r.is_team_default,
     })));
   }, []);
   useEffect(() => { loadTeamPresets(); }, [loadTeamPresets]);
@@ -187,13 +188,56 @@ export default function RoutingAlertsCronHealth() {
       toast.success(`"${name}" marcado como preset por defecto`);
     }
   };
-  // Auto-apply default preset on mount when URL has no filter params.
+
+  // Slice AA — Default de equipo (compartido vía DB).
+  // Cuando un preset de equipo está marcado is_team_default=true, todo el equipo
+  // lo ve auto-aplicado al abrir el panel (sin query params en la URL y sin que
+  // la persona haya elegido un default personal con prioridad). Solo puede haber
+  // uno (enforced por índice único parcial en DB).
+  const teamDefaultPreset = teamPresets.find((p) => p.is_team_default) ?? null;
+  const toggleTeamDefault = async (id: string, name: string, isCurrentlyDefault: boolean) => {
+    // Quitar default actual (si lo hay) para no chocar con el índice único parcial.
+    const { error: clearErr } = await (supabase as any)
+      .from("routing_alert_timeline_presets")
+      .update({ is_team_default: false })
+      .eq("is_team_default", true);
+    if (clearErr) { toast.error(clearErr.message); return; }
+    if (!isCurrentlyDefault) {
+      const { error } = await (supabase as any)
+        .from("routing_alert_timeline_presets")
+        .update({ is_team_default: true })
+        .eq("id", id);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`"${name}" marcado como default del equipo`);
+    } else {
+      toast.success(`"${name}" ya no es default del equipo`);
+    }
+    loadTeamPresets();
+  };
+
+  // Auto-apply preset on mount when URL has no filter params.
+  // Prioridad: team-default (DB) > personal-default (localStorage).
   const [defaultApplied, setDefaultApplied] = useState(false);
   useEffect(() => {
     if (defaultApplied) return;
-    if (!defaultPresetRef) return;
     const hasUrlFilters = searchParams.get("kind") || searchParams.get("sev") || searchParams.get("org");
     if (hasUrlFilters) { setDefaultApplied(true); return; }
+
+    // 1) Team default tiene prioridad para todo el equipo.
+    if (teamDefaultPreset) {
+      setTlKind(teamDefaultPreset.kind); setTlSev(teamDefaultPreset.sev); setTlOrg(teamDefaultPreset.org);
+      setDefaultApplied(true);
+      toast.message(`Default del equipo aplicado: "${teamDefaultPreset.name}"`);
+      return;
+    }
+
+    // 2) Default personal (localStorage).
+    if (!defaultPresetRef) {
+      // Si aún no terminó la carga de team presets, esperar un ciclo antes de rendirse.
+      if (teamPresets.length === 0) return;
+      setDefaultApplied(true);
+      return;
+    }
     const [scope, key] = defaultPresetRef.split(":");
     let target: TimelinePreset | undefined;
     if (scope === "team") target = teamPresets.find((p) => p.id === key);
@@ -203,12 +247,11 @@ export default function RoutingAlertsCronHealth() {
       setDefaultApplied(true);
       toast.message(`Preset por defecto aplicado: "${target.name}"`);
     } else if (scope === "team" && teamPresets.length === 0) {
-      // wait for team presets to load
       return;
     } else {
       setDefaultApplied(true);
     }
-  }, [defaultPresetRef, teamPresets, presets, searchParams, defaultApplied]);
+  }, [defaultPresetRef, teamPresets, teamDefaultPreset, presets, searchParams, defaultApplied]);
 
 
   // Sync filter state → URL query params (shareable deep-link).
@@ -730,6 +773,7 @@ export default function RoutingAlertsCronHealth() {
                 {teamPresets.map((p) => {
                   const ref = `team:${p.id}`;
                   const isDefault = defaultPresetRef === ref;
+                  const isTeamDefault = !!p.is_team_default;
                   return (
                   <DropdownMenuItem
                     key={p.id}
@@ -738,20 +782,31 @@ export default function RoutingAlertsCronHealth() {
                   >
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm truncate flex items-center gap-1">
+                        {isTeamDefault && <Pin className="h-3 w-3 fill-sky-400 text-sky-500 shrink-0" />}
                         {isDefault && <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />}
                         {p.name}
                       </span>
                       <span className="text-[10px] text-muted-foreground truncate">
                         {p.kind}·{p.sev}{p.org !== "all" ? `·${orgs[p.org]?.slug ?? p.org.slice(0, 6)}` : ""}
+                        {isTeamDefault && <span className="ml-1 text-sky-600">· default equipo</span>}
                       </span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleTeamDefault(p.id, p.name, isTeamDefault); }}
+                        className={isTeamDefault ? "text-sky-600 hover:text-sky-700" : "text-muted-foreground hover:text-sky-600"}
+                        aria-label={isTeamDefault ? `Quitar default del equipo para ${p.name}` : `Marcar ${p.name} como default del equipo`}
+                        title={isTeamDefault ? "Quitar default del equipo" : "Marcar como default del equipo (compartido)"}
+                      >
+                        <Pin className={`h-3.5 w-3.5 ${isTeamDefault ? "fill-sky-400" : ""}`} />
+                      </button>
+                      <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); toggleDefaultPreset(ref, p.name); }}
                         className={isDefault ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground hover:text-amber-500"}
                         aria-label={isDefault ? `Quitar preset por defecto ${p.name}` : `Marcar ${p.name} como preset por defecto`}
-                        title={isDefault ? "Quitar como preset por defecto" : "Marcar como preset por defecto"}
+                        title={isDefault ? "Quitar como preset por defecto (personal)" : "Marcar como preset por defecto (personal)"}
                       >
                         <Star className={`h-3.5 w-3.5 ${isDefault ? "fill-amber-400" : ""}`} />
                       </button>

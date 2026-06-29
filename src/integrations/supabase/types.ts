@@ -9332,6 +9332,7 @@ export type Database = {
           created_by: string | null
           filters: Json
           id: string
+          is_team_default: boolean
           name: string
           updated_at: string
         }
@@ -9340,6 +9341,7 @@ export type Database = {
           created_by?: string | null
           filters?: Json
           id?: string
+          is_team_default?: boolean
           name: string
           updated_at?: string
         }
@@ -9348,6 +9350,7 @@ export type Database = {
           created_by?: string | null
           filters?: Json
           id?: string
+          is_team_default?: boolean
           name?: string
           updated_at?: string
         }
