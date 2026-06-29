@@ -34,15 +34,16 @@ async function sha256Hex(s: string): Promise<string> {
 }
 
 function json(body: unknown, status = 200, extra: Record<string, string> = {}) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "content-type": "application/json", ...extra },
-  });
+  const headers: Record<string, string> = { ...corsHeaders, "content-type": "application/json", ...extra };
+  const code = (body as any)?.error?.code;
+  if (code) headers["x-internal-error-code"] = String(code);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 function errBody(code: string, message: string, extra: Record<string, unknown> = {}) {
   return { error: { code, message, ...extra } };
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
