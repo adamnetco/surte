@@ -302,6 +302,7 @@ const AdminDashboard = () => {
         {activeTab === "printers" && <PrintersTab organizationId={currentOrg?.id ?? ""} />}
         {activeTab === "kitchen-routing" && <KitchenRoutingTab organizationId={currentOrg?.id ?? ""} />}
         {activeTab === "print-fleet" && <PrintFleetTab organizationId={currentOrg?.id ?? ""} />}
+        {activeTab === "print-jobs" && <PrintJobsInspectorTab organizationId={currentOrg?.id ?? ""} />}
         {/* data / sync / fiscal removidos — viven en /superadmin */}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
