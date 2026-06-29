@@ -50,6 +50,11 @@ export default function RoutingAlertsCronHealth() {
   const [orgs, setOrgs] = useState<Record<string, OrgRow>>({});
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [autoRecovery, setAutoRecovery] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(AUTO_RECOVERY_LS_KEY) === "1";
+  });
+  const [autoAttempted, setAutoAttempted] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
