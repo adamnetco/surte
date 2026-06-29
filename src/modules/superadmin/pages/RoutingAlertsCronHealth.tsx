@@ -468,6 +468,31 @@ export default function RoutingAlertsCronHealth() {
               <ToggleGroupItem value="warning" className="h-7 px-2 text-xs">warn</ToggleGroupItem>
               <ToggleGroupItem value="error" className="h-7 px-2 text-xs">error</ToggleGroupItem>
             </ToggleGroup>
+            {(() => {
+              const orgIdSet = new Set<string>();
+              for (const ev of events) {
+                const p = ev.payload ?? {};
+                if (Array.isArray(p.orgs)) for (const o of p.orgs) { if (o?.id) orgIdSet.add(o.id); }
+                if (p.organization_id) orgIdSet.add(p.organization_id);
+              }
+              const options = Array.from(orgIdSet).map((id) => ({
+                id, label: orgs[id]?.name ?? `${id.slice(0, 8)}…`,
+              })).sort((a, b) => a.label.localeCompare(b.label));
+              return (
+                <Select value={tlOrg} onValueChange={setTlOrg}>
+                  <SelectTrigger className="h-7 px-2 text-xs w-[180px]">
+                    <Building2 className="h-3 w-3 mr-1" />
+                    <SelectValue placeholder="Organización" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las orgs</SelectItem>
+                    {options.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            })()}
             <Button
               size="sm"
               variant="outline"
@@ -476,6 +501,13 @@ export default function RoutingAlertsCronHealth() {
                   if (tlKind === "sla" && ev.kind !== "routing_alerts_cron_sla_breach") return false;
                   if (tlKind === "auto" && ev.kind !== "routing_alerts_auto_recovery") return false;
                   if (tlSev !== "all" && ev.severity !== tlSev) return false;
+                  if (tlOrg !== "all") {
+                    const p = ev.payload ?? {};
+                    const ids = new Set<string>();
+                    if (Array.isArray(p.orgs)) for (const o of p.orgs) { if (o?.id) ids.add(o.id); }
+                    if (p.organization_id) ids.add(p.organization_id);
+                    if (!ids.has(tlOrg)) return false;
+                  }
                   return true;
                 });
                 if (!filtered.length) { toast.info("Sin eventos para exportar"); return; }
@@ -497,7 +529,8 @@ export default function RoutingAlertsCronHealth() {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = `cron-timeline-${new Date().toISOString().slice(0, 10)}.csv`;
+                const suffix = tlOrg !== "all" ? `-${(orgs[tlOrg]?.slug ?? tlOrg.slice(0, 8))}` : "";
+                a.download = `cron-timeline${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
                 a.click();
                 URL.revokeObjectURL(url);
                 toast.success(`${filtered.length} eventos exportados`);
