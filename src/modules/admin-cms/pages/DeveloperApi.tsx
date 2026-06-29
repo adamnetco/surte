@@ -247,6 +247,13 @@ export default function DeveloperApiPage() {
                         <span className="ml-2 text-xs text-muted-foreground">
                           {k.scopes?.join(", ")} · {k.last_used_at ? `usada ${new Date(k.last_used_at).toLocaleDateString()}` : "sin uso"}
                         </span>
+                        {Array.isArray(k.allowed_ips) && k.allowed_ips.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {k.allowed_ips.map((ip: string) => (
+                              <Badge key={ip} variant="outline" className="text-[10px]">IP {ip}</Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {!k.revoked_at && (
                         <Button size="sm" variant="ghost" onClick={() => revokeKey(k.id)}>
