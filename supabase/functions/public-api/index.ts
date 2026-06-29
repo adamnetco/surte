@@ -119,9 +119,21 @@ Deno.serve(async (req) => {
 
   if (c.organization_id) {
     logCtx.orgId = c.organization_id;
-    // Look up key id (best-effort) for per-key analytics
-    const { data: keyRow } = await sb.from("api_keys").select("id").eq("prefix", prefix).maybeSingle();
-    if (keyRow) logCtx.keyId = keyRow.id;
+    // Look up key id + allowed_ips for IP allowlist enforcement
+    const { data: keyRow } = await sb.from("api_keys")
+      .select("id, allowed_ips").eq("prefix", prefix).maybeSingle();
+    if (keyRow) {
+      logCtx.keyId = keyRow.id;
+      if (keyRow.allowed_ips && Array.isArray(keyRow.allowed_ips) && keyRow.allowed_ips.length > 0) {
+        const { data: allowed } = await sb.rpc("api_key_ip_allowed", { p_allowed: keyRow.allowed_ips, p_ip: ip });
+        if (allowed !== true) {
+          return respond(json(
+            errBody("IP_NOT_ALLOWED", "This API key is restricted to a specific IP allowlist", { ip }),
+            403, rlHeaders,
+          ), "IP_NOT_ALLOWED");
+        }
+      }
+    }
   }
 
   if (!c.ok) {
