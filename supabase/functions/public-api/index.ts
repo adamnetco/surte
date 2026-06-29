@@ -325,4 +325,9 @@ Deno.serve(async (req) => {
   }
 
   return json(errBody("NOT_FOUND", `Unknown route ${path}`), 404, rlHeaders);
+  })();
+
+  await writeLog(response.status, response.headers.get("x-internal-error-code") ?? undefined);
+  return response;
 });
+
