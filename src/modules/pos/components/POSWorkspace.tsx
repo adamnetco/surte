@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import {
   Search, FileText, FileSignature, Pause, Keyboard, Printer,
   ScanLine, CreditCard, Percent, StickyNote, ArrowLeftRight, Utensils,
-  Bike, ShoppingBag,
+  Bike, ShoppingBag, ChevronUp, ChevronDown,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import {
