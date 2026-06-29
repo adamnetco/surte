@@ -100,6 +100,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [cmdOpen, setCmdOpen] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [ribbonHelpOpen, setRibbonHelpOpen] = useState(false);
+  const { currentOrg, hasModule } = useOrganization();
+  const isFood = (currentOrg?.business_type ?? "") === "food" && hasModule("dining_tables");
+  const [catalogView, setCatalogView] = useState<"catalog" | "tables">(isFood ? "tables" : "catalog");
+  useEffect(() => { setCatalogView(isFood ? "tables" : "catalog"); }, [isFood]);
   const [cashierName, setCashierName] = useState("Cajero");
   // Ticket-level extras (presentación; se persisten con setMeta junto al ticket)
   const [customer, setCustomer] = useState<POSCustomer | null>(null);
