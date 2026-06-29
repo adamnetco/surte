@@ -8,8 +8,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell } from "lucide-react";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock } from "lucide-react";
 import { toast } from "sonner";
+
+const SLA_HOURS = 24;
+const SLA_GRACE_HOURS = 36; // umbral crítico → registra health_event
 
 interface NotificationRow {
   id: string;
