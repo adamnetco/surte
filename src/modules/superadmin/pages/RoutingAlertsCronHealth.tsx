@@ -168,6 +168,36 @@ export default function RoutingAlertsCronHealth() {
         </div>
       </div>
 
+      {slaBreach && !loading && (
+        <div
+          role="alert"
+          className={`rounded-lg border p-4 flex items-start gap-3 ${
+            slaCritical
+              ? "border-destructive/40 bg-destructive/5 text-destructive"
+              : "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400"
+          }`}
+        >
+          <ShieldAlert className="h-5 w-5 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm">
+              {slaCritical ? "SLA crítico" : "SLA en riesgo"} · cron sin actividad hace{" "}
+              {isFinite(hoursSince) ? `${Math.round(hoursSince)}h` : "—"}
+            </p>
+            <p className="text-xs opacity-90 mt-0.5 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {lastRunAt
+                ? `Última notificación: ${new Date(lastRunAt).toLocaleString("es-CO")}`
+                : `Sin notificaciones en los últimos ${DAYS_WINDOW} días.`}
+              {" · "}umbral {SLA_HOURS}h.
+              {slaCritical && " Se registró un health_event automático."}
+            </p>
+          </div>
+          <Button size="sm" variant={slaCritical ? "destructive" : "outline"} onClick={runManual} disabled={running}>
+            <Play className={`h-4 w-4 mr-1 ${running ? "animate-pulse" : ""}`} /> Disparar ahora
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
           <CardContent className="pt-4">
