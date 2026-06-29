@@ -362,6 +362,12 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
           </div>
         </div>
       </SheetContent>
+      <VoidItemDialog
+        open={!!voidItem}
+        onOpenChange={(v) => !v && setVoidItem(null)}
+        item={voidItem}
+        onVoided={() => { setVoidItem(null); load(); }}
+      />
     </Sheet>
   );
 }
