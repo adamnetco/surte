@@ -460,7 +460,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         items: snapshotItems.map((l) => ({
           name: l.name, quantity: l.quantity, unit_price: l.unitPrice, total: l.total,
         })),
-        subtotal: snapshotSubtotal, discount: totals.globalDisc, tax: totals.tax, tip: 0,
+        subtotal: snapshotSubtotal, discount: totals.globalDisc, tax: totals.tax, tip: tipAmount,
         total: snapshotTotal, amount_paid: amountPaid, change_due: change,
         payments: payments.map((p) => ({ method: p.method, amount: p.amount })),
       });
