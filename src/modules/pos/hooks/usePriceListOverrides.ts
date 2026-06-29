@@ -48,5 +48,5 @@ export function usePriceListOverrides(organizationId: string, priceListId: strin
     [map],
   );
 
-  return { priceFor, hasOverrides: map.size > 0, loading };
+  return { priceFor, hasOverrides: map.size > 0, overrideCount: map.size, loading };
 }

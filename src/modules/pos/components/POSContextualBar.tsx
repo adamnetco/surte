@@ -23,6 +23,8 @@ interface Props {
   onPriceListChange: (id: string | null, name: string) => void;
   parkedCount?: number;
   onOpenParked?: () => void;
+  /** Slice 7: nº de productos con precio override activo */
+  overrideCount?: number;
 }
 
 /**
@@ -37,6 +39,7 @@ export default function POSContextualBar({
   onPriceListChange,
   parkedCount = 0,
   onOpenParked,
+  overrideCount = 0,
 }: Props) {
   const [lists, setLists] = useState<PriceList[]>([]);
 
@@ -58,6 +61,7 @@ export default function POSContextualBar({
 
   const currentName =
     lists.find((l) => l.id === priceListId)?.name ?? "Pública";
+  const overridesActive = !!priceListId && overrideCount > 0;
 
   return (
     <div
@@ -68,15 +72,26 @@ export default function POSContextualBar({
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(
-            "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border bg-card",
-            "hover:bg-accent/10 hover:border-accent/40 transition",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border transition",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            overridesActive
+              ? "bg-amber-50 border-amber-300 hover:bg-amber-100"
+              : "bg-card hover:bg-accent/10 hover:border-accent/40",
           )}
-          title="Lista de precios aplicada al ticket"
+          title={
+            overridesActive
+              ? `Lista "${currentName}" con ${overrideCount} precio(s) personalizado(s)`
+              : "Lista de precios aplicada al ticket"
+          }
         >
-          <Tag className="w-3.5 h-3.5 text-accent" />
+          <Tag className={cn("w-3.5 h-3.5", overridesActive ? "text-amber-700" : "text-accent")} />
           <span className="font-semibold">Precios:</span>
           <span className="text-foreground/90 truncate max-w-[140px]">{currentName}</span>
+          {overridesActive && (
+            <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+              {overrideCount}
+            </span>
+          )}
           <ChevronDown className="w-3 h-3 opacity-60" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
