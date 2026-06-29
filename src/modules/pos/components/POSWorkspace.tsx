@@ -643,6 +643,32 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         pushAction({ type: "sale_complete", label: `Venta completada · ${COP(snapshotTotal)}`, meta: { orderId: clientUuid } });
       });
 
+      // 2.b) Si la venta provino de una mesa, marcar table_order como pagada
+      //      y, si era la última sub-cuenta, liberar la mesa.
+      if (activeTableOrder) {
+        const ato = activeTableOrder;
+        (async () => {
+          try {
+            await (supabase as any)
+              .from("table_orders")
+              .update({ status: "paid", paid_at: new Date().toISOString() })
+              .eq("organization_id", organizationId).eq("id", ato.tableOrderId);
+            if (ato.releaseTableOnPaid) {
+              await (supabase as any)
+                .from("dining_tables")
+                .update({ status: "available" })
+                .eq("organization_id", organizationId).eq("id", ato.tableId);
+            }
+          } catch (err) {
+            console.warn("[table-order paid]", err);
+          }
+        })();
+        setActiveTableOrder(null);
+        setTableLabel("");
+      }
+
+
+
       // 3) Snapshot para vista previa local del ticket (siempre disponible
       //    como fallback si no hay impresora configurada o falla el driver).
       setLastTicketData({
