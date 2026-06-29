@@ -221,7 +221,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
           )}
           {payments.map((p, i) => {
             const amountId = `pay-amount-${i}`;
-            const remaining = Math.max(0, total - (sum - (Number(p.amount) || 0)));
+            const remaining = Math.max(0, grandTotal - (sum - (Number(p.amount) || 0)));
             const quick = p.method === "efectivo" ? suggestedQuickAmounts(remaining) : [];
 
             return (
