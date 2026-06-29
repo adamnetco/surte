@@ -64,7 +64,7 @@ export function useTablesFloor(organizationId: string | undefined, opts: Options
         .order("sort_order"),
       supabase
         .from("dining_tables")
-        .select(tableCols)
+        .select(tableCols as "*")
         .eq("organization_id", organizationId)
         .eq("is_active", true)
         .order("label"),
@@ -75,7 +75,7 @@ export function useTablesFloor(organizationId: string | undefined, opts: Options
         .in("status", ["open", "sent", "billed"]),
     ]);
     setAreas((a as Area[]) ?? []);
-    setTables((t as FloorTable[]) ?? []);
+    setTables((t as unknown as FloorTable[]) ?? []);
     setOpenOrders((o as OpenOrder[]) ?? []);
     setLoading(false);
   }, [organizationId, tableCols]);
