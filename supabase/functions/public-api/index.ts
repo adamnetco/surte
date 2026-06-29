@@ -124,14 +124,16 @@ Deno.serve(async (req) => {
   const scopes = c.scopes ?? [];
   const need = (scope: string) => scopes.includes("*") || scopes.includes(scope);
 
-  // ---- Routing ----
+  // ---- Routing (wrapped so we can log every response) ----
   const url = new URL(req.url);
   const path = url.pathname.replace(/^.*\/public-api/, "").replace(/^\/v1/, "") || "/";
   logCtx.path = path;
 
+  const response = await (async (): Promise<Response> => {
 
   // -------- GET --------
   if (req.method === "GET") {
+
     const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "50"), 200);
     const since = url.searchParams.get("since");
 
