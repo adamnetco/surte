@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock, BarChart3, Bell, RefreshCw, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { ApiAlertsPanel } from "@/modules/admin-cms/components/ApiAlertsPanel";
+import { ApiEndpointMetricsPanel } from "@/modules/admin-cms/components/ApiEndpointMetricsPanel";
+import { Activity } from "lucide-react";
 
 const ALL_EVENTS = [
   "order.created",
