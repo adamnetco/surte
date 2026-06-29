@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 
 const ALL_EVENTS = [
