@@ -150,12 +150,14 @@ export default function RoutingAlertsCronHealth() {
   };
   const deletePreset = (name: string) => {
     persistPresets(presets.filter((p) => p.name !== name));
+    if (defaultPresetRef === `personal:${name}`) persistDefaultPresetRef(null);
     toast.success(`Preset "${name}" eliminado`);
   };
   const deleteTeamPreset = async (id: string, name: string) => {
     const { error } = await (supabase as any)
       .from("routing_alert_timeline_presets").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
+    if (defaultPresetRef === `team:${id}`) persistDefaultPresetRef(null);
     toast.success(`Preset de equipo "${name}" eliminado`);
     loadTeamPresets();
   };
