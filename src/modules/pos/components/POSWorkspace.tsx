@@ -408,12 +408,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       ];
     });
     if (sticky) setStickyNotes([]);
-    // Feedback móvil: si el ticket está colapsado, confirmar y ofrecer expandir.
-    if (isMobile && !mobileTicketExpanded) {
-      toast.success(`+ ${p.name}`, {
-        duration: 1400,
-        action: { label: "Ver ticket", onClick: () => setMobileTicketExpanded(true) },
-      });
+    // Feedback móvil: vibración háptica + toast con acción a expandir ticket.
+    if (isMobile) {
+      try { navigator.vibrate?.(8); } catch { /* noop */ }
+      if (!mobileTicketExpanded) {
+        toast.success(`+ ${p.name}`, {
+          duration: 1400,
+          action: { label: "Ver ticket", onClick: () => setMobileTicketExpanded(true) },
+        });
+      }
     }
   };
 
