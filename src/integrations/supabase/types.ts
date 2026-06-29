@@ -7439,6 +7439,86 @@ export type Database = {
           },
         ]
       }
+      pos_void_log: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          organization_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          reason_code: string
+          reason_text: string
+          table_order_id: string | null
+          table_order_item_id: string | null
+          void_ticket_number: number
+          voided_at: string
+          voided_by: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          organization_id: string
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          reason_code: string
+          reason_text: string
+          table_order_id?: string | null
+          table_order_item_id?: string | null
+          void_ticket_number: number
+          voided_at?: string
+          voided_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          organization_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          reason_code?: string
+          reason_text?: string
+          table_order_id?: string | null
+          table_order_item_id?: string | null
+          void_ticket_number?: number
+          voided_at?: string
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_void_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_void_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "pos_void_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "pos_void_log_table_order_id_fkey"
+            columns: ["table_order_id"]
+            isOneToOne: false
+            referencedRelation: "table_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_list_items: {
         Row: {
           created_at: string
@@ -12653,6 +12733,10 @@ export type Database = {
         Returns: Json
       }
       pos_dispatch_table_order: { Args: { p_order_id: string }; Returns: Json }
+      pos_void_table_item: {
+        Args: { _item_id: string; _reason_code: string; _reason_text: string }
+        Returns: Json
+      }
       post_journal_entry: {
         Args: {
           p_entry_date: string
