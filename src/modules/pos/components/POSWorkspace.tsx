@@ -1242,7 +1242,23 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         open={tableSheetOpen}
         onOpenChange={setTableSheetOpen}
         current={tableLabel || null}
-        onPick={(t) => setTableLabel(t.label)}
+        onPick={(t) => {
+          const prev = tableLabel;
+          setTableLabel(t.label);
+          // Slice 2-food: al ABRIR mesa por primera vez en food, ofrecer
+          // modificadores rápidos que se pegan al próximo ítem añadido.
+          if (isFood && t.label && t.label !== prev) {
+            setQuickModsOpen(true);
+          }
+        }}
+      />
+
+      <POSQuickModifiersSheet
+        open={quickModsOpen}
+        onOpenChange={setQuickModsOpen}
+        organizationId={organizationId}
+        tableLabel={tableLabel || null}
+        onApply={(notes) => setStickyNotes(notes)}
       />
 
       <DriverPickerSheet
