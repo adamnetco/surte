@@ -70,7 +70,7 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
       const next = stillThere ? activeOrderId! : list[0].id;
       setActiveOrderId(next);
       const [{ data: its }, { data: t }, { data: st }] = await Promise.all([
-        supabase.from("table_order_items").select("id,product_name,quantity,unit_price,total,status,notes")
+        supabase.from("table_order_items").select("id,product_id,product_name,quantity,unit_price,total,status,notes")
           .eq("organization_id", organizationId)
           .eq("table_order_id", next).order("created_at"),
         supabase.from("dining_tables").select("label").eq("organization_id", organizationId).eq("id", tableId).single(),
