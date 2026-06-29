@@ -17,6 +17,8 @@ import { Printer, RefreshCw, RotateCcw, FileText, Route, Sparkles } from "lucide
 
 interface Props { organizationId: string }
 
+interface RoutingRuleRef { rule_id: string | null; source: string; priority: number | null }
+interface RoutingInfo { source?: string; rules?: RoutingRuleRef[] }
 interface PrintJobRow {
   id: string;
   printer_id: string | null;
@@ -33,7 +35,16 @@ interface PrintJobRow {
   channel: string | null;
   reprint_count: number | null;
   reprint_reason: string | null;
+  payload: { routing?: RoutingInfo; station_name?: string } | null;
 }
+
+const SOURCE_LABEL: Record<string, { label: string; cls: string }> = {
+  product: { label: "Producto", cls: "bg-violet-500/15 text-violet-700 border-violet-300" },
+  category: { label: "Categoría", cls: "bg-indigo-500/15 text-indigo-700 border-indigo-300" },
+  station: { label: "Estación", cls: "bg-cyan-500/15 text-cyan-700 border-cyan-300" },
+  station_default: { label: "Estación (default)", cls: "bg-slate-500/15 text-slate-700 border-slate-300" },
+  default_receipt: { label: "Recibo default", cls: "bg-slate-500/15 text-slate-700 border-slate-300" },
+};
 
 const STATUS_COLORS: Record<string, string> = {
   queued: "bg-amber-500/15 text-amber-700 border-amber-300",
