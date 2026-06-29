@@ -33,6 +33,7 @@ import {
 } from "@/modules/offline/lib/catalog";
 import { setMeta, getMeta } from "@/modules/offline/lib/db";
 import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
+import { usePriceListOverrides } from "@/modules/pos/hooks/usePriceListOverrides";
 import { useRecentProducts } from "@/modules/pos/hooks/useRecentProducts";
 import { useRecentActions, type RecentAction } from "@/modules/pos/hooks/useRecentActions";
 import { useSyncService } from "@/modules/integrations/sync/useSyncService";
@@ -307,8 +308,24 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     }
   };
 
+  const { priceFor, hasOverrides } = usePriceListOverrides(organizationId, priceListId);
+
+  // Al cambiar de lista, re-priceamos las líneas existentes para reflejar el contexto
+  // (sin tocar cantidades ni notas — sólo unitPrice y total).
+  useEffect(() => {
+    setTicket((prev) =>
+      prev.map((l) => {
+        const np = priceFor(l.productId, l.unitPrice);
+        if (np === l.unitPrice) return l;
+        return { ...l, unitPrice: np, total: l.quantity * np };
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceListId]);
+
   const addProduct = (p: Product) => {
     pushRecent(p.id);
+    const unit = priceFor(p.id, Number(p.price));
     setTicket((prev) => {
       const i = prev.findIndex((l) => l.productId === p.id);
       if (i >= 0) {
@@ -324,8 +341,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       return [
         ...prev,
         {
-          productId: p.id, name: p.name, unitPrice: Number(p.price),
-          quantity: 1, total: Number(p.price), addedAt: Date.now(),
+          productId: p.id, name: p.name, unitPrice: unit,
+          quantity: 1, total: unit, addedAt: Date.now(),
         },
       ];
     });
