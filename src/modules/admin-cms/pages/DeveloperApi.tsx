@@ -140,6 +140,8 @@ export default function DeveloperApiPage() {
           { k: "keys", label: "API keys", icon: Key },
           { k: "webhooks", label: "Webhooks", icon: Webhook },
           { k: "deliveries", label: "Envíos recientes", icon: Clock },
+          { k: "usage", label: "Uso & logs", icon: BarChart3 },
+
         ].map((t) => {
           const Icon = t.icon;
           return (
