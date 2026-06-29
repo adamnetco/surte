@@ -74,24 +74,25 @@ Deno.serve(async (req) => {
   if (req.method !== "GET" && req.method !== "POST") {
     return respond(json(errBody("METHOD_NOT_ALLOWED", "Only GET and POST supported"), 405), "METHOD_NOT_ALLOWED");
   }
-
+  logCtx.path = new URL(req.url).pathname;
 
   // ---- Auth ----
   const auth = req.headers.get("authorization") ?? "";
   const m = auth.match(/^Bearer\s+(sk_[A-Za-z0-9]+_[A-Za-z0-9_-]+)$/);
-  if (!m) return json(errBody("UNAUTHORIZED", "Missing or malformed Bearer token"), 401);
+  if (!m) return respond(json(errBody("UNAUTHORIZED", "Missing or malformed Bearer token"), 401), "UNAUTHORIZED");
   const token = m[1];
   const parts = token.split("_");
-  if (parts.length < 3) return json(errBody("UNAUTHORIZED", "Malformed key"), 401);
+  if (parts.length < 3) return respond(json(errBody("UNAUTHORIZED", "Malformed key"), 401), "UNAUTHORIZED");
   const prefix = `${parts[0]}_${parts[1]}`;
   const secret = parts.slice(2).join("_");
   const hash = await sha256Hex(secret);
+  logCtx.prefix = prefix;
 
   const sb = createClient(SUPABASE_URL, SERVICE_KEY);
   const { data: consume, error: rpcErr } = await sb.rpc("api_key_consume", {
     p_prefix: prefix, p_hash: hash, p_max_per_min: MAX_PER_MIN,
   });
-  if (rpcErr) return json(errBody("INTERNAL", rpcErr.message), 500);
+  if (rpcErr) return respond(json(errBody("INTERNAL", rpcErr.message), 500), "INTERNAL");
   const c = consume as { ok: boolean; reason?: string; organization_id?: string; scopes?: string[]; limit?: number; remaining?: number; reset_at?: string };
 
   const rlHeaders: Record<string, string> = c.limit
@@ -102,13 +103,20 @@ Deno.serve(async (req) => {
       }
     : {};
 
+  if (c.organization_id) {
+    logCtx.orgId = c.organization_id;
+    // Look up key id (best-effort) for per-key analytics
+    const { data: keyRow } = await sb.from("api_keys").select("id").eq("prefix", prefix).maybeSingle();
+    if (keyRow) logCtx.keyId = keyRow.id;
+  }
+
   if (!c.ok) {
     if (c.reason === "rate_limited") {
-      return json(errBody("RATE_LIMIT_EXCEEDED", `Limit ${MAX_PER_MIN} req/min`, { retry_after_seconds: 60 }), 429, {
+      return respond(json(errBody("RATE_LIMIT_EXCEEDED", `Limit ${MAX_PER_MIN} req/min`, { retry_after_seconds: 60 }), 429, {
         ...rlHeaders, "retry-after": "60",
-      });
+      }), "RATE_LIMIT_EXCEEDED");
     }
-    return json(errBody("UNAUTHORIZED", `Key ${c.reason}`), 401);
+    return respond(json(errBody("UNAUTHORIZED", `Key ${c.reason}`), 401), "UNAUTHORIZED");
   }
 
   const orgId = c.organization_id!;
@@ -118,6 +126,8 @@ Deno.serve(async (req) => {
   // ---- Routing ----
   const url = new URL(req.url);
   const path = url.pathname.replace(/^.*\/public-api/, "").replace(/^\/v1/, "") || "/";
+  logCtx.path = path;
+
 
   // -------- GET --------
   if (req.method === "GET") {
