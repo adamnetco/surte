@@ -711,6 +711,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           setPriceListName(name);
         }}
         parkedCount={parkedCount}
+        overrideCount={overrideCount}
       />
 
       {/* Tabs de categorías (60%) + Cliente (40%) */}
