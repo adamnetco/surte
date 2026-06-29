@@ -546,6 +546,13 @@ export default function RoutingAlertsCronHealth() {
               if (tlKind === "sla" && ev.kind !== "routing_alerts_cron_sla_breach") return false;
               if (tlKind === "auto" && ev.kind !== "routing_alerts_auto_recovery") return false;
               if (tlSev !== "all" && ev.severity !== tlSev) return false;
+              if (tlOrg !== "all") {
+                const p = ev.payload ?? {};
+                const ids = new Set<string>();
+                if (Array.isArray(p.orgs)) for (const o of p.orgs) { if (o?.id) ids.add(o.id); }
+                if (p.organization_id) ids.add(p.organization_id);
+                if (!ids.has(tlOrg)) return false;
+              }
               return true;
             });
             if (events.length === 0) return <p className="text-sm text-muted-foreground">Sin eventos registrados — el cron está sano.</p>;
