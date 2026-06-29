@@ -40,6 +40,8 @@ import { enqueue } from "@/modules/offline/lib/outbox";
 import { useEinvoiceAutoEmit } from "@/modules/pos/hooks/useEinvoiceAutoEmit";
 import POSTopBar from "./POSTopBar";
 import POSTopRibbon from "./POSTopRibbon";
+import POSQuickCreate from "./POSQuickCreate";
+import POSRibbonHotkeysSheet from "./POSRibbonHotkeysSheet";
 import POSRightRail from "./POSRightRail";
 import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
@@ -93,6 +95,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [ribbonHelpOpen, setRibbonHelpOpen] = useState(false);
   const [cashierName, setCashierName] = useState("Cajero");
   // Ticket-level extras (presentación; se persisten con setMeta junto al ticket)
   const [customer, setCustomer] = useState<POSCustomer | null>(null);
@@ -554,7 +558,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </>
         }
       />
-      <POSTopRibbon />
+      <POSTopRibbon
+        onQuickCreate={() => setQuickCreateOpen(true)}
+        onShowHotkeys={() => setRibbonHelpOpen(true)}
+      />
 
 
 
@@ -1029,6 +1036,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       />
 
       <POSShortcutsOverlay open={helpOpen} onOpenChange={setHelpOpen} />
+
+      <POSQuickCreate
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        onCreated={(kind, row) => {
+          if (kind === "customer") {
+            setCustomer({ id: row.id, name: row.name });
+          }
+        }}
+      />
+      <POSRibbonHotkeysSheet open={ribbonHelpOpen} onOpenChange={setRibbonHelpOpen} />
 
       <TableGridSheet
         open={tableSheetOpen}
