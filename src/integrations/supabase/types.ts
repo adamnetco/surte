@@ -3442,6 +3442,79 @@ export type Database = {
           },
         ]
       }
+      fiscal_adjustment_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          amount: number | null
+          created_at: string
+          current_hash: string
+          id: string
+          organization_id: string
+          payload: Json
+          prev_hash: string | null
+          quantity: number | null
+          reason: string | null
+          sequence: number
+          source_id: string
+          source_table: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          amount?: number | null
+          created_at?: string
+          current_hash: string
+          id?: string
+          organization_id: string
+          payload?: Json
+          prev_hash?: string | null
+          quantity?: number | null
+          reason?: string | null
+          sequence: number
+          source_id: string
+          source_table: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          amount?: number | null
+          created_at?: string
+          current_hash?: string
+          id?: string
+          organization_id?: string
+          payload?: Json
+          prev_hash?: string | null
+          quantity?: number | null
+          reason?: string | null
+          sequence?: number
+          source_id?: string
+          source_table?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_adjustment_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_adjustment_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fiscal_adjustment_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       fiscal_periods: {
         Row: {
           closed_at: string | null
@@ -12192,6 +12265,14 @@ export type Database = {
       find_account_id: {
         Args: { _code: string; _org: string }
         Returns: string
+      }
+      fiscal_adj_log_verify: {
+        Args: { _org: string }
+        Returns: {
+          first_break: number
+          ok: number
+          total: number
+        }[]
       }
       fx_apply_pricing_rule: {
         Args: {
