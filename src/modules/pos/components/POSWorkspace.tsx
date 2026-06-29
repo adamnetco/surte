@@ -191,6 +191,31 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     })();
   }, [userId]);
 
+  // Conteo de tickets suspendidos (refrescado en cambio de session/org)
+  useEffect(() => {
+    let cancel = false;
+    const load = async () => {
+      const { count } = await (supabase as any)
+        .from("parked_tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId);
+      if (!cancel) setParkedCount(count ?? 0);
+    };
+    load();
+    const ch = (supabase as any)
+      .channel(`parked-${organizationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "parked_tickets", filter: `organization_id=eq.${organizationId}` },
+        load
+      )
+      .subscribe();
+    return () => {
+      cancel = true;
+      (supabase as any).removeChannel(ch);
+    };
+  }, [organizationId]);
+
   const ticketCacheKey = `pos_ticket:${session.id}`;
 
   // Hydrate catalog + persisted ticket
