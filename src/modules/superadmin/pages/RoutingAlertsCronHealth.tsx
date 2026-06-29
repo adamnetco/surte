@@ -97,6 +97,36 @@ export default function RoutingAlertsCronHealth() {
   const ranToday = days.find((d) => d.day === today);
   const totalOrgs = useMemo(() => new Set(rows.map((r) => r.organization_id)).size, [rows]);
 
+  // SLA: horas desde la última notificación registrada (proxy de "última corrida con efecto").
+  const lastRunAt = useMemo(() => {
+    if (!rows.length) return null;
+    return rows.reduce((max, r) => (r.created_at > max ? r.created_at : max), rows[0].created_at);
+  }, [rows]);
+  const hoursSince = useMemo(() => {
+    if (!lastRunAt) return Infinity;
+    return (Date.now() - new Date(lastRunAt).getTime()) / 3600000;
+  }, [lastRunAt]);
+  const slaBreach = hoursSince > SLA_HOURS;
+  const slaCritical = hoursSince > SLA_GRACE_HOURS;
+
+  // Registro automático del breach crítico en health_events (best-effort, una vez por carga).
+  useEffect(() => {
+    if (loading || !slaCritical) return;
+    (async () => {
+      try {
+        await (supabase as any).from("health_events").insert({
+          kind: "routing_alerts_cron_sla_breach",
+          severity: "warning",
+          payload: {
+            hours_since_last_run: Math.round(hoursSince),
+            last_run_at: lastRunAt,
+            sla_hours: SLA_HOURS,
+          },
+        });
+      } catch { /* silent */ }
+    })();
+  }, [loading, slaCritical, hoursSince, lastRunAt]);
+
   const runManual = async () => {
     if (!window.confirm("Disparar manualmente el cron global de alertas? Iterará todas las organizaciones (respeta mutes y dedupe diario).")) return;
     setRunning(true);
