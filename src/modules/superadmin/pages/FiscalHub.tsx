@@ -47,6 +47,13 @@ export default function FiscalHub() {
       desc: "Conteo por denominaciones con foto firmada y hash de integridad.",
     },
     {
+      to: `${base}/audit`,
+      icon: Lock,
+      title: "Audit trail de ajustes",
+      desc: "Log inmutable hash-encadenado de todos los ajustes de inventario y caja.",
+      badge: "Nuevo",
+    },
+    {
       to: `/superadmin/t/${slug}/sync`,
       icon: Inbox,
       title: "Buzón electrónico",
