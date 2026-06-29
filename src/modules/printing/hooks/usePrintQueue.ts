@@ -167,7 +167,27 @@ async function renderJobFromOrder(job: PrintJobRow, printer: any): Promise<Uint8
     const stationName = job.payload?.station_name ?? "COCINA";
     return buildKitchen(td, stationName, mm).build();
   }
-  return buildReceipt(td, mm).build();
+  // Resolver canal: explícito en print_jobs.channel, o derivado de sale_mode/kind.
+  const channel: ReceiptChannel =
+    (job.channel as ReceiptChannel) ??
+    inferChannel(order.sale_mode, job.kind);
+  const { builder } = await buildReceiptForChannel({
+    orgId: order.organization_id,
+    channel,
+    ticket: td,
+    paperMm: mm,
+  });
+  return builder.build();
+}
+
+function inferChannel(saleMode: string | null | undefined, kind: string): ReceiptChannel {
+  if (kind === "void") return "void";
+  const m = (saleMode ?? "").toLowerCase();
+  if (m.includes("domic") || m.includes("delivery")) return "delivery";
+  if (m.includes("plataforma") || m.includes("platform")) return "platform";
+  if (m.includes("mesa") || m.includes("table")) return "table";
+  if (m.includes("llevar") || m.includes("takeaway") || m.includes("take")) return "takeaway";
+  return "counter";
 }
 
 async function dispatchToPrinter(printer: any, bytes: Uint8Array) {
