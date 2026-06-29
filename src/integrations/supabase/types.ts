@@ -9326,6 +9326,36 @@ export type Database = {
           },
         ]
       }
+      routing_alert_timeline_preset_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          diff: Json | null
+          id: string
+          preset_id: string | null
+          preset_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          diff?: Json | null
+          id?: string
+          preset_id?: string | null
+          preset_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          diff?: Json | null
+          id?: string
+          preset_id?: string | null
+          preset_name?: string | null
+        }
+        Relationships: []
+      }
       routing_alert_timeline_presets: {
         Row: {
           created_at: string
