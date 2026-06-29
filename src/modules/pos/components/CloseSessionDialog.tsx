@@ -79,6 +79,10 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
         setDenoms((dens ?? []) as Denomination[]);
         setCounts({});
         setNotes("");
+        setRevealed(false);
+        setBlindMode(true);
+        setPhotoFile(null);
+        setPhotoPreview(null);
       } catch (e) {
         toast.error(errorToMessage(e));
       } finally {
