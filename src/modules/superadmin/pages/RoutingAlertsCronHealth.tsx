@@ -8,10 +8,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info } from "lucide-react";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "sonner";
+
+type TimelineFilterKind = "all" | "sla" | "auto";
+type TimelineFilterSev = "all" | "info" | "warning" | "error";
 
 const SLA_HOURS = 24;
 const SLA_GRACE_HOURS = 36; // umbral crítico → registra health_event
@@ -65,6 +69,8 @@ export default function RoutingAlertsCronHealth() {
   });
   const [autoAttempted, setAutoAttempted] = useState(false);
   const [events, setEvents] = useState<HealthEventRow[]>([]);
+  const [tlKind, setTlKind] = useState<TimelineFilterKind>("all");
+  const [tlSev, setTlSev] = useState<TimelineFilterSev>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -419,53 +425,118 @@ export default function RoutingAlertsCronHealth() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-start justify-between gap-3 flex-wrap">
           <CardTitle className="text-base flex items-center gap-2">
-            <History className="h-4 w-4" /> Timeline de eventos del cron ({events.length})
+            <History className="h-4 w-4" /> Timeline de eventos del cron
             <Badge variant="outline" className="text-[10px] ml-1">SLA + auto-recuperación · {DAYS_WINDOW}d</Badge>
           </CardTitle>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1">
+              <Filter className="h-3 w-3 text-muted-foreground" />
+              <ToggleGroup type="single" size="sm" value={tlKind} onValueChange={(v) => v && setTlKind(v as TimelineFilterKind)}>
+                <ToggleGroupItem value="all" className="h-7 px-2 text-xs">Todos</ToggleGroupItem>
+                <ToggleGroupItem value="sla" className="h-7 px-2 text-xs">SLA</ToggleGroupItem>
+                <ToggleGroupItem value="auto" className="h-7 px-2 text-xs">Auto</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            <ToggleGroup type="single" size="sm" value={tlSev} onValueChange={(v) => v && setTlSev(v as TimelineFilterSev)}>
+              <ToggleGroupItem value="all" className="h-7 px-2 text-xs">·</ToggleGroupItem>
+              <ToggleGroupItem value="info" className="h-7 px-2 text-xs">info</ToggleGroupItem>
+              <ToggleGroupItem value="warning" className="h-7 px-2 text-xs">warn</ToggleGroupItem>
+              <ToggleGroupItem value="error" className="h-7 px-2 text-xs">error</ToggleGroupItem>
+            </ToggleGroup>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const filtered = events.filter((ev) => {
+                  if (tlKind === "sla" && ev.kind !== "routing_alerts_cron_sla_breach") return false;
+                  if (tlKind === "auto" && ev.kind !== "routing_alerts_auto_recovery") return false;
+                  if (tlSev !== "all" && ev.severity !== tlSev) return false;
+                  return true;
+                });
+                if (!filtered.length) { toast.info("Sin eventos para exportar"); return; }
+                const header = ["created_at", "kind", "severity", "hours_since_last_run", "sent", "skipped", "duration_ms", "error"];
+                const escape = (v: any) => {
+                  const s = v == null ? "" : String(v);
+                  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                };
+                const lines = [header.join(",")];
+                for (const ev of filtered) {
+                  const p = ev.payload ?? {};
+                  lines.push([
+                    ev.created_at, ev.kind, ev.severity,
+                    p.hours_since_last_run ?? "", p.sent ?? "", p.skipped ?? "", p.duration_ms ?? "",
+                    p.error ?? "",
+                  ].map(escape).join(","));
+                }
+                const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `cron-timeline-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success(`${filtered.length} eventos exportados`);
+              }}
+            >
+              <Download className="h-3.5 w-3.5 mr-1" /> CSV
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          {events.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sin eventos registrados — el cron está sano.</p>
-          ) : (
-            <ol className="relative border-l border-border ml-2 space-y-3">
-              {events.map((ev) => {
-                const isBreach = ev.kind === "routing_alerts_cron_sla_breach";
-                const sev = ev.severity;
-                const Icon = sev === "error" ? XCircle : sev === "warning" ? AlertTriangle : sev === "info" ? CheckCircle2 : Info;
-                const tone =
-                  sev === "error" ? "text-destructive bg-destructive/10 border-destructive/30"
-                  : sev === "warning" ? "text-amber-600 bg-amber-500/10 border-amber-500/30 dark:text-amber-400"
-                  : sev === "info" ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/30 dark:text-emerald-400"
-                  : "text-muted-foreground bg-muted border-border";
-                const p = ev.payload ?? {};
-                const label = isBreach
-                  ? `SLA en breach · ${p.hours_since_last_run ?? "?"}h sin corrida`
-                  : `Auto-recuperación · ${p.sent ?? 0} notificadas · ${p.skipped ?? 0} sin cambios${p.duration_ms ? ` · ${Math.round(p.duration_ms)}ms` : ""}`;
-                return (
-                  <li key={ev.id} className="ml-4">
-                    <span className={`absolute -left-[7px] mt-1 inline-flex h-3 w-3 rounded-full border ${tone}`} />
-                    <div className="flex items-start gap-2 flex-wrap">
-                      <Badge variant="outline" className={`text-[10px] gap-1 ${tone}`}>
-                        <Icon className="h-3 w-3" />
-                        {isBreach ? "SLA breach" : "Auto-recuperación"}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(ev.created_at).toLocaleString("es-CO")}
-                      </span>
-                      <span className="text-sm">{label}</span>
-                      {p.error && (
-                        <span className="text-xs text-destructive break-all">· {String(p.error).slice(0, 140)}</span>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
+          {(() => {
+            const filtered = events.filter((ev) => {
+              if (tlKind === "sla" && ev.kind !== "routing_alerts_cron_sla_breach") return false;
+              if (tlKind === "auto" && ev.kind !== "routing_alerts_auto_recovery") return false;
+              if (tlSev !== "all" && ev.severity !== tlSev) return false;
+              return true;
+            });
+            if (events.length === 0) return <p className="text-sm text-muted-foreground">Sin eventos registrados — el cron está sano.</p>;
+            if (filtered.length === 0) return <p className="text-sm text-muted-foreground">Ningún evento coincide con los filtros activos.</p>;
+            return (
+              <>
+                <p className="text-xs text-muted-foreground mb-3">{filtered.length} de {events.length} eventos</p>
+                <ol className="relative border-l border-border ml-2 space-y-3">
+                  {filtered.map((ev) => {
+                    const isBreach = ev.kind === "routing_alerts_cron_sla_breach";
+                    const sev = ev.severity;
+                    const Icon = sev === "error" ? XCircle : sev === "warning" ? AlertTriangle : sev === "info" ? CheckCircle2 : Info;
+                    const tone =
+                      sev === "error" ? "text-destructive bg-destructive/10 border-destructive/30"
+                      : sev === "warning" ? "text-amber-600 bg-amber-500/10 border-amber-500/30 dark:text-amber-400"
+                      : sev === "info" ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/30 dark:text-emerald-400"
+                      : "text-muted-foreground bg-muted border-border";
+                    const p = ev.payload ?? {};
+                    const label = isBreach
+                      ? `SLA en breach · ${p.hours_since_last_run ?? "?"}h sin corrida`
+                      : `Auto-recuperación · ${p.sent ?? 0} notificadas · ${p.skipped ?? 0} sin cambios${p.duration_ms ? ` · ${Math.round(p.duration_ms)}ms` : ""}`;
+                    return (
+                      <li key={ev.id} className="ml-4">
+                        <span className={`absolute -left-[7px] mt-1 inline-flex h-3 w-3 rounded-full border ${tone}`} />
+                        <div className="flex items-start gap-2 flex-wrap">
+                          <Badge variant="outline" className={`text-[10px] gap-1 ${tone}`}>
+                            <Icon className="h-3 w-3" />
+                            {isBreach ? "SLA breach" : "Auto-recuperación"}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(ev.created_at).toLocaleString("es-CO")}
+                          </span>
+                          <span className="text-sm">{label}</span>
+                          {p.error && (
+                            <span className="text-xs text-destructive break-all">· {String(p.error).slice(0, 140)}</span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </>
+            );
+          })()}
         </CardContent>
       </Card>
+
     </div>
   );
 }
