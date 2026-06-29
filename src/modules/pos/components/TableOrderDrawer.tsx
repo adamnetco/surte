@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Minus, Trash2, Send, FileText, SplitSquareHorizontal, ArrowRightLeft } from "lucide-react";
+import { Search, Plus, Minus, Trash2, Send, FileText, SplitSquareHorizontal, ArrowRightLeft, Ban } from "lucide-react";
 import { toast } from "sonner";
+import VoidItemDialog from "./VoidItemDialog";
 
 interface Props {
   tableId: string;
