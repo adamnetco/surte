@@ -33,7 +33,7 @@ export default function DeveloperApiPage() {
   const [endpoints, setEndpoints] = useState<any[]>([]);
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newKey, setNewKey] = useState<{ name: string; scopes: string[] }>({ name: "", scopes: ["read"] });
+  const [newKey, setNewKey] = useState<{ name: string; scopes: string[] }>({ name: "", scopes: ["pos_orders:read"] });
   const [newKeyResult, setNewKeyResult] = useState<{ prefix: string; secret: string } | null>(null);
   const [newWh, setNewWh] = useState<{ url: string; events: string[]; description: string }>({ url: "", events: [], description: "" });
   const [showWhDialog, setShowWhDialog] = useState(false);
