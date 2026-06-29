@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { Receipt, ShieldCheck, BookOpen, FileDown, Banknote, Inbox, ArrowRight } from "lucide-react";
+import { Receipt, ShieldCheck, BookOpen, FileDown, Banknote, Inbox, ArrowRight, Lock } from "lucide-react";
 
 interface Feature {
   to: string;
@@ -45,6 +45,13 @@ export default function FiscalHub() {
       icon: Banknote,
       title: "Arqueo & conteo ciego",
       desc: "Conteo por denominaciones con foto firmada y hash de integridad.",
+    },
+    {
+      to: `${base}/audit`,
+      icon: Lock,
+      title: "Audit trail de ajustes",
+      desc: "Log inmutable hash-encadenado de todos los ajustes de inventario y caja.",
+      badge: "Nuevo",
     },
     {
       to: `/superadmin/t/${slug}/sync`,
