@@ -4941,6 +4941,7 @@ export type Database = {
           name: string
           organization_id: string
           printer_id: string | null
+          sla_minutes: number
           sort_order: number
         }
         Insert: {
@@ -4952,6 +4953,7 @@ export type Database = {
           name: string
           organization_id: string
           printer_id?: string | null
+          sla_minutes?: number
           sort_order?: number
         }
         Update: {
@@ -4963,6 +4965,7 @@ export type Database = {
           name?: string
           organization_id?: string
           printer_id?: string | null
+          sla_minutes?: number
           sort_order?: number
         }
         Relationships: [
@@ -12560,6 +12563,10 @@ export type Database = {
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
       is_tenant_readable: { Args: { _org_id: string }; Returns: boolean }
       is_tenant_writable: { Args: { _org_id: string }; Returns: boolean }
+      kds_toggle_item: {
+        Args: { p_done: boolean; p_item_index: number; p_ticket_id: string }
+        Returns: Json
+      }
       log_sync_event:
         | {
             Args: {

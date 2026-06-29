@@ -9,20 +9,26 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
 
-interface Station { id: string; name: string; color: string | null; }
+interface Station { id: string; name: string; color: string | null; sla_minutes: number; }
+interface KdsItem { name: string; qty: number; done?: boolean }
 interface Ticket {
   id: string; kitchen_station_id: string | null; dining_table_label: string | null;
-  items: any[]; status: string; sent_at: string; started_at: string | null; ready_at: string | null;
+  items: KdsItem[]; status: string; sent_at: string; started_at: string | null; ready_at: string | null;
   notes: string | null;
 }
 
-const elapsedMin = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+const elapsedSec = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+const fmtMMSS = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
-const STATUS_STYLES: Record<string, string> = {
-  pending: "border-accent bg-accent/10",
-  in_progress: "border-primary bg-primary/10",
-  ready: "border-secondary bg-secondary/15",
-};
+// Semáforo color-por-tiempo según SLA de la estación
+function timeTone(elapsedS: number, slaMin: number, status: string) {
+  if (status === "ready") return { card: "border-emerald-500 bg-emerald-500/10", timer: "text-emerald-600" };
+  const slaSec = Math.max(60, slaMin * 60);
+  const ratio = elapsedS / slaSec;
+  if (ratio < 0.5) return { card: "border-emerald-500 bg-emerald-500/5", timer: "text-emerald-600" };
+  if (ratio < 1)   return { card: "border-amber-500 bg-amber-500/10",   timer: "text-amber-600" };
+  return { card: "border-destructive bg-destructive/10 animate-pulse", timer: "text-destructive font-bold" };
+}
 
 export default function KDS() {
   const { user, loading: authLoading } = useAuth();
@@ -38,9 +44,9 @@ export default function KDS() {
   useEffect(() => { if (!authLoading && !user) navigate("/login"); }, [user, authLoading, navigate]);
   useEffect(() => { document.title = `KDS · ${currentOrg?.name ?? "Mi Negocio"}`; }, [currentOrg?.name]);
 
-  // Re-render every 30s to update timers
+  // Tick cada 1s para mm:ss en vivo
   useEffect(() => {
-    const id = setInterval(() => force(x => x + 1), 30000);
+    const id = setInterval(() => force(x => x + 1), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -49,12 +55,12 @@ export default function KDS() {
   const load = useCallback(async () => {
     if (!orgId) return;
     const [{ data: st }, { data: tk }] = await Promise.all([
-      supabase.from("kitchen_stations").select("id,name,color").eq("organization_id", orgId).eq("is_active", true).order("sort_order"),
+      supabase.from("kitchen_stations").select("id,name,color,sla_minutes").eq("organization_id", orgId).eq("is_active", true).order("sort_order"),
       supabase.from("kds_tickets").select("id,kitchen_station_id,dining_table_label,items,status,sent_at,started_at,ready_at,notes")
         .eq("organization_id", orgId).in("status", ["pending","in_progress","ready"]).order("sent_at"),
     ]);
-    setStations(st ?? []);
-    setTickets((tk as Ticket[]) ?? []);
+    setStations((st as Station[]) ?? []);
+    setTickets((tk as unknown as Ticket[]) ?? []);
     setLoading(false);
   }, [orgId]);
 
@@ -75,6 +81,12 @@ export default function KDS() {
     return () => { safeRemoveChannel(ch); };
   }, [orgId, load]);
 
+  const stationById = useMemo(() => {
+    const map = new Map<string, Station>();
+    stations.forEach(s => map.set(s.id, s));
+    return map;
+  }, [stations]);
+
   const filtered = useMemo(
     () => activeStation === "all" ? tickets : tickets.filter(t => t.kitchen_station_id === activeStation),
     [tickets, activeStation]
@@ -82,12 +94,30 @@ export default function KDS() {
 
   const bump = async (t: Ticket) => {
     const next = t.status === "pending" ? "in_progress" : t.status === "in_progress" ? "ready" : "served";
-    const patch: any = { status: next, bumped_by: user!.id };
-    if (next === "in_progress") patch.started_at = new Date().toISOString();
-    if (next === "ready") patch.ready_at = new Date().toISOString();
-    if (next === "served") patch.served_at = new Date().toISOString();
+    const nowIso = new Date().toISOString();
+    const patch = {
+      status: next,
+      bumped_by: user!.id,
+      ...(next === "in_progress" ? { started_at: nowIso } : {}),
+      ...(next === "ready" ? { ready_at: nowIso } : {}),
+      ...(next === "served" ? { served_at: nowIso } : {}),
+    };
     const { error } = await supabase.from("kds_tickets").update(patch).eq("id", t.id).eq("organization_id", orgId!);
     if (error) return toast.error(error.message);
+  };
+
+  const toggleItem = async (ticketId: string, idx: number, done: boolean) => {
+    // optimista
+    setTickets(prev => prev.map(t => {
+      if (t.id !== ticketId) return t;
+      const items = [...t.items];
+      items[idx] = { ...items[idx], done };
+      return { ...t, items };
+    }));
+    const { error } = await supabase.rpc("kds_toggle_item", {
+      p_ticket_id: ticketId, p_item_index: idx, p_done: done,
+    });
+    if (error) { toast.error(error.message); load(); }
   };
 
   if (authLoading || orgLoading || loading) {
@@ -129,7 +159,7 @@ export default function KDS() {
           {stations.map(s => (
             <button key={s.id} onClick={() => setActiveStation(s.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${activeStation === s.id ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
-              {s.name}
+              {s.name} <span className="opacity-60">· SLA {s.sla_minutes}m</span>
             </button>
           ))}
         </div>
@@ -141,22 +171,38 @@ export default function KDS() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
             {filtered.map(t => {
-              const mins = elapsedMin(t.sent_at);
-              const urgent = mins >= 10;
+              const station = t.kitchen_station_id ? stationById.get(t.kitchen_station_id) : undefined;
+              const sla = station?.sla_minutes ?? 10;
+              const secs = elapsedSec(t.sent_at);
+              const tone = timeTone(secs, sla, t.status);
+              const items = t.items ?? [];
+              const doneCount = items.filter(i => i.done).length;
               return (
-                <div key={t.id}
-                  className={`rounded-lg border-2 p-3 text-foreground ${STATUS_STYLES[t.status] ?? "bg-card"} ${urgent && t.status !== "ready" ? "animate-pulse" : ""}`}>
-                  <div className="flex justify-between items-center mb-2">
+                <div key={t.id} className={`rounded-lg border-2 p-3 text-foreground bg-card ${tone.card}`}>
+                  <div className="flex justify-between items-center mb-1">
                     <span className="font-bold">{t.dining_table_label ?? "Para llevar"}</span>
-                    <span className={`text-xs font-mono ${urgent ? "text-destructive font-bold" : "text-muted-foreground"}`}>
-                      {mins}min
-                    </span>
+                    <span className={`text-xs font-mono ${tone.timer}`}>{fmtMMSS(secs)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-2 text-[11px] text-muted-foreground">
+                    <span>{station?.name ?? "—"}</span>
+                    <span>{doneCount}/{items.length}</span>
                   </div>
                   <ul className="space-y-1 text-sm mb-3">
-                    {(t.items ?? []).map((i: any, idx: number) => (
-                      <li key={idx} className="flex justify-between">
-                        <span>{i.name}</span>
-                        <span className="font-semibold ml-2">×{i.qty}</span>
+                    {items.map((i, idx) => (
+                      <li key={idx}>
+                        <button
+                          onClick={() => toggleItem(t.id, idx, !i.done)}
+                          className={`w-full flex justify-between items-center gap-2 px-2 py-1 rounded hover:bg-muted/60 transition ${i.done ? "opacity-50 line-through" : ""}`}
+                          aria-pressed={!!i.done}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className={`inline-flex w-4 h-4 items-center justify-center rounded border ${i.done ? "bg-primary border-primary text-primary-foreground" : "border-border"}`}>
+                              {i.done && <Check className="w-3 h-3" />}
+                            </span>
+                            {i.name}
+                          </span>
+                          <span className="font-semibold ml-2">×{i.qty}</span>
+                        </button>
                       </li>
                     ))}
                   </ul>
