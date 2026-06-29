@@ -216,6 +216,70 @@ export default function RoutingAlertsCronHealth() {
     loadTeamPresets();
   };
 
+  // Slice BB — Audit log de cambios en presets de equipo.
+  // Lee `routing_alert_timeline_preset_audit` (poblada por trigger AFTER INSERT/UPDATE/DELETE)
+  // y muestra los últimos 50 cambios con autor, acción y diff resumido.
+  interface PresetAuditRow {
+    id: string;
+    preset_id: string | null;
+    preset_name: string | null;
+    action: "create" | "update" | "delete";
+    actor_id: string | null;
+    diff: any;
+    created_at: string;
+  }
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [auditRows, setAuditRows] = useState<PresetAuditRow[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditActors, setAuditActors] = useState<Record<string, { name: string }>>({});
+  const loadAudit = useCallback(async () => {
+    setAuditLoading(true);
+    const { data, error } = await (supabase as any)
+      .from("routing_alert_timeline_preset_audit")
+      .select("id, preset_id, preset_name, action, actor_id, diff, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) { toast.error(error.message); setAuditLoading(false); return; }
+    const rows = (data ?? []) as PresetAuditRow[];
+    setAuditRows(rows);
+    const actorIds = Array.from(new Set(rows.map((r) => r.actor_id).filter(Boolean))) as string[];
+    if (actorIds.length) {
+      const { data: profs } = await (supabase as any)
+        .from("profiles").select("user_id, full_name, business_name").in("user_id", actorIds);
+      const map: Record<string, { name: string }> = {};
+      for (const p of profs ?? []) map[(p as any).user_id] = { name: (p as any).full_name || (p as any).business_name || "—" };
+      setAuditActors(map);
+    }
+    setAuditLoading(false);
+  }, []);
+  useEffect(() => { if (auditOpen) loadAudit(); }, [auditOpen, loadAudit]);
+
+  const summarizeDiff = (row: PresetAuditRow): string => {
+    const d = row.diff ?? {};
+    if (row.action === "create") {
+      const f = d?.new?.filters ?? {};
+      return `kind=${f.kind ?? "?"} · sev=${f.sev ?? "?"} · org=${f.org ?? "?"}`;
+    }
+    if (row.action === "delete") {
+      const f = d?.old?.filters ?? {};
+      return `era kind=${f.kind ?? "?"} · sev=${f.sev ?? "?"} · org=${f.org ?? "?"}`;
+    }
+    // update — diff de campos relevantes
+    const oldV = d?.old ?? {}; const newV = d?.new ?? {};
+    const parts: string[] = [];
+    if (oldV.name !== newV.name) parts.push(`name: "${oldV.name}" → "${newV.name}"`);
+    if (!!oldV.is_team_default !== !!newV.is_team_default) {
+      parts.push(newV.is_team_default ? "marcado default equipo" : "quitado default equipo");
+    }
+    const of = oldV.filters ?? {}; const nf = newV.filters ?? {};
+    for (const k of ["kind", "sev", "org"] as const) {
+      if (of[k] !== nf[k]) parts.push(`${k}: ${of[k] ?? "?"} → ${nf[k] ?? "?"}`);
+    }
+    return parts.join(" · ") || "cambio menor";
+  };
+
+
+
   // Auto-apply preset on mount when URL has no filter params.
   // Prioridad: team-default (DB) > personal-default (localStorage).
   const [defaultApplied, setDefaultApplied] = useState(false);
