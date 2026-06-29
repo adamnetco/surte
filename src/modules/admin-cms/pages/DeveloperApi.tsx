@@ -42,6 +42,17 @@ export default function DeveloperApiPage() {
   const [newKeyResult, setNewKeyResult] = useState<{ prefix: string; secret: string } | null>(null);
   const [newWh, setNewWh] = useState<{ url: string; events: string[]; description: string }>({ url: "", events: [], description: "" });
   const [showWhDialog, setShowWhDialog] = useState(false);
+  const [inspectDelivery, setInspectDelivery] = useState<any | null>(null);
+  const [replayingId, setReplayingId] = useState<string | null>(null);
+
+  const replayDelivery = async (id: string) => {
+    setReplayingId(id);
+    const { error } = await supabase.rpc("webhook_replay_delivery", { p_delivery_id: id });
+    setReplayingId(null);
+    if (error) return toast.error("No se pudo reintentar", { description: error.message });
+    toast.success("Reintento encolado");
+    load();
+  };
 
   const load = async () => {
     if (!orgId) return;
