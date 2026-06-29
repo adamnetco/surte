@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import { Helmet } from "react-helmet-async";
+import { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
