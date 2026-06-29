@@ -16,9 +16,10 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Printer, Zap, Info } from "lucide-react";
+import { Plus, Trash2, Printer, Zap, Info, History } from "lucide-react";
 import { toast } from "sonner";
 import { RoutingSimulator } from "./RoutingSimulator";
+import { RuleJobsDialog } from "./RuleJobsDialog";
 
 interface PrinterRow { id: string; name: string; role: string; }
 interface StationRow { id: string; name: string; default_printer_id?: string | null; }
