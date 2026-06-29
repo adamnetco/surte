@@ -137,22 +137,73 @@ export default function RoutingAlertsCronHealth() {
     })();
   }, [loading, slaCritical, hoursSince, lastRunAt]);
 
-  const runManual = async () => {
-    if (!window.confirm("Disparar manualmente el cron global de alertas? Iterará todas las organizaciones (respeta mutes y dedupe diario).")) return;
+  const invokeCron = useCallback(async (opts: { auto: boolean }) => {
     setRunning(true);
+    const startedAt = Date.now();
     try {
       const { data, error } = await supabase.functions.invoke("notify-routing-alerts", { body: {} });
       if (error) throw error;
       const results = (data as any)?.results ?? [];
       const sent = results.filter((r: any) => !r.skipped).length;
       const skipped = results.filter((r: any) => r.skipped).length;
-      toast.success(`Cron disparado · ${sent} org notificadas · ${skipped} sin cambios`);
+      if (opts.auto) {
+        toast.success(`Auto-recuperación · ${sent} orgs notificadas · ${skipped} sin cambios`);
+        try {
+          await (supabase as any).from("health_events").insert({
+            kind: "routing_alerts_auto_recovery",
+            severity: sent > 0 ? "info" : "warning",
+            payload: {
+              triggered_by: "sla_critical",
+              hours_since_last_run: Math.round(hoursSince),
+              sent, skipped,
+              duration_ms: Date.now() - startedAt,
+            },
+          });
+        } catch { /* silent */ }
+      } else {
+        toast.success(`Cron disparado · ${sent} org notificadas · ${skipped} sin cambios`);
+      }
       load();
     } catch (e: any) {
-      toast.error(e?.message ?? "Error al disparar cron");
+      toast.error(`${opts.auto ? "Auto-recuperación falló" : "Error al disparar cron"}: ${e?.message ?? "desconocido"}`);
+      if (opts.auto) {
+        try {
+          await (supabase as any).from("health_events").insert({
+            kind: "routing_alerts_auto_recovery",
+            severity: "error",
+            payload: { triggered_by: "sla_critical", error: String(e?.message ?? e) },
+          });
+        } catch { /* silent */ }
+      }
     } finally {
       setRunning(false);
     }
+  }, [hoursSince, load]);
+
+  const runManual = async () => {
+    if (!window.confirm("Disparar manualmente el cron global de alertas? Iterará todas las organizaciones (respeta mutes y dedupe diario).")) return;
+    await invokeCron({ auto: false });
+  };
+
+  // Slice R — Auto-recuperación: si SLA crítico y toggle activo, dispara el cron una sola vez
+  // por cada ventana de cooldown (6h) y registra el resultado en health_events.
+  useEffect(() => {
+    if (loading || !slaCritical || !autoRecovery || autoAttempted || running) return;
+    const lastAttemptStr = window.localStorage.getItem(AUTO_RECOVERY_LAST_ATTEMPT_KEY);
+    const lastAttempt = lastAttemptStr ? Number(lastAttemptStr) : 0;
+    const hoursSinceAttempt = (Date.now() - lastAttempt) / 3600000;
+    if (hoursSinceAttempt < AUTO_RECOVERY_COOLDOWN_HOURS) return;
+    setAutoAttempted(true);
+    window.localStorage.setItem(AUTO_RECOVERY_LAST_ATTEMPT_KEY, String(Date.now()));
+    toast.message("Auto-recuperación activada", { description: `SLA crítico (${Math.round(hoursSince)}h). Disparando cron…` });
+    invokeCron({ auto: true });
+  }, [loading, slaCritical, autoRecovery, autoAttempted, running, hoursSince, invokeCron]);
+
+  const toggleAutoRecovery = (v: boolean) => {
+    setAutoRecovery(v);
+    window.localStorage.setItem(AUTO_RECOVERY_LS_KEY, v ? "1" : "0");
+    if (!v) window.localStorage.removeItem(AUTO_RECOVERY_LAST_ATTEMPT_KEY);
+    toast.success(v ? "Auto-recuperación habilitada" : "Auto-recuperación deshabilitada");
   };
 
   const fmtDay = (iso: string) => {
