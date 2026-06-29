@@ -234,24 +234,48 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
             </div>
           ) : (
             <div className="space-y-3 text-sm">
+              {/* Modo ciego toggle */}
+              <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+                <div className="flex items-start gap-2">
+                  {blindMode ? <EyeOff className="w-4 h-4 mt-0.5 text-primary" /> : <Eye className="w-4 h-4 mt-0.5" />}
+                  <div>
+                    <div className="font-medium">Conteo a ciegas</div>
+                    <p className="text-xs text-muted-foreground">
+                      Oculta el efectivo esperado y la diferencia hasta que confirmes el conteo.
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={blindMode}
+                  disabled={revealed}
+                  onCheckedChange={(v) => { setBlindMode(v); setRevealed(false); }}
+                  aria-label="Activar conteo a ciegas"
+                />
+              </div>
+
               {/* Resumen de la sesión */}
               <div className="bg-muted/40 rounded-lg p-3 space-y-1">
                 <Row label="Tickets" value={String(totals.count)} />
                 <Row label="Base inicial" value={COP(openingAmount)} />
-                <Row label="Efectivo (ventas)" value={COP(totals.cash)} />
                 <Row label="Tarjeta" value={COP(totals.card)} />
                 <Row label="Transferencia/Wallets" value={COP(totals.transfer)} />
                 <Row label="Otros" value={COP(totals.other)} />
                 <hr className="my-1" />
                 <Row label="Ventas totales" value={COP(totals.total)} bold />
-                <Row label="Efectivo esperado" value={COP(expected)} bold />
+                {(!blindMode || revealed) && <>
+                  <Row label="Efectivo (ventas)" value={COP(totals.cash)} />
+                  <Row label="Efectivo esperado" value={COP(expected)} bold />
+                </>}
+                {blindMode && !revealed && (
+                  <Row label="Efectivo esperado" value="•••••• oculto" />
+                )}
               </div>
 
               {/* Conteo */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-base">Conteo por denominación</Label>
-                  {denoms.length > 0 && (
+                  {denoms.length > 0 && !blindMode && (
                     <Button
                       type="button"
                       variant="outline"
@@ -298,31 +322,61 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
                 <Row label="Efectivo contado" value={COP(countedTotal)} bold />
               </div>
 
-              {/* Estado del cuadre */}
-              <div className={`rounded-lg p-3 text-center font-bold border ${diffStyle}`}>
-                {diffLabel}
-                {!isSquare && (
-                  <p className="text-[11px] font-normal mt-0.5 opacity-80">
-                    Esperado {COP(expected)} · Contado {COP(countedTotal)}
-                  </p>
+              {/* Estado del cuadre — sólo si reveló o no es ciego */}
+              {(!blindMode || revealed) && (
+                <div className={`rounded-lg p-3 text-center font-bold border ${diffStyle}`}>
+                  {diffLabel}
+                  {!isSquare && (
+                    <p className="text-[11px] font-normal mt-0.5 opacity-80">
+                      Esperado {COP(expected)} · Contado {COP(countedTotal)}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Foto del arqueo */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5" /> Foto del arqueo (opcional, recomendado)
+                </Label>
+                {photoPreview ? (
+                  <div className="relative inline-block">
+                    <img src={photoPreview} alt="Arqueo" className="h-32 rounded-md border object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => onPickPhoto(null)}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow"
+                      aria-label="Quitar foto"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => onPickPhoto(e.target.files?.[0] ?? null)}
+                    className="h-9 text-xs"
+                  />
                 )}
               </div>
 
               <div className="space-y-1">
                 <Label>
-                  Notas{!isSquare && <span className="text-destructive"> · obligatorias si hay descuadre</span>}
+                  Notas{(!blindMode || revealed) && !isSquare && <span className="text-destructive"> · obligatorias si hay descuadre</span>}
                 </Label>
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
-                  placeholder={!isSquare ? "Explica el motivo del descuadre…" : "Opcional"}
-                  aria-invalid={!isSquare && !notes.trim()}
+                  placeholder={(!blindMode || revealed) && !isSquare ? "Explica el motivo del descuadre…" : "Opcional"}
+                  aria-invalid={(!blindMode || revealed) && !isSquare && !notes.trim()}
                 />
               </div>
 
-              <Button className="w-full h-11" onClick={attemptClose} disabled={busy}>
-                {busy ? "Cerrando..." : "Cerrar caja"}
+              <Button className="w-full h-11" onClick={attemptClose} disabled={busy || uploading}>
+                {busy || uploading ? "Cerrando..." : blindMode && !revealed ? "Revelar resultado y revisar" : "Cerrar caja"}
               </Button>
             </div>
           )}
