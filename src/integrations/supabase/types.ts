@@ -341,6 +341,59 @@ export type Database = {
           },
         ]
       }
+      api_request_logs: {
+        Row: {
+          api_key_id: string | null
+          created_at: string
+          error_code: string | null
+          id: number
+          ip: string | null
+          key_prefix: string | null
+          latency_ms: number | null
+          method: string
+          organization_id: string
+          path: string
+          status_code: number
+          user_agent: string | null
+        }
+        Insert: {
+          api_key_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: number
+          ip?: string | null
+          key_prefix?: string | null
+          latency_ms?: number | null
+          method: string
+          organization_id: string
+          path: string
+          status_code: number
+          user_agent?: string | null
+        }
+        Update: {
+          api_key_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: number
+          ip?: string | null
+          key_prefix?: string | null
+          latency_ms?: number | null
+          method?: string
+          organization_id?: string
+          path?: string
+          status_code?: number
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_request_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           id: string
@@ -11524,6 +11577,19 @@ export type Database = {
       api_key_consume: {
         Args: { p_hash: string; p_max_per_min?: number; p_prefix: string }
         Returns: Json
+      }
+      api_key_usage_stats: {
+        Args: { p_days?: number; p_org: string }
+        Returns: {
+          api_key_id: string
+          errors: number
+          last_used_at: string
+          name: string
+          p50_latency_ms: number
+          p95_latency_ms: number
+          prefix: string
+          total_requests: number
+        }[]
       }
       app_current_role: { Args: never; Returns: string }
       apply_catalog_template: {
