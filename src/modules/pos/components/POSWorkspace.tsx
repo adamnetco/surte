@@ -1100,39 +1100,42 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
 
 
-          <POSActionRail
-            hasSelection={!!selectedLine}
-            onMultiply={railMultiply}
-            onCut={railCut}
-            onComment={railComment}
-            onDiscount={railDiscount}
-            onDelete={railDelete}
-          />
+          <div className={`${mobileTicketExpanded ? "flex" : "hidden"} lg:flex flex-col flex-1 min-h-0`}>
+            <POSActionRail
+              hasSelection={!!selectedLine}
+              onMultiply={railMultiply}
+              onCut={railCut}
+              onComment={railComment}
+              onDiscount={railDiscount}
+              onDelete={railDelete}
+            />
 
-          <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
-            {ticket.length === 0 ? (
-              <div className="text-center py-10 px-4">
-                <div className="w-12 h-12 mx-auto rounded-full bg-muted grid place-items-center mb-2">
-                  <ScanLine className="w-5 h-5 text-muted-foreground" />
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+              {ticket.length === 0 ? (
+                <div className="text-center py-10 px-4">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-muted grid place-items-center mb-2">
+                    <ScanLine className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Escanea o toca un producto</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">⌘K para búsqueda rápida</p>
                 </div>
-                <p className="text-sm text-muted-foreground">Escanea o toca un producto</p>
-                <p className="text-[11px] text-muted-foreground mt-1">⌘K para búsqueda rápida</p>
-              </div>
-            ) : (
-              ticket.map((l) => (
-                <TicketLineRow
-                  key={l.productId}
-                  line={l}
-                  selected={selectedLineId === l.productId}
-                  onSelect={() => setSelectedLineId(l.productId)}
-                  onQty={(d) => updateQty(l.productId, d)}
-                  onRemove={() => removeLine(l.productId)}
-                  onNotes={(notes) => setLineNotes(l.productId, notes)}
-                  onDiscount={(pct) => setLineDiscount(l.productId, pct)}
-                />
-              ))
-            )}
+              ) : (
+                ticket.map((l) => (
+                  <TicketLineRow
+                    key={l.productId}
+                    line={l}
+                    selected={selectedLineId === l.productId}
+                    onSelect={() => setSelectedLineId(l.productId)}
+                    onQty={(d) => updateQty(l.productId, d)}
+                    onRemove={() => removeLine(l.productId)}
+                    onNotes={(notes) => setLineNotes(l.productId, notes)}
+                    onDiscount={(pct) => setLineDiscount(l.productId, pct)}
+                  />
+                ))
+              )}
+            </div>
           </div>
+
 
 
           <div className="border-t p-3 space-y-2 bg-card">
