@@ -952,6 +952,62 @@ export default function RoutingAlertsCronHealth() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Sheet open={auditOpen} onOpenChange={setAuditOpen}>
+              <SheetTrigger asChild>
+                <Button size="sm" variant="outline" title="Audit log de presets de equipo">
+                  <ScrollText className="h-3.5 w-3.5 mr-1" /> Audit
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <ScrollText className="h-4 w-4" /> Audit · Presets de equipo
+                  </SheetTitle>
+                  <SheetDescription>
+                    Últimos 50 cambios (creación, edición, eliminación, default de equipo) registrados automáticamente.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{auditRows.length} eventos</span>
+                  <Button size="sm" variant="ghost" onClick={loadAudit} disabled={auditLoading}>
+                    <RefreshCcw className={`h-3.5 w-3.5 mr-1 ${auditLoading ? "animate-spin" : ""}`} />
+                    Refrescar
+                  </Button>
+                </div>
+                <ol className="mt-3 space-y-2">
+                  {auditLoading && <li className="text-xs text-muted-foreground">Cargando…</li>}
+                  {!auditLoading && auditRows.length === 0 && (
+                    <li className="text-xs text-muted-foreground">Sin actividad registrada.</li>
+                  )}
+                  {auditRows.map((r) => {
+                    const actor = r.actor_id ? auditActors[r.actor_id]?.name ?? r.actor_id.slice(0, 8) : "system";
+                    const tone =
+                      r.action === "create" ? "border-emerald-400/40 bg-emerald-50/40 dark:bg-emerald-950/20"
+                      : r.action === "delete" ? "border-rose-400/40 bg-rose-50/40 dark:bg-rose-950/20"
+                      : "border-sky-400/40 bg-sky-50/40 dark:bg-sky-950/20";
+                    const Icon = r.action === "create" ? Plus : r.action === "delete" ? Trash2 : Pencil;
+                    const label = r.action === "create" ? "Creado" : r.action === "delete" ? "Eliminado" : "Editado";
+                    return (
+                      <li key={r.id} className={`rounded-md border p-2 ${tone}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Icon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="text-sm font-medium truncate">{r.preset_name ?? "(sin nombre)"}</span>
+                            <Badge variant="outline" className="text-[10px] h-4 px-1">{label}</Badge>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {new Date(r.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-muted-foreground truncate">
+                          por <strong>{actor}</strong> · {summarizeDiff(r)}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </SheetContent>
+            </Sheet>
           </div>
         </CardHeader>
         <CardContent>
