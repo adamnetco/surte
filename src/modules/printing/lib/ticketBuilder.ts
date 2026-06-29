@@ -1,6 +1,8 @@
 // Construye el ticket de venta (recibo cliente) y la comanda de cocina
 // a partir de los datos de pos_orders + pos_order_items.
 import { EscPosBuilder, charsForWidth, type Width } from "./escpos";
+import { renderLayout } from "./layoutRenderer";
+import type { Layout } from "@/modules/admin-cms/lib/receiptLayoutSchema";
 
 export interface TicketOrgInfo {
   business_name: string;
