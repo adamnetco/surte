@@ -69,6 +69,8 @@ export default function RoutingAlertsCronHealth() {
   });
   const [autoAttempted, setAutoAttempted] = useState(false);
   const [events, setEvents] = useState<HealthEventRow[]>([]);
+  const [tlKind, setTlKind] = useState<TimelineFilterKind>("all");
+  const [tlSev, setTlSev] = useState<TimelineFilterSev>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
