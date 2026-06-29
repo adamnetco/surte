@@ -246,6 +246,31 @@ export function PrintJobsInspectorTab({ organizationId }: Props) {
               {selected.last_error && (<>
                 <dt className="text-muted-foreground">Error</dt><dd className="col-span-2 text-rose-600">{selected.last_error}</dd>
               </>)}
+              {selected.payload?.routing && (<>
+                <dt className="text-muted-foreground">Ruteo</dt>
+                <dd className="col-span-2 space-y-1">
+                  <div className="flex flex-wrap gap-1">
+                    {(selected.payload.routing.rules ?? []).length === 0 ? (
+                      <Badge variant="outline" className={SOURCE_LABEL[selected.payload.routing.source ?? "station_default"]?.cls}>
+                        {SOURCE_LABEL[selected.payload.routing.source ?? "station_default"]?.label ?? selected.payload.routing.source}
+                      </Badge>
+                    ) : (
+                      (selected.payload.routing.rules ?? []).map((r, i) => (
+                        <Badge key={i} variant="outline" className={`text-xs ${SOURCE_LABEL[r.source]?.cls ?? ""}`}>
+                          {SOURCE_LABEL[r.source]?.label ?? r.source}{r.priority != null ? ` · p${r.priority}` : ""}
+                          {r.rule_id && <span className="ml-1 font-mono opacity-70">{r.rule_id.slice(0,6)}</span>}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                  <a
+                    href="/admin?tab=print-routing"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <Sparkles className="w-3 h-3" /> Abrir simulador de reglas
+                  </a>
+                </dd>
+              </>)}
             </dl>
           )}
         </DialogContent>
