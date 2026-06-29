@@ -4,7 +4,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import type { AppRole } from "@/modules/auth/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2, Printer, ArrowRightLeft, Shield, Radio } from "lucide-react";
+import { Package, Tag, ShoppingCart, Settings, BarChart3, FileText, Handshake, Bell, Users, Truck, Search, Layers, FileUp, Globe, Code, Ticket, Box, Star, MapPin, MessageSquare, Map, CalendarDays, Monitor, Utensils, ChefHat, Receipt, ShoppingBag, Warehouse, CreditCard, Wallet, Sparkles, Rocket, ChevronRight, Building2, Printer, ArrowRightLeft, Shield, Radio, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import AdminHeader from "@/modules/admin-cms/components/AdminHeader";
@@ -43,6 +43,7 @@ const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersMan
 const KitchenRoutingTab = lazy(() => import("@/modules/printing/components/KitchenRoutingTab").then(m => ({ default: m.KitchenRoutingTab })));
 const PrintFleetTab = lazy(() => import("@/modules/printing/components/PrintFleetTab").then(m => ({ default: m.PrintFleetTab })));
 const PrintJobsInspectorTab = lazy(() => import("@/modules/printing/components/PrintJobsInspectorTab").then(m => ({ default: m.PrintJobsInspectorTab })));
+const PrintRoutingRulesTab = lazy(() => import("@/modules/printing/components/PrintRoutingRulesTab").then(m => ({ default: m.PrintRoutingRulesTab })));
 
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
@@ -92,6 +93,8 @@ const allTabs = [
   { id: "kitchen-routing", label: "Cocina", icon: ChefHat, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
   { id: "print-fleet", label: "Fleet impresión", icon: Radio, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
   { id: "print-jobs", label: "Inspector impresión", icon: FileText, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
+  { id: "print-rules", label: "Reglas impresión", icon: Zap, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
+
 ];
 
 class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
@@ -303,6 +306,7 @@ const AdminDashboard = () => {
         {activeTab === "kitchen-routing" && <KitchenRoutingTab organizationId={currentOrg?.id ?? ""} />}
         {activeTab === "print-fleet" && <PrintFleetTab organizationId={currentOrg?.id ?? ""} />}
         {activeTab === "print-jobs" && <PrintJobsInspectorTab organizationId={currentOrg?.id ?? ""} />}
+        {activeTab === "print-rules" && <PrintRoutingRulesTab organizationId={currentOrg?.id ?? ""} />}
         {/* data / sync / fiscal removidos — viven en /superadmin */}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
