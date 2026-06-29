@@ -39,6 +39,7 @@ import { useSyncService } from "@/modules/integrations/sync/useSyncService";
 import { enqueue } from "@/modules/offline/lib/outbox";
 import { useEinvoiceAutoEmit } from "@/modules/pos/hooks/useEinvoiceAutoEmit";
 import POSTopBar from "./POSTopBar";
+import POSTopRibbon from "./POSTopRibbon";
 import POSRightRail from "./POSRightRail";
 import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
@@ -553,6 +554,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </>
         }
       />
+      <POSTopRibbon />
+
 
 
       {/* AC10/AC11 — Banner DIAN offline / contingencia */}
