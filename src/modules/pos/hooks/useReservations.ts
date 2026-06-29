@@ -180,9 +180,4 @@ export function useFloorMap() {
   });
 }
 
-      const { error } = await supabase.from("reservations" as any).update(patch).eq("id", args.id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["reservations-agenda"] }),
-  });
-}
+
