@@ -22,6 +22,8 @@ interface Props {
   onRemove: () => void;
   onNotes: (notes: string) => void;
   onDiscount: (pct: number) => void;
+  selected?: boolean;
+  onSelect?: () => void;
 }
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
