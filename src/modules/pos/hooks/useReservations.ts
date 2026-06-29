@@ -131,3 +131,53 @@ export function useUpdateReservationStatus() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reservations-agenda"] }),
   });
 }
+
+// Ola 28 Slice 2 — Asignar/quitar mesa (drag&drop sobre el plano).
+
+export function useAssignReservationTable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { id: string; dining_table_id: string | null }) => {
+      const { error } = await supabase
+        .from("reservations" as any)
+        .update({ dining_table_id: args.dining_table_id })
+        .eq("id", args.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["reservations-agenda"] }),
+  });
+}
+
+// Ola 28 Slice 2 — Mesas + áreas (posiciones del plano) para la vista FloorMap.
+export interface FloorTable {
+  id: string;
+  label: string;
+  capacity: number;
+  pos_x: number;
+  pos_y: number;
+  width: number;
+  height: number;
+  shape: string;
+  dining_area_id: string | null;
+}
+export interface FloorArea { id: string; name: string; color: string | null; }
+
+export function useFloorMap() {
+  const { currentOrg } = useOrganization();
+  return useQuery({
+    queryKey: ["floor-map", currentOrg?.id],
+    enabled: !!currentOrg?.id,
+    queryFn: async (): Promise<{ areas: FloorArea[]; tables: FloorTable[] }> => {
+      const [{ data: a }, { data: t }] = await Promise.all([
+        supabase.from("dining_areas").select("id,name,color")
+          .eq("organization_id", currentOrg!.id).eq("is_active", true).order("sort_order"),
+        supabase.from("dining_tables")
+          .select("id,label,capacity,pos_x,pos_y,width,height,shape,dining_area_id")
+          .eq("organization_id", currentOrg!.id).eq("is_active", true).order("label"),
+      ]);
+      return { areas: (a ?? []) as FloorArea[], tables: (t ?? []) as FloorTable[] };
+    },
+  });
+}
+
+
