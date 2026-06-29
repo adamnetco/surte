@@ -194,15 +194,19 @@ Deno.serve(async (req) => {
     const total = Math.round((subtotal + tax) * 100) / 100;
     const method = String(body.payment_method ?? "cash");
 
-    const externalRef = body.external_ref ? String(body.external_ref).slice(0, 120) : null;
-    if (externalRef) {
-      const { data: dup } = await sb.from("pos_orders").select("id")
+    // Idempotency: client may pass external_ref; we map it to client_uuid (deterministic UUIDv5-like via SHA-1 not available, so use a namespaced prefix). To stay safe we accept a raw uuid in external_ref.
+    const externalRef = body.external_ref ? String(body.external_ref).trim() : null;
+    const isUuid = externalRef && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(externalRef);
+    const clientUuid = isUuid ? externalRef : null;
+    if (clientUuid) {
+      const { data: dup } = await sb.from("pos_orders").select("id,ticket_number,total")
         .eq("organization_id", orgId)
-        .eq("external_ref", externalRef).maybeSingle();
+        .eq("client_uuid", clientUuid).maybeSingle();
       if (dup) {
-        return json({ id: dup.id, idempotent: true }, 200, rlHeaders);
+        return json({ ...dup, idempotent: true }, 200, rlHeaders);
       }
     }
+
 
     const { data: order, error: oErr } = await sb.from("pos_orders").insert({
       organization_id: orgId,
