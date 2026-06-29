@@ -7439,6 +7439,85 @@ export type Database = {
           },
         ]
       }
+      pos_receipt_templates: {
+        Row: {
+          channel: Database["public"]["Enums"]["pos_receipt_channel"]
+          copies: number
+          created_at: string
+          font_size_pt: number
+          footer_text: string | null
+          header_text: string | null
+          id: string
+          is_default: boolean
+          layout: Json
+          name: string
+          organization_id: string
+          paper_width_mm: number
+          show_logo: boolean
+          show_nit: boolean
+          show_qr_pago: boolean
+          updated_at: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["pos_receipt_channel"]
+          copies?: number
+          created_at?: string
+          font_size_pt?: number
+          footer_text?: string | null
+          header_text?: string | null
+          id?: string
+          is_default?: boolean
+          layout?: Json
+          name: string
+          organization_id: string
+          paper_width_mm?: number
+          show_logo?: boolean
+          show_nit?: boolean
+          show_qr_pago?: boolean
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["pos_receipt_channel"]
+          copies?: number
+          created_at?: string
+          font_size_pt?: number
+          footer_text?: string | null
+          header_text?: string | null
+          id?: string
+          is_default?: boolean
+          layout?: Json
+          name?: string
+          organization_id?: string
+          paper_width_mm?: number
+          show_logo?: boolean
+          show_nit?: boolean
+          show_qr_pago?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_receipt_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_receipt_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "pos_receipt_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       pos_void_log: {
         Row: {
           amount: number
@@ -12733,6 +12812,36 @@ export type Database = {
         Returns: Json
       }
       pos_dispatch_table_order: { Args: { p_order_id: string }; Returns: Json }
+      pos_receipt_template_resolve: {
+        Args: {
+          _channel?: Database["public"]["Enums"]["pos_receipt_channel"]
+          _org_id: string
+        }
+        Returns: {
+          channel: Database["public"]["Enums"]["pos_receipt_channel"]
+          copies: number
+          created_at: string
+          font_size_pt: number
+          footer_text: string | null
+          header_text: string | null
+          id: string
+          is_default: boolean
+          layout: Json
+          name: string
+          organization_id: string
+          paper_width_mm: number
+          show_logo: boolean
+          show_nit: boolean
+          show_qr_pago: boolean
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pos_receipt_templates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       pos_void_table_item: {
         Args: { _item_id: string; _reason_code: string; _reason_text: string }
         Returns: Json
@@ -13167,6 +13276,14 @@ export type Database = {
         | "approaching_limit"
         | "cancellation_followup"
       lifecycle_status: "active" | "completed" | "suppressed" | "failed"
+      pos_receipt_channel:
+        | "counter"
+        | "delivery"
+        | "platform"
+        | "table"
+        | "takeaway"
+        | "kitchen"
+        | "void"
       tenant_lifecycle_state:
         | "pending"
         | "trial"
@@ -13330,6 +13447,15 @@ export const Constants = {
         "cancellation_followup",
       ],
       lifecycle_status: ["active", "completed", "suppressed", "failed"],
+      pos_receipt_channel: [
+        "counter",
+        "delivery",
+        "platform",
+        "table",
+        "takeaway",
+        "kitchen",
+        "void",
+      ],
       tenant_lifecycle_state: [
         "pending",
         "trial",

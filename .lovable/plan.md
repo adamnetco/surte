@@ -1,60 +1,80 @@
-# Ola 18 — Dunning & Recuperación de pago
+# Ola 27 — Configurador de factura visual 80mm
 
-Objetivo: recuperar churn involuntario (tarjeta vencida, fondos insuficientes, fallo de gateway) con reintentos automáticos Wompi, escalado de comunicaciones, grace period, pausa automática y panel de morosidad para superadmin.
-
-## Estado actual relevante
-- Wompi ya emite webhooks (`wompi-events`) con estados APPROVED/DECLINED/ERROR/VOIDED para suscripciones y add-ons.
-- `subscriptions` tiene `status` (active/past_due/canceled/...) y `current_period_end`.
-- `subscription_invoices` ya existe con 22 columnas.
-- `SubscriptionStatusBanner` y `SubscriptionGate` ya reaccionan a status `past_due`.
-- Embudo Ola 17 (`gate_denials → upgrade_clicks → wompi_approved`) listo para enriquecer con eventos de dunning.
+Editor split (formulario + preview en vivo de ticket 80mm) para que cada tienda configure el layout de su recibo POS / comanda / vale, con plantillas por canal de venta (mostrador, domicilio, plataforma, mesa, llevar) y secciones reordenables. Cierra gap visible vs VectorPOS (capturas: "Configurador de factura split form+preview vivo 80mm" en mem://references/vectorpos-settings-kds).
 
 ## Slices
 
-### Slice 1 — Schema + detección de fallo (DB)
-- Tabla `dunning_cases` (organization_id, subscription_id, invoice_id, status [open/recovered/written_off/paused], failure_reason, attempt_count, next_retry_at, opened_at, closed_at, total_amount_cop).
-- Tabla `dunning_attempts` (case_id, attempt_no, scheduled_at, executed_at, outcome [approved/declined/error/skipped], wompi_transaction_id, error_code).
-- RLS: admin/owner del tenant lee sus casos; superadmin lee todo; service_role escribe.
-- RPC `dunning_open_case(p_subscription_id, p_invoice_id, p_reason)` — idempotente por (subscription_id, invoice_id).
-- Trigger en `wompi-events`: cuando DECLINED/ERROR en cobro recurrente → abre caso + marca `subscription.status='past_due'`.
-- Vista `v_dunning_summary` (por tenant y global) para KPIs.
+### Slice 1 — Schema + plantilla por defecto seed
+- Nueva tabla `pos_receipt_templates` (id, org_id, name, channel `enum: counter|delivery|platform|table|takeaway|kitchen|void`, is_default, paper_width_mm 58|80, layout `jsonb` con array de secciones, header/footer texto, mostrar_logo, mostrar_qr_pago, mostrar_nit, copies, font_size, created_at, updated_at).
+- GRANT + RLS estándar org-scoped + service_role.
+- Seed automático on first read: plantilla "Mostrador 80mm" por org cuando no existe ninguna.
+- Hook `usePosReceiptTemplates(channel?)`.
 
-### Slice 2 — Retry engine (Edge + cron)
-- Edge function `dunning-retry-worker`: lee casos `open` con `next_retry_at <= now()`, ejecuta cobro Wompi (PSE/tarjeta tokenizada), registra attempt, calcula siguiente retry con backoff exponencial **D+1, D+3, D+5, D+7** (max 4 intentos). 
-- En APPROVED → `recovered` + suscripción `active`; en último intento fallido → `paused` (suspende tenant) + status `canceled_for_nonpayment`.
-- `pg_cron` cada 30 min invoca el worker.
-- Telemetría: `usage_events` con `kind='dunning_attempt'`.
+### Slice 2 — Editor split + preview en vivo 80mm
+- Ruta `/admin/configuracion/recibos` con layout `grid grid-cols-1 lg:grid-cols-[420px_1fr]`:
+  - Izquierda: form (RHF + zod) con accordion de secciones (Logo, Encabezado, Datos tienda, Cliente, Items, Totales, Pagos, Códigos, Pie legal, QR).
+  - Derecha: `<ReceiptPreview/>` sticky, ancho fijo 302px (~80mm a 96dpi), tipografía mono, render reactivo con datos mock realistas.
+- Drag & drop de orden de secciones (`@dnd-kit/sortable`, ya instalado).
+- Toggles por sección: visible, mostrar título, separador.
+- Cambios autosave con debounce 600ms + indicador "Guardado".
 
-### Slice 3 — Comunicaciones escalonadas (emails + in-app)
-- Plantillas React Email en `_shared/transactional-email-templates/`:
-  - `dunning-payment-failed` (D+0): "No pudimos cobrar tu plan, lo reintentaremos automáticamente. Actualiza tu método si quieres adelantar."
-  - `dunning-reminder` (D+3): "Segundo intento falló. Quedan 4 días de gracia."
-  - `dunning-final-warning` (D+6): "Mañana suspenderemos tu cuenta."
-  - `dunning-suspended` (D+7+): "Cuenta suspendida. Reactiva con un pago."
-  - `dunning-recovered`: "¡Pago recuperado! Tu cuenta sigue activa."
-- Triggers en `dunning-retry-worker` después de cada attempt.
-- Banner `DunningBanner.tsx` global (ámbar→rojo según attempt_no) con CTA "Actualizar método de pago" → deep-link a `/billing/update-payment` con `return_to`.
+### Slice 3 — Plantillas por canal + asignación
+- Tabs por canal en la cabecera del editor (counter/delivery/platform/table/takeaway/kitchen/void) con badge "default" y duplicar plantilla.
+- RPC `pos_receipt_template_resolve(org, channel)` que devuelve plantilla activa por canal con fallback al default.
+- Integración en `print_jobs`: el worker de impresión lee la plantilla resuelta para renderizar el ticket (no rompe jobs existentes, gating por flag `use_visual_template` en `app_settings`).
 
-### Slice 4 — Grace period + pausa automática + reactivación
-- Config `grace_period_days` por plan (default 7) en `saas_plans.grace_period_days`.
-- Durante grace: tenant lee/escribe normal, pero `SubscriptionGate` muestra DunningBanner crítico.
-- Al expirar grace: `dunning-retry-worker` ejecuta `pause_tenant(org_id)` → cambia `organizations.status='suspended_payment'`, fuerza `TenantSuspendedBanner` ya existente.
-- Página `/billing/recover`: muestra invoices vencidas, botón "Pagar y reactivar" → invoca `wompi-recover-payment` (nueva edge) → al APPROVED dispara `reactivate_tenant`.
+### Slice 4 — Comanda de cocina + vale de anulación
+- Layouts especializados para `channel='kitchen'` (sin precios, fuente XL, separador por estación, hora, mesa/sub-letra) y `channel='void'` (vale de anulación de Ola 26 Slice 5, con motivo y hash fiscal).
+- Preview muestra ejemplos contextualizados según canal seleccionado.
+- Botón "Imprimir prueba" → encola `print_jobs` real con datos mock.
 
-### Slice 5 — Panel superadmin de morosidad + churn involuntario
-- Página `/superadmin/dunning`:
-  - KPI cards: casos abiertos, MRR en riesgo, tasa de recuperación 30d, churn involuntario evitado.
-  - Tabla casos abiertos (tenant, días en mora, intentos, próximo retry, monto) con acciones: forzar retry ahora, marcar `written_off`, extender grace.
-  - Gráfica recovery rate por cohorte semanal (Recharts).
-- Integración con `ConversionFunnelPanel`: añadir métrica "churn recuperado" al embudo PLG.
-- Export CSV de casos para finanzas.
+### Slice 5 — Export/Import JSON + galería de plantillas
+- Export plantilla a JSON, import con validación zod.
+- 4 plantillas prediseñadas (Minimal, Completa, Restaurante, Mayorista) disponibles desde botón "Cargar desde galería".
+- QA E2E (Playwright: navegar al editor, mover sección, verificar preview cambia, autosave) + publish.
+
+## Detalles técnicos
+
+```text
+src/modules/admin-cms/
+├── pages/ReceiptTemplatesPage.tsx              # ruta /admin/configuracion/recibos
+├── components/receipts/
+│   ├── ReceiptTemplateEditor.tsx               # split layout
+│   ├── ReceiptTemplateForm.tsx                 # RHF + zod + dnd-kit
+│   ├── ReceiptPreview.tsx                      # render 302px, datos mock
+│   ├── ReceiptSection.tsx                      # 10 renderers por tipo
+│   ├── ChannelTabs.tsx
+│   └── TemplateGalleryDialog.tsx
+├── hooks/
+│   ├── usePosReceiptTemplates.ts
+│   └── useReceiptTemplateAutosave.ts
+└── lib/
+    ├── receiptLayoutSchema.ts                  # zod + tipos Section
+    ├── receiptMockData.ts
+    └── receiptGallery.ts                       # 4 presets
+
+supabase/migrations/[ts]_pos_receipt_templates.sql
+supabase/functions/print-worker/                # extender para leer template
+```
+
+Layout JSON ejemplo:
+```text
+{
+  "sections": [
+    {"id":"logo","type":"logo","visible":true,"align":"center"},
+    {"id":"store","type":"store_info","fields":["name","nit","address","phone"]},
+    {"id":"divider1","type":"divider","char":"="},
+    {"id":"items","type":"items","columns":["qty","name","total"],"showModifiers":true},
+    {"id":"totals","type":"totals","showTax":true,"showTip":true},
+    {"id":"qr","type":"qr","content":"order_url"},
+    {"id":"footer","type":"text","value":"Gracias por su compra"}
+  ]
+}
+```
+
+Render preview: componente puro stateless, recibe `layout` + `mockOrder`, sin red ni efectos, ideal para autosave debounce.
 
 ## Skills aplicadas
-- `saas-entitlements-and-plan-gating` — coordinación con SubscriptionGate ya existente.
-- `saas-lifecycle-email-orchestration` — secuencia retention/dunning event-triggered, con suppression al recuperar.
-- `saas-admin-backoffice-tooling` — panel superadmin con audit log y acciones co-firmadas (extender grace, write-off).
-- `saas-business-metrics` — KPIs de involuntary churn y recovery rate.
-- `feature-dev`, `frontend-design`, `code-review`, `claude-mem`.
+superpowers, feature-dev (clarify→architect→build→review), frontend-design (split editor minimal, mono font para ticket), frontend-ui-engineering (accessibility, dnd a11y, sticky preview), pos-feature (DB→edge→hooks→UI→ruta), code-review en cada slice.
 
-## Orden de ejecución
-Arranco con **Slice 1 (schema + apertura de caso)** ahora mismo si confirmas. ¿Procedo?
+¿Arrancamos por **Slice 1 (schema + seed)** o prefieres que empiece directo con **Slice 2 (editor + preview)** usando una plantilla hardcoded mientras valido UX?
