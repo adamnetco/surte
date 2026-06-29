@@ -56,7 +56,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         // Superadmin ve TODAS las organizaciones activas, no solo las suyas.
         const { data, error } = await supabase
           .from("organizations")
-          .select("id, slug, name")
+          .select("id, slug, name, business_type")
           .eq("is_active", true)
           .order("name");
         if (error) throw error;
@@ -65,6 +65,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
           slug: o.slug,
           name: o.name,
           role: "owner" as OrgRole,
+          business_type: o.business_type ?? null,
         }));
       } else {
         const { data, error } = await supabase.rpc("user_orgs", { _user_id: user.id });
@@ -74,6 +75,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
           slug: r.slug,
           name: r.name,
           role: r.role,
+          business_type: r.business_type ?? null,
         }));
       }
       setOrgs(list);
