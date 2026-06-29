@@ -53,6 +53,7 @@ import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import POSCustomerPicker from "./POSCustomerPicker";
 import POSContextualBar from "./POSContextualBar";
 import TableGridSheet from "./TableGridSheet";
+import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
 import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/modules/pos/hooks/usePOSModes";
@@ -113,6 +114,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [customer, setCustomer] = useState<POSCustomer | null>(null);
   const [tableLabel, setTableLabel] = useState(""); // para modo mesa
   const [tableSheetOpen, setTableSheetOpen] = useState(false);
+  const [quickModsOpen, setQuickModsOpen] = useState(false);
+  const [stickyNotes, setStickyNotes] = useState<string[]>([]);
   const [driver, setDriver] = useState<DriverInfo | null>(null); // para modo domicilio
   const [driverSheetOpen, setDriverSheetOpen] = useState(false);
   const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
