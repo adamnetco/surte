@@ -130,6 +130,7 @@ const SuperadminDashboard = () => {
                 <Route path="lifecycle" element={<LifecyclePanel />} />
                 <Route path="referrals" element={<ReferralsPanel />} />
                 <Route path="surveys" element={<SurveysPanel />} />
+                <Route path="routing-alerts-cron" element={<RoutingAlertsCronHealth />} />
 
                 {/* Redirecciones de rutas globales antiguas → ahora viven por tenant */}
                 <Route path="sync" element={<Navigate to="/superadmin/tiendas" replace />} />
