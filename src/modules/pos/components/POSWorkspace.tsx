@@ -1285,6 +1285,19 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onApply={(notes) => setStickyNotes(notes)}
       />
 
+      <POSModifiersPickerSheet
+        open={!!modPickerProduct}
+        onOpenChange={(o) => { if (!o) setModPickerProduct(null); }}
+        product={modPickerProduct}
+        onConfirm={(adj, summary) => {
+          if (!modPickerProduct) return;
+          const base = priceFor(modPickerProduct.id, Number(modPickerProduct.price));
+          pushLine(modPickerProduct, base + adj, summary);
+          setModPickerProduct(null);
+        }}
+      />
+
+
       <DriverPickerSheet
         open={driverSheetOpen}
         onOpenChange={setDriverSheetOpen}
