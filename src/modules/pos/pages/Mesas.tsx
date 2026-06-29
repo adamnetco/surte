@@ -151,7 +151,7 @@ export default function Mesas() {
           tableId={openTableId}
           organizationId={orgId!}
           userId={user!.id}
-          onClose={() => { setOpenTableId(null); load(); }}
+          onClose={() => { setOpenTableId(null); reload(); }}
         />
       )}
     </div>
