@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import ReservationsFloorMap from "../components/ReservationsFloorMap";
 import {
   useReservationsAgenda,
   useCheckAvailability,
@@ -19,6 +21,7 @@ import {
   type ReservationStatus,
   type AvailableTable,
 } from "../hooks/useReservations";
+
 
 const STATUS_COLOR: Record<ReservationStatus, string> = {
   pending: "bg-yellow-500/10 text-yellow-700 border-yellow-500/30",
