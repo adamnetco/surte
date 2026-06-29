@@ -120,8 +120,11 @@ Emite la factura electrónica DIAN (Innapsis) para una venta existente.
 | 401 | `UNAUTHORIZED` | Token ausente, malformado, inválido, revocado o expirado |
 | 403 | `FORBIDDEN` | La key no incluye el scope requerido |
 | 404 | `NOT_FOUND` | Ruta desconocida |
+| 422 | `VALIDATION_ERROR` | Payload inválido (items vacíos, campos faltantes, etc.) |
 | 429 | `RATE_LIMIT_EXCEEDED` | Más de 120 req/min |
-| 500 | `INTERNAL` / `QUERY_ERROR` | Error del servidor |
+| 500 | `INTERNAL` / `QUERY_ERROR` / `INSERT_ERROR` | Error del servidor |
+| 502 | `EMIT_FAILED` | El proveedor DIAN rechazó la emisión |
+
 
 ## Ejemplo cURL
 
