@@ -277,6 +277,9 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
                 <Row label="Tarjeta" value={COP(totals.card)} />
                 <Row label="Transferencia/Wallets" value={COP(totals.transfer)} />
                 <Row label="Otros" value={COP(totals.other)} />
+                {totals.tips > 0 && (
+                  <Row label="Propinas (incl. en ventas)" value={COP(totals.tips)} />
+                )}
                 <hr className="my-1" />
                 <Row label="Ventas totales" value={COP(totals.total)} bold />
                 {(!blindMode || revealed) && <>
