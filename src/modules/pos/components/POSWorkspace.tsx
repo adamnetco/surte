@@ -377,6 +377,28 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     });
   }, [products, search, activeCategory]);
 
+  // ===== Atajos numéricos Alt+1..9 (estilo VectorPOS) =====
+  // Añade al ticket el N-ésimo producto visible del grid. Solo activo cuando
+  // el operador está en la vista catálogo y no está tecleando.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable) return;
+      if (catalogView !== "catalog") return;
+      const n = parseInt(e.key, 10);
+      if (!Number.isFinite(n) || n < 1 || n > 9) return;
+      const p = filtered[n - 1];
+      if (!p) return;
+      e.preventDefault();
+      addProduct(p);
+      toast.success(`+ ${p.name}`, { duration: 900 });
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, catalogView]);
+
   const totals = useMemo(() => {
     const lineSubtotal = ticket.reduce((s, l) => {
       const lineDisc = (l.discountPct ?? 0) / 100;
@@ -756,14 +778,25 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             ) : (
               <div
                 className="grid gap-2"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
+                style={{ gridTemplateColumns: isFood
+                  ? "repeat(auto-fill, minmax(160px, 1fr))"
+                  : "repeat(auto-fill, minmax(200px, 1fr))" }}
               >
-                {filtered.map((p) => (
+                {filtered.map((p, idx) => (
                   <button
                     key={p.id}
                     onClick={() => addProduct(p)}
-                    className="bg-card rounded-lg border hover:border-primary hover:shadow-sm transition text-left overflow-hidden active:scale-95"
+                    className="relative bg-card rounded-lg border hover:border-primary hover:shadow-sm transition text-left overflow-hidden active:scale-95"
                   >
+                    {!isFood && idx < 9 && (
+                      <kbd
+                        className="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 text-[10px] font-bold rounded bg-foreground/85 text-background shadow-sm"
+                        title={`Alt+${idx + 1} para añadir`}
+                        aria-hidden="true"
+                      >
+                        Alt+{idx + 1}
+                      </kbd>
+                    )}
                     <div className="aspect-square bg-muted overflow-hidden">
                       {p.image_url ? (
                         <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
@@ -771,9 +804,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                         <div className="w-full h-full grid place-items-center text-muted-foreground text-xs">Sin imagen</div>
                       )}
                     </div>
-                    <div className="p-2">
-                      <p className="text-xs font-medium line-clamp-2 min-h-[2rem]">{p.name}</p>
-                      <p className="text-sm font-bold text-primary mt-1">{COP(Number(p.price))}</p>
+                    <div className={isFood ? "p-2" : "p-2.5"}>
+                      <p className={isFood ? "text-xs font-medium line-clamp-2 min-h-[2rem]" : "text-sm font-semibold line-clamp-2 min-h-[2.5rem]"}>{p.name}</p>
+                      <p className={isFood ? "text-sm font-bold text-primary mt-1" : "text-base font-bold text-primary mt-1"}>{COP(Number(p.price))}</p>
                     </div>
                   </button>
                 ))}
