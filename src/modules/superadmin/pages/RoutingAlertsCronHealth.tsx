@@ -616,6 +616,55 @@ export default function RoutingAlertsCronHealth() {
             >
               <Link2 className="h-3.5 w-3.5 mr-1" /> Link
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" title="Presets de filtros">
+                  <Bookmark className="h-3.5 w-3.5 mr-1" /> Presets
+                  {presets.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{presets.length}</Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel className="text-xs">Presets guardados</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {presets.length === 0 && (
+                  <div className="px-2 py-2 text-xs text-muted-foreground">
+                    Aún no hay presets. Guarda los filtros actuales para reutilizarlos.
+                  </div>
+                )}
+                {presets.map((p) => (
+                  <DropdownMenuItem
+                    key={p.name}
+                    onSelect={(e) => { e.preventDefault(); applyPreset(p); }}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm truncate">{p.name}</span>
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        {p.kind}·{p.sev}{p.org !== "all" ? `·${orgs[p.org]?.slug ?? p.org.slice(0, 6)}` : ""}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); deletePreset(p.name); }}
+                      className="text-muted-foreground hover:text-destructive shrink-0"
+                      aria-label={`Eliminar preset ${p.name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(e) => { e.preventDefault(); savePreset(); }}
+                  disabled={!hasActiveFilters}
+                >
+                  <BookmarkPlus className="h-3.5 w-3.5 mr-2" />
+                  Guardar filtros actuales
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
         <CardContent>
