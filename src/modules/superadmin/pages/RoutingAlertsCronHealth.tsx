@@ -90,6 +90,16 @@ export default function RoutingAlertsCronHealth() {
       (orgsData ?? []).forEach((o: OrgRow) => { map[o.id] = o; });
       setOrgs(map);
     }
+
+    const { data: evRows } = await (supabase as any)
+      .from("health_events")
+      .select("id, kind, severity, payload, created_at")
+      .in("kind", HEALTH_KINDS)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setEvents((evRows ?? []) as HealthEventRow[]);
+
     setLoading(false);
   }, []);
 
