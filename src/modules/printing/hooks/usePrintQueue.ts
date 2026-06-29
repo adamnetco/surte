@@ -146,13 +146,15 @@ async function renderJobFromOrder(job: PrintJobRow, printer: any): Promise<Uint8
     sale_mode: order.sale_mode,
     created_at: order.paid_at ?? order.created_at,
     items: (items ?? []).map((it: any) => ({
+      id: it.id,
       name: it.product_name,
       quantity: Number(it.quantity),
       unit_price: Number(it.unit_price),
       total: Number(it.total),
       modifiers: Array.isArray(it.modifiers) ? it.modifiers : [],
       notes: it.notes,
-    })),
+      station_id: it.station_id ?? null,
+    })) as any,
     subtotal: Number(order.subtotal),
     discount: Number(order.discount),
     tax: Number(order.tax),
@@ -164,9 +166,39 @@ async function renderJobFromOrder(job: PrintJobRow, printer: any): Promise<Uint8
 
   const mm = printer.paper_width_mm === 58 || printer.paper_width_mm === 48 ? 58 : 80;
   if (job.kind === "kitchen") {
-    const stationName = job.payload?.station_name ?? "COCINA";
-    return buildKitchen(td, stationName, mm).build();
+    const stationName: string = job.payload?.station_name ?? "COCINA";
+    const stationId: string | null = job.payload?.station_id ?? null;
+    const itemIds: string[] | null = Array.isArray(job.payload?.item_ids) ? job.payload.item_ids : null;
+
+    // Filtrar items por estación / item_ids explícitos enviados por el router.
+    const filteredItems = (td.items as any[]).filter((it) => {
+      if (itemIds && itemIds.length) return itemIds.includes(it.id);
+      if (stationId) return it.station_id === stationId;
+      return true;
+    });
+    const kitchenTicket: TicketData = {
+      ...td,
+      items: filteredItems.length ? filteredItems : td.items,
+      // Para el render declarativo, el "logo" muestra el nombre de la estación.
+      org: { ...td.org, business_name: stationName.toUpperCase() },
+    };
+
+    // 1) Intentar plantilla declarativa del canal `kitchen` (compartida con el preview 80mm).
+    try {
+      const { builder, hasLayout } = await buildReceiptForChannel({
+        orgId: order.organization_id,
+        channel: "kitchen",
+        ticket: kitchenTicket,
+        paperMm: mm,
+      });
+      if (hasLayout) return builder.build();
+    } catch (e) {
+      console.warn("[printing] kitchen template falló, usando builder legacy:", e);
+    }
+    // 2) Fallback al builder hardcoded de comanda.
+    return buildKitchen(kitchenTicket, stationName, mm).build();
   }
+
   // Resolver canal: explícito en print_jobs.channel, o derivado de sale_mode/kind.
   const channel: ReceiptChannel =
     (job.channel as ReceiptChannel) ??
