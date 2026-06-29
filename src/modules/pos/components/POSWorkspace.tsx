@@ -1262,18 +1262,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </Button>
             </div>
 
-            {/* Específico modo Mesa: Trasladar */}
-            {saleMode === "mesa" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full h-7 text-[10px] border-dashed"
-                onClick={() => navigate("/mesas")}
-                title="Trasladar mesa / productos (gestión completa)"
-              >
-                <ArrowLeftRight className="w-3 h-3 mr-1" /> Trasladar mesa / productos
-              </Button>
-            )}
+            {/* "Trasladar mesa / productos" eliminado: la transferencia vive en
+                TableOrderDrawer (split + ArrowRightLeft) y el switch de vista
+                Mesas/Catálogo + F5 ya cubre la navegación a la grilla. */}
           </div>
         </aside>
       </div>

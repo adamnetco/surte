@@ -1,21 +1,13 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { Loader2, LockKeyhole, Users, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { LockKeyhole, Users } from "lucide-react";
 import { toast } from "sonner";
 import TableOrderDrawer from "@/modules/pos/components/TableOrderDrawer";
 import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
-
-interface Area { id: string; name: string; color: string | null; }
-interface Table {
-  id: string; label: string; capacity: number; pos_x: number; pos_y: number;
-  width: number; height: number; shape: string; status: string; dining_area_id: string | null;
-}
-interface OpenOrder { id: string; dining_table_id: string | null; total: number; opened_at: string; sub_label: string | null; }
+import { useTablesFloor, type FloorTable } from "@/modules/pos/hooks/useTablesFloor";
 
 const STATUS_BG: Record<string, string> = {
   available: "bg-secondary/15 border-secondary/40 text-secondary-foreground",
@@ -29,70 +21,23 @@ export default function Mesas() {
   const { currentOrg, hasModule, loading: orgLoading } = useOrganization();
   const navigate = useNavigate();
 
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [tables, setTables] = useState<Table[]>([]);
-  const [openOrders, setOpenOrders] = useState<OpenOrder[]>([]);
+  const orgId = currentOrg?.id;
+  const { areas, tables, ordersByTable, loading, reload } = useTablesFloor(orgId, { withCoords: true });
+
   const [activeArea, setActiveArea] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [openTableId, setOpenTableId] = useState<string | null>(null);
 
   useEffect(() => { if (!authLoading && !user) navigate("/login"); }, [user, authLoading, navigate]);
   useEffect(() => { document.title = `Mesas · ${currentOrg?.name ?? "Mi Negocio"}`; }, [currentOrg?.name]);
-
-  const orgId = currentOrg?.id;
-
-  const load = useCallback(async () => {
-    if (!orgId) return;
-    setLoading(true);
-    const [{ data: a }, { data: t }, { data: o }] = await Promise.all([
-      supabase.from("dining_areas").select("id,name,color").eq("organization_id", orgId).eq("is_active", true).order("sort_order"),
-      supabase.from("dining_tables").select("id,label,capacity,pos_x,pos_y,width,height,shape,status,dining_area_id")
-        .eq("organization_id", orgId).eq("is_active", true).order("label"),
-      supabase.from("table_orders").select("id,dining_table_id,total,opened_at,sub_label")
-        .eq("organization_id", orgId).in("status", ["open","sent","billed"]),
-    ]);
-    setAreas(a ?? []);
-    setTables((t as Table[]) ?? []);
-    setOpenOrders((o as OpenOrder[]) ?? []);
-    if (!activeArea && a && a.length) setActiveArea(a[0].id);
-    setLoading(false);
-  }, [orgId, activeArea]);
-
-  useEffect(() => { load(); }, [load]);
-
-  // Realtime
+  // Auto-seleccionar la primera zona en cuanto cargan
   useEffect(() => {
-    if (!orgId) return;
-    let ch: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      ch = supabase
-        .channel(uniqueTopic(`mesas-${orgId}`))
-        .on("postgres_changes", { event: "*", schema: "public", table: "table_orders", filter: `organization_id=eq.${orgId}` }, () => load())
-        .on("postgres_changes", { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${orgId}` }, () => load())
-        .subscribe();
-    } catch (err) {
-      console.warn("[Mesas] realtime subscribe failed", err);
-    }
-    return () => { safeRemoveChannel(ch); };
-  }, [orgId, load]);
+    if (!activeArea && areas.length) setActiveArea(areas[0].id);
+  }, [areas, activeArea]);
 
   const filtered = useMemo(
     () => activeArea ? tables.filter(t => t.dining_area_id === activeArea) : tables,
     [tables, activeArea]
   );
-
-  const ordersByTable = useMemo(() => {
-    const m = new Map<string, OpenOrder[]>();
-    openOrders.forEach((o) => {
-      if (!o.dining_table_id) return;
-      const arr = m.get(o.dining_table_id) ?? [];
-      arr.push(o);
-      m.set(o.dining_table_id, arr);
-    });
-    // Stable order: sub_label asc (null first), then by opened_at
-    m.forEach((arr) => arr.sort((a, b) => (a.sub_label ?? "").localeCompare(b.sub_label ?? "")));
-    return m;
-  }, [openOrders]);
 
   if (authLoading || orgLoading || loading) {
     return (
@@ -119,7 +64,7 @@ export default function Mesas() {
     );
   }
 
-  const openTable = async (t: Table) => {
+  const openTable = async (t: FloorTable) => {
     const existing = ordersByTable.get(t.id);
     if (existing && existing.length) { setOpenTableId(t.id); return; }
     // create open order
@@ -206,7 +151,7 @@ export default function Mesas() {
           tableId={openTableId}
           organizationId={orgId!}
           userId={user!.id}
-          onClose={() => { setOpenTableId(null); load(); }}
+          onClose={() => { setOpenTableId(null); reload(); }}
         />
       )}
     </div>
