@@ -12702,6 +12702,10 @@ export type Database = {
         Args: { p_entry_id: string; p_reason?: string }
         Returns: string
       }
+      webhook_replay_delivery: {
+        Args: { p_delivery_id: string }
+        Returns: string
+      }
     }
     Enums: {
       account_nature: "debit" | "credit"
