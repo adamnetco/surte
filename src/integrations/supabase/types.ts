@@ -9268,6 +9268,64 @@ export type Database = {
           },
         ]
       }
+      routing_alert_notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          notified_on: string
+          organization_id: string
+          payload: Json
+          recipients_count: number
+          target_id: string
+          target_kind: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          id?: string
+          notified_on?: string
+          organization_id: string
+          payload?: Json
+          recipients_count?: number
+          target_id: string
+          target_kind: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          notified_on?: string
+          organization_id?: string
+          payload?: Json
+          recipients_count?: number
+          target_id?: string
+          target_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routing_alert_notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routing_alert_notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "routing_alert_notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       saas_plans: {
         Row: {
           created_at: string
