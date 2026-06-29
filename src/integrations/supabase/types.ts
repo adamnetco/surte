@@ -7794,6 +7794,7 @@ export type Database = {
       print_jobs: {
         Row: {
           attempts: number
+          channel: string | null
           client_uuid: string | null
           copies: number
           created_at: string
@@ -7803,16 +7804,22 @@ export type Database = {
           kind: string
           last_error: string | null
           organization_id: string
+          parent_job_id: string | null
           payload: Json
           pos_order_id: string | null
           printer_id: string | null
           processed_at: string | null
+          reprint_count: number
+          reprint_reason: string | null
+          snapshot: Json | null
           status: string
+          template_id: string | null
           terminal_id: string | null
           updated_at: string
         }
         Insert: {
           attempts?: number
+          channel?: string | null
           client_uuid?: string | null
           copies?: number
           created_at?: string
@@ -7822,16 +7829,22 @@ export type Database = {
           kind: string
           last_error?: string | null
           organization_id: string
+          parent_job_id?: string | null
           payload?: Json
           pos_order_id?: string | null
           printer_id?: string | null
           processed_at?: string | null
+          reprint_count?: number
+          reprint_reason?: string | null
+          snapshot?: Json | null
           status?: string
+          template_id?: string | null
           terminal_id?: string | null
           updated_at?: string
         }
         Update: {
           attempts?: number
+          channel?: string | null
           client_uuid?: string | null
           copies?: number
           created_at?: string
@@ -7841,11 +7854,16 @@ export type Database = {
           kind?: string
           last_error?: string | null
           organization_id?: string
+          parent_job_id?: string | null
           payload?: Json
           pos_order_id?: string | null
           printer_id?: string | null
           processed_at?: string | null
+          reprint_count?: number
+          reprint_reason?: string | null
+          snapshot?: Json | null
           status?: string
+          template_id?: string | null
           terminal_id?: string | null
           updated_at?: string
         }
@@ -7872,6 +7890,13 @@ export type Database = {
             referencedColumns: ["organization_id"]
           },
           {
+            foreignKeyName: "print_jobs_parent_job_id_fkey"
+            columns: ["parent_job_id"]
+            isOneToOne: false
+            referencedRelation: "print_jobs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "print_jobs_pos_order_id_fkey"
             columns: ["pos_order_id"]
             isOneToOne: false
@@ -7883,6 +7908,13 @@ export type Database = {
             columns: ["printer_id"]
             isOneToOne: false
             referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_jobs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "pos_receipt_templates"
             referencedColumns: ["id"]
           },
           {
@@ -13017,6 +13049,10 @@ export type Database = {
           p_version: string
         }
         Returns: undefined
+      }
+      print_job_reprint: {
+        Args: { _job_id: string; _printer_id?: string; _reason?: string }
+        Returns: string
       }
       process_referral_qualification: {
         Args: { p_paid_amount: number; p_referee_org_id: string }

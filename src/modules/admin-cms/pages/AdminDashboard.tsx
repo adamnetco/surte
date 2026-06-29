@@ -42,6 +42,7 @@ const MembersAuditTab = lazy(() => import("@/modules/admin-cms/components/Member
 const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersManagerTab").then(m => ({ default: m.PrintersManagerTab })));
 const KitchenRoutingTab = lazy(() => import("@/modules/printing/components/KitchenRoutingTab").then(m => ({ default: m.KitchenRoutingTab })));
 const PrintFleetTab = lazy(() => import("@/modules/printing/components/PrintFleetTab").then(m => ({ default: m.PrintFleetTab })));
+const PrintJobsInspectorTab = lazy(() => import("@/modules/printing/components/PrintJobsInspectorTab").then(m => ({ default: m.PrintJobsInspectorTab })));
 
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
@@ -90,6 +91,7 @@ const allTabs = [
   { id: "printers", label: "Impresoras", icon: Printer, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
   { id: "kitchen-routing", label: "Cocina", icon: ChefHat, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
   { id: "print-fleet", label: "Fleet impresión", icon: Radio, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
+  { id: "print-jobs", label: "Inspector impresión", icon: FileText, roles: ["superadmin", "admin"] as AppRole[], module: null, group: "operacion" as TabGroup },
 ];
 
 class TabErrorBoundary extends Component<{ children: ReactNode; tabName: string }, { hasError: boolean; error: string }> {
@@ -300,6 +302,7 @@ const AdminDashboard = () => {
         {activeTab === "printers" && <PrintersTab organizationId={currentOrg?.id ?? ""} />}
         {activeTab === "kitchen-routing" && <KitchenRoutingTab organizationId={currentOrg?.id ?? ""} />}
         {activeTab === "print-fleet" && <PrintFleetTab organizationId={currentOrg?.id ?? ""} />}
+        {activeTab === "print-jobs" && <PrintJobsInspectorTab organizationId={currentOrg?.id ?? ""} />}
         {/* data / sync / fiscal removidos — viven en /superadmin */}
         {activeTab === "settings" && <SettingsTab settings={settings} queryClient={queryClient} />}
       </Suspense>
