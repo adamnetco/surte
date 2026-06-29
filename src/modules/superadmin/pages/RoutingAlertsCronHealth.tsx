@@ -88,16 +88,7 @@ export default function RoutingAlertsCronHealth() {
     const list = (notifs ?? []) as NotificationRow[];
     setRows(list);
 
-    const orgIds = Array.from(new Set(list.map((r) => r.organization_id)));
-    if (orgIds.length) {
-      const { data: orgsData } = await (supabase as any)
-        .from("organizations")
-        .select("id, name, slug")
-        .in("id", orgIds);
-      const map: Record<string, OrgRow> = {};
-      (orgsData ?? []).forEach((o: OrgRow) => { map[o.id] = o; });
-      setOrgs(map);
-    }
+    const orgIds = new Set<string>(list.map((r) => r.organization_id));
 
     const { data: evRows } = await (supabase as any)
       .from("health_events")
@@ -106,7 +97,25 @@ export default function RoutingAlertsCronHealth() {
       .gte("created_at", sinceIso)
       .order("created_at", { ascending: false })
       .limit(100);
-    setEvents((evRows ?? []) as HealthEventRow[]);
+    const evList = (evRows ?? []) as HealthEventRow[];
+    setEvents(evList);
+
+    // Recolecta org_ids referenciados en payloads (orgs[].id o organization_id sueltos)
+    for (const ev of evList) {
+      const p = ev.payload ?? {};
+      if (Array.isArray(p.orgs)) for (const o of p.orgs) { if (o?.id) orgIds.add(o.id); }
+      if (p.organization_id) orgIds.add(p.organization_id);
+    }
+
+    if (orgIds.size) {
+      const { data: orgsData } = await (supabase as any)
+        .from("organizations")
+        .select("id, name, slug")
+        .in("id", Array.from(orgIds));
+      const map: Record<string, OrgRow> = {};
+      (orgsData ?? []).forEach((o: OrgRow) => { map[o.id] = o; });
+      setOrgs(map);
+    }
 
     setLoading(false);
   }, []);
