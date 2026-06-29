@@ -109,15 +109,21 @@ Deno.serve(async (req) => {
     p_prefix: prefix, p_hash: hash, p_max_per_min: MAX_PER_MIN,
   });
   if (rpcErr) return respond(json(errBody("INTERNAL", rpcErr.message), 500), "INTERNAL");
-  const c = consume as { ok: boolean; reason?: string; organization_id?: string; scopes?: string[]; limit?: number; remaining?: number; reset_at?: string };
+  const c = consume as { ok: boolean; reason?: string; organization_id?: string; scopes?: string[]; mode?: string; limit?: number; remaining?: number; reset_at?: string };
+  const apiMode = (c.mode === "test" ? "test" : "live");
+  if (c.organization_id) logCtx.mode = apiMode;
 
-  const rlHeaders: Record<string, string> = c.limit
-    ? {
-        "x-ratelimit-limit": String(c.limit),
-        "x-ratelimit-remaining": String(c.remaining ?? 0),
-        "x-ratelimit-reset": c.reset_at ? String(Math.floor(new Date(c.reset_at).getTime() / 1000)) : "",
-      }
-    : {};
+  const rlHeaders: Record<string, string> = {
+    "x-api-mode": apiMode,
+    ...(c.limit
+      ? {
+          "x-ratelimit-limit": String(c.limit),
+          "x-ratelimit-remaining": String(c.remaining ?? 0),
+          "x-ratelimit-reset": c.reset_at ? String(Math.floor(new Date(c.reset_at).getTime() / 1000)) : "",
+        }
+      : {}),
+  };
+
 
   if (c.organization_id) {
     logCtx.orgId = c.organization_id;
