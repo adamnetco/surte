@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
   const t0 = performance.now();
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const ua = req.headers.get("user-agent")?.slice(0, 200) ?? null;
-  const logCtx: { orgId?: string; keyId?: string; prefix?: string; path?: string } = {};
+  const logCtx: { orgId?: string; keyId?: string; prefix?: string; path?: string; mode?: string } = {};
   const sbLog = createClient(SUPABASE_URL, SERVICE_KEY);
   const writeLog = async (status: number, errorCode?: string) => {
     if (!logCtx.orgId) return;
@@ -65,9 +65,11 @@ Deno.serve(async (req) => {
         latency_ms: Math.round(performance.now() - t0),
         ip, user_agent: ua,
         error_code: errorCode ?? null,
+        mode: logCtx.mode ?? "live",
       });
     } catch { /* never break the response on log failure */ }
   };
+
   const respond = async (res: Response, errorCode?: string) => {
     await writeLog(res.status, errorCode);
     return res;
