@@ -60,9 +60,9 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
     setLoading(true);
     const [{ data: pr }, { data: st }, { data: ct }, { data: pd }, { data: rl }] = await Promise.all([
       (supabase as any).from("printers").select("id,name,role").eq("organization_id", organizationId).eq("is_active", true).order("name"),
-      (supabase as any).from("kitchen_stations").select("id,name").eq("organization_id", organizationId).eq("is_active", true).order("sort_order"),
+      (supabase as any).from("kitchen_stations").select("id,name,default_printer_id").eq("organization_id", organizationId).eq("is_active", true).order("sort_order"),
       (supabase as any).from("categories").select("id,name").order("name"),
-      (supabase as any).from("products").select("id,name").eq("organization_id", organizationId).order("name").limit(500),
+      (supabase as any).from("products").select("id,name,category_id,kitchen_station_id").eq("organization_id", organizationId).order("name").limit(500),
       (supabase as any).from("printer_routing_rules").select("*").eq("organization_id", organizationId).order("priority", { ascending: true }),
     ]);
     setPrinters((pr ?? []) as PrinterRow[]);
