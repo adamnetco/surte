@@ -177,6 +177,19 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className }
             <Plus className="w-4 h-4" /> Nuevo
           </Button>
         )}
+
+        {onShowHotkeys && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="shrink-0 h-9 w-9 p-0"
+            onClick={onShowHotkeys}
+            title="Atajos de teclado (?)"
+            aria-label="Atajos de teclado"
+          >
+            <Keyboard className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </nav>
   );
