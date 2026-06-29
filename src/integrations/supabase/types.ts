@@ -248,6 +248,79 @@ export type Database = {
         }
         Relationships: []
       }
+      api_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          metadata: Json
+          organization_id: string
+          resolved_at: string | null
+          severity: string
+          status: string
+          subject_id: string | null
+          subject_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          message: string
+          metadata?: Json
+          organization_id: string
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          subject_id?: string | null
+          subject_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string
+          metadata?: Json
+          organization_id?: string
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          subject_id?: string | null
+          subject_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "api_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       api_key_usage: {
         Row: {
           api_key_id: string
@@ -11574,6 +11647,31 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      api_alert_ack: {
+        Args: { _id: string; _resolve?: boolean }
+        Returns: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          metadata: Json
+          organization_id: string
+          resolved_at: string | null
+          severity: string
+          status: string
+          subject_id: string | null
+          subject_label: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "api_alerts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       api_key_consume: {
         Args: { p_hash: string; p_max_per_min?: number; p_prefix: string }
         Returns: Json
@@ -11824,6 +11922,7 @@ export type Database = {
         Args: { p_event_type: string; p_org: string; p_payload: Json }
         Returns: number
       }
+      evaluate_api_alerts: { Args: never; Returns: Json }
       expire_overdue_subscriptions: {
         Args: never
         Returns: {

@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock, BarChart3 } from "lucide-react";
+import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock, BarChart3, Bell } from "lucide-react";
 import { toast } from "sonner";
+import { ApiAlertsPanel } from "@/modules/admin-cms/components/ApiAlertsPanel";
 
 const ALL_EVENTS = [
   "order.created",
@@ -28,7 +29,7 @@ const ALL_EVENTS = [
 export default function DeveloperApiPage() {
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id;
-  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries" | "usage">("keys");
+  const [tab, setTab] = useState<"keys" | "webhooks" | "deliveries" | "usage" | "alerts">("keys");
   const [keys, setKeys] = useState<any[]>([]);
   const [endpoints, setEndpoints] = useState<any[]>([]);
   const [deliveries, setDeliveries] = useState<any[]>([]);
@@ -141,6 +142,7 @@ export default function DeveloperApiPage() {
           { k: "webhooks", label: "Webhooks", icon: Webhook },
           { k: "deliveries", label: "Envíos recientes", icon: Clock },
           { k: "usage", label: "Uso & logs", icon: BarChart3 },
+          { k: "alerts", label: "Alertas", icon: Bell },
 
         ].map((t) => {
           const Icon = t.icon;
@@ -491,6 +493,8 @@ export default function DeveloperApiPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {tab === "alerts" && <ApiAlertsPanel orgId={orgId} />}
     </div>
   );
 }
