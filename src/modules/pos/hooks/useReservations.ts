@@ -124,9 +124,16 @@ export function useUpdateReservationStatus() {
       if (args.status === "cancelled") {
         patch.cancelled_at = new Date().toISOString();
         patch.cancel_reason = args.cancel_reason ?? null;
+      }
+      const { error } = await supabase.from("reservations" as any).update(patch).eq("id", args.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["reservations-agenda"] }),
+  });
 }
 
 // Ola 28 Slice 2 — Asignar/quitar mesa (drag&drop sobre el plano).
+
 export function useAssignReservationTable() {
   const qc = useQueryClient();
   return useMutation({
