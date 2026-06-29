@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock, BarChart3, Bell } from "lucide-react";
+import { Code2, Key, Plus, Trash2, Webhook, Copy, CheckCircle2, XCircle, Clock, BarChart3, Bell, RefreshCw, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { ApiAlertsPanel } from "@/modules/admin-cms/components/ApiAlertsPanel";
 
@@ -42,6 +42,17 @@ export default function DeveloperApiPage() {
   const [newKeyResult, setNewKeyResult] = useState<{ prefix: string; secret: string } | null>(null);
   const [newWh, setNewWh] = useState<{ url: string; events: string[]; description: string }>({ url: "", events: [], description: "" });
   const [showWhDialog, setShowWhDialog] = useState(false);
+  const [inspectDelivery, setInspectDelivery] = useState<any | null>(null);
+  const [replayingId, setReplayingId] = useState<string | null>(null);
+
+  const replayDelivery = async (id: string) => {
+    setReplayingId(id);
+    const { error } = await supabase.rpc("webhook_replay_delivery", { p_delivery_id: id });
+    setReplayingId(null);
+    if (error) return toast.error("No se pudo reintentar", { description: error.message });
+    toast.success("Reintento encolado");
+    load();
+  };
 
   const load = async () => {
     if (!orgId) return;
@@ -349,6 +360,18 @@ export default function DeveloperApiPage() {
                     <span className="ml-auto text-xs text-muted-foreground">
                       {new Date(d.created_at).toLocaleString("es-CO")}
                     </span>
+                    <Button size="sm" variant="ghost" onClick={() => setInspectDelivery(d)} title="Ver payload">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={replayingId === d.id}
+                      onClick={() => replayDelivery(d.id)}
+                      title="Reintentar"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${replayingId === d.id ? "animate-spin" : ""}`} />
+                    </Button>
                   </li>
                 ))}
               </ul>
@@ -518,6 +541,42 @@ export default function DeveloperApiPage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowWhDialog(false)}>Cancelar</Button>
             <Button onClick={createEndpoint} disabled={!newWh.url.trim().startsWith("https://")}>Crear</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!inspectDelivery} onOpenChange={(o) => !o && setInspectDelivery(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base">Detalle de envío</DialogTitle>
+          </DialogHeader>
+          {inspectDelivery && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <div><span className="text-muted-foreground">Evento:</span> <code className="text-xs">{inspectDelivery.event_type}</code></div>
+                <div><span className="text-muted-foreground">Estado:</span> {inspectDelivery.status}</div>
+                <div><span className="text-muted-foreground">Intentos:</span> {inspectDelivery.attempt_count}</div>
+                <div><span className="text-muted-foreground">Último status:</span> {inspectDelivery.last_status_code ?? "—"}</div>
+              </div>
+              <div>
+                <Label className="text-xs">Payload</Label>
+                <pre className="max-h-60 overflow-auto rounded-md border bg-muted/30 p-2 text-xs">{JSON.stringify(inspectDelivery.payload, null, 2)}</pre>
+              </div>
+              {inspectDelivery.last_response && (
+                <div>
+                  <Label className="text-xs">Última respuesta</Label>
+                  <pre className="max-h-40 overflow-auto rounded-md border bg-muted/30 p-2 text-xs whitespace-pre-wrap">{inspectDelivery.last_response}</pre>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setInspectDelivery(null)}>Cerrar</Button>
+            {inspectDelivery && (
+              <Button onClick={() => { replayDelivery(inspectDelivery.id); setInspectDelivery(null); }}>
+                <RefreshCw className="mr-2 h-4 w-4" /> Reintentar ahora
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
