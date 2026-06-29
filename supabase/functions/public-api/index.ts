@@ -327,7 +327,11 @@ Deno.serve(async (req) => {
   // POST /pos-orders/:id/emit-invoice
   const emitMatch = path.match(/^\/pos-orders\/([0-9a-f-]{36})\/emit-invoice$/);
   if (emitMatch) {
+    if (apiMode === "test") {
+      return json(errBody("EMIT_DISABLED_IN_TEST", "Electronic invoice emission is disabled in test mode to avoid contaminating DIAN. Use a live (sk_live) key."), 403, rlHeaders);
+    }
     if (!need("einvoices:write")) return json(errBody("FORBIDDEN", "Missing scope einvoices:write"), 403, rlHeaders);
+
     const posOrderId = emitMatch[1];
 
     const { data: ord, error: ordErr } = await sb.from("pos_orders")
