@@ -57,15 +57,11 @@ export default function POSQuickCreate({ open, onOpenChange, initialTab = "custo
     try {
       if (tab === "customer") {
         if (!cust.full_name.trim()) return toast.error("Nombre requerido");
-        const { data, error } = await supabase
-          .from("profiles")
-          .insert({ ...cust, organization_id: currentOrg.id })
-          .select("id, full_name")
-          .single();
-        if (error) throw error;
-        toast.success("Cliente creado");
-        onCreated?.("customer", { id: data.id, name: data.full_name ?? cust.full_name });
-        qc.invalidateQueries({ queryKey: ["admin-customers", currentOrg.id] });
+        // Los clientes del POS viven en memoria (POSCustomer). La persistencia
+        // formal (profiles con user_id) ocurre en /admin → Clientes. Aquí solo
+        // emitimos el cliente para asignarlo al ticket actual.
+        toast.success("Cliente asignado al ticket");
+        onCreated?.("customer", { id: `temp-${Date.now()}`, name: cust.full_name.trim() });
       } else if (tab === "product") {
         if (!prod.name.trim()) return toast.error("Nombre requerido");
         const priceNum = Number(prod.price || 0);
