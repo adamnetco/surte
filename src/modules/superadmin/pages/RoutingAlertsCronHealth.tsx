@@ -532,6 +532,10 @@ export default function RoutingAlertsCronHealth() {
                     const label = isBreach
                       ? `SLA en breach · ${p.hours_since_last_run ?? "?"}h sin corrida`
                       : `Auto-recuperación · ${p.sent ?? 0} notificadas · ${p.skipped ?? 0} sin cambios${p.duration_ms ? ` · ${Math.round(p.duration_ms)}ms` : ""}`;
+                    const evOrgs: Array<{ id: string; rules?: number; printers?: number; emails?: number; whatsapps?: number }> =
+                      Array.isArray(p.orgs) ? p.orgs : (p.organization_id ? [{ id: p.organization_id }] : []);
+                    const canExpand = evOrgs.length > 0;
+                    const isOpen = !!expanded[ev.id];
                     return (
                       <li key={ev.id} className="ml-4">
                         <span className={`absolute -left-[7px] mt-1 inline-flex h-3 w-3 rounded-full border ${tone}`} />
@@ -547,7 +551,54 @@ export default function RoutingAlertsCronHealth() {
                           {p.error && (
                             <span className="text-xs text-destructive break-all">· {String(p.error).slice(0, 140)}</span>
                           )}
+                          {canExpand && (
+                            <button
+                              type="button"
+                              onClick={() => setExpanded((s) => ({ ...s, [ev.id]: !s[ev.id] }))}
+                              className="ml-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                              aria-expanded={isOpen}
+                            >
+                              {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                              <Building2 className="h-3 w-3" />
+                              {evOrgs.length} org{evOrgs.length === 1 ? "" : "s"}
+                            </button>
+                          )}
                         </div>
+                        {canExpand && isOpen && (
+                          <ul className="mt-2 ml-1 space-y-1 border-l border-border/60 pl-3">
+                            {evOrgs.map((o) => {
+                              const org = orgs[o.id];
+                              const slug = org?.slug;
+                              return (
+                                <li key={o.id} className="flex items-center gap-2 flex-wrap text-xs">
+                                  <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                                  {slug ? (
+                                    <Link
+                                      to={`/superadmin/t/${slug}`}
+                                      className="font-medium text-primary hover:underline inline-flex items-center gap-1"
+                                    >
+                                      {org?.name ?? slug}
+                                      <ExternalLink className="h-3 w-3" />
+                                    </Link>
+                                  ) : (
+                                    <span className="font-mono text-muted-foreground">{o.id.slice(0, 8)}…</span>
+                                  )}
+                                  {(o.rules != null || o.printers != null) && (
+                                    <span className="text-muted-foreground">
+                                      · {o.rules ?? 0} reglas · {o.printers ?? 0} impresoras
+                                    </span>
+                                  )}
+                                  {(o.emails || o.whatsapps) && (
+                                    <span className="text-muted-foreground inline-flex items-center gap-1">
+                                      {o.emails ? <><Mail className="h-3 w-3" />{o.emails}</> : null}
+                                      {o.whatsapps ? <><MessageCircle className="h-3 w-3" />{o.whatsapps}</> : null}
+                                    </span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
                       </li>
                     );
                   })}
