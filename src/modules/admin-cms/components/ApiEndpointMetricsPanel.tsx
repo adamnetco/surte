@@ -88,6 +88,9 @@ export function ApiEndpointMetricsPanel({ orgId }: { orgId: string }) {
           <Button size="sm" variant="outline" onClick={load} disabled={loading}>
             <RefreshCw className={`mr-1 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refrescar
           </Button>
+          <Button size="sm" variant="outline" onClick={() => exportCsv(rows ?? [], range, mode)} disabled={!rows?.length}>
+            <Download className="mr-1 h-3.5 w-3.5" /> CSV
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
