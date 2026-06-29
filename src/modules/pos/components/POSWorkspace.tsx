@@ -377,6 +377,28 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     });
   }, [products, search, activeCategory]);
 
+  // ===== Atajos numéricos Alt+1..9 (estilo VectorPOS) =====
+  // Añade al ticket el N-ésimo producto visible del grid. Solo activo cuando
+  // el operador está en la vista catálogo y no está tecleando.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable) return;
+      if (catalogView !== "catalog") return;
+      const n = parseInt(e.key, 10);
+      if (!Number.isFinite(n) || n < 1 || n > 9) return;
+      const p = filtered[n - 1];
+      if (!p) return;
+      e.preventDefault();
+      addProduct(p);
+      toast.success(`+ ${p.name}`, { duration: 900 });
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, catalogView]);
+
   const totals = useMemo(() => {
     const lineSubtotal = ticket.reduce((s, l) => {
       const lineDisc = (l.discountPct ?? 0) / 100;
