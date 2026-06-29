@@ -162,6 +162,53 @@ export default function RoutingAlertsCronHealth() {
   const hasActiveFilters = !(tlKind === "all" && tlSev === "all" && tlOrg === "all");
   const totalPresetsCount = presets.length + teamPresets.length;
 
+  // Slice Z — Preset por defecto (auto-aplicado al abrir sin query params).
+  // Formato: "team:<id>" | "personal:<name>" | null. Persistido en localStorage.
+  const DEFAULT_PRESET_LS_KEY = "routing_alerts_timeline_default_preset_v1";
+  const [defaultPresetRef, setDefaultPresetRef] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(DEFAULT_PRESET_LS_KEY);
+  });
+  const persistDefaultPresetRef = (ref: string | null) => {
+    setDefaultPresetRef(ref);
+    try {
+      if (ref) window.localStorage.setItem(DEFAULT_PRESET_LS_KEY, ref);
+      else window.localStorage.removeItem(DEFAULT_PRESET_LS_KEY);
+    } catch { /* ignore */ }
+  };
+  const toggleDefaultPreset = (ref: string, name: string) => {
+    if (defaultPresetRef === ref) {
+      persistDefaultPresetRef(null);
+      toast.success(`"${name}" ya no es el preset por defecto`);
+    } else {
+      persistDefaultPresetRef(ref);
+      toast.success(`"${name}" marcado como preset por defecto`);
+    }
+  };
+  // Auto-apply default preset on mount when URL has no filter params.
+  const [defaultApplied, setDefaultApplied] = useState(false);
+  useEffect(() => {
+    if (defaultApplied) return;
+    if (!defaultPresetRef) return;
+    const hasUrlFilters = searchParams.get("kind") || searchParams.get("sev") || searchParams.get("org");
+    if (hasUrlFilters) { setDefaultApplied(true); return; }
+    const [scope, key] = defaultPresetRef.split(":");
+    let target: TimelinePreset | undefined;
+    if (scope === "team") target = teamPresets.find((p) => p.id === key);
+    else if (scope === "personal") target = presets.find((p) => p.name === key);
+    if (target) {
+      setTlKind(target.kind); setTlSev(target.sev); setTlOrg(target.org);
+      setDefaultApplied(true);
+      toast.message(`Preset por defecto aplicado: "${target.name}"`);
+    } else if (scope === "team" && teamPresets.length === 0) {
+      // wait for team presets to load
+      return;
+    } else {
+      setDefaultApplied(true);
+    }
+  }, [defaultPresetRef, teamPresets, presets, searchParams, defaultApplied]);
+
+
   // Sync filter state → URL query params (shareable deep-link).
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
