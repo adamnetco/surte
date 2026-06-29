@@ -13,10 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Printer, RefreshCw, RotateCcw, FileText } from "lucide-react";
+import { Printer, RefreshCw, RotateCcw, FileText, Route, Sparkles } from "lucide-react";
 
 interface Props { organizationId: string }
 
+interface RoutingRuleRef { rule_id: string | null; source: string; priority: number | null }
+interface RoutingInfo { source?: string; rules?: RoutingRuleRef[] }
 interface PrintJobRow {
   id: string;
   printer_id: string | null;
@@ -33,7 +35,16 @@ interface PrintJobRow {
   channel: string | null;
   reprint_count: number | null;
   reprint_reason: string | null;
+  payload: { routing?: RoutingInfo; station_name?: string } | null;
 }
+
+const SOURCE_LABEL: Record<string, { label: string; cls: string }> = {
+  product: { label: "Producto", cls: "bg-violet-500/15 text-violet-700 border-violet-300" },
+  category: { label: "Categoría", cls: "bg-indigo-500/15 text-indigo-700 border-indigo-300" },
+  station: { label: "Estación", cls: "bg-cyan-500/15 text-cyan-700 border-cyan-300" },
+  station_default: { label: "Estación (default)", cls: "bg-slate-500/15 text-slate-700 border-slate-300" },
+  default_receipt: { label: "Recibo default", cls: "bg-slate-500/15 text-slate-700 border-slate-300" },
+};
 
 const STATUS_COLORS: Record<string, string> = {
   queued: "bg-amber-500/15 text-amber-700 border-amber-300",
@@ -72,7 +83,7 @@ export function PrintJobsInspectorTab({ organizationId }: Props) {
     queryFn: async () => {
       let q = (supabase as any)
         .from("print_jobs")
-        .select("id,printer_id,pos_order_id,kind,status,attempts,copies,last_error,created_at,processed_at,parent_job_id,template_id,channel,reprint_count,reprint_reason")
+        .select("id,printer_id,pos_order_id,kind,status,attempts,copies,last_error,created_at,processed_at,parent_job_id,template_id,channel,reprint_count,reprint_reason,payload")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
         .limit(150);
@@ -173,13 +184,24 @@ export function PrintJobsInspectorTab({ organizationId }: Props) {
             <div className="text-sm text-muted-foreground py-12 text-center">Sin trabajos para los filtros actuales.</div>
           ) : (
             <ul className="divide-y divide-gray-100">
-              {filtered.map((j) => (
+              {filtered.map((j) => {
+                const routing = j.payload?.routing;
+                const sources = Array.from(new Set((routing?.rules ?? []).map((r) => r.source).concat(routing?.source ? [routing.source] : [])));
+                return (
                 <li key={j.id} className="py-3 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className={STATUS_COLORS[j.status] ?? ""}>{j.status}</Badge>
                       <span className="text-sm font-medium">{j.kind}</span>
                       {j.channel && <Badge variant="secondary" className="text-xs">{j.channel}</Badge>}
+                      {sources.map((s) => {
+                        const meta = SOURCE_LABEL[s] ?? { label: s, cls: "" };
+                        return (
+                          <Badge key={s} variant="outline" className={`text-xs ${meta.cls}`}>
+                            <Route className="w-3 h-3 mr-1" /> {meta.label}
+                          </Badge>
+                        );
+                      })}
                       {j.parent_job_id && <Badge variant="outline" className="text-xs"><RotateCcw className="w-3 h-3 mr-1" />reimp #{j.reprint_count ?? 1}</Badge>}
                       <span className="text-xs text-muted-foreground">{printerName(j.printer_id)} · {j.copies} copia(s) · {j.attempts} intento(s)</span>
                     </div>
@@ -193,7 +215,8 @@ export function PrintJobsInspectorTab({ organizationId }: Props) {
                     <RotateCcw className="w-3.5 h-3.5 mr-1" /> Reimprimir
                   </Button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </CardContent>
@@ -222,6 +245,31 @@ export function PrintJobsInspectorTab({ organizationId }: Props) {
               <dt className="text-muted-foreground">Procesado</dt><dd className="col-span-2">{selected.processed_at ? fmtDate(selected.processed_at) : "—"}</dd>
               {selected.last_error && (<>
                 <dt className="text-muted-foreground">Error</dt><dd className="col-span-2 text-rose-600">{selected.last_error}</dd>
+              </>)}
+              {selected.payload?.routing && (<>
+                <dt className="text-muted-foreground">Ruteo</dt>
+                <dd className="col-span-2 space-y-1">
+                  <div className="flex flex-wrap gap-1">
+                    {(selected.payload.routing.rules ?? []).length === 0 ? (
+                      <Badge variant="outline" className={SOURCE_LABEL[selected.payload.routing.source ?? "station_default"]?.cls}>
+                        {SOURCE_LABEL[selected.payload.routing.source ?? "station_default"]?.label ?? selected.payload.routing.source}
+                      </Badge>
+                    ) : (
+                      (selected.payload.routing.rules ?? []).map((r, i) => (
+                        <Badge key={i} variant="outline" className={`text-xs ${SOURCE_LABEL[r.source]?.cls ?? ""}`}>
+                          {SOURCE_LABEL[r.source]?.label ?? r.source}{r.priority != null ? ` · p${r.priority}` : ""}
+                          {r.rule_id && <span className="ml-1 font-mono opacity-70">{r.rule_id.slice(0,6)}</span>}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                  <a
+                    href="/admin?tab=print-routing"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <Sparkles className="w-3 h-3" /> Abrir simulador de reglas
+                  </a>
+                </dd>
               </>)}
             </dl>
           )}
