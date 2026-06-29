@@ -26,7 +26,7 @@ interface TableOrder {
   parent_table_order_id: string | null;
 }
 interface Item {
-  id: string; product_name: string; quantity: number; unit_price: number; total: number; status: string; notes: string | null;
+  id: string; product_id: string | null; product_name: string; quantity: number; unit_price: number; total: number; status: string; notes: string | null;
 }
 interface Product { id: string; name: string; price: number; }
 
@@ -70,7 +70,7 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
       const next = stillThere ? activeOrderId! : list[0].id;
       setActiveOrderId(next);
       const [{ data: its }, { data: t }, { data: st }] = await Promise.all([
-        supabase.from("table_order_items").select("id,product_name,quantity,unit_price,total,status,notes")
+        supabase.from("table_order_items").select("id,product_id,product_name,quantity,unit_price,total,status,notes")
           .eq("organization_id", organizationId)
           .eq("table_order_id", next).order("created_at"),
         supabase.from("dining_tables").select("label").eq("organization_id", organizationId).eq("id", tableId).single(),
@@ -181,23 +181,34 @@ export default function TableOrderDrawer({ tableId, organizationId, userId, onCl
 
   const closeBill = async () => {
     if (!order) return;
-    const remaining = orders.filter((o) => o.id !== order.id).length;
-    const msg = remaining > 0
-      ? `¿Cerrar esta sub-cuenta? Quedan ${remaining} sub-cuenta(s) abierta(s) en la mesa.`
-      : "¿Cerrar y liberar mesa? (cobrar en POS)";
-    if (!confirm(msg)) return;
-    await supabase.from("table_orders").update({ status: "paid", paid_at: new Date().toISOString() })
-      .eq("organization_id", organizationId).eq("id", order.id);
-    if (remaining === 0) {
-      await supabase.from("dining_tables").update({ status: "available" })
-        .eq("organization_id", organizationId).eq("id", tableId);
-      toast.success("Mesa liberada");
-      onClose();
-    } else {
-      toast.success("Sub-cuenta cerrada");
-      await load();
+    const billable = items.filter((i) => i.status !== "cancelled");
+    if (billable.length === 0) return toast.info("No hay items para cobrar");
+    const pendingCount = items.filter((i) => i.status === "pending").length;
+    if (pendingCount > 0) {
+      if (!confirm(`Hay ${pendingCount} item(s) sin enviar a cocina. ¿Cobrar de todos modos?`)) return;
     }
+    const remaining = orders.filter((o) => o.id !== order.id).length;
+    // Hand off to POS workspace: items + table context. POS marca paid + libera mesa al cobrar.
+    window.dispatchEvent(new CustomEvent("pos:bill-table-order", {
+      detail: {
+        tableOrderId: order.id,
+        tableId,
+        tableLabel: `${tableLabel}${order.sub_label ?? ""}`,
+        releaseTableOnPaid: remaining === 0,
+        items: billable.map((it) => ({
+          productId: it.product_id,
+          name: it.product_name,
+          quantity: it.quantity,
+          unitPrice: Number(it.unit_price),
+          total: Number(it.total),
+          notes: it.notes ?? undefined,
+        })),
+      },
+    }));
+    toast.success(`Mesa ${tableLabel}${order.sub_label ?? ""} cargada en POS — completa el cobro`);
+    onClose();
   };
+
 
   const otherOrders = orders.filter((o) => o.id !== activeOrderId);
 
