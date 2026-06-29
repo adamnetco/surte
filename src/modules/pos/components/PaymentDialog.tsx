@@ -115,8 +115,8 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   }, [open, isSuperadmin, gate.canCharge, gate]);
 
   const sum = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-  const change = Math.max(0, sum - total);
-  const pending = Math.max(0, total - sum);
+  const change = Math.max(0, sum - grandTotal);
+  const pending = Math.max(0, grandTotal - sum);
   const paymentsOk = payments.every((p) => p.amount > 0) && pending <= 0;
   const canConfirm = !submitting && paymentsOk && gate.canCharge;
 
@@ -131,11 +131,20 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
     setPayments((prev) => prev.map((p, j) => (j === i ? { ...p, ...patch } : p)));
   };
 
+  const applyTipPct = (pct: number) => {
+    setTipPct(pct);
+    setTipCustom("");
+    // Si solo hay un pago en efectivo, ajustamos su monto al nuevo grand total
+    setPayments(prev => prev.length === 1 && prev[0].method === "efectivo"
+      ? [{ ...prev[0], amount: total + Math.round((total * pct) / 100) }]
+      : prev);
+  };
+
   const doConfirm = async () => {
     if (!canConfirm) return;
     setSubmitting(true);
     try {
-      await onConfirm(payments.filter((p) => p.amount > 0), { docType });
+      await onConfirm(payments.filter((p) => p.amount > 0), { docType, tip: tipAmount });
     } catch {
       setSubmitting(false);
     }
