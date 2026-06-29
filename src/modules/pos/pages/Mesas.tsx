@@ -81,9 +81,16 @@ export default function Mesas() {
     [tables, activeArea]
   );
 
-  const orderByTable = useMemo(() => {
-    const m = new Map<string, OpenOrder>();
-    openOrders.forEach(o => { if (o.dining_table_id) m.set(o.dining_table_id, o); });
+  const ordersByTable = useMemo(() => {
+    const m = new Map<string, OpenOrder[]>();
+    openOrders.forEach((o) => {
+      if (!o.dining_table_id) return;
+      const arr = m.get(o.dining_table_id) ?? [];
+      arr.push(o);
+      m.set(o.dining_table_id, arr);
+    });
+    // Stable order: sub_label asc (null first), then by opened_at
+    m.forEach((arr) => arr.sort((a, b) => (a.sub_label ?? "").localeCompare(b.sub_label ?? "")));
     return m;
   }, [openOrders]);
 
