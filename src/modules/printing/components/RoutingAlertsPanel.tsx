@@ -187,6 +187,27 @@ export function RoutingAlertsPanel({
     load();
   };
 
+  const [notifying, setNotifying] = useState(false);
+  const notifyAdmins = async () => {
+    const visibleCount = (idleRules.length - mutedRuleIds.size) + (idlePrinters.length - mutedPrinterIds.size);
+    if (visibleCount === 0) return toast.info("No hay alertas activas para notificar");
+    if (!window.confirm("Enviar resumen por email/WhatsApp a los administradores de la organización?")) return;
+    setNotifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("notify-routing-alerts", {
+        body: { organization_id: organizationId },
+      });
+      if (error) throw error;
+      const res = (data as any)?.results?.[0];
+      if (res?.skipped) toast.info(`Sin envío: ${res.skipped}`);
+      else toast.success(`Notificación enviada · ${res?.emails ?? 0} email · ${res?.whatsapps ?? 0} WhatsApp`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al notificar");
+    } finally {
+      setNotifying(false);
+    }
+  };
+
   return (
     <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between gap-2">
@@ -200,10 +221,18 @@ export function RoutingAlertsPanel({
             </Badge>
           )}
         </div>
-        <Button size="sm" variant="ghost" onClick={load} disabled={loading}>
-          <RefreshCcw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="outline" onClick={notifyAdmins} disabled={notifying || loading}
+            title="Enviar resumen de alertas a admins por email/WhatsApp">
+            <Send className={`h-4 w-4 mr-1 ${notifying ? "animate-pulse" : ""}`} />
+            Notificar admins
+          </Button>
+          <Button size="sm" variant="ghost" onClick={load} disabled={loading}>
+            <RefreshCcw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <section className="space-y-2">
