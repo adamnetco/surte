@@ -17,6 +17,7 @@ import { template as trialEnding } from './trial-ending.tsx'
 import { template as winbackInactive } from './winback-inactive.tsx'
 import { template as approachingLimit } from './approaching-limit.tsx'
 import { template as cancellationFollowup } from './cancellation-followup.tsx'
+import { template as apiAlertCritical } from './api-alert-critical.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'order-confirmation': orderConfirmation,
@@ -27,4 +28,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'winback-inactive': winbackInactive,
   'approaching-limit': approachingLimit,
   'cancellation-followup': cancellationFollowup,
+  'api-alert-critical': apiAlertCritical,
 }

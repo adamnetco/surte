@@ -95,4 +95,9 @@ project_id = "dimyhjzcwlgfczimqhet"
   [functions.public-api]
     verify_jwt = false
 
+  [functions.notify-api-alert]
+    verify_jwt = false
+
+
+
 
