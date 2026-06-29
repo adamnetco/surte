@@ -130,6 +130,22 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
     toast.success("Conteo autocompletado al efectivo esperado");
   };
 
+  const uploadArqueoPhoto = async (): Promise<string | null> => {
+    if (!photoFile) return null;
+    setUploading(true);
+    try {
+      const ext = (photoFile.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `org-${organizationId}/sessions/${sessionId}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("cash-arqueo").upload(path, photoFile, {
+        upsert: false, contentType: photoFile.type || "image/jpeg",
+      });
+      if (error) throw error;
+      return path;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const doClose = async () => {
     setBusy(true);
     const payload = denoms
@@ -137,6 +153,7 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
       .filter((x) => x.quantity > 0);
 
     try {
+      const photoPath = await uploadArqueoPhoto();
       const { error: upErr } = await supabase
         .from("cash_sessions")
         .update({
@@ -148,6 +165,10 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
           total_other: totals.other,
           ticket_count: totals.count,
           notes,
+          blind_count_enabled: blindMode,
+          arqueo_photo_url: photoPath,
+          arqueo_confirmed_at: new Date().toISOString(),
+          arqueo_confirmed_by: userId,
         })
         .eq("organization_id", organizationId)
         .eq("id", sessionId);
@@ -158,6 +179,14 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
         _counts: payload as any,
       });
       if (error) throw error;
+
+      // Calcula y persiste hash determinístico del conteo
+      const { data: hash } = await supabase.rpc("cash_session_compute_denom_hash", { p_session_id: sessionId });
+      if (hash) {
+        await supabase.from("cash_sessions")
+          .update({ denominations_hash: hash as string })
+          .eq("organization_id", organizationId).eq("id", sessionId);
+      }
 
       toast.success("Caja cerrada");
       onOpenChange(false);
@@ -171,6 +200,11 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
   };
 
   const attemptClose = () => {
+    if (blindMode && !revealed) {
+      setRevealed(true);
+      toast.message(isSquare ? "Cuadrado ✓" : diffLabel, { description: "Revisa el resultado y confirma para cerrar." });
+      return;
+    }
     if (!isSquare && !notes.trim()) {
       toast.error("Anota el motivo del descuadre antes de cerrar");
       return;
@@ -180,6 +214,12 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
       return;
     }
     doClose();
+  };
+
+  const onPickPhoto = (f: File | null) => {
+    setPhotoFile(f);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(f ? URL.createObjectURL(f) : null);
   };
 
   return (
