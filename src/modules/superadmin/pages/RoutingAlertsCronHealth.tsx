@@ -8,11 +8,16 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock } from "lucide-react";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 const SLA_HOURS = 24;
 const SLA_GRACE_HOURS = 36; // umbral crítico → registra health_event
+const AUTO_RECOVERY_LS_KEY = "routing_alerts_auto_recovery_enabled";
+const AUTO_RECOVERY_LAST_ATTEMPT_KEY = "routing_alerts_auto_recovery_last_attempt";
+const AUTO_RECOVERY_COOLDOWN_HOURS = 6;
 
 interface NotificationRow {
   id: string;
@@ -45,6 +50,11 @@ export default function RoutingAlertsCronHealth() {
   const [orgs, setOrgs] = useState<Record<string, OrgRow>>({});
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [autoRecovery, setAutoRecovery] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(AUTO_RECOVERY_LS_KEY) === "1";
+  });
+  const [autoAttempted, setAutoAttempted] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -127,22 +137,73 @@ export default function RoutingAlertsCronHealth() {
     })();
   }, [loading, slaCritical, hoursSince, lastRunAt]);
 
-  const runManual = async () => {
-    if (!window.confirm("Disparar manualmente el cron global de alertas? Iterará todas las organizaciones (respeta mutes y dedupe diario).")) return;
+  const invokeCron = useCallback(async (opts: { auto: boolean }) => {
     setRunning(true);
+    const startedAt = Date.now();
     try {
       const { data, error } = await supabase.functions.invoke("notify-routing-alerts", { body: {} });
       if (error) throw error;
       const results = (data as any)?.results ?? [];
       const sent = results.filter((r: any) => !r.skipped).length;
       const skipped = results.filter((r: any) => r.skipped).length;
-      toast.success(`Cron disparado · ${sent} org notificadas · ${skipped} sin cambios`);
+      if (opts.auto) {
+        toast.success(`Auto-recuperación · ${sent} orgs notificadas · ${skipped} sin cambios`);
+        try {
+          await (supabase as any).from("health_events").insert({
+            kind: "routing_alerts_auto_recovery",
+            severity: sent > 0 ? "info" : "warning",
+            payload: {
+              triggered_by: "sla_critical",
+              hours_since_last_run: Math.round(hoursSince),
+              sent, skipped,
+              duration_ms: Date.now() - startedAt,
+            },
+          });
+        } catch { /* silent */ }
+      } else {
+        toast.success(`Cron disparado · ${sent} org notificadas · ${skipped} sin cambios`);
+      }
       load();
     } catch (e: any) {
-      toast.error(e?.message ?? "Error al disparar cron");
+      toast.error(`${opts.auto ? "Auto-recuperación falló" : "Error al disparar cron"}: ${e?.message ?? "desconocido"}`);
+      if (opts.auto) {
+        try {
+          await (supabase as any).from("health_events").insert({
+            kind: "routing_alerts_auto_recovery",
+            severity: "error",
+            payload: { triggered_by: "sla_critical", error: String(e?.message ?? e) },
+          });
+        } catch { /* silent */ }
+      }
     } finally {
       setRunning(false);
     }
+  }, [hoursSince, load]);
+
+  const runManual = async () => {
+    if (!window.confirm("Disparar manualmente el cron global de alertas? Iterará todas las organizaciones (respeta mutes y dedupe diario).")) return;
+    await invokeCron({ auto: false });
+  };
+
+  // Slice R — Auto-recuperación: si SLA crítico y toggle activo, dispara el cron una sola vez
+  // por cada ventana de cooldown (6h) y registra el resultado en health_events.
+  useEffect(() => {
+    if (loading || !slaCritical || !autoRecovery || autoAttempted || running) return;
+    const lastAttemptStr = window.localStorage.getItem(AUTO_RECOVERY_LAST_ATTEMPT_KEY);
+    const lastAttempt = lastAttemptStr ? Number(lastAttemptStr) : 0;
+    const hoursSinceAttempt = (Date.now() - lastAttempt) / 3600000;
+    if (hoursSinceAttempt < AUTO_RECOVERY_COOLDOWN_HOURS) return;
+    setAutoAttempted(true);
+    window.localStorage.setItem(AUTO_RECOVERY_LAST_ATTEMPT_KEY, String(Date.now()));
+    toast.message("Auto-recuperación activada", { description: `SLA crítico (${Math.round(hoursSince)}h). Disparando cron…` });
+    invokeCron({ auto: true });
+  }, [loading, slaCritical, autoRecovery, autoAttempted, running, hoursSince, invokeCron]);
+
+  const toggleAutoRecovery = (v: boolean) => {
+    setAutoRecovery(v);
+    window.localStorage.setItem(AUTO_RECOVERY_LS_KEY, v ? "1" : "0");
+    if (!v) window.localStorage.removeItem(AUTO_RECOVERY_LAST_ATTEMPT_KEY);
+    toast.success(v ? "Auto-recuperación habilitada" : "Auto-recuperación deshabilitada");
   };
 
   const fmtDay = (iso: string) => {
@@ -158,7 +219,12 @@ export default function RoutingAlertsCronHealth() {
           <h1 className="font-heading font-bold text-xl">Salud del cron de alertas</h1>
           <Badge variant="outline" className="text-[10px]">notify-routing-alerts-daily · 08:00 UTC</Badge>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-md border px-2 py-1">
+            <Wand2 className="h-3.5 w-3.5 text-muted-foreground" />
+            <Label htmlFor="auto-recovery" className="text-xs cursor-pointer">Auto-recuperación</Label>
+            <Switch id="auto-recovery" checked={autoRecovery} onCheckedChange={toggleAutoRecovery} />
+          </div>
           <Button size="sm" variant="outline" onClick={runManual} disabled={running || loading}>
             <Play className={`h-4 w-4 mr-1 ${running ? "animate-pulse" : ""}`} /> Disparar ahora
           </Button>
@@ -190,6 +256,7 @@ export default function RoutingAlertsCronHealth() {
                 : `Sin notificaciones en los últimos ${DAYS_WINDOW} días.`}
               {" · "}umbral {SLA_HOURS}h.
               {slaCritical && " Se registró un health_event automático."}
+              {slaCritical && autoRecovery && " · Auto-recuperación activa (cooldown 6h)."}
             </p>
           </div>
           <Button size="sm" variant={slaCritical ? "destructive" : "outline"} onClick={runManual} disabled={running}>
