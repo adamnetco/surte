@@ -45,6 +45,12 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
   const [denoms, setDenoms] = useState<Denomination[]>([]);
   const [counts, setCounts] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Ola 25 · Slice 1
+  const [blindMode, setBlindMode] = useState(true);
+  const [revealed, setRevealed] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
