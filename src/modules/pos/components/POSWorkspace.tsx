@@ -1040,6 +1040,19 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             mobileTicketExpanded ? "max-h-[70dvh]" : "max-h-none"
           }`}
         >
+          {/* Grabber táctil sólo móvil: zona ancha que expande/colapsa el ticket */}
+          <button
+            type="button"
+            onClick={() => setMobileTicketExpanded((v) => !v)}
+            aria-label={mobileTicketExpanded ? "Colapsar ticket" : "Expandir ticket"}
+            className="lg:hidden w-full py-1.5 flex items-center justify-center group"
+          >
+            <span className={`block h-1.5 w-12 rounded-full transition-colors ${
+              !mobileTicketExpanded && ticket.length > 0
+                ? "bg-primary/60 group-hover:bg-primary"
+                : "bg-muted-foreground/30 group-hover:bg-muted-foreground/50"
+            }`} />
+          </button>
           {/* Header con chip de modo + contexto (mesa/cliente) */}
           <div className="p-3 border-b space-y-2">
             <div className="flex items-center gap-2">
