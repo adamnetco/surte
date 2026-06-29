@@ -56,6 +56,7 @@ export function PrintRoutingRulesTab({ organizationId }: { organizationId: strin
     copies: 1,
     priority: 100,
   });
+  const [drillRule, setDrillRule] = useState<{ id: string; label: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
