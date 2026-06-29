@@ -41,6 +41,7 @@ const PriceListsTab = lazy(() => import("@/modules/admin-cms/components/PriceLis
 const MembersAuditTab = lazy(() => import("@/modules/admin-cms/components/MembersAuditTab"));
 const PrintersTab = lazy(() => import("@/modules/printing/components/PrintersManagerTab").then(m => ({ default: m.PrintersManagerTab })));
 const KitchenRoutingTab = lazy(() => import("@/modules/printing/components/KitchenRoutingTab").then(m => ({ default: m.KitchenRoutingTab })));
+const PrintFleetTab = lazy(() => import("@/modules/printing/components/PrintFleetTab").then(m => ({ default: m.PrintFleetTab })));
 
 // Pestañas OPERATIVAS del negocio (no multi-tenant).
 // Las que tocan multi-tenant viven en /superadmin: Tiendas, Módulos,
