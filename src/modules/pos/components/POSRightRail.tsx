@@ -12,8 +12,6 @@
 import { Button } from "@/components/ui/button";
 import {
   LogOut,
-  Keyboard,
-  Pause,
   Receipt,
   BarChart3,
   Wallet,
@@ -24,8 +22,10 @@ import type { RecentAction } from "../hooks/useRecentActions";
 
 interface Props {
   onCloseShift: () => void;
-  onOpenShortcuts: () => void;
-  onPark: () => void;
+  /** @deprecated Suspender ya está en POSTopRibbon (F8). Se acepta por compat. */
+  onOpenShortcuts?: () => void;
+  /** @deprecated Suspender ya está en POSTopRibbon (F8). Se acepta por compat. */
+  onPark?: () => void;
   onNotasCredito: () => void;
   onVentasDelDia: () => void;
   onCajon: () => void;
@@ -48,15 +48,18 @@ interface Item {
   badge?: number;
 }
 
+/**
+ * POSRightRail — Auditado Slice 7.5: se eliminan duplicados con POSTopRibbon
+ * (Suspender F8) y con el hotkey `?` (Atajos). Quedan SOLO accesos únicos de
+ * alta frecuencia: NC/Devolución, Ventas del día, Cajón, Sync con badge,
+ * Recientes y Cierre Z destructivo.
+ */
 export default function POSRightRail({
   onCloseShift,
-  onOpenShortcuts,
-  onPark,
   onNotasCredito,
   onVentasDelDia,
   onCajon,
   onRefresh,
-  parkDisabled,
   syncing,
   pendingCount = 0,
   recentActions = [],
@@ -64,12 +67,10 @@ export default function POSRightRail({
   onClearRecent,
 }: Props) {
   const items: Item[] = [
-    { key: "park", label: "Suspender ticket (F8)", icon: Pause, onClick: onPark, disabled: parkDisabled },
     { key: "nc", label: "Notas crédito / Devolución", icon: Receipt, onClick: onNotasCredito },
     { key: "ventas", label: "Ventas del día", icon: BarChart3, onClick: onVentasDelDia },
     { key: "cajon", label: "Abrir cajón monedero", icon: Wallet, onClick: onCajon },
-    { key: "refresh", label: pendingCount > 0 ? `Sincronizar (${pendingCount})` : "Refrescar", icon: RefreshCw, onClick: onRefresh, badge: pendingCount },
-    { key: "shortcuts", label: "Atajos de teclado (?)", icon: Keyboard, onClick: onOpenShortcuts },
+    { key: "refresh", label: pendingCount > 0 ? `Sincronizar (${pendingCount})` : "Refrescar sync", icon: RefreshCw, onClick: onRefresh, badge: pendingCount },
     { key: "close", label: "Cierre Z de caja", icon: LogOut, onClick: onCloseShift, tone: "destructive" },
   ];
 

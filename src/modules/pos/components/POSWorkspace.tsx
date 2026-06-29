@@ -53,6 +53,7 @@ import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import POSCustomerPicker from "./POSCustomerPicker";
 import POSContextualBar from "./POSContextualBar";
 import TableGridSheet from "./TableGridSheet";
+import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
 import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import { usePOSModes } from "@/modules/pos/hooks/usePOSModes";
@@ -113,6 +114,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [customer, setCustomer] = useState<POSCustomer | null>(null);
   const [tableLabel, setTableLabel] = useState(""); // para modo mesa
   const [tableSheetOpen, setTableSheetOpen] = useState(false);
+  const [quickModsOpen, setQuickModsOpen] = useState(false);
+  const [stickyNotes, setStickyNotes] = useState<string[]>([]);
   const [driver, setDriver] = useState<DriverInfo | null>(null); // para modo domicilio
   const [driverSheetOpen, setDriverSheetOpen] = useState(false);
   const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
@@ -326,8 +329,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const addProduct = (p: Product) => {
     pushRecent(p.id);
     const unit = priceFor(p.id, Number(p.price));
+    // Slice 2-food: consumir sticky notes (quick mods) en el próximo add
+    const sticky = stickyNotes.length > 0 ? stickyNotes.join(" · ") : "";
     setTicket((prev) => {
-      const i = prev.findIndex((l) => l.productId === p.id);
+      const i = prev.findIndex((l) => l.productId === p.id && !sticky);
       if (i >= 0) {
         const copy = [...prev];
         copy[i] = {
@@ -343,9 +348,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         {
           productId: p.id, name: p.name, unitPrice: unit,
           quantity: 1, total: unit, addedAt: Date.now(),
+          ...(sticky ? { notes: sticky } : {}),
         },
       ];
     });
+    if (sticky) setStickyNotes([]);
   };
 
   const recentProducts = useMemo(
@@ -1242,7 +1249,23 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         open={tableSheetOpen}
         onOpenChange={setTableSheetOpen}
         current={tableLabel || null}
-        onPick={(t) => setTableLabel(t.label)}
+        onPick={(t) => {
+          const prev = tableLabel;
+          setTableLabel(t.label);
+          // Slice 2-food: al ABRIR mesa por primera vez en food, ofrecer
+          // modificadores rápidos que se pegan al próximo ítem añadido.
+          if (isFood && t.label && t.label !== prev) {
+            setQuickModsOpen(true);
+          }
+        }}
+      />
+
+      <POSQuickModifiersSheet
+        open={quickModsOpen}
+        onOpenChange={setQuickModsOpen}
+        organizationId={organizationId}
+        tableLabel={tableLabel || null}
+        onApply={(notes) => setStickyNotes(notes)}
       />
 
       <DriverPickerSheet
