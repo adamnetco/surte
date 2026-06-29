@@ -73,7 +73,47 @@ Facturas electrónicas DIAN.
 ### `GET /v1/products?limit=100`
 Catálogo activo.
 
+### `POST /v1/pos-orders`
+Crea una venta POS. Totales se recalculan en servidor a partir de `items[]`.
+
+**Body**
+```json
+{
+  "location_id": "uuid",
+  "cash_session_id": "uuid",
+  "customer_name": "Juan",
+  "customer_document": "1098765432",
+  "payment_method": "cash",
+  "external_ref": "uuid-idempotency-key",
+  "notes": "Pedido web #42",
+  "items": [
+    { "product_name": "Cerveza Club Colombia", "sku": "BEER-001", "quantity": 2, "unit_price": 5000, "tax_rate": 19, "discount": 0 }
+  ]
+}
+```
+**Idempotencia:** envía un UUID en `external_ref` para evitar duplicados (se mapea a `client_uuid`; si ya existe una venta con ese UUID en la org, se devuelve la existente con `"idempotent": true`).
+
+**201 Created**
+```json
+{ "id": "uuid", "ticket_number": 1234, "total": 11900, "subtotal": 10000, "tax": 1900, "discount": 0 }
+```
+
+### `POST /v1/pos-orders/:id/emit-invoice`
+Emite la factura electrónica DIAN (Innapsis) para una venta existente.
+
+**Body (opcional)**
+```json
+{ "document_type": "invoice" }
+```
+
+**200 OK**
+```json
+{ "ok": true, "pos_order_id": "uuid", "result": { "cufe": "...", "full_number": "FE001-1234" } }
+```
+
 ## Errores
+
+
 
 | HTTP | code | Significado |
 |---|---|---|
