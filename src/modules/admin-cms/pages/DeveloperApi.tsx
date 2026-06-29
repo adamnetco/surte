@@ -653,6 +653,7 @@ export default function DeveloperApiPage() {
         </DialogContent>
       </Dialog>
 
+      {tab === "metrics" && <ApiEndpointMetricsPanel orgId={orgId} />}
       {tab === "alerts" && <ApiAlertsPanel orgId={orgId} />}
     </div>
   );
