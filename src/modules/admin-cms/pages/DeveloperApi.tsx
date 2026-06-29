@@ -204,9 +204,22 @@ export default function DeveloperApiPage() {
                       <code>{sc}</code>
                     </label>
                   ))}
-                </div>
               </div>
+            </div>
 
+            <div>
+              <Label>IP allowlist (opcional)</Label>
+              <Input
+                value={newKey.allowed_ips}
+                onChange={(e) => setNewKey((s) => ({ ...s, allowed_ips: e.target.value }))}
+                placeholder="190.0.0.0/24, 200.1.2.3"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                IPs o CIDRs separadas por coma. Si se deja vacío, la key acepta cualquier IP.
+              </p>
+            </div>
+
+            <div className="flex justify-end">
               <Button onClick={createKey} disabled={!newKey.name.trim()}>
                 <Plus className="mr-1 h-4 w-4" /> Crear
               </Button>
