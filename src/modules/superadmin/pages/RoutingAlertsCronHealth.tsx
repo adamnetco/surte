@@ -8,7 +8,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter, ChevronDown, ChevronRight, ExternalLink, Building2, Link2, Bookmark, BookmarkPlus, Trash2, Star, Pin } from "lucide-react";
+import { RefreshCcw, Play, HeartPulse, AlertTriangle, Mail, MessageCircle, Bell, ShieldAlert, Clock, Wand2, History, CheckCircle2, XCircle, Info, Download, Filter, ChevronDown, ChevronRight, ExternalLink, Building2, Link2, Bookmark, BookmarkPlus, Trash2, Star, Pin, ScrollText, Plus, Pencil } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -214,6 +215,70 @@ export default function RoutingAlertsCronHealth() {
     }
     loadTeamPresets();
   };
+
+  // Slice BB — Audit log de cambios en presets de equipo.
+  // Lee `routing_alert_timeline_preset_audit` (poblada por trigger AFTER INSERT/UPDATE/DELETE)
+  // y muestra los últimos 50 cambios con autor, acción y diff resumido.
+  interface PresetAuditRow {
+    id: string;
+    preset_id: string | null;
+    preset_name: string | null;
+    action: "create" | "update" | "delete";
+    actor_id: string | null;
+    diff: any;
+    created_at: string;
+  }
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [auditRows, setAuditRows] = useState<PresetAuditRow[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditActors, setAuditActors] = useState<Record<string, { name: string }>>({});
+  const loadAudit = useCallback(async () => {
+    setAuditLoading(true);
+    const { data, error } = await (supabase as any)
+      .from("routing_alert_timeline_preset_audit")
+      .select("id, preset_id, preset_name, action, actor_id, diff, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) { toast.error(error.message); setAuditLoading(false); return; }
+    const rows = (data ?? []) as PresetAuditRow[];
+    setAuditRows(rows);
+    const actorIds = Array.from(new Set(rows.map((r) => r.actor_id).filter(Boolean))) as string[];
+    if (actorIds.length) {
+      const { data: profs } = await (supabase as any)
+        .from("profiles").select("user_id, full_name, business_name").in("user_id", actorIds);
+      const map: Record<string, { name: string }> = {};
+      for (const p of profs ?? []) map[(p as any).user_id] = { name: (p as any).full_name || (p as any).business_name || "—" };
+      setAuditActors(map);
+    }
+    setAuditLoading(false);
+  }, []);
+  useEffect(() => { if (auditOpen) loadAudit(); }, [auditOpen, loadAudit]);
+
+  const summarizeDiff = (row: PresetAuditRow): string => {
+    const d = row.diff ?? {};
+    if (row.action === "create") {
+      const f = d?.new?.filters ?? {};
+      return `kind=${f.kind ?? "?"} · sev=${f.sev ?? "?"} · org=${f.org ?? "?"}`;
+    }
+    if (row.action === "delete") {
+      const f = d?.old?.filters ?? {};
+      return `era kind=${f.kind ?? "?"} · sev=${f.sev ?? "?"} · org=${f.org ?? "?"}`;
+    }
+    // update — diff de campos relevantes
+    const oldV = d?.old ?? {}; const newV = d?.new ?? {};
+    const parts: string[] = [];
+    if (oldV.name !== newV.name) parts.push(`name: "${oldV.name}" → "${newV.name}"`);
+    if (!!oldV.is_team_default !== !!newV.is_team_default) {
+      parts.push(newV.is_team_default ? "marcado default equipo" : "quitado default equipo");
+    }
+    const of = oldV.filters ?? {}; const nf = newV.filters ?? {};
+    for (const k of ["kind", "sev", "org"] as const) {
+      if (of[k] !== nf[k]) parts.push(`${k}: ${of[k] ?? "?"} → ${nf[k] ?? "?"}`);
+    }
+    return parts.join(" · ") || "cambio menor";
+  };
+
+
 
   // Auto-apply preset on mount when URL has no filter params.
   // Prioridad: team-default (DB) > personal-default (localStorage).
@@ -887,6 +952,62 @@ export default function RoutingAlertsCronHealth() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Sheet open={auditOpen} onOpenChange={setAuditOpen}>
+              <SheetTrigger asChild>
+                <Button size="sm" variant="outline" title="Audit log de presets de equipo">
+                  <ScrollText className="h-3.5 w-3.5 mr-1" /> Audit
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <ScrollText className="h-4 w-4" /> Audit · Presets de equipo
+                  </SheetTitle>
+                  <SheetDescription>
+                    Últimos 50 cambios (creación, edición, eliminación, default de equipo) registrados automáticamente.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{auditRows.length} eventos</span>
+                  <Button size="sm" variant="ghost" onClick={loadAudit} disabled={auditLoading}>
+                    <RefreshCcw className={`h-3.5 w-3.5 mr-1 ${auditLoading ? "animate-spin" : ""}`} />
+                    Refrescar
+                  </Button>
+                </div>
+                <ol className="mt-3 space-y-2">
+                  {auditLoading && <li className="text-xs text-muted-foreground">Cargando…</li>}
+                  {!auditLoading && auditRows.length === 0 && (
+                    <li className="text-xs text-muted-foreground">Sin actividad registrada.</li>
+                  )}
+                  {auditRows.map((r) => {
+                    const actor = r.actor_id ? auditActors[r.actor_id]?.name ?? r.actor_id.slice(0, 8) : "system";
+                    const tone =
+                      r.action === "create" ? "border-emerald-400/40 bg-emerald-50/40 dark:bg-emerald-950/20"
+                      : r.action === "delete" ? "border-rose-400/40 bg-rose-50/40 dark:bg-rose-950/20"
+                      : "border-sky-400/40 bg-sky-50/40 dark:bg-sky-950/20";
+                    const Icon = r.action === "create" ? Plus : r.action === "delete" ? Trash2 : Pencil;
+                    const label = r.action === "create" ? "Creado" : r.action === "delete" ? "Eliminado" : "Editado";
+                    return (
+                      <li key={r.id} className={`rounded-md border p-2 ${tone}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Icon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="text-sm font-medium truncate">{r.preset_name ?? "(sin nombre)"}</span>
+                            <Badge variant="outline" className="text-[10px] h-4 px-1">{label}</Badge>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {new Date(r.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-muted-foreground truncate">
+                          por <strong>{actor}</strong> · {summarizeDiff(r)}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </SheetContent>
+            </Sheet>
           </div>
         </CardHeader>
         <CardContent>
