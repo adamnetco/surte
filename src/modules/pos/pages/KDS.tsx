@@ -60,7 +60,7 @@ export default function KDS() {
         .eq("organization_id", orgId).in("status", ["pending","in_progress","ready"]).order("sent_at"),
     ]);
     setStations((st as Station[]) ?? []);
-    setTickets((tk as Ticket[]) ?? []);
+    setTickets((tk as unknown as Ticket[]) ?? []);
     setLoading(false);
   }, [orgId]);
 
