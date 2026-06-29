@@ -86,6 +86,7 @@ const ResetPassword = lazy(() => import("./modules/auth/pages/ResetPassword"));
 const POS = lazy(() => import("./modules/pos").then((m) => ({ default: m.POSPage })));
 const PosHub = lazy(() => import("./modules/pos").then((m) => ({ default: m.PosHubPage })));
 const Mesas = lazy(() => import("./modules/pos").then((m) => ({ default: m.MesasPage })));
+const Reservas = lazy(() => import("./modules/pos").then((m) => ({ default: m.ReservasPage })));
 const KDS = lazy(() => import("./modules/pos").then((m) => ({ default: m.KDSPage })));
 const Inventario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InventarioPage })));
 const Facturacion = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.FacturacionPage })));
