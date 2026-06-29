@@ -324,6 +324,24 @@ export type Database = {
           },
         ]
       }
+      api_ip_rate: {
+        Row: {
+          count: number
+          ip: unknown
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          ip: unknown
+          window_start: string
+        }
+        Update: {
+          count?: number
+          ip?: unknown
+          window_start?: string
+        }
+        Relationships: []
+      }
       api_key_usage: {
         Row: {
           api_key_id: string
@@ -352,6 +370,7 @@ export type Database = {
       }
       api_keys: {
         Row: {
+          allowed_ips: string[] | null
           created_at: string
           created_by: string | null
           expires_at: string | null
@@ -366,6 +385,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allowed_ips?: string[] | null
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
@@ -380,6 +400,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allowed_ips?: string[] | null
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
@@ -11676,9 +11697,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      api_ip_consume: {
+        Args: { p_ip: unknown; p_limit?: number; p_window_seconds?: number }
+        Returns: Json
+      }
       api_key_consume: {
         Args: { p_hash: string; p_max_per_min?: number; p_prefix: string }
         Returns: Json
+      }
+      api_key_ip_allowed: {
+        Args: { p_allowed: string[]; p_ip: unknown }
+        Returns: boolean
       }
       api_key_usage_stats: {
         Args: { p_days?: number; p_org: string }
@@ -11742,6 +11771,7 @@ export type Database = {
         Returns: Json
       }
       check_public_catalog_health: { Args: never; Returns: Json }
+      cleanup_api_ip_rate: { Args: never; Returns: number }
       cleanup_sso_tokens: { Args: never; Returns: number }
       close_cash_session_multi_currency: {
         Args: { _counts: Json; _notes?: string; _session_id: string }

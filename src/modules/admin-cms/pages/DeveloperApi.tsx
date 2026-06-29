@@ -38,7 +38,7 @@ export default function DeveloperApiPage() {
   const [statsDays, setStatsDays] = useState(7);
   const [loading, setLoading] = useState(true);
 
-  const [newKey, setNewKey] = useState<{ name: string; scopes: string[] }>({ name: "", scopes: ["pos_orders:read"] });
+  const [newKey, setNewKey] = useState<{ name: string; scopes: string[]; allowed_ips: string }>({ name: "", scopes: ["pos_orders:read"], allowed_ips: "" });
   const [newKeyResult, setNewKeyResult] = useState<{ prefix: string; secret: string } | null>(null);
   const [newWh, setNewWh] = useState<{ url: string; events: string[]; description: string }>({ url: "", events: [], description: "" });
   const [showWhDialog, setShowWhDialog] = useState(false);
@@ -67,14 +67,20 @@ export default function DeveloperApiPage() {
 
   const createKey = async () => {
     if (!orgId || !newKey.name.trim()) return;
+    const ips = newKey.allowed_ips
+      .split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
     const { data, error } = await supabase.rpc("create_api_key", {
       p_org: orgId,
       p_name: newKey.name,
       p_scopes: newKey.scopes,
     });
     if (error) return toast.error("No se pudo crear", { description: error.message });
-    setNewKeyResult({ prefix: (data as any).prefix, secret: (data as any).secret });
-    setNewKey({ name: "", scopes: ["pos_orders:read"] });
+    const created = data as any;
+    if (ips.length > 0 && created?.id) {
+      await supabase.from("api_keys").update({ allowed_ips: ips }).eq("id", created.id);
+    }
+    setNewKeyResult({ prefix: created.prefix, secret: created.secret });
+    setNewKey({ name: "", scopes: ["pos_orders:read"], allowed_ips: "" });
     load();
   };
 
@@ -200,7 +206,22 @@ export default function DeveloperApiPage() {
                   ))}
                 </div>
               </div>
+            </div>
 
+
+            <div>
+              <Label>IP allowlist (opcional)</Label>
+              <Input
+                value={newKey.allowed_ips}
+                onChange={(e) => setNewKey((s) => ({ ...s, allowed_ips: e.target.value }))}
+                placeholder="190.0.0.0/24, 200.1.2.3"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                IPs o CIDRs separadas por coma. Si se deja vacío, la key acepta cualquier IP.
+              </p>
+            </div>
+
+            <div className="flex justify-end">
               <Button onClick={createKey} disabled={!newKey.name.trim()}>
                 <Plus className="mr-1 h-4 w-4" /> Crear
               </Button>
@@ -226,6 +247,13 @@ export default function DeveloperApiPage() {
                         <span className="ml-2 text-xs text-muted-foreground">
                           {k.scopes?.join(", ")} · {k.last_used_at ? `usada ${new Date(k.last_used_at).toLocaleDateString()}` : "sin uso"}
                         </span>
+                        {Array.isArray(k.allowed_ips) && k.allowed_ips.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {k.allowed_ips.map((ip: string) => (
+                              <Badge key={ip} variant="outline" className="text-[10px]">IP {ip}</Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {!k.revoked_at && (
                         <Button size="sm" variant="ghost" onClick={() => revokeKey(k.id)}>

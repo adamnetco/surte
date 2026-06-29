@@ -75,6 +75,19 @@ Deno.serve(async (req) => {
   if (req.method !== "GET" && req.method !== "POST") {
     return respond(json(errBody("METHOD_NOT_ALLOWED", "Only GET and POST supported"), 405), "METHOD_NOT_ALLOWED");
   }
+
+  // ---- Per-IP rate limit (cheap pre-auth shield against floods) ----
+  if (ip) {
+    const { data: ipR } = await sbLog.rpc("api_ip_consume", { p_ip: ip, p_limit: 600, p_window_seconds: 60 });
+    const ipRes = ipR as { allowed: boolean; remaining: number; limit: number; reset_at: string } | null;
+    if (ipRes && !ipRes.allowed) {
+      return respond(json(
+        errBody("IP_RATE_LIMIT_EXCEEDED", `Too many requests from this IP (limit ${ipRes.limit}/min)`, { retry_after_seconds: 60 }),
+        429,
+        { "retry-after": "60", "x-ratelimit-ip-limit": String(ipRes.limit), "x-ratelimit-ip-remaining": "0" },
+      ), "IP_RATE_LIMIT_EXCEEDED");
+    }
+  }
   logCtx.path = new URL(req.url).pathname;
 
   // ---- Auth ----
@@ -106,9 +119,21 @@ Deno.serve(async (req) => {
 
   if (c.organization_id) {
     logCtx.orgId = c.organization_id;
-    // Look up key id (best-effort) for per-key analytics
-    const { data: keyRow } = await sb.from("api_keys").select("id").eq("prefix", prefix).maybeSingle();
-    if (keyRow) logCtx.keyId = keyRow.id;
+    // Look up key id + allowed_ips for IP allowlist enforcement
+    const { data: keyRow } = await sb.from("api_keys")
+      .select("id, allowed_ips").eq("prefix", prefix).maybeSingle();
+    if (keyRow) {
+      logCtx.keyId = keyRow.id;
+      if (keyRow.allowed_ips && Array.isArray(keyRow.allowed_ips) && keyRow.allowed_ips.length > 0) {
+        const { data: allowed } = await sb.rpc("api_key_ip_allowed", { p_allowed: keyRow.allowed_ips, p_ip: ip });
+        if (allowed !== true) {
+          return respond(json(
+            errBody("IP_NOT_ALLOWED", "This API key is restricted to a specific IP allowlist", { ip }),
+            403, rlHeaders,
+          ), "IP_NOT_ALLOWED");
+        }
+      }
+    }
   }
 
   if (!c.ok) {
