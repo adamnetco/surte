@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import {
   Search, FileText, FileSignature, Pause, Keyboard, Printer,
   ScanLine, CreditCard, Percent, StickyNote, ArrowLeftRight, Utensils,
-  Bike, ShoppingBag,
+  Bike, ShoppingBag, ChevronUp, ChevronDown,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 import {
@@ -128,6 +128,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [priceListId, setPriceListId] = useState<string | null>(null);
   const [priceListName, setPriceListName] = useState<string>("Pública");
   const [parkedCount, setParkedCount] = useState(0);
+  // Mobile: ticket colapsado por defecto para maximizar catálogo. Totales/Cobrar siempre visibles.
+  const [mobileTicketExpanded, setMobileTicketExpanded] = useState(false);
   // === Cobro de mesa ===
   // Cuando el usuario pulsa "Cobrar" en TableOrderDrawer, el ticket de mesa se
   // carga aquí y guardamos el contexto para liberar la mesa al finalizar la venta.
@@ -1019,8 +1021,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           )}
         </div>
 
-        {/* Ticket (sticky card en desktop) */}
-        <aside className="lg:w-[380px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col max-h-[55dvh] lg:max-h-none">
+        {/* Ticket (sticky card en desktop; en móvil colapsable con footer fijo) */}
+        <aside
+          className={`bg-card border-t lg:border-t-0 lg:border-l flex flex-col lg:w-[380px] lg:max-h-none ${
+            mobileTicketExpanded ? "max-h-[70dvh]" : "max-h-none"
+          }`}
+        >
           {/* Header con chip de modo + contexto (mesa/cliente) */}
           <div className="p-3 border-b space-y-2">
             <div className="flex items-center gap-2">
@@ -1033,7 +1039,18 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 {POS_MODES[saleMode].short}
                 {saleMode === "mesa" && tableLabel && ` · ${tableLabel}`}
               </span>
-              <span className="ml-auto text-[11px] text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setMobileTicketExpanded((v) => !v)}
+                className="ml-auto lg:hidden inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground px-2 py-1 rounded-md border border-border"
+                aria-expanded={mobileTicketExpanded}
+                aria-label={mobileTicketExpanded ? "Colapsar ticket" : "Ver ítems del ticket"}
+              >
+                <span className="tabular-nums">{ticket.length}</span>
+                <span className="hidden xs:inline">{ticket.length === 1 ? "ítem" : "ítems"}</span>
+                {mobileTicketExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+              </button>
+              <span className="hidden lg:inline ml-auto text-[11px] text-muted-foreground">
                 {ticket.length} {ticket.length === 1 ? "ítem" : "ítems"}
               </span>
             </div>
@@ -1083,39 +1100,42 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
 
 
-          <POSActionRail
-            hasSelection={!!selectedLine}
-            onMultiply={railMultiply}
-            onCut={railCut}
-            onComment={railComment}
-            onDiscount={railDiscount}
-            onDelete={railDelete}
-          />
+          <div className={`${mobileTicketExpanded ? "flex" : "hidden"} lg:flex flex-col flex-1 min-h-0`}>
+            <POSActionRail
+              hasSelection={!!selectedLine}
+              onMultiply={railMultiply}
+              onCut={railCut}
+              onComment={railComment}
+              onDiscount={railDiscount}
+              onDelete={railDelete}
+            />
 
-          <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
-            {ticket.length === 0 ? (
-              <div className="text-center py-10 px-4">
-                <div className="w-12 h-12 mx-auto rounded-full bg-muted grid place-items-center mb-2">
-                  <ScanLine className="w-5 h-5 text-muted-foreground" />
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+              {ticket.length === 0 ? (
+                <div className="text-center py-10 px-4">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-muted grid place-items-center mb-2">
+                    <ScanLine className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Escanea o toca un producto</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">⌘K para búsqueda rápida</p>
                 </div>
-                <p className="text-sm text-muted-foreground">Escanea o toca un producto</p>
-                <p className="text-[11px] text-muted-foreground mt-1">⌘K para búsqueda rápida</p>
-              </div>
-            ) : (
-              ticket.map((l) => (
-                <TicketLineRow
-                  key={l.productId}
-                  line={l}
-                  selected={selectedLineId === l.productId}
-                  onSelect={() => setSelectedLineId(l.productId)}
-                  onQty={(d) => updateQty(l.productId, d)}
-                  onRemove={() => removeLine(l.productId)}
-                  onNotes={(notes) => setLineNotes(l.productId, notes)}
-                  onDiscount={(pct) => setLineDiscount(l.productId, pct)}
-                />
-              ))
-            )}
+              ) : (
+                ticket.map((l) => (
+                  <TicketLineRow
+                    key={l.productId}
+                    line={l}
+                    selected={selectedLineId === l.productId}
+                    onSelect={() => setSelectedLineId(l.productId)}
+                    onQty={(d) => updateQty(l.productId, d)}
+                    onRemove={() => removeLine(l.productId)}
+                    onNotes={(notes) => setLineNotes(l.productId, notes)}
+                    onDiscount={(pct) => setLineDiscount(l.productId, pct)}
+                  />
+                ))
+              )}
+            </div>
           </div>
+
 
 
           <div className="border-t p-3 space-y-2 bg-card">
