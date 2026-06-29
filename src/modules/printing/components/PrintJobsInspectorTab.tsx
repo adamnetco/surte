@@ -184,13 +184,24 @@ export function PrintJobsInspectorTab({ organizationId }: Props) {
             <div className="text-sm text-muted-foreground py-12 text-center">Sin trabajos para los filtros actuales.</div>
           ) : (
             <ul className="divide-y divide-gray-100">
-              {filtered.map((j) => (
+              {filtered.map((j) => {
+                const routing = j.payload?.routing;
+                const sources = Array.from(new Set((routing?.rules ?? []).map((r) => r.source).concat(routing?.source ? [routing.source] : [])));
+                return (
                 <li key={j.id} className="py-3 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className={STATUS_COLORS[j.status] ?? ""}>{j.status}</Badge>
                       <span className="text-sm font-medium">{j.kind}</span>
                       {j.channel && <Badge variant="secondary" className="text-xs">{j.channel}</Badge>}
+                      {sources.map((s) => {
+                        const meta = SOURCE_LABEL[s] ?? { label: s, cls: "" };
+                        return (
+                          <Badge key={s} variant="outline" className={`text-xs ${meta.cls}`}>
+                            <Route className="w-3 h-3 mr-1" /> {meta.label}
+                          </Badge>
+                        );
+                      })}
                       {j.parent_job_id && <Badge variant="outline" className="text-xs"><RotateCcw className="w-3 h-3 mr-1" />reimp #{j.reprint_count ?? 1}</Badge>}
                       <span className="text-xs text-muted-foreground">{printerName(j.printer_id)} · {j.copies} copia(s) · {j.attempts} intento(s)</span>
                     </div>
@@ -204,7 +215,8 @@ export function PrintJobsInspectorTab({ organizationId }: Props) {
                     <RotateCcw className="w-3.5 h-3.5 mr-1" /> Reimprimir
                   </Button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </CardContent>
