@@ -38,7 +38,7 @@ export default function DeveloperApiPage() {
   const [statsDays, setStatsDays] = useState(7);
   const [loading, setLoading] = useState(true);
 
-  const [newKey, setNewKey] = useState<{ name: string; scopes: string[] }>({ name: "", scopes: ["pos_orders:read"] });
+  const [newKey, setNewKey] = useState<{ name: string; scopes: string[]; allowed_ips: string }>({ name: "", scopes: ["pos_orders:read"], allowed_ips: "" });
   const [newKeyResult, setNewKeyResult] = useState<{ prefix: string; secret: string } | null>(null);
   const [newWh, setNewWh] = useState<{ url: string; events: string[]; description: string }>({ url: "", events: [], description: "" });
   const [showWhDialog, setShowWhDialog] = useState(false);
