@@ -67,14 +67,20 @@ export default function DeveloperApiPage() {
 
   const createKey = async () => {
     if (!orgId || !newKey.name.trim()) return;
+    const ips = newKey.allowed_ips
+      .split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
     const { data, error } = await supabase.rpc("create_api_key", {
       p_org: orgId,
       p_name: newKey.name,
       p_scopes: newKey.scopes,
     });
     if (error) return toast.error("No se pudo crear", { description: error.message });
-    setNewKeyResult({ prefix: (data as any).prefix, secret: (data as any).secret });
-    setNewKey({ name: "", scopes: ["pos_orders:read"] });
+    const created = data as any;
+    if (ips.length > 0 && created?.id) {
+      await supabase.from("api_keys").update({ allowed_ips: ips }).eq("id", created.id);
+    }
+    setNewKeyResult({ prefix: created.prefix, secret: created.secret });
+    setNewKey({ name: "", scopes: ["pos_orders:read"], allowed_ips: "" });
     load();
   };
 
