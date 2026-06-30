@@ -280,12 +280,14 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   // Hydrate catalog + persisted ticket
   useEffect(() => {
     (async () => {
+      let cachedCatsLen = 0;
       try {
         const [cached, cats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
         if (cached.length) {
           setProducts(cached as Product[]);
           setLoading(false);
         }
+        cachedCatsLen = cats.length;
         if (cats.length) setCategories(cats.map((c: any) => ({ id: c.id, name: c.name, icon_name: c.icon_name ?? null })));
       } catch { /* no cache */ }
 
@@ -299,7 +301,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       try {
         // Si no había categorías cacheadas, forzamos refresh para evitar quedar
         // pegados con un cache antiguo previo al fix de columna `icon`.
-        await refreshCatalogCache(cats.length === 0);
+        await refreshCatalogCache(cachedCatsLen === 0);
         const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
         if (fresh.length) setProducts(fresh as Product[]);
         if (freshCats.length) setCategories(freshCats.map((c: any) => ({ id: c.id, name: c.name, icon_name: c.icon_name ?? null })));
@@ -312,6 +314,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         setLoading(false);
       }
     })();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.id]);
 
