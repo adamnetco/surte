@@ -1144,8 +1144,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <p className="text-center text-muted-foreground py-8 text-sm">Sin productos en esta vista</p>
             ) : (
               <div
-                className="grid gap-1.5"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))" }}
+                className="grid grid-flow-col auto-cols-[96px] grid-rows-[repeat(3,minmax(0,1fr))] gap-1.5 overflow-x-auto overflow-y-hidden scrollbar-thin pb-1 h-full"
+                aria-label="Catálogo (desplazamiento horizontal)"
               >
                 {filtered.map((p, idx) => (
                   <button
@@ -1184,7 +1184,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
         {/* Ticket (sticky card en desktop; en móvil colapsable con footer fijo) */}
         <aside
-          className={`bg-card border-t lg:border-t-0 lg:border-l flex flex-col lg:w-[380px] lg:max-h-none ${
+          className={`bg-card border-t lg:border-t-0 lg:border-l flex flex-col lg:basis-2/5 lg:max-w-[520px] lg:max-h-none shrink-0 ${
             mobileTicketExpanded ? "max-h-[70dvh]" : "max-h-none"
           }`}
         >
