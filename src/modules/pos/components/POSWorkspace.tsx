@@ -70,7 +70,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import POSFloorMapPanel from "./POSFloorMapPanel";
-import { Utensils as UtensilsIcon, LayoutGrid } from "lucide-react";
+import { Utensils as UtensilsIcon, LayoutGrid, List as ListIcon } from "lucide-react";
 
 
 interface Product {
@@ -112,6 +112,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [helpOpen, setHelpOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  // Densidad del catálogo: "grid" (táctil, default) | "list" (compacto teclado).
+  // Persistido por usuario — operadores con teclado prefieren list para escanear más SKUs sin scroll.
+  const [catalogDensity, setCatalogDensity] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "grid";
+    return (localStorage.getItem("pos:catalogDensity") as "grid" | "list") || "grid";
+  });
+  useEffect(() => {
+    try { localStorage.setItem("pos:catalogDensity", catalogDensity); } catch { /* noop */ }
+  }, [catalogDensity]);
   const [ribbonHelpOpen, setRibbonHelpOpen] = useState(false);
   const { currentOrg, hasModule } = useOrganization();
   const isFood = (currentOrg?.business_type ?? "") === "food" && hasModule("dining_tables");
@@ -1025,6 +1034,34 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <kbd className="hidden md:inline px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">⌘K</kbd>
               Buscar
             </Button>
+            <div
+              role="group"
+              aria-label="Densidad del catálogo"
+              className="hidden md:flex items-center rounded-md border border-border h-9 overflow-hidden"
+            >
+              <button
+                type="button"
+                onClick={() => setCatalogDensity("grid")}
+                aria-pressed={catalogDensity === "grid"}
+                title="Vista en cuadrícula (táctil)"
+                className={`px-2 h-full flex items-center transition ${
+                  catalogDensity === "grid" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCatalogDensity("list")}
+                aria-pressed={catalogDensity === "list"}
+                title="Vista en lista compacta (teclado)"
+                className={`px-2 h-full flex items-center transition border-l ${
+                  catalogDensity === "list" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <ListIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <div className="hidden xl:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 h-9">
               <ScanLine className="w-3 h-3 text-secondary" />
               <span>Scanner activo</span>
@@ -1112,6 +1149,36 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </div>
             ) : filtered.length === 0 ? (
               <p className="text-center text-muted-foreground py-8 text-sm">Sin productos en esta vista</p>
+            ) : catalogDensity === "list" ? (
+              <ul role="list" className="divide-y rounded-md border bg-card overflow-hidden">
+                {filtered.map((p, idx) => {
+                  const cat = p.category_id ? categoryNameById[p.category_id] : null;
+                  return (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        onClick={() => addProduct(p)}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-primary/5 focus:bg-primary/10 focus:outline-none transition"
+                      >
+                        {!isFood && idx < 9 && (
+                          <kbd
+                            className="shrink-0 px-1 py-0 text-[9px] font-bold rounded bg-foreground/85 text-background w-7 text-center"
+                            title={`Alt+${idx + 1}`}
+                            aria-hidden="true"
+                          >
+                            Alt+{idx + 1}
+                          </kbd>
+                        )}
+                        <span className="flex-1 min-w-0 truncate text-[12px] font-medium">{p.name}</span>
+                        {cat && (
+                          <span className="hidden sm:inline text-[10px] text-muted-foreground shrink-0 truncate max-w-[120px]">({cat})</span>
+                        )}
+                        <span className="text-[12px] font-bold text-primary tabular-nums shrink-0">{COP(Number(p.price))}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             ) : (
               <div
                 className="grid gap-1.5"
