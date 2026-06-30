@@ -4,8 +4,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { Settings, Clock, User, LogOut, Keyboard, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
-import POSModeBar from "./POSModeBar";
 import type { PosMode } from "@/modules/pos/lib/posModes";
+
 
 /** Estado de sincronización mostrado de forma compacta y de ancho fijo
  *  para evitar reflow del cluster derecho (mantiene el ícono Settings anclado). */
@@ -137,9 +137,9 @@ export default function POSTopBar({
         </div>
       </div>
 
-      {modes.length > 1 && (
-        <POSModeBar modes={modes} active={activeMode} onChange={onChangeMode} />
-      )}
+      {/* POSModeBar relocalizado al POSTopRibbon como chips compactos
+          para recuperar ~72px verticales en el área de catálogo/ticket. */}
+
     </header>
   );
 }

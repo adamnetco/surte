@@ -12,6 +12,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { POS_MODES, type PosMode } from "@/modules/pos/lib/posModes";
+
 
 /**
  * POSTopRibbon — barra de navegación iconográfica XL inspirada en
@@ -73,9 +75,15 @@ interface Props {
   /** Abre el cheat-sheet de atajos del POS. */
   onShowHotkeys?: () => void;
   className?: string;
+  /** Modo de venta activo + alternativas — relocalizado desde el POSModeBar
+   *  para recuperar ~72px verticales en el catálogo. */
+  modes?: PosMode[];
+  activeMode?: PosMode;
+  onChangeMode?: (m: PosMode) => void;
 }
 
-export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className }: Props) {
+export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, modes, activeMode, onChangeMode }: Props) {
+
   const navigate = useNavigate();
   const location = useLocation();
   const { currentOrg, hasModule } = useOrganization();
@@ -108,6 +116,39 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className }
       )}
     >
       <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+        {modes && modes.length > 1 && activeMode && onChangeMode && (
+          <div
+            role="group"
+            aria-label="Modo de venta"
+            className="shrink-0 flex items-center gap-0.5 rounded-lg border bg-muted/40 p-0.5 mr-1"
+          >
+            {modes.map((m) => {
+              const meta = POS_MODES[m];
+              const MIcon = meta.icon;
+              const isActive = activeMode === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => onChangeMode(m)}
+                  aria-pressed={isActive}
+                  title={meta.description}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 h-[50px] px-2.5 rounded-md text-xs font-semibold transition",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    isActive
+                      ? "bg-accent text-accent-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-background hover:text-foreground",
+                  )}
+                >
+                  <MIcon className="w-4 h-4" aria-hidden />
+                  <span className="hidden md:inline">{meta.short}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {primary.map((item) => {
           const active = isActive(item.to);
           const tone = item.tone ?? "muted";
