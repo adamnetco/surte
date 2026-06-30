@@ -780,6 +780,36 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex" />
           </>
         }
+        extraActions={
+          <>
+            <Button variant="outline" className="w-full justify-start" onClick={handleNotasCredito}>
+              <Receipt className="w-4 h-4 mr-2" /> Notas crédito / Devolución
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={handleVentasDelDia}>
+              <BarChart3 className="w-4 h-4 mr-2" /> Ventas del día
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={handleCajon}>
+              <Wallet className="w-4 h-4 mr-2" /> Abrir cajón monedero
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={handleRefresh}
+              disabled={sync.syncing}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${sync.syncing ? "animate-spin" : ""}`} />
+              {sync.pending > 0 ? `Sincronizar (${sync.pending})` : "Refrescar sync"}
+            </Button>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <span className="text-xs text-muted-foreground">Acciones recientes</span>
+              <RecentActionsPopover
+                actions={recentActions}
+                onReplay={replayAction}
+                onClear={clearRecentActions}
+              />
+            </div>
+          </>
+        }
       />
       <POSTopRibbon
         onQuickCreate={() => setQuickCreateOpen(true)}
