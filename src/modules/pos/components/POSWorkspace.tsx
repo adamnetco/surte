@@ -26,7 +26,7 @@ import ResolutionStatusBanner from "./ResolutionStatusBanner";
 import EinvoiceShiftWidget from "./EinvoiceShiftWidget";
 import { useDianHealth } from "@/modules/pos/hooks/useDianHealth";
 import { useEinvoiceResolutionStatus } from "@/modules/pos/hooks/useEinvoiceResolutionStatus";
-import OfflineIndicator from "@/modules/offline/components/OfflineIndicator";
+
 import { usePrintQueue, TicketPreviewDialog, type TicketData } from "@/modules/printing";
 import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
@@ -776,7 +776,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           lastError: sync.lastError,
           onFlush: () => sync.flushNow(),
         }}
-        rightExtras={<OfflineIndicator />}
+        
         extraActions={
           <>
             <Button variant="outline" className="w-full justify-start" onClick={handleNotasCredito}>
