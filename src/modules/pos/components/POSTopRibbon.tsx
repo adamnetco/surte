@@ -75,9 +75,15 @@ interface Props {
   /** Abre el cheat-sheet de atajos del POS. */
   onShowHotkeys?: () => void;
   className?: string;
+  /** Modo de venta activo + alternativas — relocalizado desde el POSModeBar
+   *  para recuperar ~72px verticales en el catálogo. */
+  modes?: PosMode[];
+  activeMode?: PosMode;
+  onChangeMode?: (m: PosMode) => void;
 }
 
-export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className }: Props) {
+export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, modes, activeMode, onChangeMode }: Props) {
+
   const navigate = useNavigate();
   const location = useLocation();
   const { currentOrg, hasModule } = useOrganization();
