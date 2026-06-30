@@ -159,19 +159,11 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
         {primary.map((item) => {
           const active = isActive(item.to);
           const tone = item.tone ?? "muted";
-          const handleGo = () => {
-            if (item.openInNewTab) {
-              window.open(item.to, "_blank", "noopener,noreferrer");
-            } else {
-              navigate(item.to);
-            }
-          };
-          const titleSuffix = item.openInNewTab ? " · abre en nueva pestaña" : "";
           return (
             <button
               key={item.key}
               type="button"
-              onClick={handleGo}
+              onClick={() => navigate(item.to)}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "relative shrink-0 flex flex-col items-center justify-center gap-0.5",
@@ -179,7 +171,7 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
                 "hover:border-primary/60 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 active ? "border-primary bg-primary/5" : "border-border",
               )}
-              title={(item.hotkey ? `${item.label} (${item.hotkey})` : item.label) + titleSuffix}
+              title={item.hotkey ? `${item.label} (${item.hotkey})` : item.label}
             >
               <span className={cn("w-7 h-7 rounded-md grid place-items-center", TONE_BG[tone])}>
                 <item.Icon className="w-4 h-4" aria-hidden />
@@ -190,14 +182,6 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
               {item.hotkey && (
                 <span className="text-[9px] leading-none text-muted-foreground tabular-nums">
                   {item.hotkey}
-                </span>
-              )}
-              {item.openInNewTab && (
-                <span
-                  aria-hidden
-                  className="absolute top-1 right-1 text-[8px] leading-none text-muted-foreground/70"
-                >
-                  ↗
                 </span>
               )}
             </button>
