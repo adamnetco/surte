@@ -1149,6 +1149,36 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </div>
             ) : filtered.length === 0 ? (
               <p className="text-center text-muted-foreground py-8 text-sm">Sin productos en esta vista</p>
+            ) : catalogDensity === "list" ? (
+              <ul role="list" className="divide-y rounded-md border bg-card overflow-hidden">
+                {filtered.map((p, idx) => {
+                  const cat = p.category_id ? categoryNameById[p.category_id] : null;
+                  return (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        onClick={() => addProduct(p)}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-primary/5 focus:bg-primary/10 focus:outline-none transition"
+                      >
+                        {!isFood && idx < 9 && (
+                          <kbd
+                            className="shrink-0 px-1 py-0 text-[9px] font-bold rounded bg-foreground/85 text-background w-7 text-center"
+                            title={`Alt+${idx + 1}`}
+                            aria-hidden="true"
+                          >
+                            Alt+{idx + 1}
+                          </kbd>
+                        )}
+                        <span className="flex-1 min-w-0 truncate text-[12px] font-medium">{p.name}</span>
+                        {cat && (
+                          <span className="hidden sm:inline text-[10px] text-muted-foreground shrink-0 truncate max-w-[120px]">({cat})</span>
+                        )}
+                        <span className="text-[12px] font-bold text-primary tabular-nums shrink-0">{COP(Number(p.price))}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             ) : (
               <div
                 className="grid gap-1.5"
