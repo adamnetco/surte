@@ -52,7 +52,9 @@ import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import POSCustomerPicker from "./POSCustomerPicker";
-import POSContextualBar from "./POSContextualBar";
+// POSContextualBar removed: Suspendidas se promovió al health strip; el selector
+// global de "Precios" se elimina (los precios derivan del cliente / lista por SKU).
+
 import TableGridSheet from "./TableGridSheet";
 import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
 import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
