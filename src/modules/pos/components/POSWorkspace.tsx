@@ -1063,33 +1063,25 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </div>
 
           {recentProducts.length > 0 && !loading && (
-            <div className="px-3 pt-2 min-w-0">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground">Recientes</p>
-                <span className="text-[10px] text-muted-foreground">Tap para añadir</span>
-              </div>
+            <div className="px-3 pt-1.5 pb-0.5 min-w-0 flex items-center gap-2">
+              <span className="shrink-0 text-[9px] uppercase tracking-wide font-semibold text-muted-foreground">
+                Recientes
+              </span>
               <div
-                className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 -mx-1 px-1 scroll-smooth"
-                style={{ scrollbarWidth: "thin" }}
+                className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto overflow-y-hidden scroll-smooth"
+                style={{ scrollbarWidth: "none" }}
               >
                 {recentProducts.map((p) => (
                   <button
                     key={`recent-${p.id}`}
                     onClick={() => addProduct(p)}
-                    className="shrink-0 w-24 bg-card rounded-md border hover:border-primary hover:shadow-sm transition text-left overflow-hidden active:scale-95"
-                    title={`+ ${p.name}`}
+                    className="shrink-0 h-7 inline-flex items-center gap-1.5 px-2 bg-card rounded-full border hover:border-primary hover:bg-primary/5 transition active:scale-95 max-w-[180px]"
+                    title={`+ ${p.name} · ${COP(Number(p.price))}`}
                   >
-                    <div className="aspect-square bg-muted overflow-hidden">
-                      {p.image_url ? (
-                        <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
-                      ) : (
-                        <div className="w-full h-full grid place-items-center text-[10px] text-muted-foreground">Sin imagen</div>
-                      )}
-                    </div>
-                    <div className="p-1 leading-tight">
-                      <p className="text-[10px] font-medium line-clamp-1">{p.name}</p>
-                      <p className="text-[11px] font-bold text-primary tabular-nums">{COP(Number(p.price))}</p>
-                    </div>
+                    <span className="text-[11px] font-medium truncate">{p.name}</span>
+                    <span className="text-[11px] font-bold text-primary tabular-nums shrink-0">
+                      {COP(Number(p.price))}
+                    </span>
                   </button>
                 ))}
               </div>
