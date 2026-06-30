@@ -137,9 +137,9 @@ export default function POSTopBar({
         </div>
       </div>
 
-      {modes.length > 1 && (
-        <POSModeBar modes={modes} active={activeMode} onChange={onChangeMode} />
-      )}
+      {/* POSModeBar relocalizado al POSTopRibbon como chips compactos
+          para recuperar ~72px verticales en el área de catálogo/ticket. */}
+
     </header>
   );
 }
