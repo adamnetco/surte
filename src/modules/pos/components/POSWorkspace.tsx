@@ -1038,6 +1038,38 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <ScanLine className="w-3 h-3 text-secondary" />
               <span>Scanner activo</span>
             </div>
+            <div
+              role="group"
+              aria-label="Densidad del catálogo"
+              className="hidden md:flex items-center rounded-md border border-border h-9 overflow-hidden"
+            >
+              <button
+                type="button"
+                onClick={() => setCatalogDensity("grid")}
+                aria-pressed={catalogDensity === "grid"}
+                title="Vista en cuadrícula (táctil)"
+                className={`px-2 h-full flex items-center transition ${
+                  catalogDensity === "grid" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCatalogDensity("list")}
+                aria-pressed={catalogDensity === "list"}
+                title="Vista en lista compacta (teclado)"
+                className={`px-2 h-full flex items-center transition border-l ${
+                  catalogDensity === "list" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <ListIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="hidden xl:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 h-9">
+              <ScanLine className="w-3 h-3 text-secondary" />
+              <span>Scanner activo</span>
+            </div>
             <button
               type="button"
               onClick={() => setHelpOpen(true)}
