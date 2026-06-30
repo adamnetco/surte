@@ -1097,7 +1097,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             {loading ? (
               <div
                 className="grid gap-2"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
+                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))" }}
                 aria-label="Cargando catálogo"
               >
                 {Array.from({ length: 12 }).map((_, i) => (
