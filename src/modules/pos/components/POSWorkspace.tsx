@@ -130,7 +130,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [ticketNote, setTicketNote] = useState("");
   const [globalDiscPct, setGlobalDiscPct] = useState(0);
   const [priceListId, setPriceListId] = useState<string | null>(null);
-  const [priceListName, setPriceListName] = useState<string>("Pública");
+  const [, setPriceListName] = useState<string>("Pública");
   const [parkedCount, setParkedCount] = useState(0);
   // Mobile: ticket colapsado por defecto para maximizar catálogo. Totales/Cobrar siempre visibles.
   const [mobileTicketExpanded, setMobileTicketExpanded] = useState(false);
