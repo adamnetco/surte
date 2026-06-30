@@ -26,7 +26,7 @@ import ResolutionStatusBanner from "./ResolutionStatusBanner";
 import EinvoiceShiftWidget from "./EinvoiceShiftWidget";
 import { useDianHealth } from "@/modules/pos/hooks/useDianHealth";
 import { useEinvoiceResolutionStatus } from "@/modules/pos/hooks/useEinvoiceResolutionStatus";
-import OfflineIndicator from "@/modules/offline/components/OfflineIndicator";
+
 import { usePrintQueue, TicketPreviewDialog, type TicketData } from "@/modules/printing";
 import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
