@@ -97,6 +97,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { isAdmin } = useAuth();
   const [search, setSearch] = useState("");
+  const [searchHighlight, setSearchHighlight] = useState(0);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [payOpen, setPayOpen] = useState(false);
@@ -551,6 +553,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     return counts;
   }, [products]);
 
+  const categoryNameById = useMemo(() => {
+    const m: Record<string, string> = {};
+    categories.forEach((c) => { m[c.id] = c.name; });
+    return m;
+  }, [categories]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return products.filter((p) => {
@@ -563,6 +571,23 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       );
     });
   }, [products, search, activeCategory]);
+
+  // Sugerencias de autocompletado mientras se escribe (máx 8). Si hay query
+  // ignoramos el filtro de categoría activa para que el cajero encuentre
+  // siempre por nombre/SKU/código de barras.
+  const searchSuggestions = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return [] as Product[];
+    return products
+      .filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) ||
+        p.gtin?.toLowerCase().includes(q)
+      )
+      .slice(0, 8);
+  }, [products, search]);
+
+  useEffect(() => { setSearchHighlight(0); }, [search]);
 
   // ===== Atajos numéricos Alt+1..9 (estilo VectorPOS) =====
   // Añade al ticket el N-ésimo producto visible del grid. Solo activo cuando
@@ -940,14 +965,77 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           <>
           <div className="p-2.5 bg-card border-b flex gap-2 items-center">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input
                 ref={searchRef}
                 placeholder="Buscar producto…  (F3)"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
+                onKeyDown={(e) => {
+                  if (searchSuggestions.length === 0) return;
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setSearchHighlight((i) => Math.min(i + 1, searchSuggestions.length - 1));
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setSearchHighlight((i) => Math.max(i - 1, 0));
+                  } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    const pick = searchSuggestions[searchHighlight] ?? searchSuggestions[0];
+                    if (pick) {
+                      addProduct(pick);
+                      setSearch("");
+                    }
+                  } else if (e.key === "Escape") {
+                    if (search) { e.preventDefault(); setSearch(""); }
+                  }
+                }}
+                aria-autocomplete="list"
+                aria-expanded={searchFocused && searchSuggestions.length > 0}
+                aria-activedescendant={
+                  searchFocused && searchSuggestions[searchHighlight]
+                    ? `pos-suggestion-${searchSuggestions[searchHighlight].id}`
+                    : undefined
+                }
                 className="pl-9 h-9"
               />
+              {searchFocused && searchSuggestions.length > 0 && (
+                <ul
+                  role="listbox"
+                  className="absolute z-30 left-0 right-0 top-full mt-1 bg-popover border rounded-md shadow-lg overflow-hidden max-h-80 overflow-y-auto"
+                >
+                  {searchSuggestions.map((p, i) => {
+                    const cat = p.category_id ? categoryNameById[p.category_id] : null;
+                    const active = i === searchHighlight;
+                    return (
+                      <li
+                        id={`pos-suggestion-${p.id}`}
+                        key={p.id}
+                        role="option"
+                        aria-selected={active}
+                        onMouseEnter={() => setSearchHighlight(i)}
+                        onMouseDown={(e) => {
+                          // mousedown para que dispare antes del blur
+                          e.preventDefault();
+                          addProduct(p);
+                          setSearch("");
+                        }}
+                        className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer text-xs ${
+                          active ? "bg-primary/10 text-foreground" : "hover:bg-muted/60"
+                        }`}
+                      >
+                        <span className="flex-1 truncate font-medium">{p.name}</span>
+                        {cat && (
+                          <span className="text-[10px] text-muted-foreground shrink-0">({cat})</span>
+                        )}
+                        <span className="font-bold text-primary tabular-nums shrink-0">{COP(Number(p.price))}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
             <Button
               variant="outline"
@@ -1009,7 +1097,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             {loading ? (
               <div
                 className="grid gap-2"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
+                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))" }}
                 aria-label="Cargando catálogo"
               >
                 {Array.from({ length: 12 }).map((_, i) => (
@@ -1055,8 +1143,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <div
                 className="grid gap-2"
                 style={{ gridTemplateColumns: isFood
-                  ? "repeat(auto-fill, minmax(160px, 1fr))"
-                  : "repeat(auto-fill, minmax(200px, 1fr))" }}
+                  ? "repeat(auto-fill, minmax(120px, 1fr))"
+                  : "repeat(auto-fill, minmax(140px, 1fr))" }}
               >
                 {filtered.map((p, idx) => (
                   <button
@@ -1080,9 +1168,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                         <div className="w-full h-full grid place-items-center text-muted-foreground text-xs">Sin imagen</div>
                       )}
                     </div>
-                    <div className={isFood ? "p-2" : "p-2.5"}>
-                      <p className={isFood ? "text-xs font-medium line-clamp-2 min-h-[2rem]" : "text-sm font-semibold line-clamp-2 min-h-[2.5rem]"}>{p.name}</p>
-                      <p className={isFood ? "text-sm font-bold text-primary mt-1" : "text-base font-bold text-primary mt-1"}>{COP(Number(p.price))}</p>
+                    <div className="p-1.5">
+                      <p className="text-[11px] font-medium leading-tight line-clamp-2 min-h-[1.75rem]">{p.name}</p>
+                      <p className="text-xs font-bold text-primary mt-0.5 tabular-nums">{COP(Number(p.price))}</p>
                     </div>
                   </button>
                 ))}
