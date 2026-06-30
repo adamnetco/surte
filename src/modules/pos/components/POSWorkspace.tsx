@@ -776,7 +776,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           lastError: sync.lastError,
           onFlush: () => sync.flushNow(),
         }}
-        /* sync ahora vive en el health strip — evita duplicado con OfflineIndicator */
+        
         extraActions={
           <>
             <Button variant="outline" className="w-full justify-start" onClick={handleNotasCredito}>
