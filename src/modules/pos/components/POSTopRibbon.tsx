@@ -42,23 +42,26 @@ interface RibbonItem {
   requiresModule?: string;
   /** Tono del icono — diferencia visual rápida tipo Action Rail. */
   tone?: "primary" | "success" | "warning" | "info" | "danger" | "muted";
-  /** Back-office: abre en pestaña nueva para no perder el ticket POS
-   *  (patrón SoftwarePOS / VectorPOS). */
-  openInNewTab?: boolean;
 }
 
+// Patrón industria-estándar (Square / Toast / Lightspeed / Loyverse):
+// SPA single-window con estado de ticket persistido (Dexie en
+// POSWorkspace via `ticketCacheKey`). Toda navegación es in-app —
+// volver a /pos/vender restaura el ticket exactamente como estaba.
+// No usamos pestañas nuevas: rompen el flujo desktop y desincronizan
+// el contexto de turno/caja/impresora.
 const ALL_ITEMS: RibbonItem[] = [
   { key: "sell",      label: "Vender",     to: "/pos/vender",         Icon: ShoppingCart,  hotkey: "F2", primaryFor: "*",                              tone: "primary" },
   { key: "tables",    label: "Mesas",      to: "/mesas",              Icon: Utensils,      hotkey: "F5", primaryFor: ["food"],                          requiresModule: "dining_tables", tone: "success" },
   { key: "kds",       label: "Cocina",     to: "/kds",                Icon: ChefHat,                  primaryFor: ["food"],                          requiresModule: "kds",           tone: "warning" },
   { key: "agenda",    label: "Agenda",     to: "/reservas",           Icon: CalendarClock,            primaryFor: ["food", "services"],                                               tone: "info" },
-  { key: "clients",   label: "Clientes",   to: "/admin?tab=clientes", Icon: Users,         hotkey: "F3", primaryFor: "*",                                                            tone: "info",    openInNewTab: true },
-  { key: "products",  label: "Artículos",  to: "/admin?tab=productos",Icon: Package,       hotkey: "F4", primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted",   openInNewTab: true },
-  { key: "inventory", label: "Inventario", to: "/inventario",         Icon: Boxes,                  primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted",   openInNewTab: true },
-  { key: "purchases", label: "Compras",    to: "/compras",            Icon: Truck,         hotkey: "F6", primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted",   openInNewTab: true },
-  { key: "reports",   label: "Reportes",   to: "/admin/reportes",     Icon: BarChart3,     hotkey: "F7", primaryFor: "*",                                                            tone: "info",    openInNewTab: true },
-  { key: "billing",   label: "Facturación",to: "/facturacion",        Icon: FileText,                 primaryFor: ["retail","food","hybrid","services","pharmacy"],                tone: "muted",   openInNewTab: true },
-  { key: "accounting",label: "Contabilidad",to: "/admin/contabilidad",Icon: BookOpen,                 primaryFor: ["hybrid"],                                                       tone: "muted",   openInNewTab: true },
+  { key: "clients",   label: "Clientes",   to: "/admin?tab=clientes", Icon: Users,         hotkey: "F3", primaryFor: "*",                                                            tone: "info" },
+  { key: "products",  label: "Artículos",  to: "/admin?tab=productos",Icon: Package,       hotkey: "F4", primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted" },
+  { key: "inventory", label: "Inventario", to: "/inventario",         Icon: Boxes,                  primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted" },
+  { key: "purchases", label: "Compras",    to: "/compras",            Icon: Truck,         hotkey: "F6", primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted" },
+  { key: "reports",   label: "Reportes",   to: "/admin/reportes",     Icon: BarChart3,     hotkey: "F7", primaryFor: "*",                                                            tone: "info" },
+  { key: "billing",   label: "Facturación",to: "/facturacion",        Icon: FileText,                 primaryFor: ["retail","food","hybrid","services","pharmacy"],                tone: "muted" },
+  { key: "accounting",label: "Contabilidad",to: "/admin/contabilidad",Icon: BookOpen,                 primaryFor: ["hybrid"],                                                       tone: "muted" },
   { key: "fx",        label: "Cambios",    to: "/casas-de-cambio",    Icon: Coins,                    primaryFor: ["fx"],                                                            tone: "warning" },
   { key: "cash",      label: "Caja",       to: "/pos",                Icon: Receipt,       hotkey: "F8", primaryFor: "*",                                                            tone: "danger" },
 ];
