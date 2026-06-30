@@ -116,15 +116,9 @@ export default function POSContextualBar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Vendedor */}
-      <div
-        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border bg-card"
-        title="Vendedor del turno"
-      >
-        <User2 className="w-3.5 h-3.5 text-primary" />
-        <span className="font-semibold">Vendedor:</span>
-        <span className="text-foreground/90 truncate max-w-[140px]">{cashierName}</span>
-      </div>
+      {/* Vendedor: se muestra en el TopBar (Caja · Cajero · Turno); aquí sería redundante. */}
+
+
 
       <div className="flex-1" />
 
