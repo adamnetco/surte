@@ -44,7 +44,7 @@ import POSTopRibbon from "./POSTopRibbon";
 import POSQuickCreate from "./POSQuickCreate";
 import POSRibbonHotkeysSheet from "./POSRibbonHotkeysSheet";
 import RecentActionsPopover from "./RecentActionsPopover";
-import { Receipt, BarChart3, Wallet, RefreshCw } from "lucide-react";
+import { Receipt, BarChart3, Wallet, RefreshCw, CloudUpload, CloudOff, Loader2 } from "lucide-react";
 import POSActionRail from "./POSActionRail";
 import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
@@ -830,6 +830,24 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         <DianHealthIndicator organizationId={organizationId} className="shrink-0" />
         <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex shrink-0" />
         <div className="flex-1" />
+        {(sync.pending > 0 || sync.syncing) && (
+          <button
+            type="button"
+            onClick={() => sync.flushNow()}
+            title={sync.lastError ?? (sync.online ? "Sincronizar pendientes" : "Sin conexión · en cola")}
+            aria-label={sync.syncing ? "Sincronizando" : `${sync.pending} pendientes por sincronizar`}
+            className="shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border bg-amber-50 border-amber-300 hover:bg-amber-100 text-xs font-semibold text-amber-900 transition"
+          >
+            {sync.syncing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : sync.online ? (
+              <CloudUpload className="w-3.5 h-3.5" />
+            ) : (
+              <CloudOff className="w-3.5 h-3.5" />
+            )}
+            {sync.syncing ? "Sincronizando" : `${sync.pending} pendiente${sync.pending === 1 ? "" : "s"}`}
+          </button>
+        )}
         {parkedCount > 0 && (
           <button
             type="button"
@@ -870,7 +888,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             counts={productsByCategory}
           />
         </div>
-        <div className="w-[260px] sm:w-[320px] shrink-0 px-3 py-2 flex items-center">
+        <div className="w-[160px] sm:w-[200px] shrink-0 px-2 py-2 flex items-center">
           <POSCustomerPicker
             customer={customer}
             onChange={setCustomer}
