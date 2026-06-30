@@ -1034,10 +1034,6 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <kbd className="hidden md:inline px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">⌘K</kbd>
               Buscar
             </Button>
-            <div className="hidden xl:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 h-9">
-              <ScanLine className="w-3 h-3 text-secondary" />
-              <span>Scanner activo</span>
-            </div>
             <div
               role="group"
               aria-label="Densidad del catálogo"
