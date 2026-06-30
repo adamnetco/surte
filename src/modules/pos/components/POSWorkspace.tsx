@@ -70,7 +70,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import POSFloorMapPanel from "./POSFloorMapPanel";
-import { Utensils as UtensilsIcon, LayoutGrid } from "lucide-react";
+import { Utensils as UtensilsIcon, LayoutGrid, List as ListIcon } from "lucide-react";
 
 
 interface Product {
