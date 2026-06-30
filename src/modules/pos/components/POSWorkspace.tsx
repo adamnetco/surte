@@ -1168,9 +1168,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                         <div className="w-full h-full grid place-items-center text-muted-foreground text-xs">Sin imagen</div>
                       )}
                     </div>
-                    <div className={isFood ? "p-2" : "p-2.5"}>
-                      <p className={isFood ? "text-xs font-medium line-clamp-2 min-h-[2rem]" : "text-sm font-semibold line-clamp-2 min-h-[2.5rem]"}>{p.name}</p>
-                      <p className={isFood ? "text-sm font-bold text-primary mt-1" : "text-base font-bold text-primary mt-1"}>{COP(Number(p.price))}</p>
+                    <div className="p-1.5">
+                      <p className="text-[11px] font-medium leading-tight line-clamp-2 min-h-[1.75rem]">{p.name}</p>
+                      <p className="text-xs font-bold text-primary mt-0.5 tabular-nums">{COP(Number(p.price))}</p>
                     </div>
                   </button>
                 ))}
