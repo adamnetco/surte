@@ -206,16 +206,9 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
               {overflow.map((it) => (
                 <DropdownMenuItem
                   key={it.key}
-                  onSelect={() => {
-                    if (it.openInNewTab) {
-                      window.open(it.to, "_blank", "noopener,noreferrer");
-                    } else {
-                      navigate(it.to);
-                    }
-                  }}
+                  onSelect={() => navigate(it.to)}
                 >
                   <it.Icon className="w-4 h-4 mr-2" /> {it.label}
-                  {it.openInNewTab && <span className="ml-auto text-[10px] text-muted-foreground">↗</span>}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
