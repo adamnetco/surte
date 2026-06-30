@@ -1143,8 +1143,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <div
                 className="grid gap-2"
                 style={{ gridTemplateColumns: isFood
-                  ? "repeat(auto-fill, minmax(160px, 1fr))"
-                  : "repeat(auto-fill, minmax(200px, 1fr))" }}
+                  ? "repeat(auto-fill, minmax(120px, 1fr))"
+                  : "repeat(auto-fill, minmax(140px, 1fr))" }}
               >
                 {filtered.map((p, idx) => (
                   <button
