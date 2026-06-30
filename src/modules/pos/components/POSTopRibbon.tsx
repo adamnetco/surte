@@ -12,6 +12,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { POS_MODES, type PosMode } from "@/modules/pos/lib/posModes";
+
 
 /**
  * POSTopRibbon — barra de navegación iconográfica XL inspirada en
