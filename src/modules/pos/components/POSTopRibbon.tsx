@@ -156,19 +156,27 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
         {primary.map((item) => {
           const active = isActive(item.to);
           const tone = item.tone ?? "muted";
+          const handleGo = () => {
+            if (item.openInNewTab) {
+              window.open(item.to, "_blank", "noopener,noreferrer");
+            } else {
+              navigate(item.to);
+            }
+          };
+          const titleSuffix = item.openInNewTab ? " · abre en nueva pestaña" : "";
           return (
             <button
               key={item.key}
               type="button"
-              onClick={() => navigate(item.to)}
+              onClick={handleGo}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "shrink-0 flex flex-col items-center justify-center gap-0.5",
+                "relative shrink-0 flex flex-col items-center justify-center gap-0.5",
                 "min-w-[72px] h-[58px] px-2 rounded-lg border transition",
                 "hover:border-primary/60 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 active ? "border-primary bg-primary/5" : "border-border",
               )}
-              title={item.hotkey ? `${item.label} (${item.hotkey})` : item.label}
+              title={(item.hotkey ? `${item.label} (${item.hotkey})` : item.label) + titleSuffix}
             >
               <span className={cn("w-7 h-7 rounded-md grid place-items-center", TONE_BG[tone])}>
                 <item.Icon className="w-4 h-4" aria-hidden />
@@ -179,6 +187,14 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
               {item.hotkey && (
                 <span className="text-[9px] leading-none text-muted-foreground tabular-nums">
                   {item.hotkey}
+                </span>
+              )}
+              {item.openInNewTab && (
+                <span
+                  aria-hidden
+                  className="absolute top-1 right-1 text-[8px] leading-none text-muted-foreground/70"
+                >
+                  ↗
                 </span>
               )}
             </button>
@@ -201,13 +217,24 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {overflow.map((it) => (
-                <DropdownMenuItem key={it.key} onSelect={() => navigate(it.to)}>
+                <DropdownMenuItem
+                  key={it.key}
+                  onSelect={() => {
+                    if (it.openInNewTab) {
+                      window.open(it.to, "_blank", "noopener,noreferrer");
+                    } else {
+                      navigate(it.to);
+                    }
+                  }}
+                >
                   <it.Icon className="w-4 h-4 mr-2" /> {it.label}
+                  {it.openInNewTab && <span className="ml-auto text-[10px] text-muted-foreground">↗</span>}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+
 
         <div className="flex-1" />
 
