@@ -1289,14 +1289,6 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
 
           <div className={`${mobileTicketExpanded ? "flex" : "hidden"} lg:flex flex-col flex-1 min-h-0`}>
-            <POSActionRail
-              hasSelection={!!selectedLine}
-              onMultiply={railMultiply}
-              onCut={railCut}
-              onComment={railComment}
-              onDiscount={railDiscount}
-              onDelete={railDelete}
-            />
 
             <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
               {ticket.length === 0 ? (
