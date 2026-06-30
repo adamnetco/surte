@@ -44,7 +44,7 @@ import POSTopRibbon from "./POSTopRibbon";
 import POSQuickCreate from "./POSQuickCreate";
 import POSRibbonHotkeysSheet from "./POSRibbonHotkeysSheet";
 import RecentActionsPopover from "./RecentActionsPopover";
-import { Receipt, BarChart3, Wallet, RefreshCw } from "lucide-react";
+import { Receipt, BarChart3, Wallet, RefreshCw, CloudUpload, CloudOff, Loader2 } from "lucide-react";
 import POSActionRail from "./POSActionRail";
 import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
