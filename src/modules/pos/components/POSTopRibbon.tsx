@@ -42,6 +42,9 @@ interface RibbonItem {
   requiresModule?: string;
   /** Tono del icono — diferencia visual rápida tipo Action Rail. */
   tone?: "primary" | "success" | "warning" | "info" | "danger" | "muted";
+  /** Back-office: abre en pestaña nueva para no perder el ticket POS
+   *  (patrón SoftwarePOS / VectorPOS). */
+  openInNewTab?: boolean;
 }
 
 const ALL_ITEMS: RibbonItem[] = [
@@ -49,16 +52,17 @@ const ALL_ITEMS: RibbonItem[] = [
   { key: "tables",    label: "Mesas",      to: "/mesas",              Icon: Utensils,      hotkey: "F5", primaryFor: ["food"],                          requiresModule: "dining_tables", tone: "success" },
   { key: "kds",       label: "Cocina",     to: "/kds",                Icon: ChefHat,                  primaryFor: ["food"],                          requiresModule: "kds",           tone: "warning" },
   { key: "agenda",    label: "Agenda",     to: "/reservas",           Icon: CalendarClock,            primaryFor: ["food", "services"],                                               tone: "info" },
-  { key: "clients",   label: "Clientes",   to: "/admin?tab=clientes", Icon: Users,         hotkey: "F3", primaryFor: "*",                                                            tone: "info" },
-  { key: "products",  label: "Artículos",  to: "/admin?tab=productos",Icon: Package,       hotkey: "F4", primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted" },
-  { key: "inventory", label: "Inventario", to: "/inventario",         Icon: Boxes,                  primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted" },
-  { key: "purchases", label: "Compras",    to: "/compras",            Icon: Truck,         hotkey: "F6", primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted" },
-  { key: "reports",   label: "Reportes",   to: "/admin/reportes",     Icon: BarChart3,     hotkey: "F7", primaryFor: "*",                                                            tone: "info" },
-  { key: "billing",   label: "Facturación",to: "/facturacion",        Icon: FileText,                 primaryFor: ["retail","food","hybrid","services","pharmacy"],                tone: "muted" },
-  { key: "accounting",label: "Contabilidad",to: "/admin/contabilidad",Icon: BookOpen,                 primaryFor: ["hybrid"],                                                       tone: "muted" },
+  { key: "clients",   label: "Clientes",   to: "/admin?tab=clientes", Icon: Users,         hotkey: "F3", primaryFor: "*",                                                            tone: "info",    openInNewTab: true },
+  { key: "products",  label: "Artículos",  to: "/admin?tab=productos",Icon: Package,       hotkey: "F4", primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted",   openInNewTab: true },
+  { key: "inventory", label: "Inventario", to: "/inventario",         Icon: Boxes,                  primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted",   openInNewTab: true },
+  { key: "purchases", label: "Compras",    to: "/compras",            Icon: Truck,         hotkey: "F6", primaryFor: ["retail","food","hybrid","pharmacy"],                          tone: "muted",   openInNewTab: true },
+  { key: "reports",   label: "Reportes",   to: "/admin/reportes",     Icon: BarChart3,     hotkey: "F7", primaryFor: "*",                                                            tone: "info",    openInNewTab: true },
+  { key: "billing",   label: "Facturación",to: "/facturacion",        Icon: FileText,                 primaryFor: ["retail","food","hybrid","services","pharmacy"],                tone: "muted",   openInNewTab: true },
+  { key: "accounting",label: "Contabilidad",to: "/admin/contabilidad",Icon: BookOpen,                 primaryFor: ["hybrid"],                                                       tone: "muted",   openInNewTab: true },
   { key: "fx",        label: "Cambios",    to: "/casas-de-cambio",    Icon: Coins,                    primaryFor: ["fx"],                                                            tone: "warning" },
   { key: "cash",      label: "Caja",       to: "/pos",                Icon: Receipt,       hotkey: "F8", primaryFor: "*",                                                            tone: "danger" },
 ];
+
 
 const TONE_BG: Record<NonNullable<RibbonItem["tone"]>, string> = {
   primary: "bg-primary/10 text-primary",
@@ -152,19 +156,27 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
         {primary.map((item) => {
           const active = isActive(item.to);
           const tone = item.tone ?? "muted";
+          const handleGo = () => {
+            if (item.openInNewTab) {
+              window.open(item.to, "_blank", "noopener,noreferrer");
+            } else {
+              navigate(item.to);
+            }
+          };
+          const titleSuffix = item.openInNewTab ? " · abre en nueva pestaña" : "";
           return (
             <button
               key={item.key}
               type="button"
-              onClick={() => navigate(item.to)}
+              onClick={handleGo}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "shrink-0 flex flex-col items-center justify-center gap-0.5",
+                "relative shrink-0 flex flex-col items-center justify-center gap-0.5",
                 "min-w-[72px] h-[58px] px-2 rounded-lg border transition",
                 "hover:border-primary/60 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 active ? "border-primary bg-primary/5" : "border-border",
               )}
-              title={item.hotkey ? `${item.label} (${item.hotkey})` : item.label}
+              title={(item.hotkey ? `${item.label} (${item.hotkey})` : item.label) + titleSuffix}
             >
               <span className={cn("w-7 h-7 rounded-md grid place-items-center", TONE_BG[tone])}>
                 <item.Icon className="w-4 h-4" aria-hidden />
@@ -175,6 +187,14 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
               {item.hotkey && (
                 <span className="text-[9px] leading-none text-muted-foreground tabular-nums">
                   {item.hotkey}
+                </span>
+              )}
+              {item.openInNewTab && (
+                <span
+                  aria-hidden
+                  className="absolute top-1 right-1 text-[8px] leading-none text-muted-foreground/70"
+                >
+                  ↗
                 </span>
               )}
             </button>
@@ -197,13 +217,24 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {overflow.map((it) => (
-                <DropdownMenuItem key={it.key} onSelect={() => navigate(it.to)}>
+                <DropdownMenuItem
+                  key={it.key}
+                  onSelect={() => {
+                    if (it.openInNewTab) {
+                      window.open(it.to, "_blank", "noopener,noreferrer");
+                    } else {
+                      navigate(it.to);
+                    }
+                  }}
+                >
                   <it.Icon className="w-4 h-4 mr-2" /> {it.label}
+                  {it.openInNewTab && <span className="ml-auto text-[10px] text-muted-foreground">↗</span>}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+
 
         <div className="flex-1" />
 
