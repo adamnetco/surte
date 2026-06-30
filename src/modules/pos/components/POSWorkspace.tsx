@@ -112,6 +112,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [helpOpen, setHelpOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  // Densidad del catálogo: "grid" (táctil, default) | "list" (compacto teclado).
+  // Persistido por usuario — operadores con teclado prefieren list para escanear más SKUs sin scroll.
+  const [catalogDensity, setCatalogDensity] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "grid";
+    return (localStorage.getItem("pos:catalogDensity") as "grid" | "list") || "grid";
+  });
+  useEffect(() => {
+    try { localStorage.setItem("pos:catalogDensity", catalogDensity); } catch { /* noop */ }
+  }, [catalogDensity]);
   const [ribbonHelpOpen, setRibbonHelpOpen] = useState(false);
   const { currentOrg, hasModule } = useOrganization();
   const isFood = (currentOrg?.business_type ?? "") === "food" && hasModule("dining_tables");
