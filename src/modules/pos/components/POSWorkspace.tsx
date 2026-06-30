@@ -811,7 +811,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       <POSTopRibbon
         onQuickCreate={() => setQuickCreateOpen(true)}
         onShowHotkeys={() => setRibbonHelpOpen(true)}
+        modes={posModes.enabled}
+        activeMode={saleMode}
+        onChangeMode={setSaleMode}
       />
+
 
       {/* Health strip — relocated out of POSTopBar's right cluster to prevent
           flex-wrap overflow that broke the topbar layout on <1280px viewports.
