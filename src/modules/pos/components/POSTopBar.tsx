@@ -81,13 +81,29 @@ export default function POSTopBar({
           <span className="flex items-center gap-1 tabular-nums"><Clock className="w-3 h-3" />{elapsed}</span>
         </div>
 
-        {/* Switcher operativo Panel/Vender/Mesas/KDS — evita volver al hub */}
-        <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none">
-          <POSWorkspaceNav className="ml-1" />
-        </div>
+        {/* Spacer — el switcher Panel/Vender/Mesas/KDS se eliminó del topbar
+            por duplicación con POSTopRibbon (Vender F2 / Mesas F5 / Cocina).
+            Panel queda accesible junto al ícono Configuración. */}
+        <div className="flex-1" />
 
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {rightExtras}
+          <NavLink
+            to="/pos"
+            end
+            aria-label="Ir al panel del POS"
+            className={({ isActive }) =>
+              cn(
+                "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-md text-xs font-medium transition focus-visible:ring-2 focus-visible:ring-ring",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )
+            }
+          >
+            <LayoutGrid className="w-4 h-4" aria-hidden />
+            <span className="hidden sm:inline">Panel</span>
+          </NavLink>
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10 focus-visible:ring-2 focus-visible:ring-ring" aria-label="Abrir configuración del POS">
