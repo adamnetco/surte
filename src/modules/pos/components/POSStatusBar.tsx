@@ -141,7 +141,7 @@ export default function POSStatusBar({ organizationId, session, className }: Pro
       role="status"
       aria-live="polite"
       aria-label="Estado del sistema"
-      className={cn("flex items-center gap-1.5 flex-wrap", className)}
+      className={cn("flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none", className)}
     >
       <StatusPill
         icon={Printer}

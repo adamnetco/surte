@@ -768,18 +768,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           lastError: sync.lastError,
           onFlush: () => sync.flushNow(),
         }}
-        rightExtras={
-          <>
-            <POSStatusBar
-              organizationId={organizationId}
-              session={{ opening_amount: session.opening_amount, opened_at: session.opened_at }}
-              className="hidden md:flex"
-            />
-            <OfflineIndicator />
-            <DianHealthIndicator organizationId={organizationId} className="hidden md:inline-flex" />
-            <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex" />
-          </>
-        }
+        rightExtras={<OfflineIndicator />}
         extraActions={
           <>
             <Button variant="outline" className="w-full justify-start" onClick={handleNotasCredito}>
@@ -815,6 +804,25 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onQuickCreate={() => setQuickCreateOpen(true)}
         onShowHotkeys={() => setRibbonHelpOpen(true)}
       />
+
+      {/* Health strip — relocated out of POSTopBar's right cluster to prevent
+          flex-wrap overflow that broke the topbar layout on <1280px viewports.
+          Sticky under the ribbon, single scrollable row, hidden on mobile to
+          keep the catalog above the fold. Pills/widgets render inline-nowrap
+          with horizontal scroll fallback. */}
+      <div
+        role="region"
+        aria-label="Estado del sistema y facturación"
+        className="hidden md:flex sticky top-[104px] z-10 bg-card/95 backdrop-blur border-b px-3 py-1.5 items-center gap-2 overflow-x-auto scrollbar-none"
+      >
+        <POSStatusBar
+          organizationId={organizationId}
+          session={{ opening_amount: session.opening_amount, opened_at: session.opened_at }}
+        />
+        <DianHealthIndicator organizationId={organizationId} className="shrink-0" />
+        <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex shrink-0" />
+      </div>
+
 
 
 
