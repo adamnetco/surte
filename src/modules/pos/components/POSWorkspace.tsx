@@ -739,26 +739,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || clearConfirmOpen || !!actionMode || !!saleComplete;
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden md:pr-14">
+    <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden">
       {/* Scanner global invisible */}
       <POSScannerListener onScan={handleScan} disabled={dialogOpen} />
 
-      {/* Mini-rail derecho (tablet+) — atajos de alta frecuencia */}
-      <POSRightRail
-        onCloseShift={() => setCloseOpen(true)}
-        onOpenShortcuts={() => setHelpOpen(true)}
-        onPark={handlePark}
-        onNotasCredito={handleNotasCredito}
-        onVentasDelDia={handleVentasDelDia}
-        onCajon={handleCajon}
-        onRefresh={handleRefresh}
-        parkDisabled={ticket.length === 0}
-        syncing={sync.syncing}
-        pendingCount={sync.pending}
-        recentActions={recentActions}
-        onReplayAction={replayAction}
-        onClearRecent={clearRecentActions}
-      />
+      {/* NOTE: POSRightRail eliminado — sus acciones (NC, Ventas día, Cajón,
+          Recientes, Cierre Z) viven ahora en el Sheet "Sesión POS" del TopBar
+          (botón Settings). Sync con badge ámbar sigue inline en el TopBar.
+          Suspender (F8) y Atajos (?) están en POSTopRibbon / hotkeys.
+          Ver `.lovable/memory/features/pos-right-rail-removed.md`. */}
 
 
       {/* TopBar 48px + ModeBar */}
