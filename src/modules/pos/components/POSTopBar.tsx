@@ -62,7 +62,7 @@ export default function POSTopBar({
     return () => clearInterval(i);
   }, [openedAt]);
 
-  const hasSyncActivity = !!sync && (sync.pending > 0 || sync.syncing);
+  void sync;
 
   return (
     <header className="sticky top-0 z-30 bg-card border-b">
