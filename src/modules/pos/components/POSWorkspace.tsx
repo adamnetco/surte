@@ -1040,12 +1040,29 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             mobileTicketExpanded ? "max-h-[70dvh]" : "max-h-none"
           }`}
         >
-          {/* Grabber táctil sólo móvil: zona ancha que expande/colapsa el ticket */}
+          {/* Grabber táctil: swipe-down para colapsar, tap para alternar */}
           <button
             type="button"
             onClick={() => setMobileTicketExpanded((v) => !v)}
-            aria-label={mobileTicketExpanded ? "Colapsar ticket" : "Expandir ticket"}
-            className="lg:hidden w-full py-1.5 flex items-center justify-center group"
+            onTouchStart={(e) => {
+              const t = e.touches[0];
+              (e.currentTarget as any)._sy = t.clientY;
+            }}
+            onTouchEnd={(e) => {
+              const sy = (e.currentTarget as any)._sy as number | undefined;
+              const t = e.changedTouches[0];
+              if (sy == null) return;
+              const dy = t.clientY - sy;
+              if (mobileTicketExpanded && dy > 40) {
+                setMobileTicketExpanded(false);
+                try { navigator.vibrate?.(6); } catch { /* noop */ }
+              } else if (!mobileTicketExpanded && dy < -40) {
+                setMobileTicketExpanded(true);
+                try { navigator.vibrate?.(6); } catch { /* noop */ }
+              }
+            }}
+            aria-label={mobileTicketExpanded ? "Colapsar ticket (desliza hacia abajo)" : "Expandir ticket (desliza hacia arriba)"}
+            className="lg:hidden w-full py-2 flex items-center justify-center group touch-pan-y"
           >
             <span className={`block h-1.5 w-12 rounded-full transition-colors ${
               !mobileTicketExpanded && ticket.length > 0
@@ -1053,6 +1070,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 : "bg-muted-foreground/30 group-hover:bg-muted-foreground/50"
             }`} />
           </button>
+
           {/* Header con chip de modo + contexto (mesa/cliente) */}
           <div className="p-3 border-b space-y-2">
             <div className="flex items-center gap-2">
