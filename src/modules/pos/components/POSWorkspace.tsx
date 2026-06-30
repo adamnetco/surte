@@ -553,6 +553,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     return counts;
   }, [products]);
 
+  const categoryNameById = useMemo(() => {
+    const m: Record<string, string> = {};
+    categories.forEach((c) => { m[c.id] = c.name; });
+    return m;
+  }, [categories]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return products.filter((p) => {
@@ -565,6 +571,23 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       );
     });
   }, [products, search, activeCategory]);
+
+  // Sugerencias de autocompletado mientras se escribe (máx 8). Si hay query
+  // ignoramos el filtro de categoría activa para que el cajero encuentre
+  // siempre por nombre/SKU/código de barras.
+  const searchSuggestions = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return [] as Product[];
+    return products
+      .filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) ||
+        p.gtin?.toLowerCase().includes(q)
+      )
+      .slice(0, 8);
+  }, [products, search]);
+
+  useEffect(() => { setSearchHighlight(0); }, [search]);
 
   // ===== Atajos numéricos Alt+1..9 (estilo VectorPOS) =====
   // Añade al ticket el N-ésimo producto visible del grid. Solo activo cuando
