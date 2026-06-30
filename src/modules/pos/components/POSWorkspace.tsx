@@ -821,10 +821,23 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         />
         <DianHealthIndicator organizationId={organizationId} className="shrink-0" />
         <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex shrink-0" />
+        <div className="flex-1" />
+        {parkedCount > 0 && (
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("pos:open-parked"))}
+            className="shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border bg-amber-50 border-amber-300 hover:bg-amber-100 text-xs font-semibold text-amber-900 transition"
+            title="Tickets suspendidos (F8 para suspender)"
+            aria-label={`${parkedCount} ticket(s) suspendido(s)`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Suspendidas
+            <span className="inline-flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+              {parkedCount}
+            </span>
+          </button>
+        )}
       </div>
-
-
-
 
       {/* AC10/AC11 — Banner DIAN offline / contingencia */}
       <ContingencyBanner
@@ -838,18 +851,6 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         einvoiceEnabled={resolutionSnap.status !== "unknown"}
       />
 
-      {/* Barra contextual: Lista de precios · Vendedor · Suspendidas (SoftwarePOS-like) */}
-      <POSContextualBar
-        organizationId={organizationId}
-        cashierName={cashierName}
-        priceListId={priceListId}
-        onPriceListChange={(id, name) => {
-          setPriceListId(id);
-          setPriceListName(name);
-        }}
-        parkedCount={parkedCount}
-        overrideCount={overrideCount}
-      />
 
       {/* Tabs de categorías (60%) + Cliente (40%) */}
       <div className="flex items-stretch border-b bg-card">
