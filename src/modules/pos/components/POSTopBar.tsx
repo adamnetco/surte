@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Settings, Clock, User, LogOut, Keyboard, CloudUpload, CloudOff, Loader2 } from "lucide-react";
+import { Settings, Clock, User, LogOut, Keyboard } from "lucide-react";
 import POSModeBar from "./POSModeBar";
 import POSWorkspaceNav from "./POSWorkspaceNav";
 import type { PosMode } from "@/modules/pos/lib/posModes";
