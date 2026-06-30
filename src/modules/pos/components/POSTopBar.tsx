@@ -27,6 +27,9 @@ interface Props {
   onOpenShortcuts: () => void;
   rightExtras?: React.ReactNode; // offline / status indicators (NO sync)
   sync?: POSTopBarSyncState;     // sync interno con slot de ancho fijo
+  /** Acciones extra mostradas dentro del Sheet "Sesión POS"
+   *  (post-refactor del POSRightRail: NC, Ventas día, Cajón, Recientes). */
+  extraActions?: React.ReactNode;
 }
 
 function fmtElapsed(ms: number) {
@@ -48,6 +51,7 @@ export default function POSTopBar({
   onOpenShortcuts,
   rightExtras,
   sync,
+  extraActions,
 }: Props) {
   const [elapsed, setElapsed] = useState("00:00");
 
@@ -150,6 +154,11 @@ export default function POSTopBar({
                 <Button variant="outline" className="w-full justify-start" onClick={onOpenShortcuts}>
                   <Keyboard className="w-4 h-4 mr-2" /> Ver atajos de teclado
                 </Button>
+                {extraActions && (
+                  <div className="space-y-2 pt-2 border-t">
+                    {extraActions}
+                  </div>
+                )}
                 <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive" onClick={onCloseShift}>
                   <LogOut className="w-4 h-4 mr-2" /> Cierre Z de caja
                 </Button>

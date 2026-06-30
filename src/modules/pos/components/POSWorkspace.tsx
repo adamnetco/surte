@@ -43,7 +43,8 @@ import POSTopBar from "./POSTopBar";
 import POSTopRibbon from "./POSTopRibbon";
 import POSQuickCreate from "./POSQuickCreate";
 import POSRibbonHotkeysSheet from "./POSRibbonHotkeysSheet";
-import POSRightRail from "./POSRightRail";
+import RecentActionsPopover from "./RecentActionsPopover";
+import { Receipt, BarChart3, Wallet, RefreshCw } from "lucide-react";
 import POSActionRail from "./POSActionRail";
 import POSStatusBar from "./POSStatusBar";
 import POSCategoryTabs from "./POSCategoryTabs";
@@ -739,26 +740,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || clearConfirmOpen || !!actionMode || !!saleComplete;
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden md:pr-14">
+    <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden">
       {/* Scanner global invisible */}
       <POSScannerListener onScan={handleScan} disabled={dialogOpen} />
 
-      {/* Mini-rail derecho (tablet+) — atajos de alta frecuencia */}
-      <POSRightRail
-        onCloseShift={() => setCloseOpen(true)}
-        onOpenShortcuts={() => setHelpOpen(true)}
-        onPark={handlePark}
-        onNotasCredito={handleNotasCredito}
-        onVentasDelDia={handleVentasDelDia}
-        onCajon={handleCajon}
-        onRefresh={handleRefresh}
-        parkDisabled={ticket.length === 0}
-        syncing={sync.syncing}
-        pendingCount={sync.pending}
-        recentActions={recentActions}
-        onReplayAction={replayAction}
-        onClearRecent={clearRecentActions}
-      />
+      {/* NOTE: POSRightRail eliminado — sus acciones (NC, Ventas día, Cajón,
+          Recientes, Cierre Z) viven ahora en el Sheet "Sesión POS" del TopBar
+          (botón Settings). Sync con badge ámbar sigue inline en el TopBar.
+          Suspender (F8) y Atajos (?) están en POSTopRibbon / hotkeys.
+          Ver `.lovable/memory/features/pos-right-rail-removed.md`. */}
 
 
       {/* TopBar 48px + ModeBar */}
@@ -788,6 +778,36 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             <OfflineIndicator />
             <DianHealthIndicator organizationId={organizationId} className="hidden md:inline-flex" />
             <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex" />
+          </>
+        }
+        extraActions={
+          <>
+            <Button variant="outline" className="w-full justify-start" onClick={handleNotasCredito}>
+              <Receipt className="w-4 h-4 mr-2" /> Notas crédito / Devolución
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={handleVentasDelDia}>
+              <BarChart3 className="w-4 h-4 mr-2" /> Ventas del día
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={handleCajon}>
+              <Wallet className="w-4 h-4 mr-2" /> Abrir cajón monedero
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={handleRefresh}
+              disabled={sync.syncing}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${sync.syncing ? "animate-spin" : ""}`} />
+              {sync.pending > 0 ? `Sincronizar (${sync.pending})` : "Refrescar sync"}
+            </Button>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <span className="text-xs text-muted-foreground">Acciones recientes</span>
+              <RecentActionsPopover
+                actions={recentActions}
+                onReplay={replayAction}
+                onClear={clearRecentActions}
+              />
+            </div>
           </>
         }
       />
