@@ -870,7 +870,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             counts={productsByCategory}
           />
         </div>
-        <div className="w-[260px] sm:w-[320px] shrink-0 px-3 py-2 flex items-center">
+        <div className="w-[160px] sm:w-[200px] shrink-0 px-2 py-2 flex items-center">
           <POSCustomerPicker
             customer={customer}
             onChange={setCustomer}
