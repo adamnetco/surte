@@ -88,6 +88,7 @@ export default function POSPinLock({
       setDraft("");
       setError(null);
       setReason(null);
+      logPosSecurityEvent("pin_lock", { trigger: "idle", meta: { idleMs: effectiveIdleMs } });
     }, effectiveIdleMs);
   }, [locked, effectiveIdleMs, pinHash]);
 
