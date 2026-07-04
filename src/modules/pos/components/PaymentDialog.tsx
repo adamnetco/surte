@@ -152,7 +152,18 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && canConfirm) {
+    if (e.key !== "Enter") return;
+    // Kodigo-style Enter × N:
+    //   1) Si falta plata → autocompleta el último pago con el pendiente.
+    //   2) Si ya cuadra y se puede confirmar → confirma.
+    if (pending > 0 && payments.length > 0) {
+      e.preventDefault();
+      const lastIdx = payments.length - 1;
+      const last = payments[lastIdx];
+      updatePayment(lastIdx, { amount: (Number(last.amount) || 0) + pending });
+      return;
+    }
+    if (canConfirm) {
       e.preventDefault();
       doConfirm();
     }
