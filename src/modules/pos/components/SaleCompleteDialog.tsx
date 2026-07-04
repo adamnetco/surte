@@ -73,8 +73,7 @@ export default function SaleCompleteDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[min(92vw,880px)] p-0 gap-0 border-4 border-foreground/10 bg-[#f7f5ee] dark:bg-[#0e1220] overflow-hidden"
-        hideCloseButton
+        className="max-w-[min(92vw,880px)] p-0 gap-0 border-4 border-foreground/10 bg-[#f7f5ee] dark:bg-[#0e1220] overflow-hidden [&>button.absolute]:hidden"
       >
         {/* Header discreto — el protagonista son las cifras */}
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-foreground/10 bg-background/60">
