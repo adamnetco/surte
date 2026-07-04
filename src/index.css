@@ -1,8 +1,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
 
+/* DSEG7 Classic — tipografía 7-segmentos (LCD calculadora) para totales POS.
+   Fuente open-source: https://github.com/keshikan/DSEG (SIL OFL). */
+@font-face {
+  font-family: 'DSEG7';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/gh/keshikan/DSEG@v0.46/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2') format('woff2');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  /* Números 7-seg estilo caja registradora. Usar con tabular-nums para alineación perfecta. */
+  .font-seg7 {
+    font-family: 'DSEG7', 'Share Tech Mono', ui-monospace, monospace;
+    font-feature-settings: 'tnum' 1;
+    letter-spacing: 0.02em;
+  }
+}
+
 
 @layer base {
   :root {

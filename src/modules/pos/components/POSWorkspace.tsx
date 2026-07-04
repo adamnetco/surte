@@ -1846,7 +1846,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground leading-none" aria-hidden="true">
                   Total
                 </span>
-                <span className="text-2xl xl:text-[28px] font-extrabold tabular-nums leading-tight text-primary font-heading" aria-hidden="true">
+                <span className="font-seg7 text-2xl xl:text-[30px] tabular-nums leading-tight text-primary" aria-hidden="true">
                   {COP(totals.total)}
                 </span>
                 {(totals.globalDisc > 0 || totals.tax > 0) && (
