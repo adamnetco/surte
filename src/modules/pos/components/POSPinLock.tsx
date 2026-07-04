@@ -165,6 +165,7 @@ export default function POSPinLock({
         setFirstPin(null);
         setMode("unlock");
         toast.success("PIN configurado");
+        logPosSecurityEvent("pin_configured");
       } else {
         setError("Los PIN no coinciden");
         setFirstPin(null);
