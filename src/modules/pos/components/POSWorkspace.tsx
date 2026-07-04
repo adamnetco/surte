@@ -982,10 +982,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         </div>
       </div>
 
-      {/* Cuerpo: catálogo + ticket */}
+      {/* Cuerpo: catálogo (compacto, izq) + ticket (absorbe, der) */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* Catálogo (50%) */}
-        <div className="flex flex-col min-h-0 flex-1 lg:min-w-0">
+        {/* Catálogo — ancho fijo compacto (3 cols pequeñas), libera espacio al ticket */}
+        <div className="flex flex-col min-h-0 lg:w-[540px] xl:w-[600px] lg:shrink-0 lg:min-w-0">
           {isFood && (
             <div className="flex items-center gap-1 px-2.5 py-1.5 bg-card border-b">
               <div className="inline-flex rounded-md border bg-muted/30 p-0.5 text-xs">
