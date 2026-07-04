@@ -362,7 +362,21 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
             disabled={pending <= 0}
           >
             <Plus className="w-4 h-4 mr-1" /> Dividir pago{pending > 0 && ` · falta ${COP(pending)}`}
+            <kbd className="ml-2 px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F9</kbd>
           </Button>
+
+          {/* Leyenda de F-keys — estilo SitricPOS */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground font-mono px-1">
+            <span><kbd className="px-1 rounded bg-muted">F1</kbd> Efectivo</span>
+            <span><kbd className="px-1 rounded bg-muted">F2</kbd> Débito</span>
+            <span><kbd className="px-1 rounded bg-muted">F3</kbd> Crédito</span>
+            <span><kbd className="px-1 rounded bg-muted">F4</kbd> Transfer</span>
+            <span><kbd className="px-1 rounded bg-muted">F5</kbd> Nequi</span>
+            <span><kbd className="px-1 rounded bg-muted">F6</kbd> Daviplata</span>
+            <span><kbd className="px-1 rounded bg-muted">F9</kbd> Dividir</span>
+            <span><kbd className="px-1 rounded bg-muted">F10/F12</kbd> Cobrar</span>
+          </div>
+
 
           <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{COP(total)}</span></div>
