@@ -1181,37 +1181,54 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </ul>
             ) : (
               <div
-                className="grid gap-1.5"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))" }}
+                className="grid gap-2"
+                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(112px, 1fr))" }}
               >
-                {filtered.map((p, idx) => (
+                {filtered.map((p, idx) => {
+                  const cat = p.category_id ? categoryNameById[p.category_id] : null;
+                  return (
                   <button
                     key={p.id}
                     onClick={() => addProduct(p)}
-                    className="relative bg-card rounded-md border hover:border-primary hover:shadow-sm transition text-left overflow-hidden active:scale-95"
+                    className="group relative bg-card rounded-lg border border-border hover:border-primary/60 hover:shadow-md transition text-left overflow-hidden active:scale-[0.98] flex flex-col"
+                    title={`${p.name}${cat ? ` · ${cat}` : ""} — ${COP(Number(p.price))}`}
                   >
                     {!isFood && idx < 9 && (
                       <kbd
-                        className="absolute top-1 left-1 z-10 px-1 py-0 text-[9px] font-bold rounded bg-foreground/85 text-background shadow-sm"
-                        title={`Alt+${idx + 1} para añadir`}
+                        className="absolute top-1 left-1 z-10 px-1 py-0 text-[9px] font-semibold rounded bg-foreground/80 text-background"
                         aria-hidden="true"
                       >
-                        Alt+{idx + 1}
+                        {idx + 1}
                       </kbd>
                     )}
-                    <div className="aspect-square bg-muted overflow-hidden">
+                    <div className="aspect-[4/3] bg-muted overflow-hidden">
                       {p.image_url ? (
-                        <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                        <img
+                          src={p.image_url}
+                          alt={p.name}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading="lazy"
+                        />
                       ) : (
-                        <div className="w-full h-full grid place-items-center text-muted-foreground text-[10px]">Sin imagen</div>
+                        <div className="w-full h-full grid place-items-center text-muted-foreground/40 text-2xl font-heading font-bold">
+                          {p.name.charAt(0).toUpperCase()}
+                        </div>
                       )}
                     </div>
-                    <div className="p-1 leading-tight">
-                      <p className="text-[10px] font-medium line-clamp-2 min-h-[1.6rem]">{p.name}</p>
-                      <p className="text-[11px] font-bold text-primary tabular-nums">{COP(Number(p.price))}</p>
+                    <div className="px-1.5 py-1 leading-tight flex flex-col gap-0.5 flex-1">
+                      <p className="text-[11px] font-medium line-clamp-2 min-h-[1.7em]">{p.name}</p>
+                      <div className="flex items-center justify-between gap-1 mt-auto">
+                        {cat ? (
+                          <span className="text-[9px] text-muted-foreground truncate">{cat}</span>
+                        ) : <span />}
+                        <span className="text-[11px] font-bold text-primary tabular-nums shrink-0">
+                          {COP(Number(p.price))}
+                        </span>
+                      </div>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
