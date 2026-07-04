@@ -1472,31 +1472,35 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </div>
 
 
-          {/* Numpad permanente estilo Kodigo — edita cantidad de la línea seleccionada.
-              Se muestra sólo en desktop (lg+) para no romper el thumb-zone móvil,
-              donde el numpad sigue apareciendo por línea vía Sheet. */}
-          <div className="hidden lg:block border-t bg-card px-3 py-2">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Cantidad
-              </span>
-              <span className="text-[11px] text-muted-foreground truncate max-w-[60%]" title={selectedLine?.name ?? ""}>
-                {selectedLine ? selectedLine.name : "Selecciona una línea"}
-              </span>
+          {/* Numpad permanente estilo Kodigo — thumb-zone (una mano, dedo pulgar).
+              Se ancla a la derecha con ancho fijo ~200px para caber en el arco natural
+              del pulgar y no invadir el listado de productos. En móvil se sigue usando
+              el Sheet por línea (thumb-zone nativo). */}
+          <div className="hidden lg:flex border-t bg-card px-3 py-2 justify-end">
+            <div className="w-[200px] max-w-full">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Cant.
+                </span>
+                <span className="text-[10px] text-muted-foreground truncate max-w-[60%]" title={selectedLine?.name ?? ""}>
+                  {selectedLine ? selectedLine.name : "—"}
+                </span>
+              </div>
+              <div className="mb-1.5 h-9 rounded-md border bg-muted/30 grid place-items-center text-xl font-heading font-bold tabular-nums">
+                {numpadDraft || "0"}
+              </div>
+              <Numpad
+                value={numpadDraft}
+                onChange={setNumpadDraft}
+                maxDigits={4}
+                compact
+                confirmLabel="Aplicar ⏎"
+                confirmDisabled={!selectedLine || !numpadDraft || Number(numpadDraft) <= 0}
+                onConfirm={applyNumpadQty}
+              />
             </div>
-            <div className="mb-2 h-10 rounded-md border bg-muted/30 grid place-items-center text-2xl font-heading font-bold tabular-nums">
-              {numpadDraft || "0"}
-            </div>
-            <Numpad
-              value={numpadDraft}
-              onChange={setNumpadDraft}
-              maxDigits={4}
-              compact
-              confirmLabel="Aplicar (Enter)"
-              confirmDisabled={!selectedLine || !numpadDraft || Number(numpadDraft) <= 0}
-              onConfirm={applyNumpadQty}
-            />
           </div>
+
 
 
 
