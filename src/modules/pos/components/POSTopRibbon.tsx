@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, Users, Package, Truck, BarChart3, FileText,
   Utensils, ChefHat, CalendarClock, Coins, Boxes, Receipt,
-  Plus, MoreHorizontal, BookOpen, Keyboard,
+  Plus, MoreHorizontal, BookOpen, Keyboard, Activity,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import { useOrganization } from "@/modules/platform/context/OrganizationContext"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { POS_MODES, type PosMode } from "@/modules/pos/lib/posModes";
 
