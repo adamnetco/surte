@@ -1360,11 +1360,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                   <span
                     className="text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 shrink-0"
                     title={POS_MODES[saleMode].description}
+                    aria-label={`Modo de venta: ${POS_MODES[saleMode].description}${saleMode === "mesa" && tableLabel ? `, mesa ${tableLabel}` : ""}`}
                   >
                     {POS_MODES[saleMode].short}
                     {saleMode === "mesa" && tableLabel && ` · ${tableLabel}`}
                   </span>
-                  <span className="text-[10px] font-semibold tabular-nums text-muted-foreground ml-auto shrink-0">
+                  <span
+                    className="text-[10px] font-semibold tabular-nums text-muted-foreground ml-auto shrink-0"
+                    aria-label={`${ticket.length} ${ticket.length === 1 ? "ítem" : "ítems"} en el ticket`}
+                  >
                     {ticket.length} {ticket.length === 1 ? "ít." : "íts."}
                   </span>
                   <button
