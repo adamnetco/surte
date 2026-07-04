@@ -1602,8 +1602,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
 
           <div className="border-t p-3 space-y-2 bg-card">
-            {/* Totales */}
-            <div className="space-y-0.5 text-sm">
+            {/* Breakdown compacto — el TOTAL XL vive arriba junto al header */}
+            <div className="space-y-0.5 text-xs">
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
                 <span className="tabular-nums">{COP(totals.lineSubtotal)}</span>
@@ -1620,14 +1620,6 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                   <span className="tabular-nums">{COP(totals.tax)}</span>
                 </div>
               )}
-              {/* Total XL estilo Kodigo — display de precio dominante, tabular-nums, foreground puro */}
-              <div className="flex items-end justify-between pt-2 mt-1 border-t-2 border-foreground/15">
-                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground pb-1">Total</span>
-                <span className="text-4xl font-extrabold tabular-nums leading-none text-foreground font-heading">
-                  {COP(totals.total)}
-                </span>
-              </div>
-
             </div>
 
             {/* Botón principal (cambia label según modo) — thumb-zone XL */}
