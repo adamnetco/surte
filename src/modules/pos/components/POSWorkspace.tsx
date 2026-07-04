@@ -55,7 +55,7 @@ import POSCustomerPicker from "./POSCustomerPicker";
 // POSContextualBar removed: Suspendidas se promovió al health strip; el selector
 // global de "Precios" se elimina (los precios derivan del cliente / lista por SKU).
 
-import TableGridSheet from "./TableGridSheet";
+import TableGridSheet, { type PosTable } from "./TableGridSheet";
 import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
 import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
 import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithModifiers";
@@ -141,6 +141,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   // Cuando true, el TableGridSheet mueve el ticket actual a la mesa elegida
   // (crea table_order + items, marca mesa ocupada, limpia el ticket).
   const [sendToTableMode, setSendToTableMode] = useState(false);
+  // Mesas reales cargadas desde dining_tables (para el TableGridSheet). Sin
+  // esto el picker mostraba labels genéricos "1..18" que no existen en DB y
+  // handleSendTicketToTable fallaba con "No se encontró la mesa X".
+  const [posTables, setPosTables] = useState<PosTable[]>([]);
   const [orgTip, setOrgTip] = useState<{ pct: number; enabled: boolean }>({ pct: 10, enabled: true });
   const [quickModsOpen, setQuickModsOpen] = useState(false);
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
@@ -237,6 +241,48 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       if (data?.full_name) setCashierName(data.full_name);
     })();
   }, [userId]);
+  // Cargar mesas reales de la organización + zonas (dining_areas).
+  useEffect(() => {
+    let cancel = false;
+    const load = async () => {
+      const [{ data: tables }, { data: areas }] = await Promise.all([
+        (supabase as any)
+          .from("dining_tables")
+          .select("id, label, status, dining_area_id")
+          .eq("organization_id", organizationId)
+          .order("label", { ascending: true }),
+        (supabase as any)
+          .from("dining_areas")
+          .select("id, name")
+          .eq("organization_id", organizationId),
+      ]);
+      if (cancel) return;
+      const areaMap = new Map<string, string>((areas ?? []).map((a: any) => [a.id, a.name]));
+      const mapped: PosTable[] = (tables ?? []).map((t: any) => ({
+        id: t.id,
+        label: t.label,
+        zone: (t.dining_area_id && areaMap.get(t.dining_area_id)) || "SALÓN",
+        occupied: t.status === "occupied",
+      }));
+      setPosTables(mapped);
+    };
+    if (isFood) void load();
+    const ch = isFood
+      ? (supabase as any)
+          .channel(`dining-tables-${organizationId}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${organizationId}` },
+            load
+          )
+          .subscribe()
+      : null;
+    return () => {
+      cancel = true;
+      if (ch) (supabase as any).removeChannel(ch);
+    };
+  }, [organizationId, isFood]);
+
 
   // Conteo de tickets suspendidos (refrescado en cambio de session/org)
   useEffect(() => {
@@ -537,15 +583,20 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     setTableSheetOpen(true);
   };
 
-  const handleSendTicketToTable = async (tableLabelPicked: string) => {
+  const handleSendTicketToTable = async (
+    tableLabelPicked: string,
+    tableIdHint?: string
+  ) => {
     if (ticket.length === 0) return;
     try {
-      const { data: tableRow, error: tErr } = await (supabase as any)
+      // Preferir id (viene del picker cargado desde DB). Fallback: buscar por
+      // label dentro de la organización.
+      let query = (supabase as any)
         .from("dining_tables")
         .select("id, location_id, status")
-        .eq("organization_id", organizationId)
-        .eq("label", tableLabelPicked)
-        .maybeSingle();
+        .eq("organization_id", organizationId);
+      query = tableIdHint ? query.eq("id", tableIdHint) : query.eq("label", tableLabelPicked);
+      const { data: tableRow, error: tErr } = await query.maybeSingle();
       if (tErr) throw tErr;
       if (!tableRow) { toast.error(`No se encontró la mesa ${tableLabelPicked}`); return; }
 
@@ -2009,18 +2060,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           if (!o) setSendToTableMode(false);
         }}
         current={tableLabel || null}
+        tables={posTables.length > 0 ? posTables : undefined}
         onPick={(t) => {
-          // Modo "Enviar a Mesa" (botón footer): mueve el ticket a la mesa
-          // y limpia el workspace en lugar de solo etiquetar el ticket actual.
           if (sendToTableMode) {
             setSendToTableMode(false);
-            void handleSendTicketToTable(t.label);
+            // Pasar el id real de dining_tables para evitar lookup por label.
+            void handleSendTicketToTable(t.label, t.id);
             return;
           }
           const prev = tableLabel;
           setTableLabel(t.label);
-          // Slice 2-food: al ABRIR mesa por primera vez en food, ofrecer
-          // modificadores rápidos que se pegan al próximo ítem añadido.
           if (isFood && t.label && t.label !== prev) {
             setQuickModsOpen(true);
           }
