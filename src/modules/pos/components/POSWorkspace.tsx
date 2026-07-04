@@ -1511,91 +1511,63 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             {/* Numpad permanente estilo Kodigo — thumb-zone (una mano, dedo pulgar).
                 Columna lateral de ~210px anclada a la derecha del panel del ticket. */}
             <div className="hidden lg:flex lg:w-[220px] shrink-0 border-l bg-card px-2 py-2 flex-col overflow-y-auto min-h-0">
-              {/* Descripción de la línea seleccionada — reemplaza el label truncado
-                  y da contexto claro (nombre completo + unitario · subtotal). */}
-              <div
-                className={`mb-2 rounded-md border p-2 ${
-                  selectedLine ? "border-primary/30 bg-primary/5" : "border-dashed border-border bg-muted/20"
-                }`}
-                aria-live="polite"
-              >
-                <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
-                  Línea seleccionada
-                </div>
-                {selectedLine ? (
-                  <>
-                    <p className="text-xs font-semibold leading-tight text-foreground line-clamp-2" title={selectedLine.name}>
-                      {selectedLine.name}
-                    </p>
-                    <div className="mt-1 flex items-baseline justify-between gap-1 text-[10px] text-muted-foreground">
-                      <span className="tabular-nums">
-                        {selectedLine.quantity} × {COP(selectedLine.unitPrice)}
-                      </span>
-                      <span className="tabular-nums font-bold text-primary">
-                        {COP(selectedLine.total)}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-[11px] italic text-muted-foreground">
-                    Toca un producto del ticket para editarlo aquí.
-                  </p>
-                )}
-              </div>
-
               {/* Acciones rápidas sobre la línea seleccionada — estilo Kodigo (−1 / +1 / Borrar) */}
               <div className="grid grid-cols-3 gap-1 mb-2">
                 <button
                   type="button"
                   disabled={!selectedLine}
                   onClick={() => selectedLine && updateQty(selectedLine.productId, -1)}
-                  className="h-9 rounded-md border border-border bg-card text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition inline-flex items-center justify-center gap-1"
+                  className="h-10 rounded-md border border-border bg-card text-sm font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition inline-flex items-center justify-center"
                   title="Restar 1 a la línea seleccionada"
+                  aria-label="Restar 1"
                 >
-                  <span className="text-base leading-none">−1</span>
+                  −1
                 </button>
                 <button
                   type="button"
                   disabled={!selectedLine}
                   onClick={() => selectedLine && updateQty(selectedLine.productId, +1)}
-                  className="h-9 rounded-md border border-primary/40 bg-primary/5 text-xs font-bold text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition inline-flex items-center justify-center gap-1"
+                  className="h-10 rounded-md border border-primary/40 bg-primary/5 text-sm font-bold text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition inline-flex items-center justify-center"
                   title="Sumar 1 a la línea seleccionada"
+                  aria-label="Sumar 1"
                 >
-                  <span className="text-base leading-none">+1</span>
+                  +1
                 </button>
                 <button
                   type="button"
                   disabled={!selectedLine}
                   onClick={() => selectedLine && removeLine(selectedLine.productId)}
-                  className="h-9 rounded-md border border-destructive/40 bg-destructive/5 text-[10px] font-bold uppercase tracking-wide text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition inline-flex items-center justify-center"
+                  className="h-10 rounded-md border border-destructive/40 bg-destructive/5 text-[11px] font-bold uppercase tracking-wide text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition inline-flex items-center justify-center"
                   title="Borrar línea seleccionada (Supr)"
+                  aria-label="Borrar línea"
                 >
                   Borrar
                 </button>
               </div>
 
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
-                Cantidad
+              <div className="flex items-baseline justify-between mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Cantidad
+                </span>
+                {selectedLine && (
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[130px]" title={selectedLine.name}>
+                    {selectedLine.name}
+                  </span>
+                )}
               </div>
 
-              <div className="mb-1.5 h-9 rounded-md border bg-muted/30 grid place-items-center text-xl font-heading font-bold tabular-nums">
+              <div className="mb-2 h-11 rounded-md border bg-muted/30 grid place-items-center text-2xl font-heading font-bold tabular-nums">
                 {numpadDraft || "0"}
               </div>
               <Numpad
                 value={numpadDraft}
                 onChange={setNumpadDraft}
                 maxDigits={4}
-                compact
-                presets={[
-                  { label: "×1", value: 1 },
-                  { label: "×2", value: 2 },
-                  { label: "×5", value: 5, highlight: true },
-                  { label: "×10", value: 10 },
-                ]}
                 confirmLabel="Aplicar ⏎"
                 confirmDisabled={!selectedLine || !numpadDraft || Number(numpadDraft) <= 0}
                 onConfirm={applyNumpadQty}
               />
+
             </div>
 
           </div>
