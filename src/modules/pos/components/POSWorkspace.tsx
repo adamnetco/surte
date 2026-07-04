@@ -624,6 +624,46 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, catalogView]);
 
+  // ===== Ctrl+F cliente, ↑↓ y Backspace en ticket (estilo Kodigo/Vendty) =====
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const typing = t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable;
+
+      // Ctrl+F / Cmd+F → abrir picker de cliente ("Buscar o crear").
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "f" || e.key === "F")) {
+        e.preventDefault();
+        setCustomerOpenSignal((n) => n + 1);
+        return;
+      }
+
+      if (typing) return;
+      if (ticket.length === 0) return;
+
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const idx = ticket.findIndex((l) => l.productId === selectedLineId);
+        const dir = e.key === "ArrowDown" ? 1 : -1;
+        const nextIdx = idx < 0 ? (dir > 0 ? 0 : ticket.length - 1) : (idx + dir + ticket.length) % ticket.length;
+        setSelectedLineId(ticket[nextIdx].productId);
+        return;
+      }
+
+      if ((e.key === "Backspace" || e.key === "Delete") && selectedLineId) {
+        e.preventDefault();
+        const idx = ticket.findIndex((l) => l.productId === selectedLineId);
+        const next = ticket[idx + 1] ?? ticket[idx - 1] ?? null;
+        removeLine(selectedLineId);
+        setSelectedLineId(next?.productId ?? null);
+        try { navigator.vibrate?.(8); } catch { /* noop */ }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticket, selectedLineId]);
+
+
   const totals = useMemo(() => {
     const lineSubtotal = ticket.reduce((s, l) => {
       const lineDisc = (l.discountPct ?? 0) / 100;
