@@ -1379,9 +1379,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                   <p className="text-[11px] text-muted-foreground mt-1">⌘K para búsqueda rápida</p>
                 </div>
               ) : (
-                ticket.map((l) => (
+                ticket.map((l, i) => (
                   <TicketLineRow
                     key={l.productId}
+                    index={i}
                     line={l}
                     selected={selectedLineId === l.productId}
                     onSelect={() => setSelectedLineId(l.productId)}
@@ -1391,6 +1392,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                     onDiscount={(pct) => setLineDiscount(l.productId, pct)}
                   />
                 ))
+
               )}
             </div>
           </div>
