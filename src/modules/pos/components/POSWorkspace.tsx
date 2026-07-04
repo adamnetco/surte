@@ -2000,9 +2000,19 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
       <TableGridSheet
         open={tableSheetOpen}
-        onOpenChange={setTableSheetOpen}
+        onOpenChange={(o) => {
+          setTableSheetOpen(o);
+          if (!o) setSendToTableMode(false);
+        }}
         current={tableLabel || null}
         onPick={(t) => {
+          // Modo "Enviar a Mesa" (botón footer): mueve el ticket a la mesa
+          // y limpia el workspace en lugar de solo etiquetar el ticket actual.
+          if (sendToTableMode) {
+            setSendToTableMode(false);
+            void handleSendTicketToTable(t.label);
+            return;
+          }
           const prev = tableLabel;
           setTableLabel(t.label);
           // Slice 2-food: al ABRIR mesa por primera vez en food, ofrecer
