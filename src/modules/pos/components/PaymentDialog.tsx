@@ -459,9 +459,13 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                   >
                     {submitting ? "Procesando…" : "Confirmar cobro"}
                     {!submitting && canConfirm && (
-                      <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
+                      <span className="ml-2 flex items-center gap-0.5">
+                        <kbd className="px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
+                        <kbd className="px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">F10</kbd>
+                      </span>
                     )}
                   </Button>
+
                 </span>
               </TooltipTrigger>
               {!gate.canCharge && (
