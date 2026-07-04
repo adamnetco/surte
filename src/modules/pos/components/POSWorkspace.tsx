@@ -2065,7 +2065,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 variant={saleMode === "consumo_interno" ? "cta-primary" : "cta"}
                 className="flex-1 h-14 text-base font-extrabold shadow-md active:scale-[0.98] transition-transform [touch-action:manipulation]"
                 disabled={ticket.length === 0}
-                onClick={() => { try { navigator.vibrate?.(12); } catch { /* noop */ } setPayOpen(true); }}
+                onClick={async () => {
+                  try { navigator.vibrate?.(12); } catch { /* noop */ }
+                  // Exige PIN si el usuario activó la protección para "COBRAR" (y ya lo configuró).
+                  const { getRequirePinForCharge, hasPinConfigured, requirePinVerification } =
+                    await import("@/lib/posPinPrefs");
+                  if (getRequirePinForCharge(userId) && hasPinConfigured(userId)) {
+                    const ok = await requirePinVerification("Confirma tu PIN para cobrar");
+                    if (!ok) return;
+                  }
+                  setPayOpen(true);
+                }}
               >
                 <CreditCard className="w-5 h-5 mr-2" />
                 {saleMode === "consumo_interno" ? "REGISTRAR CORTESÍA" : "COBRAR"}

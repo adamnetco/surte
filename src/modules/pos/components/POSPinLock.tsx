@@ -2,26 +2,27 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Lock, ShieldCheck } from "lucide-react";
 
 import Numpad from "./Numpad";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getAutoLockMinutes } from "@/lib/posPinPrefs";
 
 /**
  * Bloqueo local del POS por PIN de 4 dígitos.
  *
  * - PIN se guarda hasheado (SHA-256) en localStorage por userId.
- * - Auto-lock por inactividad (default 3min) — cualquier touch/click/keydown resetea.
+ * - Auto-lock por inactividad, configurable por usuario (0 = nunca).
  * - Al bloquear, el ticket, mesa y estado se conservan (overlay encima del workspace).
  * - Si no hay PIN configurado, la primera vez que se activa el lock pide configurarlo.
- *
- * Uso: montar en la raíz del POSWorkspace. Expone <button> flotante “Lock” abajo-izq.
+ * - Expone `window.__posPinRequest(reason)` para exigir PIN antes de acciones críticas
+ *   (ej. COBRAR). Resuelve `true` si el usuario desbloqueó, `false` si canceló.
  */
 export default function POSPinLock({
   userId,
   cashierName,
-  idleMs = 3 * 60 * 1000,
+  idleMs,
 }: {
   userId: string;
   cashierName?: string;
+  /** Override manual; si no se pasa, se lee la preferencia por usuario. */
   idleMs?: number;
 }) {
   const storageKey = `pos:pin:${userId}`;
@@ -33,9 +34,31 @@ export default function POSPinLock({
   const [draft, setDraft] = useState("");
   const [firstPin, setFirstPin] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reason, setReason] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const pendingResolveRef = useRef<((ok: boolean) => void) | null>(null);
+  const [effectiveIdleMs, setEffectiveIdleMs] = useState<number>(() => {
+    if (typeof idleMs === "number") return idleMs;
+    const m = getAutoLockMinutes(userId);
+    return m > 0 ? m * 60 * 1000 : 0;
+  });
+
+  // Reacciona a cambios de preferencias (auto-lock configurable desde ajustes).
+  useEffect(() => {
+    const sync = () => {
+      if (typeof idleMs === "number") { setEffectiveIdleMs(idleMs); return; }
+      const m = getAutoLockMinutes(userId);
+      setEffectiveIdleMs(m > 0 ? m * 60 * 1000 : 0);
+    };
+    window.addEventListener("pos:pin:prefs-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("pos:pin:prefs-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, [idleMs, userId]);
 
   // Bloqueo de scroll del body mientras el overlay está activo.
   // Evita que el ticket se desplace o reciba toques por debajo del backdrop.
@@ -57,13 +80,15 @@ export default function POSPinLock({
   const resetIdle = useCallback(() => {
     if (locked) return;
     if (timerRef.current) window.clearTimeout(timerRef.current);
+    if (effectiveIdleMs <= 0) return; // "Nunca"
     timerRef.current = window.setTimeout(() => {
       setLocked(true);
       setMode(pinHash ? "unlock" : "set");
       setDraft("");
       setError(null);
-    }, idleMs);
-  }, [locked, idleMs, pinHash]);
+      setReason(null);
+    }, effectiveIdleMs);
+  }, [locked, effectiveIdleMs, pinHash]);
 
   useEffect(() => {
     const events: (keyof WindowEventMap)[] = ["pointerdown", "keydown", "wheel", "touchstart"];
@@ -75,6 +100,25 @@ export default function POSPinLock({
     };
   }, [resetIdle]);
 
+  // Handler imperativo — se registra en window para que POSWorkspace pueda exigir PIN
+  // antes de acciones críticas (COBRAR, cierre de caja, etc.).
+  useEffect(() => {
+    (window as unknown as { __posPinRequest?: (r?: string) => Promise<boolean> }).__posPinRequest =
+      (r?: string) => new Promise<boolean>((resolve) => {
+        // Si no hay PIN configurado, la acción se permite (no bloquear al usuario que aún no ha activado seguridad).
+        if (!pinHash) { resolve(true); return; }
+        pendingResolveRef.current = resolve;
+        setReason(r ?? null);
+        setLocked(true);
+        setMode("unlock");
+        setDraft("");
+        setError(null);
+      });
+    return () => {
+      delete (window as unknown as { __posPinRequest?: unknown }).__posPinRequest;
+    };
+  }, [pinHash]);
+
   const handleConfirm = async (pin: string) => {
     if (pin.length !== 4) return;
     setError(null);
@@ -85,7 +129,9 @@ export default function POSPinLock({
       if (h === pinHash) {
         setLocked(false);
         setDraft("");
-        toast.success("Caja desbloqueada");
+        setReason(null);
+        if (pendingResolveRef.current) { pendingResolveRef.current(true); pendingResolveRef.current = null; }
+        else toast.success("Caja desbloqueada");
       } else {
         setError("PIN incorrecto");
         setDraft("");
@@ -162,7 +208,7 @@ export default function POSPinLock({
               </h2>
               <p className="text-sm text-muted-foreground">
                 {mode === "unlock"
-                  ? `Ingresa tu PIN, ${cashierName ?? "cajero"}`
+                  ? (reason ?? `Ingresa tu PIN, ${cashierName ?? "cajero"}`)
                   : mode === "set"
                     ? "4 dígitos — se guarda solo en este dispositivo"
                     : "Repite el PIN para confirmarlo"}
@@ -203,6 +249,7 @@ export default function POSPinLock({
                     setMode("set");
                     setDraft("");
                     setError(null);
+                    if (pendingResolveRef.current) { pendingResolveRef.current(false); pendingResolveRef.current = null; }
                   }
                 }}
                 className="w-full text-xs text-muted-foreground hover:text-foreground py-2 [touch-action:manipulation]"

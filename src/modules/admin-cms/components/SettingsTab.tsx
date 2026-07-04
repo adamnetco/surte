@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import POSModesSettings from "@/modules/admin-cms/components/POSModesSettings";
+import POSSecuritySettings from "@/modules/admin-cms/components/POSSecuritySettings";
 
 // Paleta base SistecPOS. Cada negocio (id_negocio) puede personalizarla desde Ajustes.
 const DEFAULT_COLORS: Record<string, { hex: string; label: string; desc: string }> = {
@@ -264,6 +265,10 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
 
       {/* POS sale modes per business */}
       <POSModesSettings />
+
+      {/* Seguridad local del POS (PIN, auto-lock) */}
+      <POSSecuritySettings />
+
 
       {/* Default product image */}
       <div className="bg-card rounded-xl p-2.5 border border-border flex items-center gap-3">
