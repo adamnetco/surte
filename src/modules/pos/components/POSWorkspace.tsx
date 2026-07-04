@@ -61,6 +61,7 @@ import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
 import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithModifiers";
 import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
+import POSPinLock from "./POSPinLock";
 import { usePOSModes } from "@/modules/pos/hooks/usePOSModes";
 import { POS_MODES } from "@/modules/pos/lib/posModes";
 import { supabase } from "@/integrations/supabase/client";
