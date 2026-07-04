@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Settings, Clock, User, LogOut, Keyboard, PanelTop } from "lucide-react";
@@ -71,6 +71,36 @@ export default function POSTopBar({
 
   void sync;
 
+  // Robust click / dbl-click handling for the ribbon toggle.
+  // - Hidden → single click/tap SHOWS immediately (no delay, no dbl-click needed).
+  // - Visible → single click/tap is a NO-OP (prevents accidental hide on touch);
+  //   only a real double-click/tap within 320ms hides it (Office-style).
+  const clickTimerRef = useRef<number | null>(null);
+  const clearClickTimer = () => {
+    if (clickTimerRef.current !== null) {
+      window.clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+  };
+  useEffect(() => () => clearClickTimer(), []);
+
+  const handleRibbonClick = () => {
+    if (!ribbonVisible) {
+      clearClickTimer();
+      onToggleRibbon?.();
+      return;
+    }
+    // Ribbon visible: swallow single click, wait for potential dbl-click.
+    if (clickTimerRef.current !== null) return;
+    clickTimerRef.current = window.setTimeout(() => {
+      clickTimerRef.current = null;
+    }, 320);
+  };
+  const handleRibbonDoubleClick = () => {
+    clearClickTimer();
+    if (ribbonVisible) onHideRibbon?.();
+  };
+
   return (
     <header className="sticky top-0 z-30 bg-card border-b">
       <div className="h-12 flex items-center px-3 gap-3">
@@ -107,13 +137,14 @@ export default function POSTopBar({
           {onToggleRibbon && (
             <button
               type="button"
-              onClick={onToggleRibbon}
-              onDoubleClick={onHideRibbon}
+              onClick={handleRibbonClick}
+              onDoubleClick={handleRibbonDoubleClick}
               aria-label={ribbonVisible ? "Ocultar barra de módulos (doble-click)" : "Mostrar barra de módulos"}
               aria-pressed={ribbonVisible}
-              title={ribbonVisible ? "Ocultar cinta · doble-click para fijar oculto" : "Mostrar cinta de módulos"}
+              title={ribbonVisible ? "Doble-click para ocultar la cinta" : "Mostrar cinta de módulos"}
+              style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
               className={cn(
-                "inline-flex items-center justify-center h-9 w-9 rounded-md border transition focus-visible:ring-2 focus-visible:ring-ring",
+                "inline-flex items-center justify-center h-9 w-9 rounded-md border transition select-none focus-visible:ring-2 focus-visible:ring-ring",
                 ribbonVisible
                   ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
                   : "border-border text-muted-foreground hover:border-primary hover:text-primary",
