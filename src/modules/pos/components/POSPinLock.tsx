@@ -249,6 +249,7 @@ export default function POSPinLock({
                     setMode("set");
                     setDraft("");
                     setError(null);
+                    if (pendingResolveRef.current) { pendingResolveRef.current(false); pendingResolveRef.current = null; }
                   }
                 }}
                 className="w-full text-xs text-muted-foreground hover:text-foreground py-2 [touch-action:manipulation]"
