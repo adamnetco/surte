@@ -523,6 +523,162 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     try { navigator.vibrate?.(8); } catch { /* noop */ }
   };
 
+  // === Enviar a Mesa ===
+  // Abre el picker de mesas en modo "mover ticket". Al seleccionar la mesa,
+  // el ticket actual se persiste como table_order pendiente para esa mesa,
+  // se marca la mesa como ocupada y se limpia el workspace.
+  const openSendToTable = () => {
+    if (ticket.length === 0) { toast.error("El ticket está vacío"); return; }
+    if (activeTableOrder) {
+      toast.error("Este ticket ya proviene de una mesa. Cóbralo o pausa antes de enviar a otra mesa.");
+      return;
+    }
+    setSendToTableMode(true);
+    setTableSheetOpen(true);
+  };
+
+  const handleSendTicketToTable = async (tableLabelPicked: string) => {
+    if (ticket.length === 0) return;
+    try {
+      const { data: tableRow, error: tErr } = await (supabase as any)
+        .from("dining_tables")
+        .select("id, location_id, status")
+        .eq("organization_id", organizationId)
+        .eq("label", tableLabelPicked)
+        .maybeSingle();
+      if (tErr) throw tErr;
+      if (!tableRow) { toast.error(`No se encontró la mesa ${tableLabelPicked}`); return; }
+
+      const subtotal = totals.lineSubtotal;
+      const total = totals.total;
+
+      const { data: orderRow, error: oErr } = await (supabase as any)
+        .from("table_orders")
+        .insert({
+          organization_id: organizationId,
+          location_id: tableRow.location_id ?? session.location_id,
+          dining_table_id: tableRow.id,
+          service_type_key: "dine_in",
+          waiter_id: userId,
+          subtotal,
+          discount: totals.globalDisc,
+          tip: 0,
+          total,
+          status: "open",
+          notes: ticketNote || null,
+        })
+        .select("id")
+        .single();
+      if (oErr) throw oErr;
+
+      const itemsPayload = ticket.map((l) => ({
+        organization_id: organizationId,
+        table_order_id: orderRow.id,
+        product_id: l.productId?.startsWith("table:") ? null : l.productId,
+        product_name: l.name,
+        quantity: l.quantity,
+        unit_price: l.unitPrice,
+        total: l.total,
+        notes: l.notes ?? null,
+        created_by: userId,
+        status: "pending",
+      }));
+      const { error: iErr } = await (supabase as any).from("table_order_items").insert(itemsPayload);
+      if (iErr) throw iErr;
+
+      await (supabase as any)
+        .from("dining_tables")
+        .update({ status: "occupied" })
+        .eq("organization_id", organizationId).eq("id", tableRow.id);
+
+      pushAction({ type: "park", label: `Enviado a mesa ${tableLabelPicked} (${ticket.length} ítems)` });
+      setTicket([]);
+      setMeta(ticketCacheKey, []).catch(() => {});
+      setTableLabel("");
+      setTicketNote("");
+      setGlobalDiscPct(0);
+      toast.success(`Ticket enviado a mesa ${tableLabelPicked}`);
+    } catch (err) {
+      console.error("[send-to-table]", err);
+      toast.error("No se pudo enviar el ticket a la mesa");
+    }
+  };
+
+  // === Domicilio ===
+  // Si el modo domicilio está habilitado, lo activa y abre el selector de
+  // repartidor + el diálogo de cobro. Si no, avisa al usuario.
+  const openDeliveryFlow = () => {
+    if (ticket.length === 0) { toast.error("El ticket está vacío"); return; }
+    if (!posModes.enabled.includes("domicilio" as PosMode)) {
+      toast.error("Modo Domicilio no está activo en esta organización");
+      return;
+    }
+    if (saleMode !== "domicilio") setSaleMode("domicilio" as PosMode);
+    if (!driver) setDriverSheetOpen(true);
+    else setPayOpen(true);
+  };
+
+  // === Imprimir Pre-cuenta (con propina sugerida) ===
+  // Restaurantes: imprime una cuenta NO fiscal con subtotal + propina %
+  // configurada por la organización + total con propina. NO cierra la venta.
+  const handlePrintPreCheck = () => {
+    if (ticket.length === 0) { toast.error("El ticket está vacío"); return; }
+    const pct = orgTip.enabled ? orgTip.pct : 0;
+    const tipAmount = Math.round(totals.total * (pct / 100));
+    const totalWithTip = totals.total + tipAmount;
+    const org = orgInfoRef.current;
+    const now = new Date();
+    const fmt = (n: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+    const rows = ticket.map((l) => `
+      <tr>
+        <td style="padding:2px 4px">${l.quantity}×</td>
+        <td style="padding:2px 4px">${l.name.replace(/</g, "&lt;")}</td>
+        <td style="padding:2px 4px;text-align:right">${fmt(l.total)}</td>
+      </tr>`).join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Cuenta</title>
+      <style>
+        @page { size: 80mm auto; margin: 4mm; }
+        body { font-family: 'Courier New', monospace; font-size: 12px; color:#000; margin:0; }
+        h1 { font-size:14px; margin:0 0 4px; text-align:center; }
+        .muted { color:#555; font-size:10px; text-align:center; }
+        table { width:100%; border-collapse:collapse; margin-top:6px; }
+        .sep { border-top:1px dashed #000; margin:6px 0; }
+        .row { display:flex; justify-content:space-between; padding:1px 0; }
+        .total { font-size:14px; font-weight:bold; }
+        .tip-box { border:1px dashed #000; padding:4px 6px; margin-top:6px; }
+        .footer { text-align:center; margin-top:8px; font-size:10px; }
+      </style></head><body>
+      <h1>${org.business_name}</h1>
+      ${org.nit ? `<div class="muted">NIT ${org.nit}</div>` : ""}
+      ${org.address ? `<div class="muted">${org.address}</div>` : ""}
+      <div class="muted">${now.toLocaleString("es-CO", { timeZone: "America/Bogota" })}</div>
+      <div class="muted"><strong>CUENTA — NO ES FACTURA</strong></div>
+      ${tableLabel ? `<div class="muted">Mesa: ${tableLabel}</div>` : ""}
+      <div class="sep"></div>
+      <table>${rows}</table>
+      <div class="sep"></div>
+      <div class="row"><span>Subtotal</span><span>${fmt(totals.lineSubtotal)}</span></div>
+      ${totals.globalDisc > 0 ? `<div class="row"><span>Descuento</span><span>-${fmt(totals.globalDisc)}</span></div>` : ""}
+      ${totals.tax > 0 ? `<div class="row"><span>IVA</span><span>${fmt(totals.tax)}</span></div>` : ""}
+      <div class="row total"><span>TOTAL</span><span>${fmt(totals.total)}</span></div>
+      ${pct > 0 ? `
+        <div class="tip-box">
+          <div class="row"><span>Propina sugerida ${pct}%</span><span>${fmt(tipAmount)}</span></div>
+          <div class="row total"><span>TOTAL con propina</span><span>${fmt(totalWithTip)}</span></div>
+        </div>
+        <div class="muted" style="margin-top:4px">La propina es voluntaria.</div>
+      ` : ""}
+      <div class="footer">¡Gracias por su visita!</div>
+      <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300);};</script>
+      </body></html>`;
+    const w = window.open("", "_blank", "width=380,height=640");
+    if (!w) { toast.error("El navegador bloqueó la ventana de impresión"); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    pushAction({ type: "park", label: `Cuenta impresa · ${fmt(totalWithTip)}` });
+  };
+
+
+
 
 
 
