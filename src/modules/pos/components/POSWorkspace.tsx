@@ -1497,6 +1497,38 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             {/* Numpad permanente estilo Kodigo — thumb-zone (una mano, dedo pulgar).
                 Columna lateral de ~210px anclada a la derecha del panel del ticket. */}
             <div className="hidden lg:flex lg:w-[210px] shrink-0 border-l bg-card px-2 py-2 flex-col">
+              {/* Descripción de la línea seleccionada — reemplaza el label truncado
+                  y da contexto claro (nombre completo + unitario · subtotal). */}
+              <div
+                className={`mb-2 rounded-md border p-2 ${
+                  selectedLine ? "border-primary/30 bg-primary/5" : "border-dashed border-border bg-muted/20"
+                }`}
+                aria-live="polite"
+              >
+                <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+                  Línea seleccionada
+                </div>
+                {selectedLine ? (
+                  <>
+                    <p className="text-xs font-semibold leading-tight text-foreground line-clamp-2" title={selectedLine.name}>
+                      {selectedLine.name}
+                    </p>
+                    <div className="mt-1 flex items-baseline justify-between gap-1 text-[10px] text-muted-foreground">
+                      <span className="tabular-nums">
+                        {selectedLine.quantity} × {COP(selectedLine.unitPrice)}
+                      </span>
+                      <span className="tabular-nums font-bold text-primary">
+                        {COP(selectedLine.total)}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-[11px] italic text-muted-foreground">
+                    Toca un producto del ticket para editarlo aquí.
+                  </p>
+                )}
+              </div>
+
               {/* Acciones rápidas sobre la línea seleccionada — estilo Kodigo (−1 / +1 / Borrar) */}
               <div className="grid grid-cols-3 gap-1 mb-2">
                 <button
@@ -1528,14 +1560,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 </button>
               </div>
 
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Cant.
-                </span>
-                <span className="text-[10px] text-muted-foreground truncate max-w-[60%]" title={selectedLine?.name ?? ""}>
-                  {selectedLine ? selectedLine.name : "—"}
-                </span>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                Cantidad
               </div>
+
               <div className="mb-1.5 h-9 rounded-md border bg-muted/30 grid place-items-center text-xl font-heading font-bold tabular-nums">
                 {numpadDraft || "0"}
               </div>
