@@ -1133,6 +1133,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         
         extraActions={
           <>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setTablesOverviewOpen(true)}>
+              <Utensils className="w-4 h-4 mr-2" /> Ver todas las mesas
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setDeliveriesOpen(true)}>
+              <Bike className="w-4 h-4 mr-2" /> Ver domicilios activos
+            </Button>
             <Button variant="outline" className="w-full justify-start" onClick={handleNotasCredito}>
               <Receipt className="w-4 h-4 mr-2" /> Notas crédito / Devolución
             </Button>
