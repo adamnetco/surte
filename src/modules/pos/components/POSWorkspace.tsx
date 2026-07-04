@@ -1502,49 +1502,54 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               {/* Pausar */}
               <Button
                 variant="outline"
-                className="h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
+                className="relative h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={ticket.length === 0}
                 onClick={() => { try { navigator.vibrate?.(8); } catch { /* noop */ } setActionMode("park"); }}
                 title="Pausar / Suspender (F8)"
               >
                 <Pause className="w-5 h-5" />
                 <span className="text-[10px] leading-none">Suspender</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F8</kbd>
               </Button>
             </div>
 
-            {/* Acciones secundarias fila 2 — paleta uniforme estilo Kodigo (outline consistente) */}
+            {/* Acciones secundarias fila 2 — paleta uniforme + hotkeys visibles estilo Kodigo */}
             <div className="grid grid-cols-3 gap-2">
               <Button
                 variant="outline"
-                className="h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
+                className="relative h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={ticket.length === 0}
                 onClick={() => setActionMode("quote")}
                 title="Cotizar (F7)"
               >
                 <FileText className="w-4 h-4" />
                 <span className="text-[10px] leading-none">Cotizar</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F7</kbd>
               </Button>
               <Button
                 variant="outline"
-                className="h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
+                className="relative h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={!lastOrderId}
                 onClick={() => setActionMode("emit")}
                 title="Facturar último (F6)"
               >
                 <FileSignature className="w-4 h-4" />
                 <span className="text-[10px] leading-none">Facturar</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F6</kbd>
               </Button>
               <Button
                 variant="outline"
-                className="h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
+                className="relative h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={!lastOrderId}
                 onClick={() => window.print()}
-                title="Reimprimir última comanda"
+                title="Reimprimir última comanda (Ctrl+P)"
               >
                 <Printer className="w-4 h-4" />
                 <span className="text-[10px] leading-none">Reimprimir</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">⌃P</kbd>
               </Button>
             </div>
+
 
 
 
