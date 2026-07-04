@@ -1149,15 +1149,6 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <ScanLine className="w-3 h-3 text-secondary" />
               <span>Scanner activo</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setHelpOpen(true)}
-              className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-md px-2 h-9 hover:border-primary hover:text-primary transition"
-              title="Ver todos los atajos (F1)"
-            >
-              <Keyboard className="w-3 h-3" />
-              <kbd className="px-1 bg-muted rounded">F1</kbd>
-            </button>
           </div>
 
           {recentProducts.length > 0 && !loading && (
