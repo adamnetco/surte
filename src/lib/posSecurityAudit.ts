@@ -19,24 +19,31 @@ interface AuditContext {
 }
 
 let cachedOrgId: string | null | undefined = undefined; // undefined = sin resolver
+let inflight: Promise<string | null> | null = null; // dedupe de resolución concurrente
 
 async function resolveOrgId(): Promise<string | null> {
   if (cachedOrgId !== undefined) return cachedOrgId;
-  try {
-    const { data: sess } = await supabase.auth.getSession();
-    const uid = sess?.session?.user?.id;
-    if (!uid) { cachedOrgId = null; return null; }
-    const { data } = await supabase
-      .from("profiles")
-      .select("primary_organization_id")
-      .eq("id", uid)
-      .maybeSingle();
-    cachedOrgId = ((data as any)?.primary_organization_id as string | null) ?? null;
-    return cachedOrgId;
-  } catch {
-    cachedOrgId = null;
-    return null;
-  }
+  if (inflight) return inflight;
+  inflight = (async () => {
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess?.session?.user?.id;
+      if (!uid) { cachedOrgId = null; return null; }
+      const { data } = await supabase
+        .from("profiles")
+        .select("primary_organization_id")
+        .eq("id", uid)
+        .maybeSingle();
+      cachedOrgId = ((data as any)?.primary_organization_id as string | null) ?? null;
+      return cachedOrgId;
+    } catch {
+      cachedOrgId = null;
+      return null;
+    } finally {
+      inflight = null;
+    }
+  })();
+  return inflight;
 }
 
 /**
