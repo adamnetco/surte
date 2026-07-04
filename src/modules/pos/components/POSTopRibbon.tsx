@@ -227,6 +227,51 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
 
         <div className="flex-1" />
 
+        {statusContent && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="shrink-0 relative flex flex-col items-center justify-center gap-0.5 min-w-[60px] h-[58px] px-2 rounded-lg border border-border hover:border-primary/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                title="Estado del sistema (impresora, DIAN, sync, caja)"
+                aria-label="Estado del sistema"
+              >
+                <span className="relative w-7 h-7 rounded-md grid place-items-center bg-muted text-muted-foreground">
+                  <Activity className="w-4 h-4" aria-hidden />
+                  <span
+                    className={cn(
+                      "absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-card",
+                      statusTone === "ok" && "bg-emerald-500",
+                      statusTone === "warn" && "bg-amber-500",
+                      statusTone === "error" && "bg-rose-500",
+                    )}
+                    aria-hidden
+                  />
+                </span>
+                <span className="text-[11px] leading-none font-medium">Estado</span>
+                {typeof statusBadge === "number" && statusBadge > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold bg-amber-500 text-white grid place-items-center">
+                    {statusBadge}
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-[360px] p-3 max-h-[70vh] overflow-y-auto"
+              aria-label="Panel de estado del sistema"
+            >
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b">
+                <Activity className="w-4 h-4 text-primary" aria-hidden />
+                <h3 className="text-sm font-semibold">Estado del sistema</h3>
+              </div>
+              <div className="flex flex-col gap-2">
+                {statusContent}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+
         {onQuickCreate && (
           <Button
             size="sm"
@@ -246,6 +291,11 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
             className="shrink-0 h-9 w-9 p-0"
             onClick={onShowHotkeys}
             title="Atajos de teclado (?)"
+            aria-label="Atajos de teclado"
+          >
+            <Keyboard className="w-4 h-4" />
+          </Button>
+        )}
             aria-label="Atajos de teclado"
           >
             <Keyboard className="w-4 h-4" />
