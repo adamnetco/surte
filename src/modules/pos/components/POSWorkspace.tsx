@@ -2155,6 +2155,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         organizationId={organizationId}
       />
 
+      <PaymentMethodsReportSheet
+        open={paymentsReportOpen}
+        onOpenChange={setPaymentsReportOpen}
+      />
+
+
+
 
 
       <POSQuickModifiersSheet
