@@ -4,6 +4,7 @@ import { Lock, ShieldCheck } from "lucide-react";
 import Numpad from "./Numpad";
 import { toast } from "sonner";
 import { getAutoLockMinutes } from "@/lib/posPinPrefs";
+import { logPosSecurityEvent } from "@/lib/posSecurityAudit";
 
 /**
  * Bloqueo local del POS por PIN de 4 dígitos.
