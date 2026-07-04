@@ -33,6 +33,9 @@ const QUICK_NOTES = ["Sin cebolla", "Sin sal", "Sin picante", "Para llevar", "Bi
 export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscount, selected, onSelect }: Props) {
   const [noteDraft, setNoteDraft] = useState(line.notes ?? "");
   const [discDraft, setDiscDraft] = useState(String(line.discountPct ?? 0));
+  const [discSheetOpen, setDiscSheetOpen] = useState(false);
+  const [qtySheetOpen, setQtySheetOpen] = useState(false);
+  const [qtyDraft, setQtyDraft] = useState(String(line.quantity));
   const hasNote = !!line.notes?.trim();
   const hasDisc = (line.discountPct ?? 0) > 0;
   const finalTotal = hasDisc ? line.total * (1 - (line.discountPct ?? 0) / 100) : line.total;
