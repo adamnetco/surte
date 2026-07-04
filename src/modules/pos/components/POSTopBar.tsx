@@ -88,6 +88,16 @@ export default function POSTopBar({
 
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {rightExtras}
+          <button
+            type="button"
+            onClick={onOpenShortcuts}
+            aria-label="Ver atajos de teclado (F1)"
+            title="Atajos de teclado (F1)"
+            className="inline-flex items-center gap-1 h-9 px-2 rounded-md text-[11px] font-medium text-muted-foreground border border-border hover:border-primary hover:text-primary transition focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Keyboard className="w-3.5 h-3.5" aria-hidden />
+            <kbd className="px-1 bg-muted rounded text-[10px] font-mono">F1</kbd>
+          </button>
           <NavLink
             to="/pos"
             end
