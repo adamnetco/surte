@@ -142,13 +142,22 @@ export default function POSPinLock({
       )}
 
       {locked && (
-        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          ref={dialogRef}
+          tabIndex={-1}
+          onKeyDown={(e) => { if (e.key === "Tab") e.preventDefault(); /* trap focus dentro del modal */ }}
+        >
           <div className="w-full max-w-sm bg-card border rounded-2xl shadow-2xl p-6 space-y-4">
             <div className="text-center space-y-1">
               <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                 {mode === "unlock" ? <Lock className="w-7 h-7 text-primary" /> : <ShieldCheck className="w-7 h-7 text-primary" />}
               </div>
-              <h2 className="text-xl font-bold">
+              <h2 id={titleId} className="text-xl font-bold">
+
                 {mode === "unlock" ? "Caja bloqueada" : mode === "set" ? "Configura tu PIN" : "Confirma tu PIN"}
               </h2>
               <p className="text-sm text-muted-foreground">
