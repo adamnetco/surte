@@ -25,12 +25,15 @@ interface Props {
   onDiscount: (pct: number) => void;
   selected?: boolean;
   onSelect?: () => void;
+  /** Índice en la lista — usado para zebra sutil estilo Kodigo */
+  index?: number;
 }
+
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const QUICK_NOTES = ["Sin cebolla", "Sin sal", "Sin picante", "Para llevar", "Bien cocido", "Término medio"];
 
-export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscount, selected, onSelect }: Props) {
+export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscount, selected, onSelect, index = 0 }: Props) {
   const [noteDraft, setNoteDraft] = useState(line.notes ?? "");
   const [discDraft, setDiscDraft] = useState(String(line.discountPct ?? 0));
   const [discSheetOpen, setDiscSheetOpen] = useState(false);
@@ -109,13 +112,14 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
       </div>
 
       <div
-        className={`relative group rounded-md border bg-card px-2 py-1.5 animate-fade-in focus:outline-none touch-pan-y ${
+        className={`relative group rounded-md border px-2 py-1.5 animate-fade-in focus:outline-none touch-pan-y ${
           !dragging ? "transition-[transform,box-shadow,border-color]" : ""
         } ${
           selected
             ? "border-primary ring-1 ring-primary/40 bg-primary/5"
-            : "border-border hover:border-border/80 focus-within:ring-1 focus-within:ring-ring"
+            : `${index % 2 === 1 ? "bg-muted/30" : "bg-card"} border-border hover:border-border/80 focus-within:ring-1 focus-within:ring-ring`
         }`}
+
         style={{ transform: `translateX(${dragX}px)` }}
         tabIndex={0}
         onKeyDown={handleKeyDown}
