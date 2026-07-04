@@ -1263,45 +1263,41 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 })}
               </ul>
             ) : (
-              <div
-                className="grid gap-2"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(112px, 1fr))" }}
-              >
+              <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
                 {filtered.map((p, idx) => {
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                   <button
                     key={p.id}
                     onClick={() => addProduct(p)}
-                    className="group relative bg-card rounded-md border border-border hover:border-foreground/40 transition text-left overflow-hidden active:scale-[0.98] flex flex-col"
+                    className="group relative bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all text-left overflow-hidden active:scale-[0.98] flex flex-col focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
                     title={`${p.name}${cat ? ` · ${cat}` : ""} — ${COP(Number(p.price))}`}
                   >
                     {!isFood && idx < 9 && (
                       <kbd
-                        className="absolute top-1 left-1 z-10 px-1 py-0 text-[9px] font-semibold rounded bg-foreground/75 text-background"
+                        className="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-foreground/85 text-background shadow-sm"
                         aria-hidden="true"
                       >
                         {idx + 1}
                       </kbd>
                     )}
-                    <div className="aspect-[4/3] bg-muted overflow-hidden">
+                    <div className="aspect-square bg-gradient-to-br from-muted/60 to-muted overflow-hidden">
                       {p.image_url ? (
                         <img
                           src={p.image_url}
                           alt={p.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full grid place-items-center text-muted-foreground/40 text-2xl font-heading font-bold">
+                        <div className="w-full h-full grid place-items-center text-muted-foreground/50 text-4xl font-heading font-bold">
                           {p.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
-                    {/* Kodigo-style: sólo nombre + precio. Sin chip de categoría. */}
-                    <div className="px-2 py-1.5 leading-tight flex flex-col gap-0.5 flex-1">
-                      <p className="text-[11px] font-medium line-clamp-2 min-h-[1.7em] text-foreground">{p.name}</p>
-                      <span className="text-[12px] font-bold tabular-nums text-foreground mt-auto">
+                    <div className="px-2.5 py-2 leading-tight flex flex-col gap-1 flex-1">
+                      <p className="text-[12px] font-semibold line-clamp-2 min-h-[2em] text-foreground">{p.name}</p>
+                      <span className="text-[14px] font-extrabold tabular-nums text-primary mt-auto">
                         {COP(Number(p.price))}
                       </span>
                     </div>
@@ -1353,79 +1349,92 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             }`} />
           </button>
 
-          {/* Header con chip de modo + contexto (mesa/cliente) */}
-          <div className="p-3 border-b space-y-2">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-primary" />
-              <h2 className="font-semibold text-sm">Ticket actual</h2>
-              <span
-                className="text-[10px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30"
-                title={POS_MODES[saleMode].description}
-              >
-                {POS_MODES[saleMode].short}
-                {saleMode === "mesa" && tableLabel && ` · ${tableLabel}`}
-              </span>
-              <button
-                type="button"
-                onClick={() => setMobileTicketExpanded((v) => !v)}
-                className={`ml-auto lg:hidden inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md border transition ${
-                  !mobileTicketExpanded && ticket.length > 0
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:text-foreground"
-                }`}
-                aria-expanded={mobileTicketExpanded}
-                aria-label={mobileTicketExpanded ? "Colapsar ticket" : "Ver ítems del ticket"}
-              >
-                <span className="tabular-nums">{ticket.length}</span>
-                <span className="hidden xs:inline">{ticket.length === 1 ? "ítem" : "ítems"}</span>
-                {mobileTicketExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-              </button>
-              <span className="hidden lg:inline ml-auto text-[11px] text-muted-foreground">
-                {ticket.length} {ticket.length === 1 ? "ítem" : "ítems"}
-              </span>
-            </div>
-
-            {/* Contexto rápido por modo */}
-            {saleMode === "mesa" && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setTableSheetOpen(true)}
-                className="w-full h-9 justify-start gap-2 text-xs font-bold"
-              >
-                <Utensils className="w-4 h-4 text-primary" />
-                {tableLabel ? `Mesa ${tableLabel}` : "Seleccionar mesa"}
-                <kbd className="ml-auto px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F5</kbd>
-              </Button>
-            )}
-
-            {saleMode === "domicilio" && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDriverSheetOpen(true)}
-                className="w-full h-9 justify-start gap-2 text-xs font-bold"
-              >
-                <Bike className="w-4 h-4 text-primary" />
-                {driver ? `Domiciliario: ${driver.name}` : "Seleccionar domiciliario"}
-                <kbd className="ml-auto px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F6</kbd>
-              </Button>
-            )}
-
-            {saleMode === "autoservicio" && (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-2 h-9 rounded-md border bg-accent/10 text-accent border-accent/30">
-                  <ShoppingBag className="w-4 h-4" />
-                  <span className="text-xs font-extrabold uppercase tracking-wide">LLEVAR</span>
+          {/* Header compacto: Ticket + modo (izq) · TOTAL XL (der) — aprovecha el ancho liberado */}
+          <div className="px-3 pt-3 pb-2 border-b space-y-2 bg-gradient-to-b from-card to-muted/10">
+            <div className="flex items-stretch gap-2">
+              {/* Bloque izquierdo: título + chip modo + contador */}
+              <div className="flex flex-col justify-between min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <h2 className="font-semibold text-[13px] truncate">Ticket</h2>
+                  <span
+                    className="text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 shrink-0"
+                    title={POS_MODES[saleMode].description}
+                  >
+                    {POS_MODES[saleMode].short}
+                    {saleMode === "mesa" && tableLabel && ` · ${tableLabel}`}
+                  </span>
+                  <span className="text-[10px] font-semibold tabular-nums text-muted-foreground ml-auto shrink-0">
+                    {ticket.length} {ticket.length === 1 ? "ít." : "íts."}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMobileTicketExpanded((v) => !v)}
+                    className={`lg:hidden inline-flex items-center justify-center w-6 h-6 rounded-md border transition ${
+                      !mobileTicketExpanded && ticket.length > 0
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                    aria-expanded={mobileTicketExpanded}
+                    aria-label={mobileTicketExpanded ? "Colapsar ticket" : "Ver ítems del ticket"}
+                  >
+                    {mobileTicketExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
-                <Input
-                  value={pickupName}
-                  onChange={(e) => setPickupName(e.target.value)}
-                  placeholder="Recoge el cliente (nombre)"
-                  className="h-9 text-xs flex-1"
-                />
+                {/* Contexto rápido compacto por modo */}
+                {saleMode === "mesa" && (
+                  <button
+                    type="button"
+                    onClick={() => setTableSheetOpen(true)}
+                    className="mt-1 h-8 px-2 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1.5 text-[11px] font-bold text-foreground transition"
+                  >
+                    <Utensils className="w-3.5 h-3.5 text-primary" />
+                    <span className="truncate">{tableLabel ? `Mesa ${tableLabel}` : "Mesa"}</span>
+                    <kbd className="ml-auto px-1 py-0 bg-muted rounded text-[9px] font-mono">F5</kbd>
+                  </button>
+                )}
+                {saleMode === "domicilio" && (
+                  <button
+                    type="button"
+                    onClick={() => setDriverSheetOpen(true)}
+                    className="mt-1 h-8 px-2 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1.5 text-[11px] font-bold text-foreground transition"
+                  >
+                    <Bike className="w-3.5 h-3.5 text-primary" />
+                    <span className="truncate">{driver ? driver.name : "Domiciliario"}</span>
+                    <kbd className="ml-auto px-1 py-0 bg-muted rounded text-[9px] font-mono">F6</kbd>
+                  </button>
+                )}
+                {saleMode === "autoservicio" && (
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-1.5 h-7 rounded-md border bg-accent/10 text-accent border-accent/30 text-[10px] font-extrabold uppercase tracking-wide">
+                      <ShoppingBag className="w-3 h-3" />
+                      LLEVAR
+                    </span>
+                    <Input
+                      value={pickupName}
+                      onChange={(e) => setPickupName(e.target.value)}
+                      placeholder="Nombre"
+                      className="h-7 text-[11px] flex-1 px-2"
+                    />
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* TOTAL XL — bloque derecho dominante, ocupa el espacio liberado */}
+              <div className="shrink-0 flex flex-col items-end justify-center min-w-[130px] px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground leading-none">
+                  Total
+                </span>
+                <span className="text-2xl xl:text-[28px] font-extrabold tabular-nums leading-tight text-primary font-heading">
+                  {COP(totals.total)}
+                </span>
+                {(totals.globalDisc > 0 || totals.tax > 0) && (
+                  <span className="text-[9px] tabular-nums text-muted-foreground leading-none">
+                    Sub {COP(totals.lineSubtotal)}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
 
@@ -1593,8 +1602,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
 
           <div className="border-t p-3 space-y-2 bg-card">
-            {/* Totales */}
-            <div className="space-y-0.5 text-sm">
+            {/* Breakdown compacto — el TOTAL XL vive arriba junto al header */}
+            <div className="space-y-0.5 text-xs">
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
                 <span className="tabular-nums">{COP(totals.lineSubtotal)}</span>
@@ -1611,14 +1620,6 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                   <span className="tabular-nums">{COP(totals.tax)}</span>
                 </div>
               )}
-              {/* Total XL estilo Kodigo — display de precio dominante, tabular-nums, foreground puro */}
-              <div className="flex items-end justify-between pt-2 mt-1 border-t-2 border-foreground/15">
-                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground pb-1">Total</span>
-                <span className="text-4xl font-extrabold tabular-nums leading-none text-foreground font-heading">
-                  {COP(totals.total)}
-                </span>
-              </div>
-
             </div>
 
             {/* Botón principal (cambia label según modo) — thumb-zone XL */}
