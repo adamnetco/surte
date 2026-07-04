@@ -11,6 +11,8 @@ interface Props {
   /** True si el ticket actual emitirá factura electrónica DIAN. */
   requireEinvoice?: boolean;
   compact?: boolean;
+  /** Cada incremento fuerza abrir el diálogo "Buscar o crear" (para Ctrl+F). */
+  openCreateSignal?: number;
 }
 
 /**
@@ -18,9 +20,16 @@ interface Props {
  * - Sin cliente → CTA naranja para asignar (rápido / consumidor final).
  * - Con cliente → muestra nombre + íconos de envío + editar/quitar.
  */
-export default function POSCustomerPicker({ customer, onChange, requireEinvoice, compact }: Props) {
+export default function POSCustomerPicker({ customer, onChange, requireEinvoice, compact, openCreateSignal }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [popOpen, setPopOpen] = useState(false);
+
+  useEffect(() => {
+    if (openCreateSignal && openCreateSignal > 0) {
+      setPopOpen(false);
+      setDialogOpen(true);
+    }
+  }, [openCreateSignal]);
 
   const openCreate = () => { setPopOpen(false); setDialogOpen(true); };
 
