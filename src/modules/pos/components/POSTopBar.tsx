@@ -57,6 +57,9 @@ export default function POSTopBar({
   rightExtras,
   sync,
   extraActions,
+  ribbonVisible = true,
+  onToggleRibbon,
+  onHideRibbon,
 }: Props) {
   const [elapsed, setElapsed] = useState("00:00");
 
