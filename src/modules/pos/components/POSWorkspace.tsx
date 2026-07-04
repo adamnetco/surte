@@ -138,6 +138,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [customerOpenSignal, setCustomerOpenSignal] = useState(0);
   const [tableLabel, setTableLabel] = useState(""); // para modo mesa
   const [tableSheetOpen, setTableSheetOpen] = useState(false);
+  // Cuando true, el TableGridSheet mueve el ticket actual a la mesa elegida
+  // (crea table_order + items, marca mesa ocupada, limpia el ticket).
+  const [sendToTableMode, setSendToTableMode] = useState(false);
+  const [orgTip, setOrgTip] = useState<{ pct: number; enabled: boolean }>({ pct: 10, enabled: true });
   const [quickModsOpen, setQuickModsOpen] = useState(false);
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
   const [modPickerProduct, setModPickerProduct] = useState<Product | null>(null);
