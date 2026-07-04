@@ -1,11 +1,18 @@
 // SURTÉ YA Desktop — entry principal Electron
 // Fingerprint de máquina + activación de licencia + heartbeat cada 30 min.
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, Menu } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
 const crypto = require("node:crypto");
 const printAgent = require("./print-agent.cjs");
+
+// Activar aceleración por hardware explícitamente (Chromium ya lo hace por defecto,
+// pero lo confirmamos y desactivamos software rendering fallback en Linux para GPUs
+// sin driver conocido — evita degradación silenciosa a canvas 2D CPU).
+app.commandLine.appendSwitch("enable-gpu-rasterization");
+app.commandLine.appendSwitch("enable-zero-copy");
+if (process.platform === "linux") app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
 const SUPA_URL = process.env.SURTEYA_SUPA_URL || "https://dimyhjzcwlgfczimqhet.supabase.co";
 const SUPA_ANON = process.env.SURTEYA_SUPA_ANON || "";
@@ -79,14 +86,38 @@ let win;
 function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 1024, minHeight: 600,
-    title: "SURTÉ YA POS Desktop",
-    webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname, "preload.cjs") },
+    title: "SistecPOS Desktop",
+    backgroundColor: "#0F172A", // evita flash blanco al abrir
+    frame: false,               // usamos AppDesktopBar como titlebar propia
+    titleBarStyle: "hidden",
+    show: false,                // se muestra tras 'ready-to-show' para evitar parpadeo
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false, // POS no puede pausar timers al perder foco
+      preload: path.join(__dirname, "preload.cjs"),
+    },
   });
+  win.once("ready-to-show", () => win.show());
+  win.on("maximize", () => win.webContents.send("window:maximize-change", true));
+  win.on("unmaximize", () => win.webContents.send("window:maximize-change", false));
   win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+
+  // Menú nativo oculto en producción — la app tiene su propia barra global.
+  if (app.isPackaged) Menu.setApplicationMenu(null);
 }
 
 ipcMain.handle("license:status", () => ({ fingerprint: machineFingerprint(), hasLicense: !!decFile(LIC_FILE) }));
 ipcMain.handle("license:activate", async (_e, key) => activate(key));
+
+// Window controls — llamados desde AppDesktopBar (renderer) vía preload bridge.
+ipcMain.handle("window:minimize", () => { if (win) win.minimize(); });
+ipcMain.handle("window:maximize", () => {
+  if (!win) return;
+  if (win.isMaximized()) win.unmaximize(); else win.maximize();
+});
+ipcMain.handle("window:close", () => { if (win) win.close(); });
+ipcMain.handle("window:is-maximized", () => !!(win && win.isMaximized()));
 
 app.whenReady().then(async () => {
   try { printAgent.start(); } catch (e) { console.error("[print-agent] failed to start:", e); }

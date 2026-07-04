@@ -27,6 +27,7 @@ import GlobalHotkeys from "@/components/GlobalHotkeys";
 import QuickActionsFAB from "@/components/QuickActionsFAB";
 import PinLock from "@/components/PinLock";
 import AuthHealthMonitor from "@/components/AuthHealthMonitor";
+import AppDesktopBar from "@/components/AppDesktopBar";
 const OnboardingChecklist = lazy(() => import("@/modules/onboarding/components/OnboardingChecklist"));
 const FirstLoginTour = lazy(() => import("@/components/FirstLoginTour"));
 const SurveyPrompt = lazy(() => import("@/components/SurveyPrompt"));
@@ -263,6 +264,7 @@ const App = () => (
             <CustomScriptInjector />
                 <AgentBar />
               <BrowserRouter>
+                <AppDesktopBar />
                 <ApproachingLimitBanner />
                 <CityPickerModal />
                 <Analytics />
