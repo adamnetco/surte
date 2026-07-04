@@ -1350,13 +1350,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </button>
 
           {/* Header compacto: Ticket + modo (izq) · TOTAL XL (der) — aprovecha el ancho liberado */}
-          <div className="px-3 pt-3 pb-2 border-b space-y-2 bg-gradient-to-b from-card to-muted/10">
+          <div data-testid="ticket-header" className="px-3 pt-3 pb-2 border-b space-y-2 bg-gradient-to-b from-card to-muted/10">
             <div className="flex items-stretch gap-2">
               {/* Bloque izquierdo: título + chip modo + contador */}
               <div className="flex flex-col justify-between min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <h2 className="font-semibold text-[13px] truncate">Ticket</h2>
+                  <FileText className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
+                  <h2 data-testid="ticket-title" className="font-semibold text-[13px] truncate">Ticket</h2>
                   <span
                     className="text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 shrink-0"
                     title={POS_MODES[saleMode].description}
