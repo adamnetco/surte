@@ -135,6 +135,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     try { localStorage.setItem("pos:catalogDensity", catalogDensity); } catch { /* noop */ }
   }, [catalogDensity]);
   const [ribbonHelpOpen, setRibbonHelpOpen] = useState(false);
+  // Visibilidad de la cinta de módulos (POSTopRibbon). Estilo Office:
+  //  - click en botón: alterna mostrar/ocultar
+  //  - doble-click: fuerza ocultar (persistente hasta próximo click)
+  // Persistido por usuario para no repetir la elección cada sesión.
+  const [ribbonVisible, setRibbonVisible] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("pos:ribbonVisible") === "1";
+  });
+  useEffect(() => {
+    try { localStorage.setItem("pos:ribbonVisible", ribbonVisible ? "1" : "0"); } catch { /* noop */ }
+  }, [ribbonVisible]);
   const { currentOrg, hasModule } = useOrganization();
   const isFood = (currentOrg?.business_type ?? "") === "food" && hasModule("dining_tables");
   const [catalogView, setCatalogView] = useState<"catalog" | "tables">(isFood ? "tables" : "catalog");
