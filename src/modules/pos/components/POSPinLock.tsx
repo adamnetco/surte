@@ -208,7 +208,7 @@ export default function POSPinLock({
               </h2>
               <p className="text-sm text-muted-foreground">
                 {mode === "unlock"
-                  ? `Ingresa tu PIN, ${cashierName ?? "cajero"}`
+                  ? (reason ?? `Ingresa tu PIN, ${cashierName ?? "cajero"}`)
                   : mode === "set"
                     ? "4 dígitos — se guarda solo en este dispositivo"
                     : "Repite el PIN para confirmarlo"}
