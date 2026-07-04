@@ -1419,6 +1419,34 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             </div>
           </div>
 
+          {/* Numpad permanente estilo Kodigo — edita cantidad de la línea seleccionada.
+              Se muestra sólo en desktop (lg+) para no romper el thumb-zone móvil,
+              donde el numpad sigue apareciendo por línea vía Sheet. */}
+          <div className="hidden lg:block border-t bg-card px-3 py-2">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Cantidad
+              </span>
+              <span className="text-[11px] text-muted-foreground truncate max-w-[60%]" title={selectedLine?.name ?? ""}>
+                {selectedLine ? selectedLine.name : "Selecciona una línea"}
+              </span>
+            </div>
+            <div className="mb-2 h-10 rounded-md border bg-muted/30 grid place-items-center text-2xl font-heading font-bold tabular-nums">
+              {numpadDraft || "0"}
+            </div>
+            <Numpad
+              value={numpadDraft}
+              onChange={setNumpadDraft}
+              maxDigits={4}
+              compact
+              confirmLabel="Aplicar (Enter)"
+              confirmDisabled={!selectedLine || !numpadDraft || Number(numpadDraft) <= 0}
+              onConfirm={applyNumpadQty}
+            />
+          </div>
+
+
+
 
 
           <div className="border-t p-3 space-y-2 bg-card">
