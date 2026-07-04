@@ -1844,7 +1844,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <span className="font-seg7 text-2xl xl:text-[30px] tabular-nums leading-tight text-primary" aria-hidden="true">
                   {COP(totals.total)}
                 </span>
-                {(totals.globalDisc > 0 || totals.tax > 0) && (
+                {ticket.length > 0 && (
                   <span className="text-[9px] tabular-nums text-muted-foreground leading-none" aria-hidden="true">
                     Sub {COP(totals.lineSubtotal)}
                   </span>
@@ -1989,77 +1989,72 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
 
 
-          <div className="border-t p-3 space-y-2 bg-card">
-            {/* Breakdown compacto — el TOTAL XL vive arriba junto al header */}
-            <div className="space-y-0.5 text-xs">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
-                <span className="tabular-nums">{COP(totals.lineSubtotal)}</span>
-              </div>
-              {totals.globalDisc > 0 && (
-                <div className="flex justify-between text-accent">
-                  <span>Descuento {globalDiscPct}%</span>
-                  <span className="tabular-nums">-{COP(totals.globalDisc)}</span>
-                </div>
-              )}
-              {totals.tax > 0 && (
-                <div className="flex justify-between text-muted-foreground">
-                  <span>IVA {(TAX_RATE * 100).toFixed(0)}%</span>
-                  <span className="tabular-nums">{COP(totals.tax)}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Fila 1: 2 acciones secundarias restaurante (Enviar a Mesa · Domicilio) */}
-            {(posModes.enabled.includes("mesa" as PosMode) || posModes.enabled.includes("domicilio" as PosMode)) && (
-              <div className="grid grid-cols-2 gap-2">
-                {posModes.enabled.includes("mesa" as PosMode) && (
-                  <Button
-                    variant="outline"
-                    className="h-11 text-xs font-semibold gap-1.5 border-primary/30 text-primary hover:bg-primary/5 [touch-action:manipulation] active:scale-95"
-                    disabled={ticket.length === 0 || !!activeTableOrder}
-                    onClick={openSendToTable}
-                    title="Guardar el ticket actual en una mesa"
-                    aria-label="Enviar ticket a una mesa"
-                  >
-                    <Send className="w-4 h-4" aria-hidden />
-                    <span>Enviar a Mesa</span>
-                  </Button>
+          <div className="border-t p-2 space-y-1.5 bg-card">
+            {/* Breakdown minimal — Subtotal ya vive junto al TOTAL XL arriba.
+                Solo mostramos ajustes activos (descuento / IVA) para no repetir. */}
+            {(totals.globalDisc > 0 || totals.tax > 0) && (
+              <div className="space-y-0.5 text-[11px]">
+                {totals.globalDisc > 0 && (
+                  <div className="flex justify-between text-accent">
+                    <span>Descuento {globalDiscPct}%</span>
+                    <span className="tabular-nums">-{COP(totals.globalDisc)}</span>
+                  </div>
                 )}
-                {posModes.enabled.includes("domicilio" as PosMode) && (
-                  <Button
-                    variant="outline"
-                    className="h-11 text-xs font-semibold gap-1.5 border-accent/40 text-accent hover:bg-accent/5 [touch-action:manipulation] active:scale-95"
-                    disabled={ticket.length === 0}
-                    onClick={openDeliveryFlow}
-                    title="Cobrar como domicilio (asigna repartidor)"
-                    aria-label="Cobrar como domicilio"
-                  >
-                    <Bike className="w-4 h-4" aria-hidden />
-                    <span>Domicilio</span>
-                  </Button>
+                {totals.tax > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>IVA {(TAX_RATE * 100).toFixed(0)}%</span>
+                    <span className="tabular-nums">{COP(totals.tax)}</span>
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Botón principal XL — thumb-zone (jerarquía visual) */}
-            <Button
-              variant={saleMode === "consumo_interno" ? "cta-primary" : "cta"}
-              className="w-full h-16 text-lg font-extrabold shadow-md active:scale-[0.98] transition-transform [touch-action:manipulation]"
-              disabled={ticket.length === 0}
-              onClick={() => { try { navigator.vibrate?.(12); } catch { /* noop */ } setPayOpen(true); }}
-            >
-              <CreditCard className="w-6 h-6 mr-2" />
-              {saleMode === "consumo_interno" ? "REGISTRAR CORTESÍA" : "COBRAR"}
-              <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">F2</kbd>
-            </Button>
+            {/* Fila única: [Mesa] [Domicilio] [COBRAR →] — COBRAR ocupa el espacio
+                sobrante y ancla la esquina derecha (thumb-zone). Las secundarias
+                se compactan a icon + label corto para liberar altura al numpad. */}
+            <div className="flex items-stretch gap-1.5">
+              {posModes.enabled.includes("mesa" as PosMode) && (
+                <Button
+                  variant="outline"
+                  className="h-14 px-2.5 text-[11px] font-semibold gap-1 border-primary/30 text-primary hover:bg-primary/5 [touch-action:manipulation] active:scale-95 flex-col shrink-0"
+                  disabled={ticket.length === 0 || !!activeTableOrder}
+                  onClick={openSendToTable}
+                  title="Guardar el ticket actual en una mesa"
+                  aria-label="Enviar ticket a una mesa"
+                >
+                  <Send className="w-4 h-4" aria-hidden />
+                  <span className="leading-none">Mesa</span>
+                </Button>
+              )}
+              {posModes.enabled.includes("domicilio" as PosMode) && (
+                <Button
+                  variant="outline"
+                  className="h-14 px-2.5 text-[11px] font-semibold gap-1 border-accent/40 text-accent hover:bg-accent/5 [touch-action:manipulation] active:scale-95 flex-col shrink-0"
+                  disabled={ticket.length === 0}
+                  onClick={openDeliveryFlow}
+                  title="Cobrar como domicilio (asigna repartidor)"
+                  aria-label="Cobrar como domicilio"
+                >
+                  <Bike className="w-4 h-4" aria-hidden />
+                  <span className="leading-none">Domicilio</span>
+                </Button>
+              )}
 
-            {/* Nota: las acciones secundarias (% Desc, Nota, Suspender,
-                Cotizar, Facturar, Reimprimir, Cuenta) viven ahora en el
-                footer bajo el catálogo para descargar visualmente este
-                panel y dejar respirar el ticket + COBRAR. */}
+              {/* CTA principal — flex-1, ancla derecha, thumb-zone */}
+              <Button
+                variant={saleMode === "consumo_interno" ? "cta-primary" : "cta"}
+                className="flex-1 h-14 text-base font-extrabold shadow-md active:scale-[0.98] transition-transform [touch-action:manipulation]"
+                disabled={ticket.length === 0}
+                onClick={() => { try { navigator.vibrate?.(12); } catch { /* noop */ } setPayOpen(true); }}
+              >
+                <CreditCard className="w-5 h-5 mr-2" />
+                {saleMode === "consumo_interno" ? "REGISTRAR CORTESÍA" : "COBRAR"}
+                <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">F2</kbd>
+              </Button>
+            </div>
 
           </div>
+
         </aside>
       </div>
 
