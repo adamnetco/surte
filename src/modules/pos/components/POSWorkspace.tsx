@@ -583,15 +583,20 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     setTableSheetOpen(true);
   };
 
-  const handleSendTicketToTable = async (tableLabelPicked: string) => {
+  const handleSendTicketToTable = async (
+    tableLabelPicked: string,
+    tableIdHint?: string
+  ) => {
     if (ticket.length === 0) return;
     try {
-      const { data: tableRow, error: tErr } = await (supabase as any)
+      // Preferir id (viene del picker cargado desde DB). Fallback: buscar por
+      // label dentro de la organización.
+      let query = (supabase as any)
         .from("dining_tables")
         .select("id, location_id, status")
-        .eq("organization_id", organizationId)
-        .eq("label", tableLabelPicked)
-        .maybeSingle();
+        .eq("organization_id", organizationId);
+      query = tableIdHint ? query.eq("id", tableIdHint) : query.eq("label", tableLabelPicked);
+      const { data: tableRow, error: tErr } = await query.maybeSingle();
       if (tErr) throw tErr;
       if (!tableRow) { toast.error(`No se encontró la mesa ${tableLabelPicked}`); return; }
 
