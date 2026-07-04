@@ -2060,18 +2060,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           if (!o) setSendToTableMode(false);
         }}
         current={tableLabel || null}
+        tables={posTables.length > 0 ? posTables : undefined}
         onPick={(t) => {
-          // Modo "Enviar a Mesa" (botón footer): mueve el ticket a la mesa
-          // y limpia el workspace en lugar de solo etiquetar el ticket actual.
           if (sendToTableMode) {
             setSendToTableMode(false);
-            void handleSendTicketToTable(t.label);
+            // Pasar el id real de dining_tables para evitar lookup por label.
+            void handleSendTicketToTable(t.label, t.id);
             return;
           }
           const prev = tableLabel;
           setTableLabel(t.label);
-          // Slice 2-food: al ABRIR mesa por primera vez en food, ofrecer
-          // modificadores rápidos que se pegan al próximo ítem añadido.
           if (isFood && t.label && t.label !== prev) {
             setQuickModsOpen(true);
           }
