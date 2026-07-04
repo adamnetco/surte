@@ -2,26 +2,27 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Lock, ShieldCheck } from "lucide-react";
 
 import Numpad from "./Numpad";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getAutoLockMinutes } from "@/lib/posPinPrefs";
 
 /**
  * Bloqueo local del POS por PIN de 4 dígitos.
  *
  * - PIN se guarda hasheado (SHA-256) en localStorage por userId.
- * - Auto-lock por inactividad (default 3min) — cualquier touch/click/keydown resetea.
+ * - Auto-lock por inactividad, configurable por usuario (0 = nunca).
  * - Al bloquear, el ticket, mesa y estado se conservan (overlay encima del workspace).
  * - Si no hay PIN configurado, la primera vez que se activa el lock pide configurarlo.
- *
- * Uso: montar en la raíz del POSWorkspace. Expone <button> flotante “Lock” abajo-izq.
+ * - Expone `window.__posPinRequest(reason)` para exigir PIN antes de acciones críticas
+ *   (ej. COBRAR). Resuelve `true` si el usuario desbloqueó, `false` si canceló.
  */
 export default function POSPinLock({
   userId,
   cashierName,
-  idleMs = 3 * 60 * 1000,
+  idleMs,
 }: {
   userId: string;
   cashierName?: string;
+  /** Override manual; si no se pasa, se lee la preferencia por usuario. */
   idleMs?: number;
 }) {
   const storageKey = `pos:pin:${userId}`;
@@ -33,9 +34,31 @@ export default function POSPinLock({
   const [draft, setDraft] = useState("");
   const [firstPin, setFirstPin] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reason, setReason] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const pendingResolveRef = useRef<((ok: boolean) => void) | null>(null);
+  const [effectiveIdleMs, setEffectiveIdleMs] = useState<number>(() => {
+    if (typeof idleMs === "number") return idleMs;
+    const m = getAutoLockMinutes(userId);
+    return m > 0 ? m * 60 * 1000 : 0;
+  });
+
+  // Reacciona a cambios de preferencias (auto-lock configurable desde ajustes).
+  useEffect(() => {
+    const sync = () => {
+      if (typeof idleMs === "number") { setEffectiveIdleMs(idleMs); return; }
+      const m = getAutoLockMinutes(userId);
+      setEffectiveIdleMs(m > 0 ? m * 60 * 1000 : 0);
+    };
+    window.addEventListener("pos:pin:prefs-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("pos:pin:prefs-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, [idleMs, userId]);
 
   // Bloqueo de scroll del body mientras el overlay está activo.
   // Evita que el ticket se desplace o reciba toques por debajo del backdrop.
