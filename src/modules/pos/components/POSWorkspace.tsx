@@ -1314,7 +1314,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
         {/* Ticket (sticky card en desktop; en móvil colapsable con footer fijo) */}
         <aside
-          className={`bg-muted/20 border-t lg:border-t-0 lg:border-l flex flex-col min-h-0 lg:w-[500px] xl:w-[540px] lg:flex-none lg:max-h-none ${
+          className={`bg-muted/20 border-t lg:border-t-0 lg:border-l flex flex-col min-h-0 lg:flex-1 lg:min-w-[520px] lg:max-h-none ${
             mobileTicketExpanded ? "max-h-[70dvh]" : "max-h-none"
           }`}
         >
