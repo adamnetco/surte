@@ -65,7 +65,7 @@ interface Row { method: MethodKey; amount: number; count: number }
  * Muestra breakdown por método con barra proporcional y CSV export.
  */
 export default function PaymentMethodsReportSheet({ open, onOpenChange }: Props) {
-  const { organization } = useOrganization();
+  const { currentOrg: organization } = useOrganization();
   const [preset, setPreset] = useState<PresetKey>("today");
   const range = useMemo(() => rangeFor(preset), [preset]);
 
