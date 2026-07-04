@@ -99,11 +99,11 @@ export default function SaleCompleteDialog({
       setRemainingMs(null);
       return;
     }
-    const total = autoCloseMs ?? getSaleCompleteAutoCloseMs();
+    const totalMs = autoCloseMs ?? getSaleCompleteAutoCloseMs();
     const start = Date.now();
-    setRemainingMs(total);
+    setRemainingMs(totalMs);
     const iv = window.setInterval(() => {
-      const left = total - (Date.now() - start);
+      const left = totalMs - (Date.now() - start);
       if (left <= 0) {
         window.clearInterval(iv);
         closeAndReset();
