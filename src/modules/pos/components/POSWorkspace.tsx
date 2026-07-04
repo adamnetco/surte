@@ -1433,6 +1433,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
           <div className={`${mobileTicketExpanded ? "flex" : "hidden"} lg:flex flex-col flex-1 min-h-0`}>
 
+            {/* Encabezado visible del listado — deja claro dónde aparecen los productos añadidos */}
+            <div className="hidden lg:flex items-center justify-between px-3 pt-2 pb-1">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Productos añadidos
+              </span>
+              <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
+                {ticket.length}
+              </span>
+            </div>
+
             <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
               {ticket.length === 0 ? (
                 <div className="text-center py-10 px-4">
@@ -1460,6 +1470,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               )}
             </div>
           </div>
+
 
           {/* Numpad permanente estilo Kodigo — edita cantidad de la línea seleccionada.
               Se muestra sólo en desktop (lg+) para no romper el thumb-zone móvil,
