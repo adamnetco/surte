@@ -77,6 +77,7 @@ export default function AppDesktopBar() {
   const goHome = () => navigate("/");
 
   const openShortcuts = () => window.dispatchEvent(new CustomEvent("app:open-shortcuts"));
+  const openStatus = () => window.dispatchEvent(new CustomEvent("app:open-status"));
   const lockScreen = () => window.dispatchEvent(new CustomEvent("pin-lock:lock"));
 
   const signOut = async () => {
