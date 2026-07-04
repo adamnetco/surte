@@ -950,7 +950,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             <POSFloorMapPanel organizationId={organizationId} userId={userId} />
           ) : (
           <>
-          <div className="p-2.5 bg-card border-b flex gap-2 items-center">
+          <div className="p-2.5 bg-card border-b flex gap-2 items-center touch-manipulation">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input
@@ -960,6 +960,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 onChange={(e) => setSearch(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
+                enterKeyHint="search"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 onKeyDown={(e) => {
                   if (searchSuggestions.length === 0) return;
                   if (e.key === "ArrowDown") {
@@ -986,8 +991,18 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                     ? `pos-suggestion-${searchSuggestions[searchHighlight].id}`
                     : undefined
                 }
-                className="pl-9 h-9"
+                className="pl-9 pr-10 h-11 text-base"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => { setSearch(""); searchRef.current?.focus(); }}
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 grid place-items-center rounded-md text-muted-foreground hover:bg-muted touch-manipulation active:scale-95 transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
               {searchFocused && searchSuggestions.length > 0 && (
                 <ul
                   role="listbox"
