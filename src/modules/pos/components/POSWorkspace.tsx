@@ -1263,10 +1263,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 })}
               </ul>
             ) : (
-              <div
-                className="grid gap-2"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(112px, 1fr))" }}
-              >
+              <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
                 {filtered.map((p, idx) => {
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
