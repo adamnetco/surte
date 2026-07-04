@@ -1509,10 +1509,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 onChange={setNumpadDraft}
                 maxDigits={4}
                 compact
+                presets={[
+                  { label: "×1", value: 1 },
+                  { label: "×2", value: 2 },
+                  { label: "×5", value: 5, highlight: true },
+                  { label: "×10", value: 10 },
+                ]}
                 confirmLabel="Aplicar ⏎"
                 confirmDisabled={!selectedLine || !numpadDraft || Number(numpadDraft) <= 0}
                 onConfirm={applyNumpadQty}
               />
+
             </div>
           </div>
 
