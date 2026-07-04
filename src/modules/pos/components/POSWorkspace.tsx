@@ -186,15 +186,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   useEffect(() => {
     (async () => {
       const { data } = await (supabase as any)
-        .from("organizations").select("name, legal_name, nit, address, phone, tip_default_pct, tip_enabled")
+        .from("organizations").select("name, legal_name, tax_id, tip_default_pct, tip_enabled")
         .eq("id", organizationId).maybeSingle();
       if (data) {
         orgInfoRef.current = {
           business_name: data.name ?? "SistecPOS",
           legal_name: data.legal_name ?? null,
-          nit: data.nit ?? null,
-          address: data.address ?? null,
-          phone: data.phone ?? null,
+          nit: data.tax_id ?? null,
+          address: null,
+          phone: null,
         };
         setOrgTip({
           pct: Number(data.tip_default_pct ?? 10),
@@ -266,22 +266,20 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       }));
       setPosTables(mapped);
     };
-    if (isFood) void load();
-    const ch = isFood
-      ? (supabase as any)
-          .channel(`dining-tables-${organizationId}`)
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${organizationId}` },
-            load
-          )
-          .subscribe()
-      : null;
+    void load();
+    const ch = (supabase as any)
+      .channel(`dining-tables-${organizationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${organizationId}` },
+        load
+      )
+      .subscribe();
     return () => {
       cancel = true;
-      if (ch) (supabase as any).removeChannel(ch);
+      (supabase as any).removeChannel(ch);
     };
-  }, [organizationId, isFood]);
+  }, [organizationId]);
 
 
   // Conteo de tickets suspendidos (refrescado en cambio de session/org)
@@ -569,6 +567,56 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     try { navigator.vibrate?.(8); } catch { /* noop */ }
   };
 
+  // ===== Teclado físico → Numpad (línea seleccionada) =====
+  // 0-9 → concatena · . o , → decimal · Backspace → borra · Enter → confirma
+  // · Escape → limpia. Sólo cuando NO se está escribiendo en un input/textarea.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!selectedLine) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable) return;
+
+      // Dígitos (teclado normal y numérico)
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        setNumpadDraft((d) => {
+          const next = (d === "0" ? "" : d) + e.key;
+          return next.slice(0, 5);
+        });
+        return;
+      }
+      if (e.key === "." || e.key === ",") {
+        e.preventDefault();
+        setNumpadDraft((d) => (d.includes(".") ? d : (d || "0") + "."));
+        return;
+      }
+      if (e.key === "Backspace") {
+        // No pisar el "borrar línea" (que ya vive en el otro handler cuando
+        // no hay draft). Sólo consumimos si hay draft en curso.
+        if (numpadDraft) {
+          e.preventDefault();
+          setNumpadDraft((d) => d.slice(0, -1));
+        }
+        return;
+      }
+      if (e.key === "Enter") {
+        if (!numpadDraft) return;
+        e.preventDefault();
+        applyNumpadQty();
+        return;
+      }
+      if (e.key === "Escape") {
+        if (!numpadDraft) return;
+        e.preventDefault();
+        setNumpadDraft(String(selectedLine.quantity));
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLine?.productId, numpadDraft]);
+
   // === Enviar a Mesa ===
   // Abre el picker de mesas en modo "mover ticket". Al seleccionar la mesa,
   // el ticket actual se persiste como table_order pendiente para esa mesa,
@@ -595,7 +643,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         .from("dining_tables")
         .select("id, location_id, status")
         .eq("organization_id", organizationId);
-      query = tableIdHint ? query.eq("id", tableIdHint) : query.eq("label", tableLabelPicked);
+      const isUuid = !!tableIdHint && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tableIdHint);
+      query = isUuid ? query.eq("id", tableIdHint!) : query.eq("label", tableLabelPicked);
       const { data: tableRow, error: tErr } = await query.maybeSingle();
       if (tErr) throw tErr;
       if (!tableRow) { toast.error(`No se encontró la mesa ${tableLabelPicked}`); return; }
