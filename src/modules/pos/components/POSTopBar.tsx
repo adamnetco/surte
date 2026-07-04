@@ -137,13 +137,14 @@ export default function POSTopBar({
           {onToggleRibbon && (
             <button
               type="button"
-              onClick={onToggleRibbon}
-              onDoubleClick={onHideRibbon}
+              onClick={handleRibbonClick}
+              onDoubleClick={handleRibbonDoubleClick}
               aria-label={ribbonVisible ? "Ocultar barra de módulos (doble-click)" : "Mostrar barra de módulos"}
               aria-pressed={ribbonVisible}
-              title={ribbonVisible ? "Ocultar cinta · doble-click para fijar oculto" : "Mostrar cinta de módulos"}
+              title={ribbonVisible ? "Doble-click para ocultar la cinta" : "Mostrar cinta de módulos"}
+              style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
               className={cn(
-                "inline-flex items-center justify-center h-9 w-9 rounded-md border transition focus-visible:ring-2 focus-visible:ring-ring",
+                "inline-flex items-center justify-center h-9 w-9 rounded-md border transition select-none focus-visible:ring-2 focus-visible:ring-ring",
                 ribbonVisible
                   ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
                   : "border-border text-muted-foreground hover:border-primary hover:text-primary",
