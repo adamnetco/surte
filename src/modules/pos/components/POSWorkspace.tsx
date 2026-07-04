@@ -149,6 +149,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [posTables, setPosTables] = useState<PosTable[]>([]);
   const [tablesOverviewOpen, setTablesOverviewOpen] = useState(false);
   const [deliveriesOpen, setDeliveriesOpen] = useState(false);
+  const [paymentsReportOpen, setPaymentsReportOpen] = useState(false);
   const [orgTip, setOrgTip] = useState<{ pct: number; enabled: boolean }>({ pct: 10, enabled: true });
   const [quickModsOpen, setQuickModsOpen] = useState(false);
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
