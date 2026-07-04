@@ -23,7 +23,7 @@ const QUICK = [
   ["Alt + N", "Crear cliente / artículo / proveedor rápido"],
   ["⌘ / Ctrl + K", "Buscador global de productos"],
   ["/", "Foco al buscador"],
-  ["Esc", "Cerrar diálogo activo"],
+  ["Esc", "Salir / Volver atrás"],
   ["?", "Mostrar esta ayuda"],
 ];
 
