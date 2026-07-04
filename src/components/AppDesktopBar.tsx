@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Home, MoreVertical, Settings, Lock,
   LogOut, HelpCircle, Building2, ShoppingBag, LayoutDashboard, Shield,
-  Minus, Square, X, Keyboard,
+  Minus, Square, X, Keyboard, Activity,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -77,6 +77,7 @@ export default function AppDesktopBar() {
   const goHome = () => navigate("/");
 
   const openShortcuts = () => window.dispatchEvent(new CustomEvent("app:open-shortcuts"));
+  const openStatus = () => window.dispatchEvent(new CustomEvent("app:open-status"));
   const lockScreen = () => window.dispatchEvent(new CustomEvent("pin-lock:lock"));
 
   const signOut = async () => {
@@ -158,6 +159,9 @@ export default function AppDesktopBar() {
             <DropdownMenuItem onClick={openShortcuts}>
               <Keyboard className="w-4 h-4 mr-2" /> Atajos de teclado
               <span className="ml-auto text-[10px] text-muted-foreground font-mono">F1</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={openStatus}>
+              <Activity className="w-4 h-4 mr-2" /> Estado del sistema
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/ayuda")}>
               <HelpCircle className="w-4 h-4 mr-2" /> Centro de ayuda
