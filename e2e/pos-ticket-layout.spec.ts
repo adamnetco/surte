@@ -13,7 +13,8 @@
  *   npx playwright test tests/e2e/pos-ticket-layout.spec.ts
  *   npx playwright test --update-snapshots  (regenerar baseline tras cambio intencional)
  */
-import { test, expect, type Page, type Locator } from "@playwright/test";
+import { test, expect } from "../playwright-fixture";
+import type { Page, Locator } from "@playwright/test";
 
 const BREAKPOINTS = [
   { name: "desktop-xl",  w: 1440, h: 900 },
