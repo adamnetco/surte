@@ -56,6 +56,8 @@ import POSCustomerPicker from "./POSCustomerPicker";
 // global de "Precios" se elimina (los precios derivan del cliente / lista por SKU).
 
 import TableGridSheet, { type PosTable } from "./TableGridSheet";
+import TablesOverviewSheet from "./TablesOverviewSheet";
+import DeliveriesListSheet from "./DeliveriesListSheet";
 import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
 import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
 import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithModifiers";
@@ -145,6 +147,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   // esto el picker mostraba labels genéricos "1..18" que no existen en DB y
   // handleSendTicketToTable fallaba con "No se encontró la mesa X".
   const [posTables, setPosTables] = useState<PosTable[]>([]);
+  const [tablesOverviewOpen, setTablesOverviewOpen] = useState(false);
+  const [deliveriesOpen, setDeliveriesOpen] = useState(false);
   const [orgTip, setOrgTip] = useState<{ pct: number; enabled: boolean }>({ pct: 10, enabled: true });
   const [quickModsOpen, setQuickModsOpen] = useState(false);
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
@@ -1129,6 +1133,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         
         extraActions={
           <>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setTablesOverviewOpen(true)}>
+              <Utensils className="w-4 h-4 mr-2" /> Ver todas las mesas
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setDeliveriesOpen(true)}>
+              <Bike className="w-4 h-4 mr-2" /> Ver domicilios activos
+            </Button>
             <Button variant="outline" className="w-full justify-start" onClick={handleNotasCredito}>
               <Receipt className="w-4 h-4 mr-2" /> Notas crédito / Devolución
             </Button>
@@ -2124,6 +2134,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           }
         }}
       />
+
+      <TablesOverviewSheet
+        open={tablesOverviewOpen}
+        onOpenChange={setTablesOverviewOpen}
+        organizationId={organizationId}
+        userId={userId}
+      />
+
+      <DeliveriesListSheet
+        open={deliveriesOpen}
+        onOpenChange={setDeliveriesOpen}
+        organizationId={organizationId}
+      />
+
+
 
       <POSQuickModifiersSheet
         open={quickModsOpen}
