@@ -1,25 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock supabase client antes de importar el helper.
-const insertMock = vi.fn().mockResolvedValue({ data: null, error: null });
-const maybeSingleMock = vi.fn().mockResolvedValue({ data: { primary_organization_id: "org-1" } });
-const getUserMock = vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } } });
-const getSessionMock = vi.fn().mockResolvedValue({ data: { session: { user: { id: "user-1" } } } });
+const mocks = vi.hoisted(() => ({
+  insertMock: vi.fn().mockResolvedValue({ data: null, error: null }),
+  maybeSingleMock: vi.fn().mockResolvedValue({ data: { primary_organization_id: "org-1" } }),
+  getUserMock: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } } }),
+  getSessionMock: vi.fn().mockResolvedValue({ data: { session: { user: { id: "user-1" } } } }),
+}));
+const { insertMock, maybeSingleMock, getUserMock, getSessionMock } = mocks;
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    auth: { getSession: getSessionMock, getUser: getUserMock },
-    from: vi.fn((table: string) => {
+    auth: { getSession: mocks.getSessionMock, getUser: mocks.getUserMock },
+    from: (table: string) => {
       if (table === "profiles") {
-        return {
-          select: () => ({ eq: () => ({ maybeSingle: maybeSingleMock }) }),
-        };
+        return { select: () => ({ eq: () => ({ maybeSingle: mocks.maybeSingleMock }) }) };
       }
-      if (table === "sync_logs") {
-        return { insert: insertMock };
-      }
+      if (table === "sync_logs") return { insert: mocks.insertMock };
       return {};
-    }),
+    },
   },
 }));
 
