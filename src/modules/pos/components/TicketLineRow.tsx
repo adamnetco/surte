@@ -244,53 +244,48 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
             </PopoverContent>
           </Popover>
 
-          <Popover>
-            <PopoverTrigger asChild>
+          <Sheet open={discSheetOpen} onOpenChange={setDiscSheetOpen}>
+            <SheetTrigger asChild>
               <button
                 type="button"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); setDiscDraft(String(line.discountPct ?? 0)); }}
                 aria-label={hasDisc ? `Descuento ${line.discountPct}%` : "Descuento"}
-                className={`h-7 min-w-[28px] px-1 grid place-items-center rounded transition text-[10px] font-semibold ${
+                className={`h-9 min-w-[36px] px-1.5 grid place-items-center rounded transition text-[11px] font-semibold touch-manipulation ${
                   hasDisc ? "text-accent bg-accent/15" : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                {hasDisc ? `${line.discountPct}%` : <Percent className="w-3.5 h-3.5" />}
+                {hasDisc ? `${line.discountPct}%` : <Percent className="w-4 h-4" />}
               </button>
-            </PopoverTrigger>
-            <PopoverContent side="top" align="end" className="w-56 p-3 space-y-2">
-              <p className="text-xs font-semibold">Descuento (%)</p>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={discDraft}
-                onChange={(e) => setDiscDraft(e.target.value)}
-                className="h-8 text-sm"
-              />
-              <div className="grid grid-cols-4 gap-1">
-                {[0, 5, 10, 15, 20, 25, 50, 100].map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setDiscDraft(String(v))}
-                    className="text-[10px] py-1 rounded border bg-muted hover:bg-accent/20"
-                  >
-                    {v}%
-                  </button>
-                ))}
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-w-md mx-auto rounded-t-2xl p-4 pb-6">
+              <SheetHeader className="mb-3">
+                <SheetTitle className="text-base">Descuento · {line.name}</SheetTitle>
+              </SheetHeader>
+              <div className="mb-3 h-16 rounded-lg border bg-muted/30 grid place-items-center text-3xl font-heading font-bold tabular-nums">
+                {discDraft || "0"}%
               </div>
-              <Button
-                size="sm"
-                className="w-full h-7 text-xs"
-                onClick={() => {
+              <Numpad
+                value={discDraft}
+                onChange={setDiscDraft}
+                maxDigits={3}
+                presets={[
+                  { label: "0%", value: 0 },
+                  { label: "5%", value: 5 },
+                  { label: "10%", value: 10, highlight: true },
+                  { label: "15%", value: 15 },
+                  { label: "20%", value: 20 },
+                  { label: "50%", value: 50 },
+                  { label: "100%", value: 100 },
+                ]}
+                confirmLabel="Aplicar descuento"
+                onConfirm={() => {
                   const v = Math.max(0, Math.min(100, Number(discDraft) || 0));
                   onDiscount(v);
+                  setDiscSheetOpen(false);
                 }}
-              >
-                Aplicar
-              </Button>
-            </PopoverContent>
-          </Popover>
+              />
+            </SheetContent>
+          </Sheet>
 
           <button
             type="button"
