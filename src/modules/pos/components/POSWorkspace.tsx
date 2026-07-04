@@ -1390,11 +1390,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                   <button
                     type="button"
                     onClick={() => setTableSheetOpen(true)}
-                    className="mt-1 h-8 px-2 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1.5 text-[11px] font-bold text-foreground transition"
+                    aria-label={tableLabel ? `Mesa asignada: ${tableLabel}. Cambiar mesa` : "Seleccionar mesa (F5)"}
+                    aria-keyshortcuts="F5"
+                    className="mt-1 h-8 px-2 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1.5 text-[11px] font-bold text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                   >
-                    <Utensils className="w-3.5 h-3.5 text-primary" />
+                    <Utensils className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                     <span className="truncate">{tableLabel ? `Mesa ${tableLabel}` : "Mesa"}</span>
-                    <kbd className="ml-auto px-1 py-0 bg-muted rounded text-[9px] font-mono">F5</kbd>
+                    <kbd className="ml-auto px-1 py-0 bg-muted rounded text-[9px] font-mono" aria-hidden="true">F5</kbd>
                   </button>
                 )}
                 {saleMode === "domicilio" && (
