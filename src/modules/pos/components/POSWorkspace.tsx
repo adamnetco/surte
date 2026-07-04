@@ -1824,14 +1824,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                     {mobileTicketExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                {saleMode === "autoservicio" && (
-                  <Input
-                    value={pickupName}
-                    onChange={(e) => setPickupName(e.target.value)}
-                    placeholder="Nombre para pedido"
-                    className="h-7 text-[11px] px-2"
-                  />
-                )}
+                {/* Nombre de pedido "Llevar" se maneja como pestaña dentro del modo Mesas
+                    (restaurante). En Mostrador no se pide nombre para liberar espacio inferior. */}
               </div>
 
               {/* TOTAL XL — bloque derecho dominante, ocupa el espacio liberado */}
