@@ -241,6 +241,48 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       if (data?.full_name) setCashierName(data.full_name);
     })();
   }, [userId]);
+  // Cargar mesas reales de la organización + zonas (dining_areas).
+  useEffect(() => {
+    let cancel = false;
+    const load = async () => {
+      const [{ data: tables }, { data: areas }] = await Promise.all([
+        (supabase as any)
+          .from("dining_tables")
+          .select("id, label, status, dining_area_id")
+          .eq("organization_id", organizationId)
+          .order("label", { ascending: true }),
+        (supabase as any)
+          .from("dining_areas")
+          .select("id, name")
+          .eq("organization_id", organizationId),
+      ]);
+      if (cancel) return;
+      const areaMap = new Map<string, string>((areas ?? []).map((a: any) => [a.id, a.name]));
+      const mapped: PosTable[] = (tables ?? []).map((t: any) => ({
+        id: t.id,
+        label: t.label,
+        zone: (t.dining_area_id && areaMap.get(t.dining_area_id)) || "SALÓN",
+        occupied: t.status === "occupied",
+      }));
+      setPosTables(mapped);
+    };
+    if (isFood) void load();
+    const ch = isFood
+      ? (supabase as any)
+          .channel(`dining-tables-${organizationId}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${organizationId}` },
+            load
+          )
+          .subscribe()
+      : null;
+    return () => {
+      cancel = true;
+      if (ch) (supabase as any).removeChannel(ch);
+    };
+  }, [organizationId, isFood]);
+
 
   // Conteo de tickets suspendidos (refrescado en cambio de session/org)
   useEffect(() => {
