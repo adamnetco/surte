@@ -296,11 +296,6 @@ export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, 
             <Keyboard className="w-4 h-4" />
           </Button>
         )}
-            aria-label="Atajos de teclado"
-          >
-            <Keyboard className="w-4 h-4" />
-          </Button>
-        )}
       </div>
     </nav>
   );
