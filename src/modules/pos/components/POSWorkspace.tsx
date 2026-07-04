@@ -593,7 +593,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         .from("dining_tables")
         .select("id, location_id, status")
         .eq("organization_id", organizationId);
-      query = tableIdHint ? query.eq("id", tableIdHint) : query.eq("label", tableLabelPicked);
+      const isUuid = !!tableIdHint && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tableIdHint);
+      query = isUuid ? query.eq("id", tableIdHint!) : query.eq("label", tableLabelPicked);
       const { data: tableRow, error: tErr } = await query.maybeSingle();
       if (tErr) throw tErr;
       if (!tableRow) { toast.error(`No se encontró la mesa ${tableLabelPicked}`); return; }
