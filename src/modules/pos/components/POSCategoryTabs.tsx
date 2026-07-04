@@ -57,8 +57,9 @@ export default function POSCategoryTabs({ categories, activeId, onChange, counts
       <ScrollArea className="w-full">
         <div
           ref={scrollerRef}
-          className={cn("flex items-center gap-1.5 py-2", overflow ? "md:px-10 px-3" : "px-3")}
+          className={cn("flex items-center gap-1.5 py-2 scroll-smooth snap-x snap-mandatory", overflow ? "md:px-10 px-3" : "px-3")}
         >
+
           <CategoryChip
             label="Todos"
             icon={<LayoutGrid className="w-3.5 h-3.5" />}
@@ -125,11 +126,13 @@ function CategoryChip({
       aria-label={typeof count === "number" ? `${label} (${count} productos)` : label}
       className={cn(
         // Kodigo-style: sin píldora, tipografía uniforme, underline rojo 3px bajo la activa.
-        "relative shrink-0 inline-flex items-center gap-1.5 px-3 h-10 text-xs font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+        // snap-start alinea la pestaña al inicio del scroller al enfocarla/tocarla.
+        "relative shrink-0 snap-start inline-flex items-center gap-1.5 px-3 h-10 text-xs font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
         active
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground"
       )}
+
     >
       {icon}
       <span className="whitespace-nowrap">{label}</span>

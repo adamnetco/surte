@@ -38,8 +38,11 @@ export default function Numpad({
   const btn =
     "select-none active:scale-95 transition-transform touch-manipulation " +
     "font-heading font-semibold tabular-nums bg-card border border-border rounded-lg " +
-    "hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-  const size = compact ? "h-12 text-lg" : "h-14 text-xl";
+    "hover:border-primary hover:bg-primary/5 " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:z-10 focus-visible:relative";
+  // Tap targets ≥44px WCAG AA táctil. h-12 = 48px (compact), h-14 = 56px (default).
+  const size = compact ? "min-h-11 h-12 text-lg" : "min-h-11 h-14 text-xl";
+
 
   const push = (ch: string) => {
     if (ch === "." || ch === ",") {

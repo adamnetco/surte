@@ -107,6 +107,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [searchFocused, setSearchFocused] = useState(false);
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  // Anuncio a11y para lectores de pantalla al añadir/actualizar líneas del ticket.
+  const [srAnnounce, setSrAnnounce] = useState("");
+
   // Draft del numpad permanente (columna derecha estilo Kodigo). Se sincroniza con la línea seleccionada.
   const [numpadDraft, setNumpadDraft] = useState<string>("");
 
@@ -493,6 +496,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       ];
     });
     if (sticky) setStickyNotes([]);
+    // Anuncio a11y (screen readers) — cantidad total en el ticket tras la operación.
+    setTicket((cur) => {
+      const l = cur.find((x) => x.productId === p.id);
+      const qty = l?.quantity ?? 1;
+      setSrAnnounce(`${p.name} añadido al ticket. Cantidad ${qty}.`);
+      return cur;
+    });
     // Feedback móvil: vibración háptica + toast con acción a expandir ticket.
     if (isMobile) {
       try { navigator.vibrate?.(8); } catch { /* noop */ }
@@ -504,6 +514,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       }
     }
   };
+
 
 
   const addProduct = (p: Product) => {
@@ -1505,7 +1516,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 </Button>
               </div>
             ) : filtered.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8 text-sm">Sin productos en esta vista</p>
+              <div className="text-center py-10 px-4" role="status">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-muted/50 border border-border grid place-items-center mb-3">
+                  <ScanLine className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">Sin productos en esta vista</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                  Prueba con otra categoría, escanea un código de barras o busca por nombre/SKU (<kbd className="px-1 rounded bg-muted font-mono text-[10px]">F3</kbd>).
+                </p>
+              </div>
+
             ) : catalogDensity === "list" ? (
               <ul role="list" className="divide-y rounded-md border bg-card overflow-hidden">
                 {filtered.map((p, idx) => {
@@ -2059,6 +2079,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       </div>
 
       <POSPinLock userId={userId} cashierName={cashierName} />
+
+      {/* Región a11y — anuncia cambios del ticket a lectores de pantalla sin ocupar espacio visual. */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {srAnnounce}
+      </div>
+
 
       <PaymentDialog
         open={payOpen}
