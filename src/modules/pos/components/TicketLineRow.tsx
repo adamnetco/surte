@@ -12,7 +12,7 @@ export interface TicketLineData {
   quantity: number;
   total: number;
   notes?: string;
-  discountPct?: number; // 0-100
+  discountPct?: number;
   addedAt: number;
 }
 
@@ -37,179 +37,177 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
   const finalTotal = hasDisc ? line.total * (1 - (line.discountPct ?? 0) / 100) : line.total;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    // Solo si el foco está dentro del row pero no en un input/textarea
     const target = e.target as HTMLElement;
     const tag = target.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable) return;
-    if (e.key === "+" || e.key === "=") {
-      e.preventDefault();
-      onQty(1);
-    } else if (e.key === "-" || e.key === "_") {
-      e.preventDefault();
-      onQty(-1);
-    } else if (e.key === "Delete" || (e.key === "Backspace" && e.shiftKey)) {
-      e.preventDefault();
-      onRemove();
-    }
+    if (e.key === "+" || e.key === "=") { e.preventDefault(); onQty(1); }
+    else if (e.key === "-" || e.key === "_") { e.preventDefault(); onQty(-1); }
+    else if (e.key === "Delete" || (e.key === "Backspace" && e.shiftKey)) { e.preventDefault(); onRemove(); }
   };
 
   return (
     <div
-      className={`rounded-lg p-2 space-y-1 animate-fade-in focus:outline-none transition ${
+      className={`group relative rounded-md border bg-card px-2 py-1.5 animate-fade-in focus:outline-none transition ${
         selected
-          ? "bg-primary/10 ring-2 ring-primary"
-          : "bg-muted/40 focus-within:ring-2 focus-within:ring-ring"
+          ? "border-primary ring-1 ring-primary/40 bg-primary/5"
+          : "border-border hover:border-border/80 focus-within:ring-1 focus-within:ring-ring"
       }`}
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onClick={onSelect}
       role="group"
-      aria-label={`${line.name}, cantidad ${line.quantity}. Teclas: + para sumar, - para restar, Supr para eliminar`}
+      aria-label={`${line.name}, cantidad ${line.quantity}`}
     >
       <div className="flex items-center gap-2">
+        {/* Nombre + meta */}
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-medium leading-tight truncate">{line.name}</p>
-          <p className="text-[11px] text-muted-foreground">
-            {COP(line.unitPrice)} c/u
-            {hasDisc && <span className="ml-1 text-accent font-semibold">· -{line.discountPct}%</span>}
+          <p className="text-[10px] text-muted-foreground leading-tight tabular-nums">
+            {line.quantity} × {COP(line.unitPrice)}
+            {hasDisc && <span className="ml-1 text-accent font-semibold">−{line.discountPct}%</span>}
           </p>
         </div>
-        <div className="flex items-center gap-0.5">
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-9 w-9 focus-visible:ring-2 focus-visible:ring-ring"
-            onClick={() => onQty(-1)}
-            aria-label={`Reducir cantidad de ${line.name}`}
+
+        {/* Stepper compacto */}
+        <div className="flex items-center rounded-md border border-border overflow-hidden bg-background">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onQty(-1); }}
+            aria-label="Reducir"
+            className="h-7 w-7 grid place-items-center text-muted-foreground hover:bg-muted transition"
           >
-            <Minus className="w-4 h-4" />
-          </Button>
-          <span className="w-7 text-center text-sm font-bold tabular-nums" aria-live="polite">{line.quantity}</span>
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-9 w-9 focus-visible:ring-2 focus-visible:ring-ring"
-            onClick={() => onQty(1)}
-            aria-label={`Aumentar cantidad de ${line.name}`}
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+          <span className="w-7 text-center text-[12px] font-bold tabular-nums" aria-live="polite">
+            {line.quantity}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onQty(1); }}
+            aria-label="Aumentar"
+            className="h-7 w-7 grid place-items-center text-muted-foreground hover:bg-muted transition"
           >
-            <Plus className="w-4 h-4" />
-          </Button>
+            <Plus className="w-3.5 h-3.5" />
+          </button>
         </div>
-        <div className="w-20 text-right">
-          {hasDisc && <p className="text-[10px] text-muted-foreground line-through tabular-nums">{COP(line.total)}</p>}
-          <p className="text-sm font-bold tabular-nums">{COP(finalTotal)}</p>
+
+        {/* Total */}
+        <div className="w-[70px] text-right shrink-0">
+          {hasDisc && (
+            <p className="text-[9px] text-muted-foreground line-through tabular-nums leading-none">{COP(line.total)}</p>
+          )}
+          <p className="text-[13px] font-bold tabular-nums leading-tight">{COP(finalTotal)}</p>
+        </div>
+
+        {/* Acciones icon-only */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={hasNote ? "Editar nota" : "Añadir nota"}
+                className={`h-7 w-7 grid place-items-center rounded transition ${
+                  hasNote ? "text-accent bg-accent/15" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <StickyNote className="w-3.5 h-3.5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="end" className="w-72 p-3 space-y-2">
+              <p className="text-xs font-semibold">Nota para cocina</p>
+              <Textarea
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value.slice(0, 140))}
+                placeholder="Ej. Sin sal, término medio…"
+                rows={2}
+                className="text-sm"
+              />
+              <div className="flex flex-wrap gap-1">
+                {QUICK_NOTES.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => setNoteDraft((p) => (p ? p + ", " + q : q).slice(0, 140))}
+                    className="text-[10px] px-1.5 py-0.5 rounded-full border bg-muted hover:bg-accent/20"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] text-muted-foreground">{noteDraft.length}/140</span>
+                <Button size="sm" className="h-7 text-xs" onClick={() => onNotes(noteDraft.trim())}>
+                  Guardar
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={hasDisc ? `Descuento ${line.discountPct}%` : "Descuento"}
+                className={`h-7 min-w-[28px] px-1 grid place-items-center rounded transition text-[10px] font-semibold ${
+                  hasDisc ? "text-accent bg-accent/15" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {hasDisc ? `${line.discountPct}%` : <Percent className="w-3.5 h-3.5" />}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="end" className="w-56 p-3 space-y-2">
+              <p className="text-xs font-semibold">Descuento (%)</p>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={discDraft}
+                onChange={(e) => setDiscDraft(e.target.value)}
+                className="h-8 text-sm"
+              />
+              <div className="grid grid-cols-4 gap-1">
+                {[0, 5, 10, 15, 20, 25, 50, 100].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setDiscDraft(String(v))}
+                    className="text-[10px] py-1 rounded border bg-muted hover:bg-accent/20"
+                  >
+                    {v}%
+                  </button>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                className="w-full h-7 text-xs"
+                onClick={() => {
+                  const v = Math.max(0, Math.min(100, Number(discDraft) || 0));
+                  onDiscount(v);
+                }}
+              >
+                Aplicar
+              </Button>
+            </PopoverContent>
+          </Popover>
+
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            aria-label={`Eliminar ${line.name}`}
+            className="h-7 w-7 grid place-items-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
       {hasNote && (
-        <p className="text-[11px] italic text-accent-foreground bg-accent/15 rounded px-1.5 py-0.5 ml-0.5">
-          📝 {line.notes}
+        <p className="mt-1 text-[10px] italic text-accent-foreground bg-accent/10 rounded px-1.5 py-0.5 truncate">
+          {line.notes}
         </p>
       )}
-
-      <div className="flex items-center gap-1 -mt-0.5">
-        {/* Nota cocina */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label={hasNote ? `Editar nota: ${line.notes}` : "Añadir nota para cocina"}
-              className={`flex items-center gap-1 text-[11px] px-2 h-7 rounded border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                hasNote ? "border-accent text-accent bg-accent/10" : "border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <StickyNote className="w-3 h-3" />
-              Nota
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="top" className="w-72 p-3 space-y-2">
-            <p className="text-xs font-semibold">Nota para cocina</p>
-            <Textarea
-              value={noteDraft}
-              onChange={(e) => setNoteDraft(e.target.value.slice(0, 140))}
-              placeholder="Ej. Sin sal, término medio…"
-              rows={2}
-              className="text-sm"
-            />
-            <div className="flex flex-wrap gap-1">
-              {QUICK_NOTES.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => setNoteDraft((p) => (p ? p + ", " + q : q).slice(0, 140))}
-                  className="text-[10px] px-1.5 py-0.5 rounded-full border bg-muted hover:bg-accent/20"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] text-muted-foreground">{noteDraft.length}/140</span>
-              <Button size="sm" className="h-7 text-xs" onClick={() => onNotes(noteDraft.trim())}>
-                Guardar
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Descuento */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label={hasDisc ? `Editar descuento ${line.discountPct}%` : "Aplicar descuento de línea"}
-              className={`flex items-center gap-1 text-[11px] px-2 h-7 rounded border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                hasDisc ? "border-accent text-accent bg-accent/10" : "border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Percent className="w-3 h-3" />
-              {hasDisc ? `${line.discountPct}%` : "Desc"}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="top" className="w-56 p-3 space-y-2">
-            <p className="text-xs font-semibold">Descuento (%)</p>
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              value={discDraft}
-              onChange={(e) => setDiscDraft(e.target.value)}
-              className="h-8 text-sm"
-            />
-            <div className="grid grid-cols-4 gap-1">
-              {[0, 5, 10, 15, 20, 25, 50, 100].map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setDiscDraft(String(v))}
-                  className="text-[10px] py-1 rounded border bg-muted hover:bg-accent/20"
-                >
-                  {v}%
-                </button>
-              ))}
-            </div>
-            <Button
-              size="sm"
-              className="w-full h-7 text-xs"
-              onClick={() => {
-                const v = Math.max(0, Math.min(100, Number(discDraft) || 0));
-                onDiscount(v);
-              }}
-            >
-              Aplicar
-            </Button>
-          </PopoverContent>
-        </Popover>
-
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Eliminar ${line.name} del ticket`}
-          className="ml-auto inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive transition"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
     </div>
   );
 }
