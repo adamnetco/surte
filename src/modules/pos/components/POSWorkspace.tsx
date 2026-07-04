@@ -1154,6 +1154,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             <Button variant="outline" className="w-full justify-start" onClick={handleVentasDelDia}>
               <BarChart3 className="w-4 h-4 mr-2" /> Ventas del día
             </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setPaymentsReportOpen(true)}>
+              <Wallet className="w-4 h-4 mr-2" /> Métodos de pago (reporte)
+            </Button>
             <Button variant="outline" className="w-full justify-start" onClick={handleCajon}>
               <Wallet className="w-4 h-4 mr-2" /> Abrir cajón monedero
             </Button>
