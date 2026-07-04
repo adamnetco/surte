@@ -442,6 +442,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
 
   const addProduct = (p: Product) => {
+    // Táctil: feedback háptico corto al agregar. Silencioso si el device no soporta.
+    try { navigator.vibrate?.(6); } catch { /* noop */ }
     // Slice 3-food: si el producto tiene modifier_groups, abrir picker antes de añadir.
     if (isFood && productsWithMods.has(p.id)) {
       setModPickerProduct(p);

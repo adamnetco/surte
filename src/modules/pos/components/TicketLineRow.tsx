@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Trash2, Plus, Minus, StickyNote, Percent } from "lucide-react";
+import Numpad from "./Numpad";
 
 export interface TicketLineData {
   productId: string;
@@ -32,6 +33,9 @@ const QUICK_NOTES = ["Sin cebolla", "Sin sal", "Sin picante", "Para llevar", "Bi
 export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscount, selected, onSelect }: Props) {
   const [noteDraft, setNoteDraft] = useState(line.notes ?? "");
   const [discDraft, setDiscDraft] = useState(String(line.discountPct ?? 0));
+  const [discSheetOpen, setDiscSheetOpen] = useState(false);
+  const [qtySheetOpen, setQtySheetOpen] = useState(false);
+  const [qtyDraft, setQtyDraft] = useState(String(line.quantity));
   const hasNote = !!line.notes?.trim();
   const hasDisc = (line.discountPct ?? 0) > 0;
   const finalTotal = hasDisc ? line.total * (1 - (line.discountPct ?? 0) / 100) : line.total;
@@ -129,22 +133,57 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
           </p>
         </div>
 
-        {/* Stepper compacto — targets táctiles h-9 (36px), zona activa aún mayor por padding del row */}
+        {/* Stepper táctil: −/+ h-9, número tappable → Numpad para cantidades grandes */}
         <div className="flex items-center rounded-md border border-border overflow-hidden bg-background">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onQty(-1); }}
+            onClick={(e) => { e.stopPropagation(); try { navigator.vibrate?.(4); } catch { /* noop */ } onQty(-1); }}
             aria-label="Reducir"
             className="h-9 w-9 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
           >
             <Minus className="w-4 h-4" />
           </button>
-          <span className="w-8 text-center text-[13px] font-bold tabular-nums" aria-live="polite">
-            {line.quantity}
-          </span>
+          <Sheet open={qtySheetOpen} onOpenChange={setQtySheetOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setQtyDraft(String(line.quantity)); }}
+                aria-label={`Editar cantidad, actualmente ${line.quantity}`}
+                className="h-9 min-w-[36px] px-1 grid place-items-center text-[13px] font-bold tabular-nums hover:bg-muted transition touch-manipulation"
+              >
+                {line.quantity}
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-w-md mx-auto rounded-t-2xl p-4 pb-6">
+              <SheetHeader className="mb-3">
+                <SheetTitle className="text-base">Cantidad · {line.name}</SheetTitle>
+              </SheetHeader>
+              <div className="mb-3 h-16 rounded-lg border bg-muted/30 grid place-items-center text-3xl font-heading font-bold tabular-nums">
+                {qtyDraft || "0"}
+              </div>
+              <Numpad
+                value={qtyDraft}
+                onChange={setQtyDraft}
+                maxDigits={4}
+                presets={[
+                  { label: "×2", value: 2 },
+                  { label: "×5", value: 5 },
+                  { label: "×10", value: 10 },
+                  { label: "×12", value: 12 },
+                ]}
+                confirmLabel="Aplicar cantidad"
+                confirmDisabled={!qtyDraft || Number(qtyDraft) <= 0}
+                onConfirm={() => {
+                  const n = Math.max(1, Math.min(9999, Number(qtyDraft) || 1));
+                  onQty(n - line.quantity);
+                  setQtySheetOpen(false);
+                }}
+              />
+            </SheetContent>
+          </Sheet>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onQty(1); }}
+            onClick={(e) => { e.stopPropagation(); try { navigator.vibrate?.(4); } catch { /* noop */ } onQty(1); }}
             aria-label="Aumentar"
             className="h-9 w-9 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
           >
@@ -168,11 +207,11 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
                 type="button"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={hasNote ? "Editar nota" : "Añadir nota"}
-                className={`h-7 w-7 grid place-items-center rounded transition ${
+                className={`h-9 w-9 grid place-items-center rounded transition touch-manipulation ${
                   hasNote ? "text-accent bg-accent/15" : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                <StickyNote className="w-3.5 h-3.5" />
+                <StickyNote className="w-4 h-4" />
               </button>
             </PopoverTrigger>
             <PopoverContent side="top" align="end" className="w-72 p-3 space-y-2">
@@ -205,61 +244,56 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
             </PopoverContent>
           </Popover>
 
-          <Popover>
-            <PopoverTrigger asChild>
+          <Sheet open={discSheetOpen} onOpenChange={setDiscSheetOpen}>
+            <SheetTrigger asChild>
               <button
                 type="button"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); setDiscDraft(String(line.discountPct ?? 0)); }}
                 aria-label={hasDisc ? `Descuento ${line.discountPct}%` : "Descuento"}
-                className={`h-7 min-w-[28px] px-1 grid place-items-center rounded transition text-[10px] font-semibold ${
+                className={`h-9 min-w-[36px] px-1.5 grid place-items-center rounded transition text-[11px] font-semibold touch-manipulation ${
                   hasDisc ? "text-accent bg-accent/15" : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                {hasDisc ? `${line.discountPct}%` : <Percent className="w-3.5 h-3.5" />}
+                {hasDisc ? `${line.discountPct}%` : <Percent className="w-4 h-4" />}
               </button>
-            </PopoverTrigger>
-            <PopoverContent side="top" align="end" className="w-56 p-3 space-y-2">
-              <p className="text-xs font-semibold">Descuento (%)</p>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={discDraft}
-                onChange={(e) => setDiscDraft(e.target.value)}
-                className="h-8 text-sm"
-              />
-              <div className="grid grid-cols-4 gap-1">
-                {[0, 5, 10, 15, 20, 25, 50, 100].map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setDiscDraft(String(v))}
-                    className="text-[10px] py-1 rounded border bg-muted hover:bg-accent/20"
-                  >
-                    {v}%
-                  </button>
-                ))}
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-w-md mx-auto rounded-t-2xl p-4 pb-6">
+              <SheetHeader className="mb-3">
+                <SheetTitle className="text-base">Descuento · {line.name}</SheetTitle>
+              </SheetHeader>
+              <div className="mb-3 h-16 rounded-lg border bg-muted/30 grid place-items-center text-3xl font-heading font-bold tabular-nums">
+                {discDraft || "0"}%
               </div>
-              <Button
-                size="sm"
-                className="w-full h-7 text-xs"
-                onClick={() => {
+              <Numpad
+                value={discDraft}
+                onChange={setDiscDraft}
+                maxDigits={3}
+                presets={[
+                  { label: "0%", value: 0 },
+                  { label: "5%", value: 5 },
+                  { label: "10%", value: 10, highlight: true },
+                  { label: "15%", value: 15 },
+                  { label: "20%", value: 20 },
+                  { label: "50%", value: 50 },
+                  { label: "100%", value: 100 },
+                ]}
+                confirmLabel="Aplicar descuento"
+                onConfirm={() => {
                   const v = Math.max(0, Math.min(100, Number(discDraft) || 0));
                   onDiscount(v);
+                  setDiscSheetOpen(false);
                 }}
-              >
-                Aplicar
-              </Button>
-            </PopoverContent>
-          </Popover>
+              />
+            </SheetContent>
+          </Sheet>
 
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            onClick={(e) => { e.stopPropagation(); try { navigator.vibrate?.(8); } catch { /* noop */ } onRemove(); }}
             aria-label={`Eliminar ${line.name}`}
-            className="h-7 w-7 grid place-items-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+            className="h-9 w-9 grid place-items-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition touch-manipulation"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
