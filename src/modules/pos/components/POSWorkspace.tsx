@@ -1021,7 +1021,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   // A11y — anuncia cambios de mesa activa (asignar / liberar).
   useEffect(() => {
     if (!activeTableOrder) return;
-    setSrAnnounce(`Mesa activa: ${activeTableOrder.tableNumber ?? "sin número"}.`);
+    setSrAnnounce(`Mesa activa: ${activeTableOrder.tableLabel ?? "sin número"}.`);
   }, [activeTableOrder?.tableId]);
 
   // ===== Cobro =====
