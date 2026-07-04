@@ -110,6 +110,15 @@ function createWindow() {
 ipcMain.handle("license:status", () => ({ fingerprint: machineFingerprint(), hasLicense: !!decFile(LIC_FILE) }));
 ipcMain.handle("license:activate", async (_e, key) => activate(key));
 
+// Window controls — llamados desde AppDesktopBar (renderer) vía preload bridge.
+ipcMain.handle("window:minimize", () => { if (win) win.minimize(); });
+ipcMain.handle("window:maximize", () => {
+  if (!win) return;
+  if (win.isMaximized()) win.unmaximize(); else win.maximize();
+});
+ipcMain.handle("window:close", () => { if (win) win.close(); });
+ipcMain.handle("window:is-maximized", () => !!(win && win.isMaximized()));
+
 app.whenReady().then(async () => {
   try { printAgent.start(); } catch (e) { console.error("[print-agent] failed to start:", e); }
   createWindow();
