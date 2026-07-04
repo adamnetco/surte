@@ -2173,6 +2173,14 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
       <POSShortcutsOverlay open={helpOpen} onOpenChange={setHelpOpen} />
 
+      <ParkedTicketsSheet
+        organizationId={organizationId}
+        currentCashSessionId={session.id}
+        currentUserId={userId}
+        hasActiveTicket={ticket.length > 0}
+        onResume={resumeParked}
+      />
+
       <POSQuickCreate
         open={quickCreateOpen}
         onOpenChange={setQuickCreateOpen}
