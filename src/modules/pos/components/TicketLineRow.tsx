@@ -130,22 +130,57 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
           </p>
         </div>
 
-        {/* Stepper compacto — targets táctiles h-9 (36px), zona activa aún mayor por padding del row */}
+        {/* Stepper táctil: −/+ h-9, número tappable → Numpad para cantidades grandes */}
         <div className="flex items-center rounded-md border border-border overflow-hidden bg-background">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onQty(-1); }}
+            onClick={(e) => { e.stopPropagation(); try { navigator.vibrate?.(4); } catch { /* noop */ } onQty(-1); }}
             aria-label="Reducir"
             className="h-9 w-9 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
           >
             <Minus className="w-4 h-4" />
           </button>
-          <span className="w-8 text-center text-[13px] font-bold tabular-nums" aria-live="polite">
-            {line.quantity}
-          </span>
+          <Sheet open={qtySheetOpen} onOpenChange={setQtySheetOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setQtyDraft(String(line.quantity)); }}
+                aria-label={`Editar cantidad, actualmente ${line.quantity}`}
+                className="h-9 min-w-[36px] px-1 grid place-items-center text-[13px] font-bold tabular-nums hover:bg-muted transition touch-manipulation"
+              >
+                {line.quantity}
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-w-md mx-auto rounded-t-2xl p-4 pb-6">
+              <SheetHeader className="mb-3">
+                <SheetTitle className="text-base">Cantidad · {line.name}</SheetTitle>
+              </SheetHeader>
+              <div className="mb-3 h-16 rounded-lg border bg-muted/30 grid place-items-center text-3xl font-heading font-bold tabular-nums">
+                {qtyDraft || "0"}
+              </div>
+              <Numpad
+                value={qtyDraft}
+                onChange={setQtyDraft}
+                maxDigits={4}
+                presets={[
+                  { label: "×2", value: 2 },
+                  { label: "×5", value: 5 },
+                  { label: "×10", value: 10 },
+                  { label: "×12", value: 12 },
+                ]}
+                confirmLabel="Aplicar cantidad"
+                confirmDisabled={!qtyDraft || Number(qtyDraft) <= 0}
+                onConfirm={() => {
+                  const n = Math.max(1, Math.min(9999, Number(qtyDraft) || 1));
+                  onQty(n - line.quantity);
+                  setQtySheetOpen(false);
+                }}
+              />
+            </SheetContent>
+          </Sheet>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onQty(1); }}
+            onClick={(e) => { e.stopPropagation(); try { navigator.vibrate?.(4); } catch { /* noop */ } onQty(1); }}
             aria-label="Aumentar"
             className="h-9 w-9 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
           >
