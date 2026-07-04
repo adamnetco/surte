@@ -1844,7 +1844,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <span className="font-seg7 text-2xl xl:text-[30px] tabular-nums leading-tight text-primary" aria-hidden="true">
                   {COP(totals.total)}
                 </span>
-                {(totals.globalDisc > 0 || totals.tax > 0) && (
+                {ticket.length > 0 && (
                   <span className="text-[9px] tabular-nums text-muted-foreground leading-none" aria-hidden="true">
                     Sub {COP(totals.lineSubtotal)}
                   </span>
