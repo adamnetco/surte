@@ -193,7 +193,7 @@ export default function POSPinLock({
       const t = e.target as HTMLElement | null;
       if (t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable) return;
       e.preventDefault();
-      lockNow();
+      lockNow("hotkey");
     };
     window.addEventListener("keydown", handler);
     // Evento global disparado desde AppDesktopBar → "Bloquear pantalla".
