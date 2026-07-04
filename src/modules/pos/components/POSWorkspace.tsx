@@ -156,7 +156,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const productsWithMods = useProductsWithModifiers(organizationId);
   const [driver, setDriver] = useState<DriverInfo | null>(null); // para modo domicilio
   const [driverSheetOpen, setDriverSheetOpen] = useState(false);
-  const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
+  
   const [ticketNote, setTicketNote] = useState("");
   const [globalDiscPct, setGlobalDiscPct] = useState(0);
   const [priceListId, setPriceListId] = useState<string | null>(null);
