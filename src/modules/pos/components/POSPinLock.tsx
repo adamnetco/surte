@@ -34,6 +34,20 @@ export default function POSPinLock({
   const [firstPin, setFirstPin] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+
+  // Bloqueo de scroll del body mientras el overlay está activo.
+  // Evita que el ticket se desplace o reciba toques por debajo del backdrop.
+  useEffect(() => {
+    if (!locked) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    // Focus inicial en el modal (el Numpad captura los siguientes eventos).
+    dialogRef.current?.focus();
+    return () => { document.body.style.overflow = prev; };
+  }, [locked]);
+
 
   const hashPin = async (pin: string) => {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
