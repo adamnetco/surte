@@ -266,17 +266,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       }));
       setPosTables(mapped);
     };
-    if (isFood) void load();
-    const ch = isFood
-      ? (supabase as any)
-          .channel(`dining-tables-${organizationId}`)
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${organizationId}` },
-            load
-          )
-          .subscribe()
-      : null;
+    void load();
+    const ch = (supabase as any)
+      .channel(`dining-tables-${organizationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${organizationId}` },
+        load
+      )
+      .subscribe();
     return () => {
       cancel = true;
       if (ch) (supabase as any).removeChannel(ch);
