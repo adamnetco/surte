@@ -114,7 +114,9 @@ export default function SaleCompleteDialog({
     return () => window.clearInterval(iv);
   }, [open, printState, autoCloseMs, closeAndReset]);
 
-  // Hotkeys globales — solo si el foco no está en un editable (protege numpad y otros inputs)
+  // Hotkeys globales — captura en fase capture y stopImmediatePropagation para
+  // no colisionar con los F-keys del workspace (usePOSHotkeys). Ignora eventos
+  // desde campos editables (protege numpad y otros inputs).
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -123,26 +125,50 @@ export default function SaleCompleteDialog({
       const editable =
         tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el?.isContentEditable;
       if (editable) return;
-      if (e.key === "Enter") {
-        e.preventDefault();
+
+      // Acciones del modal — SitricPOS-style F-keys.
+      const isYes = e.key === "Enter" || e.key === "F10" || e.key === "F12";
+      const isNo = e.key === "Escape";
+      const isPrint = e.key === "F1"; // Imprimir POS (reimprimir)
+      const isInvoice = e.key === "F2"; // Facturar DIAN
+      const isNewSale = e.key === "F3"; // Nueva venta sin imprimir
+      const isEmit = canEmitInvoice && isInvoice;
+
+      if (!(isYes || isNo || isPrint || isEmit || isNewSale)) return;
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      if (isYes) {
         if (printState === "printing") return;
-        // Éxito o idle → imprime + cierra. Error → reintenta.
-        if (printState === "error") {
-          runPrint();
-        } else if (printState === "success") {
-          closeAndReset();
-        } else {
-          runPrint().then(closeAndReset).catch(() => { /* queda en error */ });
-        }
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        if (printState === "printing") return; // no abandonar durante impresión
+        if (printState === "error") { runPrint(); return; }
+        if (printState === "success") { closeAndReset(); return; }
+        runPrint().then(closeAndReset).catch(() => { /* queda en error */ });
+        return;
+      }
+      if (isNo) {
+        if (printState === "printing") return;
+        closeAndReset();
+        return;
+      }
+      if (isPrint) {
+        if (printState === "printing") return;
+        void runPrint();
+        return;
+      }
+      if (isEmit) {
+        onEmitInvoice();
+        return;
+      }
+      if (isNewSale) {
+        if (printState === "printing") return;
         closeAndReset();
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, printState, runPrint, closeAndReset]);
+    // capture=true → corre antes que usePOSHotkeys en window
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [open, printState, runPrint, closeAndReset, canEmitInvoice, onEmitInvoice]);
 
   const toggleSound = () => {
     const next = !soundOn;
