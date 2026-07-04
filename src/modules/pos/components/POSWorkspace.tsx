@@ -1003,6 +1003,27 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     return { lineSubtotal, globalDisc, subtotal, tax, total: subtotal + tax };
   }, [ticket, globalDiscPct]);
 
+  // A11y — anuncia el total al lector de pantalla cuando cambia, con debounce
+  // para evitar spam mientras el usuario ajusta cantidades rápido. Se omite
+  // el estado inicial (ticket vacío) para no repetir "cero" al montar.
+  useEffect(() => {
+    if (ticket.length === 0) return;
+    const t = window.setTimeout(() => {
+      const fmt = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+      const items = ticket.length;
+      setSrAnnounce(
+        `Total del ticket: ${fmt.format(totals.total)}. ${items} ${items === 1 ? "artículo" : "artículos"}.`,
+      );
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [totals.total, ticket.length]);
+
+  // A11y — anuncia cambios de mesa activa (asignar / liberar).
+  useEffect(() => {
+    if (!activeTableOrder) return;
+    setSrAnnounce(`Mesa activa: ${activeTableOrder.tableNumber ?? "sin número"}.`);
+  }, [activeTableOrder?.tableId]);
+
   // ===== Cobro =====
   // Guard contra doble-submit: el await de enqueue + el batch de setState
   // dejaban la puerta abierta a que un Enter/click repetido encolara la venta
