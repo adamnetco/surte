@@ -1125,23 +1125,14 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       />
 
 
-      {/* Tabs de categorías (60%) + Cliente (40%) */}
+      {/* Tabs de categorías — ancho completo (el cliente se movió al header del ticket) */}
       <div className="flex items-stretch border-b bg-card">
-        <div className="flex-1 min-w-0 border-r">
+        <div className="flex-1 min-w-0">
           <POSCategoryTabs
             categories={categories}
             activeId={activeCategory}
             onChange={setActiveCategory}
             counts={productsByCategory}
-          />
-        </div>
-        <div className="w-[160px] sm:w-[200px] shrink-0 px-2 py-2 flex items-center">
-          <POSCustomerPicker
-            customer={customer}
-            onChange={setCustomer}
-            requireEinvoice={false}
-            compact
-            openCreateSignal={customerOpenSignal}
           />
         </div>
       </div>
@@ -1506,11 +1497,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           {/* Header compacto: Ticket + modo (izq) · TOTAL XL (der) — aprovecha el ancho liberado */}
           <div data-testid="ticket-header" className="px-3 pt-3 pb-2 border-b space-y-2 bg-gradient-to-b from-card to-muted/10">
             <div className="flex items-stretch gap-2">
-              {/* Bloque izquierdo: título + chip modo + contador */}
-              <div className="flex flex-col justify-between min-w-0 flex-1">
+              {/* Bloque izquierdo: CLIENTE (protagonista) + meta ticket abajo */}
+              <div className="flex flex-col justify-between min-w-0 flex-1 gap-1.5">
+                {/* CLIENTE — primer nivel de jerarquía */}
+                <POSCustomerPicker
+                  customer={customer}
+                  onChange={setCustomer}
+                  requireEinvoice={false}
+                  compact
+                  openCreateSignal={customerOpenSignal}
+                />
+
+                {/* Meta ticket: título · modo · contador · sub-contexto */}
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <FileText className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
-                  <h2 data-testid="ticket-title" className="font-semibold text-[13px] truncate">Ticket</h2>
+                  <FileText className="w-3 h-3 text-muted-foreground shrink-0" aria-hidden="true" />
+                  <h2 data-testid="ticket-title" className="font-semibold text-[11px] text-muted-foreground truncate">Ticket</h2>
                   <span
                     data-testid="ticket-mode-chip"
                     className="text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 shrink-0"
@@ -1520,6 +1521,35 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                     {POS_MODES[saleMode].short}
                     {saleMode === "mesa" && tableLabel && ` · ${tableLabel}`}
                   </span>
+                  {saleMode === "mesa" && (
+                    <button
+                      type="button"
+                      data-testid="ticket-mesa-btn"
+                      onClick={() => setTableSheetOpen(true)}
+                      aria-label={tableLabel ? `Mesa asignada: ${tableLabel}. Cambiar mesa` : "Seleccionar mesa (F5)"}
+                      aria-keyshortcuts="F5"
+                      className="h-6 px-1.5 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1 text-[10px] font-bold text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    >
+                      <Utensils className="w-3 h-3 text-primary" aria-hidden="true" />
+                      <span className="truncate">{tableLabel ? `Mesa ${tableLabel}` : "Mesa"}</span>
+                    </button>
+                  )}
+                  {saleMode === "domicilio" && (
+                    <button
+                      type="button"
+                      onClick={() => setDriverSheetOpen(true)}
+                      className="h-6 px-1.5 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1 text-[10px] font-bold text-foreground transition"
+                    >
+                      <Bike className="w-3 h-3 text-primary" />
+                      <span className="truncate">{driver ? driver.name : "Domiciliario"}</span>
+                    </button>
+                  )}
+                  {saleMode === "autoservicio" && (
+                    <span className="inline-flex items-center gap-1 px-1.5 h-6 rounded-md border bg-accent/10 text-accent border-accent/30 text-[10px] font-extrabold uppercase tracking-wide">
+                      <ShoppingBag className="w-3 h-3" />
+                      LLEVAR
+                    </span>
+                  )}
                   <span
                     className="text-[10px] font-semibold tabular-nums text-muted-foreground ml-auto shrink-0"
                     aria-label={`${ticket.length} ${ticket.length === 1 ? "ítem" : "ítems"} en el ticket`}
@@ -1540,45 +1570,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                     {mobileTicketExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                {/* Contexto rápido compacto por modo */}
-                {saleMode === "mesa" && (
-                  <button
-                    type="button"
-                    data-testid="ticket-mesa-btn"
-                    onClick={() => setTableSheetOpen(true)}
-                    aria-label={tableLabel ? `Mesa asignada: ${tableLabel}. Cambiar mesa` : "Seleccionar mesa (F5)"}
-                    aria-keyshortcuts="F5"
-                    className="mt-1 h-8 px-2 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1.5 text-[11px] font-bold text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                  >
-                    <Utensils className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                    <span className="truncate">{tableLabel ? `Mesa ${tableLabel}` : "Mesa"}</span>
-                    <kbd className="ml-auto px-1 py-0 bg-muted rounded text-[9px] font-mono" aria-hidden="true">F5</kbd>
-                  </button>
-                )}
-                {saleMode === "domicilio" && (
-                  <button
-                    type="button"
-                    onClick={() => setDriverSheetOpen(true)}
-                    className="mt-1 h-8 px-2 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1.5 text-[11px] font-bold text-foreground transition"
-                  >
-                    <Bike className="w-3.5 h-3.5 text-primary" />
-                    <span className="truncate">{driver ? driver.name : "Domiciliario"}</span>
-                    <kbd className="ml-auto px-1 py-0 bg-muted rounded text-[9px] font-mono">F6</kbd>
-                  </button>
-                )}
                 {saleMode === "autoservicio" && (
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <span className="inline-flex items-center gap-1 px-1.5 h-7 rounded-md border bg-accent/10 text-accent border-accent/30 text-[10px] font-extrabold uppercase tracking-wide">
-                      <ShoppingBag className="w-3 h-3" />
-                      LLEVAR
-                    </span>
-                    <Input
-                      value={pickupName}
-                      onChange={(e) => setPickupName(e.target.value)}
-                      placeholder="Nombre"
-                      className="h-7 text-[11px] flex-1 px-2"
-                    />
-                  </div>
+                  <Input
+                    value={pickupName}
+                    onChange={(e) => setPickupName(e.target.value)}
+                    placeholder="Nombre para pedido"
+                    className="h-7 text-[11px] px-2"
+                  />
                 )}
               </div>
 
