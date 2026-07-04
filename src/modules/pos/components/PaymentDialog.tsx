@@ -258,11 +258,11 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                     <Input
                       id={amountId}
                       ref={i === 0 ? firstAmountRef : undefined}
-                      type="number"
-                      inputMode="numeric"
-                      className="h-11 text-lg font-bold tabular-nums"
-                      value={p.amount || ""}
-                      onChange={(e) => updatePayment(i, { amount: Number(e.target.value) })}
+                      type="text"
+                      inputMode="none"
+                      readOnly
+                      className="h-14 text-2xl font-bold tabular-nums text-right"
+                      value={p.amount ? COP(p.amount) : "$0"}
                       onFocus={(e) => e.target.select()}
                     />
                   </div>
@@ -272,35 +272,27 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                       variant="ghost"
                       onClick={() => setPayments((prev) => prev.filter((_, j) => j !== i))}
                       aria-label={`Eliminar pago ${i + 1}`}
-                      className="h-11 w-11"
+                      className="h-14 w-14"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5" />
                     </Button>
                   )}
                 </div>
 
-                {/* Quick-cash solo para efectivo */}
-                {p.method === "efectivo" && quick.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    <button
-                      type="button"
-                      onClick={() => updatePayment(i, { amount: remaining })}
-                      className="px-2.5 h-8 rounded-md border border-primary/40 bg-primary/10 text-primary text-[11px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      Exacto · {COP(remaining)}
-                    </button>
-                    {quick.filter((v) => v !== remaining).map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => updatePayment(i, { amount: v })}
-                        className="px-2.5 h-8 rounded-md border bg-muted hover:bg-accent/20 text-[11px] font-semibold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        {COP(v)}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {/* Numpad táctil siempre visible (operable sin teclado físico). */}
+                <Numpad
+                  compact
+                  value={String(p.amount || "")}
+                  onChange={(next) => updatePayment(i, { amount: Number(next.replace(/[^0-9]/g, "")) || 0 })}
+                  presets={
+                    p.method === "efectivo" && quick.length > 0
+                      ? [
+                          { label: `Exacto ${COP(remaining)}`, value: remaining, highlight: true },
+                          ...quick.filter((v) => v !== remaining).map((v) => ({ label: COP(v), value: v })),
+                        ]
+                      : undefined
+                  }
+                />
               </div>
             );
           })}
