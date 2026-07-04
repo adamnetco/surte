@@ -985,7 +985,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       {/* Cuerpo: catálogo + ticket */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Catálogo (50%) */}
-        <div className="flex flex-col min-h-0 lg:basis-[60%] lg:w-[60%] lg:flex-none flex-1">
+        <div className="flex flex-col min-h-0 flex-1 lg:min-w-0">
           {isFood && (
             <div className="flex items-center gap-1 px-2.5 py-1.5 bg-card border-b">
               <div className="inline-flex rounded-md border bg-muted/30 p-0.5 text-xs">
