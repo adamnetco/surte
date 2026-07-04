@@ -164,10 +164,10 @@ export default function POSPinLock({
             <Numpad
               value={draft}
               onChange={(v) => { setDraft(v); if (error) setError(null); }}
-              onConfirm={handleConfirm}
+              onConfirm={() => handleConfirm(draft)}
+              confirmDisabled={draft.length !== 4}
               maxDigits={4}
               confirmLabel={mode === "unlock" ? "Desbloquear" : mode === "set" ? "Siguiente" : "Confirmar"}
-              masked
             />
 
             {mode === "unlock" && (
