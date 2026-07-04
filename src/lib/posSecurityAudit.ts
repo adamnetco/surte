@@ -81,4 +81,5 @@ export function logPosSecurityEvent(event: PosSecurityEvent, ctx: AuditContext =
 /** Limpia el cache — llamar en logout para no reutilizar org entre usuarios. */
 export function resetPosSecurityAuditCache(): void {
   cachedOrgId = undefined;
+  inflight = null;
 }
