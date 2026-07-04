@@ -260,6 +260,8 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
           {line.notes}
         </p>
       )}
+      </div>
     </div>
   );
 }
+
