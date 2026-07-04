@@ -269,6 +269,8 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
 
       {/* Seguridad local del POS (PIN, auto-lock) */}
       <POSSecuritySettings />
+      <POSSecurityAuditList />
+
 
 
       {/* Default product image */}
