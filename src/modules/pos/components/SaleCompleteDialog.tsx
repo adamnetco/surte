@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, Plus, Volume2, VolumeX, FileSignature, X } from "lucide-react";
+import {
+  Printer, Plus, Volume2, VolumeX, FileSignature, X,
+  CheckCircle2, AlertTriangle, Loader2, RotateCcw,
+} from "lucide-react";
 import { getPosSoundEnabled, setPosSoundEnabled, playSaleSuccessSound } from "@/lib/posSoundPrefs";
+import { getSaleCompleteAutoCloseMs } from "@/lib/posSaleCompletePrefs";
 import { useEinvoiceLiveStatus } from "../hooks/useEinvoiceLiveStatus";
 import EinvoiceStatusBadge from "./EinvoiceStatusBadge";
 import EinvoiceActions from "./EinvoiceActions";
@@ -16,53 +20,129 @@ interface Props {
   change: number;
   canEmitInvoice: boolean;
   onNewSale: () => void;
-  onPrint: () => void;
+  /** Puede devolver Promise; si rechaza, el modal muestra estado de error con "Reintentar". */
+  onPrint: () => void | Promise<void>;
   onEmitInvoice: () => void;
   posOrderId?: string | null;
   customerEmail?: string | null;
   customerPhone?: string | null;
   isAdmin?: boolean;
+  /** Ms para autocerrar tras venta completada / impresión exitosa. Default: prefs. */
+  autoCloseMs?: number;
 }
 
 // Formato $ 123.456 (COP)
 const COP = (n: number) => "$ " + Math.round(n).toLocaleString("es-CO");
 
+type PrintState = "idle" | "printing" | "success" | "error";
+
 /**
  * SaleCompleteDialog — Estilo "caja registradora" con tipografía 7-segmentos.
- * Inspirado en POS colombianos tradicionales (VectorPOS, SitricPOS): 3 cifras
- * XXL leíbles a 2 metros, colores semánticos (azul = total, verde = recibido,
- * rojo = cambio a devolver). Hotkeys: Enter = Imprimir SÍ · Esc = NO.
+ * - Cifras XXL (azul total · verde recibido · rojo cambio) legibles a 2 m.
+ * - Verificación de impresión: idle → printing → success | error (con retry).
+ * - Auto-cierre configurable (default 8s), pausado si hay error de impresión.
+ * - Hotkeys: Enter = imprimir (o reintentar) · Esc = cerrar sin imprimir.
+ * - Autofocus en el botón SÍ (ref) sin interferir con el numpad (solo captura
+ *   Enter/Esc cuando el foco no está en un input/textarea editable).
  */
 export default function SaleCompleteDialog({
   open, onOpenChange, total, amountPaid, change, canEmitInvoice,
   onNewSale, onPrint, onEmitInvoice, posOrderId,
   customerEmail, customerPhone, isAdmin = false,
+  autoCloseMs,
 }: Props) {
   const einvoice = useEinvoiceLiveStatus(open ? posOrderId ?? null : null);
   const [soundOn, setSoundOn] = useState<boolean>(() => getPosSoundEnabled());
+  const [printState, setPrintState] = useState<PrintState>("idle");
+  const [printError, setPrintError] = useState<string | null>(null);
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
+  const yesBtnRef = useRef<HTMLButtonElement>(null);
+  const closedRef = useRef(false);
 
+  const closeAndReset = useCallback(() => {
+    if (closedRef.current) return;
+    closedRef.current = true;
+    onOpenChange(false);
+    onNewSale();
+  }, [onOpenChange, onNewSale]);
+
+  // Reset al abrir
   useEffect(() => {
-    if (open) playSaleSuccessSound();
+    if (open) {
+      closedRef.current = false;
+      setPrintState("idle");
+      setPrintError(null);
+      playSaleSuccessSound();
+      // autofocus estable en SÍ
+      const t = setTimeout(() => yesBtnRef.current?.focus(), 60);
+      return () => clearTimeout(t);
+    }
   }, [open]);
 
-  // Hotkeys: Enter imprime + nueva venta · Esc solo nueva venta.
+  // Lanza impresión con verificación
+  const runPrint = useCallback(async () => {
+    setPrintState("printing");
+    setPrintError(null);
+    try {
+      await Promise.resolve(onPrint());
+      setPrintState("success");
+    } catch (err) {
+      setPrintState("error");
+      setPrintError(err instanceof Error ? err.message : "No se pudo enviar a la impresora.");
+    }
+  }, [onPrint]);
+
+  // Auto-cierre — solo en idle (usuario no decidió) o success. Nunca en error.
+  useEffect(() => {
+    if (!open) return;
+    if (printState === "printing" || printState === "error") {
+      setRemainingMs(null);
+      return;
+    }
+    const totalMs = autoCloseMs ?? getSaleCompleteAutoCloseMs();
+    const start = Date.now();
+    setRemainingMs(totalMs);
+    const iv = window.setInterval(() => {
+      const left = totalMs - (Date.now() - start);
+      if (left <= 0) {
+        window.clearInterval(iv);
+        closeAndReset();
+      } else {
+        setRemainingMs(left);
+      }
+    }, 250);
+    return () => window.clearInterval(iv);
+  }, [open, printState, autoCloseMs, closeAndReset]);
+
+  // Hotkeys globales — solo si el foco no está en un editable (protege numpad y otros inputs)
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null;
+      const tag = el?.tagName;
+      const editable =
+        tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el?.isContentEditable;
+      if (editable) return;
       if (e.key === "Enter") {
         e.preventDefault();
-        onPrint();
-        onOpenChange(false);
-        onNewSale();
+        if (printState === "printing") return;
+        // Éxito o idle → imprime + cierra. Error → reintenta.
+        if (printState === "error") {
+          runPrint();
+        } else if (printState === "success") {
+          closeAndReset();
+        } else {
+          runPrint().then(closeAndReset).catch(() => { /* queda en error */ });
+        }
       } else if (e.key === "Escape") {
         e.preventDefault();
-        onOpenChange(false);
-        onNewSale();
+        if (printState === "printing") return; // no abandonar durante impresión
+        closeAndReset();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onPrint, onNewSale, onOpenChange]);
+  }, [open, printState, runPrint, closeAndReset]);
 
   const toggleSound = () => {
     const next = !soundOn;
@@ -70,12 +150,39 @@ export default function SaleCompleteDialog({
     setPosSoundEnabled(next);
   };
 
+  const handleYes = async () => {
+    if (printState === "printing") return;
+    if (printState === "error") { runPrint(); return; }
+    await runPrint();
+    // Si terminó ok, cerrar; si error, permanece abierto para reintentar
+    setTimeout(() => {
+      setPrintState((s) => {
+        if (s === "success") closeAndReset();
+        return s;
+      });
+    }, 0);
+  };
+
+  // Cierre controlado: bloquea cierre externo durante "printing"
+  const handleOpenChange = (v: boolean) => {
+    if (!v && printState === "printing") return;
+    if (!v) closeAndReset();
+    else onOpenChange(v);
+  };
+
+  const secondsLeft = remainingMs != null ? Math.ceil(remainingMs / 1000) : null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="max-w-[min(92vw,880px)] p-0 gap-0 border-4 border-foreground/10 bg-[#f7f5ee] dark:bg-[#0e1220] overflow-hidden [&>button.absolute]:hidden"
+        className="max-w-[min(92vw,880px)] p-0 gap-0 border-4 border-foreground/10 bg-[#f7f5ee] dark:bg-[#0e1220] overflow-hidden"
+        onOpenAutoFocus={(e) => {
+          // dejar autofocus manual en el botón SÍ (más predecible)
+          e.preventDefault();
+          setTimeout(() => yesBtnRef.current?.focus(), 20);
+        }}
       >
-        {/* Header discreto — el protagonista son las cifras */}
+        {/* Header discreto */}
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-foreground/10 bg-background/60">
           <div className="flex items-center gap-2">
             <motion.span
@@ -88,18 +195,23 @@ export default function SaleCompleteDialog({
             <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Venta completada
             </span>
+            {secondsLeft != null && printState !== "error" && (
+              <span className="ml-2 text-[10px] font-mono text-muted-foreground/70" aria-live="polite">
+                cierre auto en {secondsLeft}s
+              </span>
+            )}
           </div>
           <button
             type="button"
             onClick={toggleSound}
-            className="text-muted-foreground hover:text-foreground transition"
+            className="text-muted-foreground hover:text-foreground transition mr-8"
             aria-label={soundOn ? "Silenciar sonido" : "Activar sonido"}
           >
             {soundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
         </div>
 
-        {/* CIFRAS XXL — 7-segmentos, estilo caja registradora */}
+        {/* CIFRAS XXL */}
         <div className="px-6 sm:px-10 py-6 sm:py-8 space-y-5">
           {/* Total */}
           <AnimatePresence>
@@ -141,7 +253,7 @@ export default function SaleCompleteDialog({
             </div>
           </motion.div>
 
-          {/* Cambio — el dato crítico para el cajero */}
+          {/* Cambio */}
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -162,34 +274,71 @@ export default function SaleCompleteDialog({
           </motion.div>
         </div>
 
-        {/* Estado factura electrónica (compacto) */}
+        {/* Estado de impresión */}
+        {printState !== "idle" && (
+          <div className="px-6 sm:px-10 pb-2" aria-live="polite">
+            {printState === "printing" && (
+              <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <span>Enviando recibo a la impresora…</span>
+              </div>
+            )}
+            {printState === "success" && (
+              <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Recibo enviado correctamente.</span>
+              </div>
+            )}
+            {printState === "error" && (
+              <div className="flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+                <AlertTriangle className="w-4 h-4 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-semibold">No se pudo imprimir el recibo</div>
+                  <div className="text-xs opacity-90">
+                    {printError ?? "Revisa la impresora."} El ticket sigue reservado — puedes reintentar.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Factura electrónica */}
         {einvoice.status !== "idle" && (
           <div className="px-6 sm:px-10 pb-3">
             <EinvoiceStatusBadge snap={einvoice} className="w-full justify-center" />
           </div>
         )}
 
-        {/* Footer XXL — ¿Imprimir? SÍ / NO estilo caja */}
+        {/* Footer — ¿Imprimir? SÍ / NO */}
         <div className="border-t border-foreground/10 bg-background/60 px-5 sm:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm sm:text-base font-heading font-bold uppercase tracking-wider text-foreground/80">
-              Imprimir recibo
+              {printState === "error" ? "Reintentar impresión" : "Imprimir recibo"}
             </div>
             <div className="flex gap-2">
               <Button
+                ref={yesBtnRef}
                 variant="cta"
-                className="h-16 min-w-[110px] text-xl font-heading font-extrabold uppercase tracking-wider gap-2 shadow-md"
-                onClick={() => { onPrint(); onOpenChange(false); onNewSale(); }}
-                autoFocus
+                className="h-16 min-w-[120px] text-xl font-heading font-extrabold uppercase tracking-wider gap-2 shadow-md"
+                onClick={handleYes}
+                disabled={printState === "printing"}
               >
-                <Printer className="w-5 h-5" />
-                Sí
+                {printState === "printing" ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : printState === "error" ? (
+                  <RotateCcw className="w-5 h-5" />
+                ) : (
+                  <Printer className="w-5 h-5" />
+                )}
+                {printState === "error" ? "Reintentar" : "Sí"}
                 <kbd className="ml-1 px-1.5 py-0.5 bg-black/20 rounded text-[10px] font-mono">↵</kbd>
               </Button>
               <Button
                 variant="outline"
                 className="h-16 min-w-[110px] text-xl font-heading font-extrabold uppercase tracking-wider gap-2 border-2"
-                onClick={() => { onOpenChange(false); onNewSale(); }}
+                onClick={() => closeAndReset()}
+                disabled={printState === "printing"}
               >
                 <X className="w-5 h-5" />
                 No
@@ -198,12 +347,13 @@ export default function SaleCompleteDialog({
             </div>
           </div>
 
-          {/* Acciones secundarias — nueva venta / factura electrónica */}
+          {/* Acciones secundarias */}
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { onOpenChange(false); onNewSale(); }}
+              onClick={() => closeAndReset()}
+              disabled={printState === "printing"}
               className="h-10 font-heading font-semibold"
             >
               <Plus className="w-4 h-4 mr-1.5" /> Nueva venta
@@ -215,14 +365,14 @@ export default function SaleCompleteDialog({
                 customerEmail={customerEmail}
                 customerPhone={customerPhone}
                 isAdmin={isAdmin}
-                onReprintPos={onPrint}
+                onReprintPos={() => { void runPrint(); }}
               />
             ) : (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onEmitInvoice}
-                disabled={!canEmitInvoice}
+                disabled={!canEmitInvoice || printState === "printing"}
                 className="h-10 font-heading font-semibold"
                 title={canEmitInvoice ? "Emitir factura electrónica DIAN" : "Disponible al sincronizar"}
               >
