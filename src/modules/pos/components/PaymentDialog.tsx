@@ -278,15 +278,18 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
               <div key={i} className="rounded-lg border bg-card p-2.5 space-y-2">
                 {/* Chips de método */}
                 <div className="flex flex-wrap gap-1">
-                  {METHODS.map((m) => {
+                  {METHODS.map((m, mi) => {
                     const Icon = m.icon;
                     const active = p.method === m.key;
+                    const fkey = `F${mi + 1}`;
                     return (
                       <button
                         key={m.key}
                         type="button"
                         onClick={() => updatePayment(i, { method: m.key })}
                         aria-pressed={active}
+                        aria-keyshortcuts={fkey}
+                        title={`${m.label} (${fkey})`}
                         className={`inline-flex items-center gap-1 px-2.5 h-8 rounded-md border text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                           active
                             ? "bg-primary text-primary-foreground border-primary"
@@ -295,10 +298,14 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                       >
                         <Icon className="w-3.5 h-3.5" />
                         {m.label}
+                        <kbd className={`ml-1 px-1 py-0.5 rounded text-[9px] font-mono ${active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-background/70 text-muted-foreground"}`}>
+                          {fkey}
+                        </kbd>
                       </button>
                     );
                   })}
                 </div>
+
 
                 <div className="flex gap-2 items-end">
                   <div className="flex-1 space-y-1">
