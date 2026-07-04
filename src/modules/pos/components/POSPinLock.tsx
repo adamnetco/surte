@@ -186,7 +186,13 @@ export default function POSPinLock({
       lockNow();
     };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    // Evento global disparado desde AppDesktopBar → "Bloquear pantalla".
+    const onGlobalLock = () => lockNow();
+    window.addEventListener("pin-lock:lock", onGlobalLock);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      window.removeEventListener("pin-lock:lock", onGlobalLock);
+    };
   }, [lockNow]);
 
   return (
