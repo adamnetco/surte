@@ -6762,6 +6762,8 @@ export type Database = {
           tagline: string | null
           tax_id: string | null
           timezone: string
+          tip_default_pct: number
+          tip_enabled: boolean
           uiaf_threshold_amount: number | null
           uiaf_threshold_currency: string | null
           updated_at: string
@@ -6800,6 +6802,8 @@ export type Database = {
           tagline?: string | null
           tax_id?: string | null
           timezone?: string
+          tip_default_pct?: number
+          tip_enabled?: boolean
           uiaf_threshold_amount?: number | null
           uiaf_threshold_currency?: string | null
           updated_at?: string
@@ -6838,6 +6842,8 @@ export type Database = {
           tagline?: string | null
           tax_id?: string | null
           timezone?: string
+          tip_default_pct?: number
+          tip_enabled?: boolean
           uiaf_threshold_amount?: number | null
           uiaf_threshold_currency?: string | null
           updated_at?: string
