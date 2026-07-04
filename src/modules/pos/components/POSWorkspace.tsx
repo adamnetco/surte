@@ -820,6 +820,39 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     }
   };
 
+  // Escucha el evento global (AppDesktopBar → "Atajos de teclado") para abrir el overlay.
+  useEffect(() => {
+    const on = () => setHelpOpen(true);
+    window.addEventListener("app:open-shortcuts", on);
+    return () => window.removeEventListener("app:open-shortcuts", on);
+  }, []);
+
+  // Retomar ticket suspendido: reemplaza el ticket actual con los items guardados.
+  // Se llama desde ParkedTicketsSheet tras confirmación (si había ticket activo).
+  const resumeParked = (row: { items: ParkedTicketItem[]; customer_name: string | null; notes: string | null }) => {
+    const items = Array.isArray(row.items) ? row.items : [];
+    const rebuilt: TicketLine[] = items.map((it, i) => {
+      const unit = Number(it.unitPrice ?? 0);
+      const qty = Number(it.quantity ?? 1);
+      const prod = products.find((p) => p.id === it.productId);
+      return {
+        productId: it.productId,
+        name: it.name ?? prod?.name ?? `Item ${i + 1}`,
+        unitPrice: unit,
+        quantity: qty,
+        total: unit * qty,
+        notes: it.notes,
+        addedAt: Date.now() + i,
+      };
+    });
+    setTicket(rebuilt);
+    if (row.customer_name && !customer) setCustomer({ id: "resumed", name: row.customer_name });
+    if (row.notes) setTicketNote(row.notes);
+    toast.success(`Ticket retomado — ${rebuilt.length} ítem(s)`);
+  };
+
+
+
   // ===== Hotkeys =====
   usePOSHotkeys({
     onHelp: () => setHelpOpen((v) => !v),
