@@ -501,6 +501,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     [ticket, selectedLineId],
   );
 
+  // Sync numpad draft con la línea seleccionada (o última añadida)
+  useEffect(() => {
+    if (selectedLine) setNumpadDraft(String(selectedLine.quantity));
+    else setNumpadDraft("");
+  }, [selectedLine?.productId, selectedLine?.quantity]);
+
+  const applyNumpadQty = () => {
+    if (!selectedLine || !numpadDraft) return;
+    const n = Math.max(1, Math.min(9999, Number(numpadDraft) || 1));
+    setLineQty(selectedLine.productId, n);
+    try { navigator.vibrate?.(8); } catch { /* noop */ }
+  };
+
+
+
 
 
   // ===== Scanner handler =====
