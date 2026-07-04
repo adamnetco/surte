@@ -762,7 +762,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const dialogOpen = payOpen || closeOpen || helpOpen || cmdOpen || clearConfirmOpen || !!actionMode || !!saleComplete;
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden">
+    <div
+      className="h-[100dvh] flex flex-col bg-muted/30 overflow-hidden select-none [touch-action:manipulation] [overscroll-behavior:contain]"
+    >
       {/* Scanner global invisible */}
       <POSScannerListener onScan={handleScan} disabled={dialogOpen} />
 
