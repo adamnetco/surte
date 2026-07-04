@@ -128,24 +128,26 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
         aria-label={`${line.name}, cantidad ${line.quantity}. Desliza a la izquierda para eliminar.`}
       >
       <div className="flex items-center gap-2">
-        {/* Nombre + meta */}
+        {/* Nombre + meta — absorbe todo el espacio disponible */}
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-medium leading-tight truncate">{line.name}</p>
-          <p className="text-[10px] text-muted-foreground leading-tight tabular-nums">
-            {line.quantity} × {COP(line.unitPrice)}
-            {hasDisc && <span className="ml-1 text-accent font-semibold">−{line.discountPct}%</span>}
+          <p className="text-sm font-semibold leading-tight truncate text-foreground" title={line.name}>
+            {line.name}
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-tight tabular-nums mt-0.5">
+            <span>{line.quantity} × {COP(line.unitPrice)}</span>
+            {hasDisc && <span className="ml-1.5 text-accent font-semibold">−{line.discountPct}%</span>}
           </p>
         </div>
 
-        {/* Stepper táctil: −/+ h-9, número tappable → Numpad para cantidades grandes */}
-        <div className="flex items-center rounded-md border border-border overflow-hidden bg-background">
+        {/* Stepper táctil compacto */}
+        <div className="flex items-center rounded-md border border-border overflow-hidden bg-background shrink-0">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); try { navigator.vibrate?.(4); } catch { /* noop */ } onQty(-1); }}
             aria-label="Reducir"
-            className="h-9 w-9 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
+            className="h-9 w-8 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
           >
-            <Minus className="w-4 h-4" />
+            <Minus className="w-3.5 h-3.5" />
           </button>
           <Sheet open={qtySheetOpen} onOpenChange={setQtySheetOpen}>
             <SheetTrigger asChild>
@@ -153,7 +155,7 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setQtyDraft(String(line.quantity)); }}
                 aria-label={`Editar cantidad, actualmente ${line.quantity}`}
-                className="h-9 min-w-[36px] px-1 grid place-items-center text-[13px] font-bold tabular-nums hover:bg-muted transition touch-manipulation"
+                className="h-9 min-w-[32px] px-1 grid place-items-center text-[13px] font-bold tabular-nums hover:bg-muted transition touch-manipulation"
               >
                 {line.quantity}
               </button>
@@ -189,26 +191,27 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
             type="button"
             onClick={(e) => { e.stopPropagation(); try { navigator.vibrate?.(4); } catch { /* noop */ } onQty(1); }}
             aria-label="Aumentar"
-            className="h-9 w-9 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
+            className="h-9 w-8 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Total */}
-        <div className="w-[72px] text-right shrink-0">
+        <div className="w-[68px] text-right shrink-0">
           {hasDisc && (
             <p className="text-[9px] text-muted-foreground line-through tabular-nums leading-none">{COP(line.total)}</p>
           )}
-          <p className="text-[13px] font-bold tabular-nums leading-tight">{COP(finalTotal)}</p>
+          <p className="text-sm font-bold tabular-nums leading-tight text-foreground">{COP(finalTotal)}</p>
         </div>
 
-        {/* Acciones icon-only — estilo Kodigo: se revelan al hover/focus/seleccion, ocultas en reposo */}
+        {/* Acciones icon-only — colapsan por completo en reposo (no reservan ancho), aparecen en hover/focus/selected */}
         <div
-          className={`flex items-center gap-0.5 shrink-0 transition-opacity ${
-            selected ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+          className={`items-center gap-0.5 shrink-0 ${
+            selected ? "flex" : "hidden group-hover:flex focus-within:flex"
           }`}
         >
+
 
           <Popover>
             <PopoverTrigger asChild>
