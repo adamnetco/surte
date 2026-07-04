@@ -124,7 +124,46 @@ export default function POSTopBar({
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10 focus-visible:ring-2 focus-visible:ring-ring" aria-label="Abrir configuración del POS">
+          {onToggleRibbon && (
+            <button
+              type="button"
+              onClick={onToggleRibbon}
+              onDoubleClick={onHideRibbon}
+              aria-label={ribbonVisible ? "Ocultar barra de módulos (doble-click)" : "Mostrar barra de módulos"}
+              aria-pressed={ribbonVisible}
+              title={ribbonVisible ? "Ocultar cinta · doble-click para fijar oculto" : "Mostrar cinta de módulos"}
+              className={cn(
+                "inline-flex items-center justify-center h-9 w-9 rounded-md border transition focus-visible:ring-2 focus-visible:ring-ring",
+                ribbonVisible
+                  ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
+                  : "border-border text-muted-foreground hover:border-primary hover:text-primary",
+              )}
+            >
+              <PanelTop className="w-4 h-4" aria-hidden />
+            </button>
+          )}
+          <NavLink
+            to="/pos"
+            end
+            aria-label="Ir al panel del POS"
+            className={({ isActive }) =>
+              cn(
+                "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-md text-xs font-medium transition focus-visible:ring-2 focus-visible:ring-ring",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )
+            }
+          >
+            <LayoutGrid className="w-4 h-4" aria-hidden />
+            <span className="hidden sm:inline">Panel</span>
+          </NavLink>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 focus-visible:ring-2 focus-visible:ring-ring" aria-label="Abrir configuración del POS">
                 <Settings className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[320px]">
