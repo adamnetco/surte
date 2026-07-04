@@ -1,11 +1,18 @@
 // SURTÉ YA Desktop — entry principal Electron
 // Fingerprint de máquina + activación de licencia + heartbeat cada 30 min.
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, Menu } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
 const crypto = require("node:crypto");
 const printAgent = require("./print-agent.cjs");
+
+// Activar aceleración por hardware explícitamente (Chromium ya lo hace por defecto,
+// pero lo confirmamos y desactivamos software rendering fallback en Linux para GPUs
+// sin driver conocido — evita degradación silenciosa a canvas 2D CPU).
+app.commandLine.appendSwitch("enable-gpu-rasterization");
+app.commandLine.appendSwitch("enable-zero-copy");
+if (process.platform === "linux") app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
 const SUPA_URL = process.env.SURTEYA_SUPA_URL || "https://dimyhjzcwlgfczimqhet.supabase.co";
 const SUPA_ANON = process.env.SURTEYA_SUPA_ANON || "";
