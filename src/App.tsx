@@ -266,6 +266,7 @@ const App = () => (
                 <AgentBar />
               <BrowserRouter>
                 <AppDesktopBar />
+                <SystemStatusDialog />
                 <ApproachingLimitBanner />
                 <CityPickerModal />
                 <Analytics />
