@@ -1763,7 +1763,39 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               )}
             </div>
 
-            {/* Botón principal (cambia label según modo) — thumb-zone XL */}
+            {/* Fila 1: 2 acciones secundarias restaurante (Enviar a Mesa · Domicilio) */}
+            {(posModes.enabled.includes("mesa" as PosMode) || posModes.enabled.includes("domicilio" as PosMode)) && (
+              <div className="grid grid-cols-2 gap-2">
+                {posModes.enabled.includes("mesa" as PosMode) && (
+                  <Button
+                    variant="outline"
+                    className="h-11 text-xs font-semibold gap-1.5 border-primary/30 text-primary hover:bg-primary/5 [touch-action:manipulation] active:scale-95"
+                    disabled={ticket.length === 0 || !!activeTableOrder}
+                    onClick={openSendToTable}
+                    title="Guardar el ticket actual en una mesa"
+                    aria-label="Enviar ticket a una mesa"
+                  >
+                    <Send className="w-4 h-4" aria-hidden />
+                    <span>Enviar a Mesa</span>
+                  </Button>
+                )}
+                {posModes.enabled.includes("domicilio" as PosMode) && (
+                  <Button
+                    variant="outline"
+                    className="h-11 text-xs font-semibold gap-1.5 border-accent/40 text-accent hover:bg-accent/5 [touch-action:manipulation] active:scale-95"
+                    disabled={ticket.length === 0}
+                    onClick={openDeliveryFlow}
+                    title="Cobrar como domicilio (asigna repartidor)"
+                    aria-label="Cobrar como domicilio"
+                  >
+                    <Bike className="w-4 h-4" aria-hidden />
+                    <span>Domicilio</span>
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Botón principal XL — thumb-zone (jerarquía visual) */}
             <Button
               variant={saleMode === "consumo_interno" ? "cta-primary" : "cta"}
               className="w-full h-16 text-lg font-extrabold shadow-md active:scale-[0.98] transition-transform [touch-action:manipulation]"
@@ -1774,6 +1806,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               {saleMode === "consumo_interno" ? "REGISTRAR CORTESÍA" : "COBRAR"}
               <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">F2</kbd>
             </Button>
+
+            {/* Imprimir cuenta (pre-cuenta con propina) — link discreto */}
+            {posModes.enabled.includes("mesa" as PosMode) && (
+              <button
+                type="button"
+                onClick={handlePrintPreCheck}
+                disabled={ticket.length === 0}
+                className="w-full h-8 inline-flex items-center justify-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary hover:underline disabled:opacity-40 disabled:cursor-not-allowed transition"
+                title="Imprimir cuenta previa con propina sugerida (no fiscal)"
+                aria-label="Imprimir cuenta previa"
+              >
+                <ReceiptText className="w-3.5 h-3.5" aria-hidden />
+                <span>Imprimir cuenta {orgTip.enabled ? `(propina ${orgTip.pct}%)` : ""}</span>
+              </button>
+            )}
 
             {/* Acciones secundarias fila 1 — targets táctiles ≥44px */}
             <div className="grid grid-cols-3 gap-2">
