@@ -1834,3 +1834,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     </div>
   );
 }
+
+/** Chip inline para mostrar un atajo de teclado en el estado vacío del ticket. */
+function ShortcutHint({ k, label }: { k: string; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 px-1.5 py-1.5 rounded-md bg-muted/60 border border-border">
+      <kbd className="px-1.5 py-0.5 rounded bg-background border text-[9px] font-mono font-bold text-foreground">
+        {k}
+      </kbd>
+      <span className="text-[9px] text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
