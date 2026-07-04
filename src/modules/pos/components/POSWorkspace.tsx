@@ -1270,35 +1270,34 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                   <button
                     key={p.id}
                     onClick={() => addProduct(p)}
-                    className="group relative bg-card rounded-md border border-border hover:border-foreground/40 transition text-left overflow-hidden active:scale-[0.98] flex flex-col"
+                    className="group relative bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all text-left overflow-hidden active:scale-[0.98] flex flex-col focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
                     title={`${p.name}${cat ? ` · ${cat}` : ""} — ${COP(Number(p.price))}`}
                   >
                     {!isFood && idx < 9 && (
                       <kbd
-                        className="absolute top-1 left-1 z-10 px-1 py-0 text-[9px] font-semibold rounded bg-foreground/75 text-background"
+                        className="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-foreground/85 text-background shadow-sm"
                         aria-hidden="true"
                       >
                         {idx + 1}
                       </kbd>
                     )}
-                    <div className="aspect-[4/3] bg-muted overflow-hidden">
+                    <div className="aspect-square bg-gradient-to-br from-muted/60 to-muted overflow-hidden">
                       {p.image_url ? (
                         <img
                           src={p.image_url}
                           alt={p.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full grid place-items-center text-muted-foreground/40 text-2xl font-heading font-bold">
+                        <div className="w-full h-full grid place-items-center text-muted-foreground/50 text-4xl font-heading font-bold">
                           {p.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
-                    {/* Kodigo-style: sólo nombre + precio. Sin chip de categoría. */}
-                    <div className="px-2 py-1.5 leading-tight flex flex-col gap-0.5 flex-1">
-                      <p className="text-[11px] font-medium line-clamp-2 min-h-[1.7em] text-foreground">{p.name}</p>
-                      <span className="text-[12px] font-bold tabular-nums text-foreground mt-auto">
+                    <div className="px-2.5 py-2 leading-tight flex flex-col gap-1 flex-1">
+                      <p className="text-[12px] font-semibold line-clamp-2 min-h-[2em] text-foreground">{p.name}</p>
+                      <span className="text-[14px] font-extrabold tabular-nums text-primary mt-auto">
                         {COP(Number(p.price))}
                       </span>
                     </div>
