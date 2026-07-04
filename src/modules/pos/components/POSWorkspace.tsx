@@ -2080,6 +2080,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
       <POSPinLock userId={userId} cashierName={cashierName} />
 
+      {/* Región a11y — anuncia cambios del ticket a lectores de pantalla sin ocupar espacio visual. */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {srAnnounce}
+      </div>
+
+
       <PaymentDialog
         open={payOpen}
         onOpenChange={setPayOpen}
