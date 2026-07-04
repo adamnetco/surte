@@ -25,7 +25,10 @@ interface Props {
   onDiscount: (pct: number) => void;
   selected?: boolean;
   onSelect?: () => void;
+  /** Índice en la lista — usado para zebra sutil estilo Kodigo */
+  index?: number;
 }
+
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const QUICK_NOTES = ["Sin cebolla", "Sin sal", "Sin picante", "Para llevar", "Bien cocido", "Término medio"];
