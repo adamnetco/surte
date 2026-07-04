@@ -20,10 +20,10 @@ export const POS_MODES: Record<PosMode, PosModeMeta> = {
   },
   autoservicio: {
     key: "autoservicio",
-    label: "Autoservicio",
-    short: "Autoservicio",
+    label: "Mostrador",
+    short: "Mostrador",
     icon: ShoppingBag,
-    description: "Venta directa en caja (minimarket, ferretería, retail)",
+    description: "Venta directa en mostrador (rápida, sin mesa ni domicilio)",
   },
   domicilio: {
     key: "domicilio",
