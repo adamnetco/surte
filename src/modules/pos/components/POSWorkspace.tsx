@@ -1210,12 +1210,12 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                   <button
                     key={p.id}
                     onClick={() => addProduct(p)}
-                    className="group relative bg-card rounded-lg border border-border hover:border-primary/60 hover:shadow-md transition text-left overflow-hidden active:scale-[0.98] flex flex-col"
+                    className="group relative bg-card rounded-md border border-border hover:border-foreground/40 transition text-left overflow-hidden active:scale-[0.98] flex flex-col"
                     title={`${p.name}${cat ? ` · ${cat}` : ""} — ${COP(Number(p.price))}`}
                   >
                     {!isFood && idx < 9 && (
                       <kbd
-                        className="absolute top-1 left-1 z-10 px-1 py-0 text-[9px] font-semibold rounded bg-foreground/80 text-background"
+                        className="absolute top-1 left-1 z-10 px-1 py-0 text-[9px] font-semibold rounded bg-foreground/75 text-background"
                         aria-hidden="true"
                       >
                         {idx + 1}
@@ -1226,7 +1226,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                         <img
                           src={p.image_url}
                           alt={p.name}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="w-full h-full object-cover"
                           loading="lazy"
                         />
                       ) : (
@@ -1235,20 +1235,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                         </div>
                       )}
                     </div>
-                    <div className="px-1.5 py-1 leading-tight flex flex-col gap-0.5 flex-1">
-                      <p className="text-[11px] font-medium line-clamp-2 min-h-[1.7em]">{p.name}</p>
-                      <div className="flex items-center justify-between gap-1 mt-auto">
-                        {cat ? (
-                          <span className="text-[9px] text-muted-foreground truncate">{cat}</span>
-                        ) : <span />}
-                        <span className="text-[11px] font-bold text-primary tabular-nums shrink-0">
-                          {COP(Number(p.price))}
-                        </span>
-                      </div>
+                    {/* Kodigo-style: sólo nombre + precio. Sin chip de categoría. */}
+                    <div className="px-2 py-1.5 leading-tight flex flex-col gap-0.5 flex-1">
+                      <p className="text-[11px] font-medium line-clamp-2 min-h-[1.7em] text-foreground">{p.name}</p>
+                      <span className="text-[12px] font-bold tabular-nums text-foreground mt-auto">
+                        {COP(Number(p.price))}
+                      </span>
                     </div>
                   </button>
                   );
                 })}
+
               </div>
             )}
           </div>
