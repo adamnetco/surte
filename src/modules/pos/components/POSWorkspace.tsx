@@ -567,6 +567,56 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     try { navigator.vibrate?.(8); } catch { /* noop */ }
   };
 
+  // ===== Teclado físico → Numpad (línea seleccionada) =====
+  // 0-9 → concatena · . o , → decimal · Backspace → borra · Enter → confirma
+  // · Escape → limpia. Sólo cuando NO se está escribiendo en un input/textarea.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!selectedLine) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable) return;
+
+      // Dígitos (teclado normal y numérico)
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        setNumpadDraft((d) => {
+          const next = (d === "0" ? "" : d) + e.key;
+          return next.slice(0, 5);
+        });
+        return;
+      }
+      if (e.key === "." || e.key === ",") {
+        e.preventDefault();
+        setNumpadDraft((d) => (d.includes(".") ? d : (d || "0") + "."));
+        return;
+      }
+      if (e.key === "Backspace") {
+        // No pisar el "borrar línea" (que ya vive en el otro handler cuando
+        // no hay draft). Sólo consumimos si hay draft en curso.
+        if (numpadDraft) {
+          e.preventDefault();
+          setNumpadDraft((d) => d.slice(0, -1));
+        }
+        return;
+      }
+      if (e.key === "Enter") {
+        if (!numpadDraft) return;
+        e.preventDefault();
+        applyNumpadQty();
+        return;
+      }
+      if (e.key === "Escape") {
+        if (!numpadDraft) return;
+        e.preventDefault();
+        setNumpadDraft(String(selectedLine.quantity));
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLine?.productId, numpadDraft]);
+
   // === Enviar a Mesa ===
   // Abre el picker de mesas en modo "mover ticket". Al seleccionar la mesa,
   // el ticket actual se persiste como table_order pendiente para esa mesa,
