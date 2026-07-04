@@ -16,7 +16,7 @@ const SHORTCUTS: { key: string; label: string; hint?: string }[] = [
   { key: "F7", label: "Generar cotización" },
   { key: "F8", label: "Suspender ticket", hint: "Guardar para retomar después" },
   { key: "F9", label: "Limpiar ticket", hint: "Pide confirmación" },
-  { key: "Esc", label: "Cerrar / Cierre Z", hint: "Cierra diálogos o abre cierre de caja" },
+  { key: "Esc", label: "Salir / Volver", hint: "Vuelve a la pantalla anterior del POS" },
   { key: "Scanner", label: "Escaneo automático", hint: "El POS detecta lectores tipo teclado sin enfocar ningún campo" },
 ];
 
