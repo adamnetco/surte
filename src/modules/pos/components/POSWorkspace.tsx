@@ -1125,23 +1125,14 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       />
 
 
-      {/* Tabs de categorías (60%) + Cliente (40%) */}
+      {/* Tabs de categorías — ancho completo (el cliente se movió al header del ticket) */}
       <div className="flex items-stretch border-b bg-card">
-        <div className="flex-1 min-w-0 border-r">
+        <div className="flex-1 min-w-0">
           <POSCategoryTabs
             categories={categories}
             activeId={activeCategory}
             onChange={setActiveCategory}
             counts={productsByCategory}
-          />
-        </div>
-        <div className="w-[160px] sm:w-[200px] shrink-0 px-2 py-2 flex items-center">
-          <POSCustomerPicker
-            customer={customer}
-            onChange={setCustomer}
-            requireEinvoice={false}
-            compact
-            openCreateSignal={customerOpenSignal}
           />
         </div>
       </div>
