@@ -207,11 +207,11 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
                 type="button"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={hasNote ? "Editar nota" : "Añadir nota"}
-                className={`h-7 w-7 grid place-items-center rounded transition ${
+                className={`h-9 w-9 grid place-items-center rounded transition touch-manipulation ${
                   hasNote ? "text-accent bg-accent/15" : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                <StickyNote className="w-3.5 h-3.5" />
+                <StickyNote className="w-4 h-4" />
               </button>
             </PopoverTrigger>
             <PopoverContent side="top" align="end" className="w-72 p-3 space-y-2">
