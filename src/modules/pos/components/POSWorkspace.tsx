@@ -1358,6 +1358,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                   <FileText className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
                   <h2 data-testid="ticket-title" className="font-semibold text-[13px] truncate">Ticket</h2>
                   <span
+                    data-testid="ticket-mode-chip"
                     className="text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 shrink-0"
                     title={POS_MODES[saleMode].description}
                     aria-label={`Modo de venta: ${POS_MODES[saleMode].description}${saleMode === "mesa" && tableLabel ? `, mesa ${tableLabel}` : ""}`}
