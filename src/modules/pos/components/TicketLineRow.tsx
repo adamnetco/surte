@@ -33,7 +33,7 @@ interface Props {
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const QUICK_NOTES = ["Sin cebolla", "Sin sal", "Sin picante", "Para llevar", "Bien cocido", "Término medio"];
 
-export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscount, selected, onSelect }: Props) {
+export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscount, selected, onSelect, index = 0 }: Props) {
   const [noteDraft, setNoteDraft] = useState(line.notes ?? "");
   const [discDraft, setDiscDraft] = useState(String(line.discountPct ?? 0));
   const [discSheetOpen, setDiscSheetOpen] = useState(false);
