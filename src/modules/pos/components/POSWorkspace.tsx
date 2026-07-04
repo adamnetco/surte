@@ -1435,13 +1435,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           <div className={`${mobileTicketExpanded ? "flex" : "hidden"} lg:flex flex-1 min-h-0 flex-col lg:flex-row`}>
 
             <div className="flex flex-col flex-1 min-w-0 min-h-0">
-              {/* Encabezado visible del listado — deja claro dónde aparecen los productos añadidos */}
-              <div className="hidden lg:flex items-center justify-between px-3 pt-2 pb-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Productos añadidos
+              {/* Encabezado tipo Kodigo — columnas del ticket */}
+              <div className="hidden lg:grid grid-cols-[1fr_auto_auto] items-center gap-2 px-3 pt-2 pb-1 border-b">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Producto
+                  </span>
+                  <span className="text-[10px] font-semibold tabular-nums text-muted-foreground/70">
+                    · {ticket.length}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-14 text-center">
+                  Cant.
                 </span>
-                <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
-                  {ticket.length}
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 text-right">
+                  Total
                 </span>
               </div>
 
@@ -1489,6 +1497,37 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             {/* Numpad permanente estilo Kodigo — thumb-zone (una mano, dedo pulgar).
                 Columna lateral de ~210px anclada a la derecha del panel del ticket. */}
             <div className="hidden lg:flex lg:w-[210px] shrink-0 border-l bg-card px-2 py-2 flex-col">
+              {/* Acciones rápidas sobre la línea seleccionada — estilo Kodigo (−1 / +1 / Borrar) */}
+              <div className="grid grid-cols-3 gap-1 mb-2">
+                <button
+                  type="button"
+                  disabled={!selectedLine}
+                  onClick={() => selectedLine && updateQty(selectedLine.productId, -1)}
+                  className="h-9 rounded-md border border-border bg-card text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition inline-flex items-center justify-center gap-1"
+                  title="Restar 1 a la línea seleccionada"
+                >
+                  <span className="text-base leading-none">−1</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedLine}
+                  onClick={() => selectedLine && updateQty(selectedLine.productId, +1)}
+                  className="h-9 rounded-md border border-primary/40 bg-primary/5 text-xs font-bold text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition inline-flex items-center justify-center gap-1"
+                  title="Sumar 1 a la línea seleccionada"
+                >
+                  <span className="text-base leading-none">+1</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedLine}
+                  onClick={() => selectedLine && removeLine(selectedLine.productId)}
+                  className="h-9 rounded-md border border-destructive/40 bg-destructive/5 text-[10px] font-bold uppercase tracking-wide text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition inline-flex items-center justify-center"
+                  title="Borrar línea seleccionada (Supr)"
+                >
+                  Borrar
+                </button>
+              </div>
+
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Cant.
@@ -1516,6 +1555,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 onConfirm={applyNumpadQty}
               />
             </div>
+
           </div>
 
 
