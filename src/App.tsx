@@ -264,6 +264,7 @@ const App = () => (
             <CustomScriptInjector />
                 <AgentBar />
               <BrowserRouter>
+                <AppDesktopBar />
                 <ApproachingLimitBanner />
                 <CityPickerModal />
                 <Analytics />
