@@ -358,7 +358,10 @@ export default function SaleCompleteDialog({
                   <Printer className="w-5 h-5" />
                 )}
                 {printState === "error" ? "Reintentar" : "Sí"}
-                <kbd className="ml-1 px-1.5 py-0.5 bg-black/20 rounded text-[10px] font-mono">↵</kbd>
+                <span className="ml-1 flex items-center gap-0.5">
+                  <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[10px] font-mono">↵</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[10px] font-mono">F10</kbd>
+                </span>
               </Button>
               <Button
                 variant="outline"
