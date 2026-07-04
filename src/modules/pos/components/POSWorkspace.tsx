@@ -52,6 +52,7 @@ import POSCommandPalette from "./POSCommandPalette";
 import POSScannerListener from "./POSScannerListener";
 import POSShortcutsOverlay from "./POSShortcutsOverlay";
 import POSCustomerPicker from "./POSCustomerPicker";
+import ParkedTicketsSheet, { type ParkedTicketItem } from "./ParkedTicketsSheet";
 // POSContextualBar removed: Suspendidas se promovió al health strip; el selector
 // global de "Precios" se elimina (los precios derivan del cliente / lista por SKU).
 
