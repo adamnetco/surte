@@ -1578,7 +1578,138 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </div>
           </>
           )}
+
+          {/* === Footer de acciones del ticket (debajo del catálogo / mesas) ===
+              Descarga visualmente el panel derecho para que solo respiren:
+              numpad, líneas del ticket, Enviar-a-mesa/Domicilio y COBRAR XL. */}
+          <div className="border-t bg-card px-2 py-2 shrink-0">
+            <div className="flex flex-wrap gap-1.5">
+              {/* % Descuento global */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95 ${globalDiscPct > 0 ? "border-accent text-accent" : ""}`}
+                    title="Descuento al ticket"
+                    disabled={ticket.length === 0}
+                  >
+                    <Percent className="w-5 h-5" />
+                    <span className="text-[10px] leading-none">
+                      {globalDiscPct > 0 ? `${globalDiscPct}%` : "% Desc"}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3 space-y-2" side="top">
+                  <p className="text-xs font-semibold">Descuento ticket (%)</p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[0, 5, 10, 15, 20, 25, 30, 50].map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => { try { navigator.vibrate?.(6); } catch { /* noop */ } setGlobalDiscPct(v); }}
+                        className={`h-11 text-sm font-semibold rounded border [touch-action:manipulation] active:scale-95 ${
+                          globalDiscPct === v ? "bg-accent text-accent-foreground border-accent" : "bg-muted hover:bg-accent/20"
+                        }`}
+                      >
+                        {v}%
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Nota */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95 ${ticketNote ? "border-accent text-accent" : ""}`}
+                    title="Nota del ticket"
+                  >
+                    <StickyNote className="w-5 h-5" />
+                    <span className="text-[10px] leading-none">Nota</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-3 space-y-2" side="top">
+                  <p className="text-xs font-semibold">Nota del ticket</p>
+                  <Textarea
+                    value={ticketNote}
+                    onChange={(e) => setTicketNote(e.target.value.slice(0, 200))}
+                    placeholder="Ej. Pedido para 19h00, entregar en portería…"
+                    rows={3}
+                    className="text-sm"
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Suspender */}
+              <Button
+                variant="outline"
+                className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
+                disabled={ticket.length === 0}
+                onClick={() => { try { navigator.vibrate?.(8); } catch { /* noop */ } setActionMode("park"); }}
+                title="Pausar / Suspender (F8)"
+              >
+                <Pause className="w-5 h-5" />
+                <span className="text-[10px] leading-none">Suspender</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F8</kbd>
+              </Button>
+
+              {/* Cotizar */}
+              <Button
+                variant="outline"
+                className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
+                disabled={ticket.length === 0}
+                onClick={() => setActionMode("quote")}
+                title="Cotizar (F7)"
+              >
+                <FileText className="w-5 h-5" />
+                <span className="text-[10px] leading-none">Cotizar</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F7</kbd>
+              </Button>
+
+              {/* Facturar */}
+              <Button
+                variant="outline"
+                className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
+                disabled={!lastOrderId}
+                onClick={() => setActionMode("emit")}
+                title="Facturar último (F6)"
+              >
+                <FileSignature className="w-5 h-5" />
+                <span className="text-[10px] leading-none">Facturar</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F6</kbd>
+              </Button>
+
+              {/* Reimprimir */}
+              <Button
+                variant="outline"
+                className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
+                disabled={!lastOrderId}
+                onClick={() => window.print()}
+                title="Reimprimir última comanda (Ctrl+P)"
+              >
+                <Printer className="w-5 h-5" />
+                <span className="text-[10px] leading-none">Reimprimir</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">⌃P</kbd>
+              </Button>
+
+              {/* Cuenta (pre-cuenta con propina) — solo restaurante */}
+              {posModes.enabled.includes("mesa" as PosMode) && (
+                <Button
+                  variant="outline"
+                  className="flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
+                  disabled={ticket.length === 0}
+                  onClick={handlePrintPreCheck}
+                  title={`Imprimir cuenta previa ${orgTip.enabled ? `(propina ${orgTip.pct}%)` : "(sin propina)"}`}
+                >
+                  <ReceiptText className="w-5 h-5" />
+                  <span className="text-[10px] leading-none">Cuenta</span>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
+
 
         {/* Ticket (sticky card en desktop; en móvil colapsable con footer fijo) */}
         <aside
@@ -1928,137 +2059,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">F2</kbd>
             </Button>
 
-            {/* Imprimir cuenta (pre-cuenta con propina) — link discreto */}
-            {posModes.enabled.includes("mesa" as PosMode) && (
-              <button
-                type="button"
-                onClick={handlePrintPreCheck}
-                disabled={ticket.length === 0}
-                className="w-full h-8 inline-flex items-center justify-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary hover:underline disabled:opacity-40 disabled:cursor-not-allowed transition"
-                title="Imprimir cuenta previa con propina sugerida (no fiscal)"
-                aria-label="Imprimir cuenta previa"
-              >
-                <ReceiptText className="w-3.5 h-3.5" aria-hidden />
-                <span>Imprimir cuenta {orgTip.enabled ? `(propina ${orgTip.pct}%)` : ""}</span>
-              </button>
-            )}
+            {/* Nota: las acciones secundarias (% Desc, Nota, Suspender,
+                Cotizar, Facturar, Reimprimir, Cuenta) viven ahora en el
+                footer bajo el catálogo para descargar visualmente este
+                panel y dejar respirar el ticket + COBRAR. */}
 
-            {/* Acciones secundarias fila 1 — targets táctiles ≥44px */}
-            <div className="grid grid-cols-3 gap-2">
-              {/* Descuento global */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={`h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95 ${globalDiscPct > 0 ? "border-accent text-accent" : ""}`}
-                    title="Descuento al ticket"
-                    disabled={ticket.length === 0}
-                  >
-                    <Percent className="w-5 h-5" />
-                    <span className="text-[10px] leading-none">
-                      {globalDiscPct > 0 ? `${globalDiscPct}%` : "Desc."}
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-3 space-y-2" side="top">
-                  <p className="text-xs font-semibold">Descuento ticket (%)</p>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[0, 5, 10, 15, 20, 25, 30, 50].map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => { try { navigator.vibrate?.(6); } catch { /* noop */ } setGlobalDiscPct(v); }}
-                        className={`h-11 text-sm font-semibold rounded border [touch-action:manipulation] active:scale-95 ${
-                          globalDiscPct === v ? "bg-accent text-accent-foreground border-accent" : "bg-muted hover:bg-accent/20"
-                        }`}
-                      >
-                        {v}%
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              {/* Nota ticket */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={`h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95 ${ticketNote ? "border-accent text-accent" : ""}`}
-                    title="Nota del ticket"
-                  >
-                    <StickyNote className="w-5 h-5" />
-                    <span className="text-[10px] leading-none">Nota</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 p-3 space-y-2" side="top">
-                  <p className="text-xs font-semibold">Nota del ticket</p>
-                  <Textarea
-                    value={ticketNote}
-                    onChange={(e) => setTicketNote(e.target.value.slice(0, 200))}
-                    placeholder="Ej. Pedido para 19h00, entregar en portería…"
-                    rows={3}
-                    className="text-sm"
-                  />
-                </PopoverContent>
-              </Popover>
-
-              {/* Pausar */}
-              <Button
-                variant="outline"
-                className="relative h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
-                disabled={ticket.length === 0}
-                onClick={() => { try { navigator.vibrate?.(8); } catch { /* noop */ } setActionMode("park"); }}
-                title="Pausar / Suspender (F8)"
-              >
-                <Pause className="w-5 h-5" />
-                <span className="text-[10px] leading-none">Suspender</span>
-                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F8</kbd>
-              </Button>
-            </div>
-
-            {/* Acciones secundarias fila 2 — paleta uniforme + hotkeys visibles estilo Kodigo */}
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                variant="outline"
-                className="relative h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
-                disabled={ticket.length === 0}
-                onClick={() => setActionMode("quote")}
-                title="Cotizar (F7)"
-              >
-                <FileText className="w-4 h-4" />
-                <span className="text-[10px] leading-none">Cotizar</span>
-                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F7</kbd>
-              </Button>
-              <Button
-                variant="outline"
-                className="relative h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
-                disabled={!lastOrderId}
-                onClick={() => setActionMode("emit")}
-                title="Facturar último (F6)"
-              >
-                <FileSignature className="w-4 h-4" />
-                <span className="text-[10px] leading-none">Facturar</span>
-                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F6</kbd>
-              </Button>
-              <Button
-                variant="outline"
-                className="relative h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
-                disabled={!lastOrderId}
-                onClick={() => window.print()}
-                title="Reimprimir última comanda (Ctrl+P)"
-              >
-                <Printer className="w-4 h-4" />
-                <span className="text-[10px] leading-none">Reimprimir</span>
-                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">⌃P</kbd>
-              </Button>
-            </div>
-
-
-
-
-            {/* "Trasladar mesa / productos" eliminado: la transferencia vive en
-                TableOrderDrawer (split + ArrowRightLeft) y el switch de vista
-                Mesas/Catálogo + F5 ya cubre la navegación a la grilla. */}
           </div>
         </aside>
       </div>
