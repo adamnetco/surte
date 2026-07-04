@@ -4,6 +4,7 @@ import { Lock, ShieldCheck } from "lucide-react";
 import Numpad from "./Numpad";
 import { toast } from "sonner";
 import { getAutoLockMinutes } from "@/lib/posPinPrefs";
+import { logPosSecurityEvent } from "@/lib/posSecurityAudit";
 
 /**
  * Bloqueo local del POS por PIN de 4 dígitos.
@@ -87,6 +88,7 @@ export default function POSPinLock({
       setDraft("");
       setError(null);
       setReason(null);
+      logPosSecurityEvent("pin_lock", { trigger: "idle", meta: { idleMs: effectiveIdleMs } });
     }, effectiveIdleMs);
   }, [locked, effectiveIdleMs, pinHash]);
 
@@ -127,15 +129,21 @@ export default function POSPinLock({
     if (mode === "unlock") {
       const h = await hashPin(pin);
       if (h === pinHash) {
+        const wasGate = !!pendingResolveRef.current;
         setLocked(false);
         setDraft("");
         setReason(null);
+        logPosSecurityEvent(wasGate ? "pin_gate_pass" : "pin_unlock", {
+          trigger: wasGate ? "gate" : "manual",
+          reason: reason ?? undefined,
+        });
         if (pendingResolveRef.current) { pendingResolveRef.current(true); pendingResolveRef.current = null; }
         else toast.success("Caja desbloqueada");
       } else {
         setError("PIN incorrecto");
         setDraft("");
         try { navigator.vibrate?.([30, 60, 30]); } catch { /* noop */ }
+        logPosSecurityEvent("pin_unlock_failed", { reason: reason ?? undefined });
       }
       return;
     }
@@ -157,6 +165,7 @@ export default function POSPinLock({
         setFirstPin(null);
         setMode("unlock");
         toast.success("PIN configurado");
+        logPosSecurityEvent("pin_configured");
       } else {
         setError("Los PIN no coinciden");
         setFirstPin(null);
@@ -166,12 +175,13 @@ export default function POSPinLock({
     }
   };
 
-  const lockNow = useCallback(() => {
+  const lockNow = useCallback((trigger: "manual" | "hotkey" = "manual") => {
     setLocked(true);
     setMode(pinHash ? "unlock" : "set");
     setDraft("");
     setError(null);
     setReason(null);
+    logPosSecurityEvent("pin_lock", { trigger });
   }, [pinHash]);
 
   // Ctrl+L / Cmd+L → bloquear caja al instante. Ignora si el foco está en un input
@@ -183,7 +193,7 @@ export default function POSPinLock({
       const t = e.target as HTMLElement | null;
       if (t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable) return;
       e.preventDefault();
-      lockNow();
+      lockNow("hotkey");
     };
     window.addEventListener("keydown", handler);
     // Evento global disparado desde AppDesktopBar → "Bloquear pantalla".
@@ -200,7 +210,7 @@ export default function POSPinLock({
       {/* Botón flotante de bloqueo — thumb-zone abajo-izquierda */}
       {!locked && (
         <button
-          onClick={lockNow}
+          onClick={() => lockNow("manual")}
           aria-label="Bloquear caja"
           className="fixed bottom-4 left-4 z-40 h-12 w-12 rounded-full bg-background border-2 border-border shadow-lg flex items-center justify-center [touch-action:manipulation] active:scale-95 hover:bg-muted"
           title="Bloquear caja (Ctrl+L)"
