@@ -1512,10 +1512,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </Button>
             </div>
 
-            {/* Acciones secundarias fila 2 — gastro VectorPOS, táctil */}
+            {/* Acciones secundarias fila 2 — paleta uniforme estilo Kodigo (outline consistente) */}
             <div className="grid grid-cols-3 gap-2">
               <Button
-                variant="ghost"
+                variant="outline"
                 className="h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={ticket.length === 0}
                 onClick={() => setActionMode("quote")}
@@ -1525,7 +1525,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <span className="text-[10px] leading-none">Cotizar</span>
               </Button>
               <Button
-                variant="ghost"
+                variant="outline"
                 className="h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={!lastOrderId}
                 onClick={() => setActionMode("emit")}
@@ -1535,7 +1535,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <span className="text-[10px] leading-none">Facturar</span>
               </Button>
               <Button
-                variant="ghost"
+                variant="outline"
                 className="h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={!lastOrderId}
                 onClick={() => window.print()}
@@ -1545,6 +1545,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <span className="text-[10px] leading-none">Reimprimir</span>
               </Button>
             </div>
+
 
 
             {/* "Trasladar mesa / productos" eliminado: la transferencia vive en
