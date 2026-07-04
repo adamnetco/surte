@@ -1519,7 +1519,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
             {/* Numpad permanente estilo Kodigo — thumb-zone (una mano, dedo pulgar).
                 Columna lateral de ~210px anclada a la derecha del panel del ticket. */}
-            <div className="hidden lg:flex lg:w-[210px] shrink-0 border-l bg-card px-2 py-2 flex-col">
+            <div className="hidden lg:flex lg:w-[220px] shrink-0 border-l bg-card px-2 py-2 flex-col overflow-y-auto min-h-0">
               {/* Descripción de la línea seleccionada — reemplaza el label truncado
                   y da contexto claro (nombre completo + unitario · subtotal). */}
               <div
