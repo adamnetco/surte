@@ -115,6 +115,46 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
     return () => window.removeEventListener("keydown", handler);
   }, [open, isSuperadmin, gate.canCharge, gate]);
 
+  // F-keys estilo SitricPOS para acelerar cobro. Actualizan el método del ÚLTIMO
+  // renglón (el activo). F10/F12 confirman. Se ejecutan en capture y detienen
+  // la propagación para no chocar con usePOSHotkeys del workspace.
+  useEffect(() => {
+    if (!open) return;
+    const F_TO_METHOD: Record<string, MethodKey> = {
+      F1: "efectivo",
+      F2: "tarjeta_debito",
+      F3: "tarjeta_credito",
+      F4: "transferencia",
+      F5: "nequi",
+      F6: "daviplata",
+    };
+    const handler = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const typing = t?.tagName === "TEXTAREA" || (t?.tagName === "INPUT" && !(t as HTMLInputElement).readOnly);
+      if (typing) return;
+      const m = F_TO_METHOD[e.key];
+      if (m) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setPayments((prev) => {
+          if (prev.length === 0) return [{ method: m, amount: 0 }];
+          const last = prev.length - 1;
+          return prev.map((p, j) => (j === last ? { ...p, method: m } : p));
+        });
+        return;
+      }
+      if (e.key === "F9") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setPayments((prev) => [...prev, { method: "efectivo", amount: 0 }]);
+        return;
+      }
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, [open]);
+
+
   const sum = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
   const change = Math.max(0, sum - grandTotal);
   const pending = Math.max(0, grandTotal - sum);
