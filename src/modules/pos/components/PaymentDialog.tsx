@@ -115,6 +115,46 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
     return () => window.removeEventListener("keydown", handler);
   }, [open, isSuperadmin, gate.canCharge, gate]);
 
+  // F-keys estilo SitricPOS para acelerar cobro. Actualizan el método del ÚLTIMO
+  // renglón (el activo). F10/F12 confirman. Se ejecutan en capture y detienen
+  // la propagación para no chocar con usePOSHotkeys del workspace.
+  useEffect(() => {
+    if (!open) return;
+    const F_TO_METHOD: Record<string, MethodKey> = {
+      F1: "efectivo",
+      F2: "tarjeta_debito",
+      F3: "tarjeta_credito",
+      F4: "transferencia",
+      F5: "nequi",
+      F6: "daviplata",
+    };
+    const handler = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const typing = t?.tagName === "TEXTAREA" || (t?.tagName === "INPUT" && !(t as HTMLInputElement).readOnly);
+      if (typing) return;
+      const m = F_TO_METHOD[e.key];
+      if (m) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setPayments((prev) => {
+          if (prev.length === 0) return [{ method: m, amount: 0 }];
+          const last = prev.length - 1;
+          return prev.map((p, j) => (j === last ? { ...p, method: m } : p));
+        });
+        return;
+      }
+      if (e.key === "F9") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setPayments((prev) => [...prev, { method: "efectivo", amount: 0 }]);
+        return;
+      }
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, [open]);
+
+
   const sum = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
   const change = Math.max(0, sum - grandTotal);
   const pending = Math.max(0, grandTotal - sum);
@@ -152,10 +192,8 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== "Enter") return;
-    // Kodigo-style Enter × N:
-    //   1) Si falta plata → autocompleta el último pago con el pendiente.
-    //   2) Si ya cuadra y se puede confirmar → confirma.
+    // Enter × N (Kodigo) + F10/F12 (SitricPOS Fin Venta) confirman
+    if (e.key !== "Enter" && e.key !== "F10" && e.key !== "F12") return;
     if (pending > 0 && payments.length > 0) {
       e.preventDefault();
       const lastIdx = payments.length - 1;
@@ -240,15 +278,18 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
               <div key={i} className="rounded-lg border bg-card p-2.5 space-y-2">
                 {/* Chips de método */}
                 <div className="flex flex-wrap gap-1">
-                  {METHODS.map((m) => {
+                  {METHODS.map((m, mi) => {
                     const Icon = m.icon;
                     const active = p.method === m.key;
+                    const fkey = `F${mi + 1}`;
                     return (
                       <button
                         key={m.key}
                         type="button"
                         onClick={() => updatePayment(i, { method: m.key })}
                         aria-pressed={active}
+                        aria-keyshortcuts={fkey}
+                        title={`${m.label} (${fkey})`}
                         className={`inline-flex items-center gap-1 px-2.5 h-8 rounded-md border text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                           active
                             ? "bg-primary text-primary-foreground border-primary"
@@ -257,10 +298,14 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                       >
                         <Icon className="w-3.5 h-3.5" />
                         {m.label}
+                        <kbd className={`ml-1 px-1 py-0.5 rounded text-[9px] font-mono ${active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-background/70 text-muted-foreground"}`}>
+                          {fkey}
+                        </kbd>
                       </button>
                     );
                   })}
                 </div>
+
 
                 <div className="flex gap-2 items-end">
                   <div className="flex-1 space-y-1">
@@ -317,7 +362,21 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
             disabled={pending <= 0}
           >
             <Plus className="w-4 h-4 mr-1" /> Dividir pago{pending > 0 && ` · falta ${COP(pending)}`}
+            <kbd className="ml-2 px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F9</kbd>
           </Button>
+
+          {/* Leyenda de F-keys — estilo SitricPOS */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground font-mono px-1">
+            <span><kbd className="px-1 rounded bg-muted">F1</kbd> Efectivo</span>
+            <span><kbd className="px-1 rounded bg-muted">F2</kbd> Débito</span>
+            <span><kbd className="px-1 rounded bg-muted">F3</kbd> Crédito</span>
+            <span><kbd className="px-1 rounded bg-muted">F4</kbd> Transfer</span>
+            <span><kbd className="px-1 rounded bg-muted">F5</kbd> Nequi</span>
+            <span><kbd className="px-1 rounded bg-muted">F6</kbd> Daviplata</span>
+            <span><kbd className="px-1 rounded bg-muted">F9</kbd> Dividir</span>
+            <span><kbd className="px-1 rounded bg-muted">F10/F12</kbd> Cobrar</span>
+          </div>
+
 
           <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{COP(total)}</span></div>
@@ -400,9 +459,13 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                   >
                     {submitting ? "Procesando…" : "Confirmar cobro"}
                     {!submitting && canConfirm && (
-                      <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
+                      <span className="ml-2 flex items-center gap-0.5">
+                        <kbd className="px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">Enter</kbd>
+                        <kbd className="px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">F10</kbd>
+                      </span>
                     )}
                   </Button>
+
                 </span>
               </TooltipTrigger>
               {!gate.canCharge && (

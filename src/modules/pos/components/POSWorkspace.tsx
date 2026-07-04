@@ -58,6 +58,7 @@ import POSCustomerPicker from "./POSCustomerPicker";
 import TableGridSheet, { type PosTable } from "./TableGridSheet";
 import TablesOverviewSheet from "./TablesOverviewSheet";
 import DeliveriesListSheet from "./DeliveriesListSheet";
+import PaymentMethodsReportSheet from "./PaymentMethodsReportSheet";
 import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
 import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
 import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithModifiers";
@@ -149,6 +150,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [posTables, setPosTables] = useState<PosTable[]>([]);
   const [tablesOverviewOpen, setTablesOverviewOpen] = useState(false);
   const [deliveriesOpen, setDeliveriesOpen] = useState(false);
+  const [paymentsReportOpen, setPaymentsReportOpen] = useState(false);
   const [orgTip, setOrgTip] = useState<{ pct: number; enabled: boolean }>({ pct: 10, enabled: true });
   const [quickModsOpen, setQuickModsOpen] = useState(false);
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
@@ -1152,6 +1154,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             <Button variant="outline" className="w-full justify-start" onClick={handleVentasDelDia}>
               <BarChart3 className="w-4 h-4 mr-2" /> Ventas del día
             </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setPaymentsReportOpen(true)}>
+              <Wallet className="w-4 h-4 mr-2" /> Métodos de pago (reporte)
+            </Button>
             <Button variant="outline" className="w-full justify-start" onClick={handleCajon}>
               <Wallet className="w-4 h-4 mr-2" /> Abrir cajón monedero
             </Button>
@@ -1798,12 +1803,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                       <span className="truncate">{driver ? driver.name : "Domiciliario"}</span>
                     </button>
                   )}
-                  {saleMode === "autoservicio" && (
-                    <span className="inline-flex items-center gap-1 px-1.5 h-6 rounded-md border bg-accent/10 text-accent border-accent/30 text-[10px] font-extrabold uppercase tracking-wide">
-                      <ShoppingBag className="w-3 h-3" />
-                      LLEVAR
-                    </span>
-                  )}
+                  {/* Modo autoservicio (Mostrador): sin badge LLEVAR — el flujo Llevar
+                      vive como pestaña dentro del modo Mesas (restaurante). */}
                   <span
                     className="text-[10px] font-semibold tabular-nums text-muted-foreground ml-auto shrink-0"
                     aria-label={`${ticket.length} ${ticket.length === 1 ? "ítem" : "ítems"} en el ticket`}
@@ -2153,6 +2154,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         onOpenChange={setDeliveriesOpen}
         organizationId={organizationId}
       />
+
+      <PaymentMethodsReportSheet
+        open={paymentsReportOpen}
+        onOpenChange={setPaymentsReportOpen}
+      />
+
+
 
 
 
