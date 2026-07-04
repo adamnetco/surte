@@ -2135,6 +2135,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         }}
       />
 
+      <TablesOverviewSheet
+        open={tablesOverviewOpen}
+        onOpenChange={setTablesOverviewOpen}
+        organizationId={organizationId}
+        userId={userId}
+      />
+
+      <DeliveriesListSheet
+        open={deliveriesOpen}
+        onOpenChange={setDeliveriesOpen}
+        organizationId={organizationId}
+      />
+
+
+
       <POSQuickModifiersSheet
         open={quickModsOpen}
         onOpenChange={setQuickModsOpen}
