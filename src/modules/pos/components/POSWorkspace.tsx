@@ -895,9 +895,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         activeMode={saleMode}
         onChangeMode={setSaleMode}
         statusTone={
-          sync.lastError || (dianSnap.health && dianSnap.health !== "ok")
+          sync.lastError || dianSnap.health === "offline"
             ? "error"
-            : sync.pending > 0 || parkedCount > 0 || !sync.online
+            : sync.pending > 0 || parkedCount > 0 || !sync.online || dianSnap.health === "degraded"
             ? "warn"
             : "ok"
         }
