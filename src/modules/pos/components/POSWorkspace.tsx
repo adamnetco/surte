@@ -58,6 +58,7 @@ import POSCustomerPicker from "./POSCustomerPicker";
 import TableGridSheet, { type PosTable } from "./TableGridSheet";
 import TablesOverviewSheet from "./TablesOverviewSheet";
 import DeliveriesListSheet from "./DeliveriesListSheet";
+import PaymentMethodsReportSheet from "./PaymentMethodsReportSheet";
 import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
 import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
 import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithModifiers";
