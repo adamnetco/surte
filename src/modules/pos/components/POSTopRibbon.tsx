@@ -88,9 +88,17 @@ interface Props {
   modes?: PosMode[];
   activeMode?: PosMode;
   onChangeMode?: (m: PosMode) => void;
+  /** Contenido del panel "Estado del sistema" (impresora, DIAN, sync, caja).
+   *  Cuando se pasa, el ribbon renderiza un botón "Estado" con popover que
+   *  reemplaza la health-strip sticky y libera espacio vertical del catálogo. */
+  statusContent?: React.ReactNode;
+  /** Semáforo del botón Estado: verde ok / ámbar warn / rojo error. */
+  statusTone?: "ok" | "warn" | "error";
+  /** Contador de alertas para el badge del botón (ej. tickets suspendidos). */
+  statusBadge?: number;
 }
 
-export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, modes, activeMode, onChangeMode }: Props) {
+export default function POSTopRibbon({ onQuickCreate, onShowHotkeys, className, modes, activeMode, onChangeMode, statusContent, statusTone = "ok", statusBadge }: Props) {
 
   const navigate = useNavigate();
   const location = useLocation();
