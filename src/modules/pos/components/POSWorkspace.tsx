@@ -826,8 +826,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       if (ticket.length === 0) return;
       setClearConfirmOpen(true);
     },
-    // ESC estilo Kodigo: si hay ticket → alias de F2 (Cobrar); si vacío → cerrar caja/salir
-    onEscape: () => { if (ticket.length > 0) setPayOpen(true); else setCloseOpen(true); },
+    // ESC = Salir / volver atrás (como app de escritorio). Si hay ticket, pide confirmar.
+    onEscape: () => {
+      if (ticket.length > 0) {
+        setClearConfirmOpen(true);
+        return;
+      }
+      if (window.history.length > 1) navigate(-1);
+      else navigate("/pos");
+    },
 
   });
 
