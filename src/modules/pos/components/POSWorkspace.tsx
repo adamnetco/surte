@@ -1319,6 +1319,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </>
         }
       />
+      )}
 
 
       {/* AC10/AC11 — Banner DIAN offline / contingencia */}
