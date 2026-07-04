@@ -36,6 +36,15 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
   const hasDisc = (line.discountPct ?? 0) > 0;
   const finalTotal = hasDisc ? line.total * (1 - (line.discountPct ?? 0) / 100) : line.total;
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const tag = target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable) return;
+    if (e.key === "+" || e.key === "=") { e.preventDefault(); onQty(1); }
+    else if (e.key === "-" || e.key === "_") { e.preventDefault(); onQty(-1); }
+    else if (e.key === "Delete" || (e.key === "Backspace" && e.shiftKey)) { e.preventDefault(); onRemove(); }
+  };
+
   // ===== Táctil: swipe-left para eliminar + long-press para seleccionar =====
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
