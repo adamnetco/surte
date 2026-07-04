@@ -135,6 +135,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [cashierName, setCashierName] = useState("Cajero");
   // Ticket-level extras (presentación; se persisten con setMeta junto al ticket)
   const [customer, setCustomer] = useState<POSCustomer | null>(null);
+  const [customerOpenSignal, setCustomerOpenSignal] = useState(0);
   const [tableLabel, setTableLabel] = useState(""); // para modo mesa
   const [tableSheetOpen, setTableSheetOpen] = useState(false);
   const [quickModsOpen, setQuickModsOpen] = useState(false);
