@@ -36,28 +36,80 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
   const hasDisc = (line.discountPct ?? 0) > 0;
   const finalTotal = hasDisc ? line.total * (1 - (line.discountPct ?? 0) / 100) : line.total;
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    const tag = target.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable) return;
-    if (e.key === "+" || e.key === "=") { e.preventDefault(); onQty(1); }
-    else if (e.key === "-" || e.key === "_") { e.preventDefault(); onQty(-1); }
-    else if (e.key === "Delete" || (e.key === "Backspace" && e.shiftKey)) { e.preventDefault(); onRemove(); }
+  // ===== Táctil: swipe-left para eliminar + long-press para seleccionar =====
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const SWIPE_TRIGGER = 96;
+
+  const clearLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartX.current = t.clientX;
+    touchStartY.current = t.clientY;
+    setDragging(true);
+    longPressTimer.current = setTimeout(() => {
+      try { navigator.vibrate?.(15); } catch { /* noop */ }
+      onSelect?.();
+      longPressTimer.current = null;
+    }, 380);
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current == null || touchStartY.current == null) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartX.current;
+    const dy = Math.abs(t.clientY - touchStartY.current);
+    if (dy > 12) clearLongPress();
+    if (dx < 0) setDragX(Math.max(dx, -140));
+  };
+  const onTouchEnd = () => {
+    clearLongPress();
+    setDragging(false);
+    if (dragX <= -SWIPE_TRIGGER) {
+      try { navigator.vibrate?.(20); } catch { /* noop */ }
+      onRemove();
+    }
+    setDragX(0);
+    touchStartX.current = null;
+    touchStartY.current = null;
   };
 
   return (
-    <div
-      className={`group relative rounded-md border bg-card px-2 py-1.5 animate-fade-in focus:outline-none transition ${
-        selected
-          ? "border-primary ring-1 ring-primary/40 bg-primary/5"
-          : "border-border hover:border-border/80 focus-within:ring-1 focus-within:ring-ring"
-      }`}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      onClick={onSelect}
-      role="group"
-      aria-label={`${line.name}, cantidad ${line.quantity}`}
-    >
+    <div className="relative" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}>
+      {/* Fondo revelado al deslizar */}
+      <div
+        aria-hidden
+        className={`absolute inset-0 flex items-center justify-end pr-4 rounded-md bg-destructive text-destructive-foreground transition-opacity ${
+          dragX < -8 ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <Trash2 className="w-5 h-5" />
+        <span className="ml-2 text-xs font-bold">Eliminar</span>
+      </div>
+
+      <div
+        className={`relative group rounded-md border bg-card px-2 py-1.5 animate-fade-in focus:outline-none touch-pan-y ${
+          !dragging ? "transition-[transform,box-shadow,border-color]" : ""
+        } ${
+          selected
+            ? "border-primary ring-1 ring-primary/40 bg-primary/5"
+            : "border-border hover:border-border/80 focus-within:ring-1 focus-within:ring-ring"
+        }`}
+        style={{ transform: `translateX(${dragX}px)` }}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onClick={onSelect}
+        role="group"
+        aria-label={`${line.name}, cantidad ${line.quantity}. Desliza a la izquierda para eliminar.`}
+      >
       <div className="flex items-center gap-2">
         {/* Nombre + meta */}
         <div className="flex-1 min-w-0">
@@ -68,31 +120,31 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
           </p>
         </div>
 
-        {/* Stepper compacto */}
+        {/* Stepper compacto — targets táctiles h-9 (36px), zona activa aún mayor por padding del row */}
         <div className="flex items-center rounded-md border border-border overflow-hidden bg-background">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onQty(-1); }}
             aria-label="Reducir"
-            className="h-7 w-7 grid place-items-center text-muted-foreground hover:bg-muted transition"
+            className="h-9 w-9 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
           >
-            <Minus className="w-3.5 h-3.5" />
+            <Minus className="w-4 h-4" />
           </button>
-          <span className="w-7 text-center text-[12px] font-bold tabular-nums" aria-live="polite">
+          <span className="w-8 text-center text-[13px] font-bold tabular-nums" aria-live="polite">
             {line.quantity}
           </span>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onQty(1); }}
             aria-label="Aumentar"
-            className="h-7 w-7 grid place-items-center text-muted-foreground hover:bg-muted transition"
+            className="h-9 w-9 grid place-items-center text-muted-foreground hover:bg-muted transition touch-manipulation active:bg-muted/70"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
           </button>
         </div>
 
         {/* Total */}
-        <div className="w-[70px] text-right shrink-0">
+        <div className="w-[72px] text-right shrink-0">
           {hasDisc && (
             <p className="text-[9px] text-muted-foreground line-through tabular-nums leading-none">{COP(line.total)}</p>
           )}
