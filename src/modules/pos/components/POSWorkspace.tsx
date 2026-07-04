@@ -1389,6 +1389,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 {saleMode === "mesa" && (
                   <button
                     type="button"
+                    data-testid="ticket-mesa-btn"
                     onClick={() => setTableSheetOpen(true)}
                     aria-label={tableLabel ? `Mesa asignada: ${tableLabel}. Cambiar mesa` : "Seleccionar mesa (F5)"}
                     aria-keyshortcuts="F5"
