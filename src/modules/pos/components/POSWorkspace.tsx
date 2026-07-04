@@ -186,15 +186,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   useEffect(() => {
     (async () => {
       const { data } = await (supabase as any)
-        .from("organizations").select("name, legal_name, nit, address, phone, tip_default_pct, tip_enabled")
+        .from("organizations").select("name, legal_name, tax_id, tip_default_pct, tip_enabled")
         .eq("id", organizationId).maybeSingle();
       if (data) {
         orgInfoRef.current = {
           business_name: data.name ?? "SistecPOS",
           legal_name: data.legal_name ?? null,
-          nit: data.nit ?? null,
-          address: data.address ?? null,
-          phone: data.phone ?? null,
+          nit: data.tax_id ?? null,
+          address: null,
+          phone: null,
         };
         setOrgTip({
           pct: Number(data.tip_default_pct ?? 10),
