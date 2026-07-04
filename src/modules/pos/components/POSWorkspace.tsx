@@ -1443,16 +1443,31 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+            <div
+              className="flex-1 overflow-y-auto p-2.5 space-y-1.5"
+              role="list"
+              aria-label={`Productos en el ticket, ${ticket.length} ${ticket.length === 1 ? "ítem" : "ítems"}`}
+              aria-live="polite"
+            >
               {ticket.length === 0 ? (
-                <div className="text-center py-10 px-4">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-muted grid place-items-center mb-2">
-                    <ScanLine className="w-5 h-5 text-muted-foreground" />
+                <div className="h-full min-h-[220px] grid place-items-center px-6" role="status">
+                  <div className="text-center max-w-xs">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/10 grid place-items-center mb-3 shadow-sm">
+                      <ScanLine className="w-7 h-7 text-primary" aria-hidden="true" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground">Ticket vacío</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Escanea, toca un producto del catálogo o busca por nombre/SKU.
+                    </p>
+                    <div className="mt-4 grid grid-cols-3 gap-1.5 text-[10px]">
+                      <ShortcutHint k="F3" label="Buscar" />
+                      <ShortcutHint k="Alt 1–9" label="Añadir #N" />
+                      <ShortcutHint k="F2" label="Cobrar" />
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">Escanea o toca un producto</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">⌘K para búsqueda rápida</p>
                 </div>
               ) : (
+
                 ticket.map((l, i) => (
                   <TicketLineRow
                     key={l.productId}
@@ -1494,10 +1509,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 onChange={setNumpadDraft}
                 maxDigits={4}
                 compact
+                presets={[
+                  { label: "×1", value: 1 },
+                  { label: "×2", value: 2 },
+                  { label: "×5", value: 5, highlight: true },
+                  { label: "×10", value: 10 },
+                ]}
                 confirmLabel="Aplicar ⏎"
                 confirmDisabled={!selectedLine || !numpadDraft || Number(numpadDraft) <= 0}
                 onConfirm={applyNumpadQty}
               />
+
             </div>
           </div>
 
@@ -1819,3 +1841,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     </div>
   );
 }
+
+/** Chip inline para mostrar un atajo de teclado en el estado vacío del ticket. */
+function ShortcutHint({ k, label }: { k: string; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 px-1.5 py-1.5 rounded-md bg-muted/60 border border-border">
+      <kbd className="px-1.5 py-0.5 rounded bg-background border text-[9px] font-mono font-bold text-foreground">
+        {k}
+      </kbd>
+      <span className="text-[9px] text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
