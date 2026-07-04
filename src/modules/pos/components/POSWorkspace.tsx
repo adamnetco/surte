@@ -1256,7 +1256,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             </div>
           </>
         }
+        ribbonVisible={ribbonVisible}
+        onToggleRibbon={() => setRibbonVisible(v => !v)}
+        onHideRibbon={() => setRibbonVisible(false)}
       />
+      {ribbonVisible && (
       <POSTopRibbon
         onQuickCreate={() => setQuickCreateOpen(true)}
         onShowHotkeys={() => setRibbonHelpOpen(true)}
