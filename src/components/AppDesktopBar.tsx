@@ -160,6 +160,9 @@ export default function AppDesktopBar() {
               <Keyboard className="w-4 h-4 mr-2" /> Atajos de teclado
               <span className="ml-auto text-[10px] text-muted-foreground font-mono">F1</span>
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={openStatus}>
+              <Activity className="w-4 h-4 mr-2" /> Estado del sistema
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/ayuda")}>
               <HelpCircle className="w-4 h-4 mr-2" /> Centro de ayuda
             </DropdownMenuItem>
