@@ -121,9 +121,6 @@ export default function POSTopBar({
             <LayoutGrid className="w-4 h-4" aria-hidden />
             <span className="hidden sm:inline">Panel</span>
           </NavLink>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 focus-visible:ring-2 focus-visible:ring-ring" aria-label="Abrir configuración del POS">
           {onToggleRibbon && (
             <button
               type="button"
