@@ -277,9 +277,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       .subscribe();
     return () => {
       cancel = true;
-      if (ch) (supabase as any).removeChannel(ch);
+      (supabase as any).removeChannel(ch);
     };
-  }, [organizationId, isFood]);
+  }, [organizationId]);
 
 
   // Conteo de tickets suspendidos (refrescado en cambio de session/org)
