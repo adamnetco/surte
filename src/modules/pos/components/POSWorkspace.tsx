@@ -182,7 +182,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   useEffect(() => {
     (async () => {
       const { data } = await (supabase as any)
-        .from("organizations").select("name, legal_name, nit, address, phone")
+        .from("organizations").select("name, legal_name, nit, address, phone, tip_default_pct, tip_enabled")
         .eq("id", organizationId).maybeSingle();
       if (data) {
         orgInfoRef.current = {
@@ -192,6 +192,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           address: data.address ?? null,
           phone: data.phone ?? null,
         };
+        setOrgTip({
+          pct: Number(data.tip_default_pct ?? 10),
+          enabled: data.tip_enabled !== false,
+        });
       }
     })();
   }, [organizationId]);
