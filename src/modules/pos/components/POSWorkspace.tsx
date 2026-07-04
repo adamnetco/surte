@@ -937,6 +937,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             onChange={setCustomer}
             requireEinvoice={false}
             compact
+            openCreateSignal={customerOpenSignal}
           />
         </div>
       </div>
