@@ -28,6 +28,7 @@ import QuickActionsFAB from "@/components/QuickActionsFAB";
 import PinLock from "@/components/PinLock";
 import AuthHealthMonitor from "@/components/AuthHealthMonitor";
 import AppDesktopBar from "@/components/AppDesktopBar";
+import SystemStatusDialog from "@/components/SystemStatusDialog";
 const OnboardingChecklist = lazy(() => import("@/modules/onboarding/components/OnboardingChecklist"));
 const FirstLoginTour = lazy(() => import("@/components/FirstLoginTour"));
 const SurveyPrompt = lazy(() => import("@/components/SurveyPrompt"));
