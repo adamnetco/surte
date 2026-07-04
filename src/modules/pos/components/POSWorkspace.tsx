@@ -156,7 +156,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const productsWithMods = useProductsWithModifiers(organizationId);
   const [driver, setDriver] = useState<DriverInfo | null>(null); // para modo domicilio
   const [driverSheetOpen, setDriverSheetOpen] = useState(false);
-  const [pickupName, setPickupName] = useState(""); // para modo autoservicio (LLEVAR)
+  
   const [ticketNote, setTicketNote] = useState("");
   const [globalDiscPct, setGlobalDiscPct] = useState(0);
   const [priceListId, setPriceListId] = useState<string | null>(null);
@@ -1824,14 +1824,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                     {mobileTicketExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                {saleMode === "autoservicio" && (
-                  <Input
-                    value={pickupName}
-                    onChange={(e) => setPickupName(e.target.value)}
-                    placeholder="Nombre para pedido"
-                    className="h-7 text-[11px] px-2"
-                  />
-                )}
+                {/* Nombre de pedido "Llevar" se maneja como pestaña dentro del modo Mesas
+                    (restaurante). En Mostrador no se pide nombre para liberar espacio inferior. */}
               </div>
 
               {/* TOTAL XL — bloque derecho dominante, ocupa el espacio liberado */}
