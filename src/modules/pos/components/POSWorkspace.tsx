@@ -145,6 +145,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   // esto el picker mostraba labels genéricos "1..18" que no existen en DB y
   // handleSendTicketToTable fallaba con "No se encontró la mesa X".
   const [posTables, setPosTables] = useState<PosTable[]>([]);
+  const [tablesOverviewOpen, setTablesOverviewOpen] = useState(false);
+  const [deliveriesOpen, setDeliveriesOpen] = useState(false);
   const [orgTip, setOrgTip] = useState<{ pct: number; enabled: boolean }>({ pct: 10, enabled: true });
   const [quickModsOpen, setQuickModsOpen] = useState(false);
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
