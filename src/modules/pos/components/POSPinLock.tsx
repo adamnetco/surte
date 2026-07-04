@@ -80,13 +80,15 @@ export default function POSPinLock({
   const resetIdle = useCallback(() => {
     if (locked) return;
     if (timerRef.current) window.clearTimeout(timerRef.current);
+    if (effectiveIdleMs <= 0) return; // "Nunca"
     timerRef.current = window.setTimeout(() => {
       setLocked(true);
       setMode(pinHash ? "unlock" : "set");
       setDraft("");
       setError(null);
-    }, idleMs);
-  }, [locked, idleMs, pinHash]);
+      setReason(null);
+    }, effectiveIdleMs);
+  }, [locked, effectiveIdleMs, pinHash]);
 
   useEffect(() => {
     const events: (keyof WindowEventMap)[] = ["pointerdown", "keydown", "wheel", "touchstart"];
@@ -98,6 +100,25 @@ export default function POSPinLock({
     };
   }, [resetIdle]);
 
+  // Handler imperativo — se registra en window para que POSWorkspace pueda exigir PIN
+  // antes de acciones críticas (COBRAR, cierre de caja, etc.).
+  useEffect(() => {
+    (window as unknown as { __posPinRequest?: (r?: string) => Promise<boolean> }).__posPinRequest =
+      (r?: string) => new Promise<boolean>((resolve) => {
+        // Si no hay PIN configurado, la acción se permite (no bloquear al usuario que aún no ha activado seguridad).
+        if (!pinHash) { resolve(true); return; }
+        pendingResolveRef.current = resolve;
+        setReason(r ?? null);
+        setLocked(true);
+        setMode("unlock");
+        setDraft("");
+        setError(null);
+      });
+    return () => {
+      delete (window as unknown as { __posPinRequest?: unknown }).__posPinRequest;
+    };
+  }, [pinHash]);
+
   const handleConfirm = async (pin: string) => {
     if (pin.length !== 4) return;
     setError(null);
@@ -108,7 +129,9 @@ export default function POSPinLock({
       if (h === pinHash) {
         setLocked(false);
         setDraft("");
-        toast.success("Caja desbloqueada");
+        setReason(null);
+        if (pendingResolveRef.current) { pendingResolveRef.current(true); pendingResolveRef.current = null; }
+        else toast.success("Caja desbloqueada");
       } else {
         setError("PIN incorrecto");
         setDraft("");
