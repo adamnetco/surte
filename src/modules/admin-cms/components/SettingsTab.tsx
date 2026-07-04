@@ -266,6 +266,10 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
       {/* POS sale modes per business */}
       <POSModesSettings />
 
+      {/* Seguridad local del POS (PIN, auto-lock) */}
+      <POSSecuritySettings />
+
+
       {/* Default product image */}
       <div className="bg-card rounded-xl p-2.5 border border-border flex items-center gap-3">
         <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-dashed border-border shrink-0">
