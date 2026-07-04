@@ -2,6 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
+    <loc>https://surteya.com/producto/agua-natural-surte-5l-ec63</loc>
+    <lastmod>2026-06-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/agua-natural-surte-600ml-e6f0</loc>
+    <lastmod>2026-06-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/demo-empanada-pollo</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/demo-sandwich-club</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://surteya.com/producto/demo-croissant</loc>
     <lastmod>2026-06-10</lastmod>
     <changefreq>weekly</changefreq>
@@ -32,13 +56,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://surteya.com/producto/demo-jugo-natural</loc>
+    <loc>https://surteya.com/producto/demo-agua-500</loc>
     <lastmod>2026-06-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://surteya.com/producto/demo-agua-500</loc>
+    <loc>https://surteya.com/producto/demo-jugo-natural</loc>
     <lastmod>2026-06-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -50,14 +74,38 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://surteya.com/producto/demo-empanada-pollo</loc>
-    <lastmod>2026-06-10</lastmod>
+    <loc>https://surteya.com/producto/dimanti-papel-termico-80mm-x50</loc>
+    <lastmod>2026-05-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://surteya.com/producto/demo-sandwich-club</loc>
-    <lastmod>2026-06-10</lastmod>
+    <loc>https://surteya.com/producto/dimanti-papel-termico-58mm-x50</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/dimanti-alisado-brasileno</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/dimanti-limpieza-facial-profunda</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/dimanti-corte-peinado</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/dimanti-mani-pedi</loc>
+    <lastmod>2026-05-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -86,37 +134,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://surteya.com/producto/dimanti-masaje-descontracturante-90</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://surteya.com/producto/dimanti-masaje-relajante-60</loc>
     <lastmod>2026-05-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://surteya.com/producto/dimanti-limpieza-facial-profunda</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/dimanti-alisado-brasileno</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/dimanti-corte-peinado</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/dimanti-mani-pedi</loc>
+    <loc>https://surteya.com/producto/dimanti-masaje-descontracturante-90</loc>
     <lastmod>2026-05-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -136,42 +160,6 @@
   <url>
     <loc>https://surteya.com/producto/dimanti-lector-codigo-barras-inalambrico</loc>
     <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/dimanti-papel-termico-80mm-x50</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/dimanti-papel-termico-58mm-x50</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/salsa-de-pi-a-surte-3-8kg-28fc</loc>
-    <lastmod>2026-05-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/salsa-tartar-1-kg--9105</loc>
-    <lastmod>2026-05-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/salsa-tartara-bidon-14-kg--f0e1</loc>
-    <lastmod>2026-05-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/salsa-tartara-galon-3-5-kg--3bba</loc>
-    <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -408,7 +396,7 @@
     <image:image><image:loc>https://dimyhjzcwlgfczimqhet.supabase.co/storage/v1/object/public/product-images/products/1774936234105-c8ffhryqp5.png</image:loc><image:title>Pulpa de Zanaranja (200gr)</image:title></image:image>
   </url>
   <url>
-    <loc>https://surteya.com/producto/agua-natural-surte-5l-ec63</loc>
+    <loc>https://surteya.com/producto/alotas-de-pollo-surte-08b4</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -419,18 +407,6 @@
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <image:image><image:loc>https://dimyhjzcwlgfczimqhet.supabase.co/storage/v1/object/public/product-images/products/1774936212453-2zqu921ux4l.png</image:loc><image:title>Pulpa Detox (Pepino, Manzana Verde, Naranja)</image:title></image:image>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/agua-natural-surte-600ml-e6f0</loc>
-    <lastmod>2026-05-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://surteya.com/producto/alotas-de-pollo-surte-08b4</loc>
-    <lastmod>2026-05-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://surteya.com/producto/carne-desmechada-80gr--11de</loc>
@@ -564,6 +540,30 @@
   </url>
   <url>
     <loc>https://surteya.com/producto/salsa-de-pi-a-surte-1kg-9434</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/salsa-de-pi-a-surte-3-8kg-28fc</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/salsa-tartar-1-kg--9105</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/salsa-tartara-bidon-14-kg--f0e1</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://surteya.com/producto/salsa-tartara-galon-3-5-kg--3bba</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

@@ -1350,21 +1350,26 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
           </button>
 
           {/* Header compacto: Ticket + modo (izq) · TOTAL XL (der) — aprovecha el ancho liberado */}
-          <div className="px-3 pt-3 pb-2 border-b space-y-2 bg-gradient-to-b from-card to-muted/10">
+          <div data-testid="ticket-header" className="px-3 pt-3 pb-2 border-b space-y-2 bg-gradient-to-b from-card to-muted/10">
             <div className="flex items-stretch gap-2">
               {/* Bloque izquierdo: título + chip modo + contador */}
               <div className="flex flex-col justify-between min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <h2 className="font-semibold text-[13px] truncate">Ticket</h2>
+                  <FileText className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
+                  <h2 data-testid="ticket-title" className="font-semibold text-[13px] truncate">Ticket</h2>
                   <span
+                    data-testid="ticket-mode-chip"
                     className="text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 shrink-0"
                     title={POS_MODES[saleMode].description}
+                    aria-label={`Modo de venta: ${POS_MODES[saleMode].description}${saleMode === "mesa" && tableLabel ? `, mesa ${tableLabel}` : ""}`}
                   >
                     {POS_MODES[saleMode].short}
                     {saleMode === "mesa" && tableLabel && ` · ${tableLabel}`}
                   </span>
-                  <span className="text-[10px] font-semibold tabular-nums text-muted-foreground ml-auto shrink-0">
+                  <span
+                    className="text-[10px] font-semibold tabular-nums text-muted-foreground ml-auto shrink-0"
+                    aria-label={`${ticket.length} ${ticket.length === 1 ? "ítem" : "ítems"} en el ticket`}
+                  >
                     {ticket.length} {ticket.length === 1 ? "ít." : "íts."}
                   </span>
                   <button
@@ -1385,12 +1390,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 {saleMode === "mesa" && (
                   <button
                     type="button"
+                    data-testid="ticket-mesa-btn"
                     onClick={() => setTableSheetOpen(true)}
-                    className="mt-1 h-8 px-2 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1.5 text-[11px] font-bold text-foreground transition"
+                    aria-label={tableLabel ? `Mesa asignada: ${tableLabel}. Cambiar mesa` : "Seleccionar mesa (F5)"}
+                    aria-keyshortcuts="F5"
+                    className="mt-1 h-8 px-2 rounded-md border border-border bg-card hover:bg-muted/50 inline-flex items-center gap-1.5 text-[11px] font-bold text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                   >
-                    <Utensils className="w-3.5 h-3.5 text-primary" />
+                    <Utensils className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                     <span className="truncate">{tableLabel ? `Mesa ${tableLabel}` : "Mesa"}</span>
-                    <kbd className="ml-auto px-1 py-0 bg-muted rounded text-[9px] font-mono">F5</kbd>
+                    <kbd className="ml-auto px-1 py-0 bg-muted rounded text-[9px] font-mono" aria-hidden="true">F5</kbd>
                   </button>
                 )}
                 {saleMode === "domicilio" && (
@@ -1421,15 +1429,22 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </div>
 
               {/* TOTAL XL — bloque derecho dominante, ocupa el espacio liberado */}
-              <div className="shrink-0 flex flex-col items-end justify-center min-w-[130px] px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground leading-none">
+              <div
+                data-testid="ticket-total-xl"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                aria-label={`Total del ticket: ${COP(totals.total)}`}
+                className="shrink-0 flex flex-col items-end justify-center min-w-[130px] px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20"
+              >
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground leading-none" aria-hidden="true">
                   Total
                 </span>
-                <span className="text-2xl xl:text-[28px] font-extrabold tabular-nums leading-tight text-primary font-heading">
+                <span className="text-2xl xl:text-[28px] font-extrabold tabular-nums leading-tight text-primary font-heading" aria-hidden="true">
                   {COP(totals.total)}
                 </span>
                 {(totals.globalDisc > 0 || totals.tax > 0) && (
-                  <span className="text-[9px] tabular-nums text-muted-foreground leading-none">
+                  <span className="text-[9px] tabular-nums text-muted-foreground leading-none" aria-hidden="true">
                     Sub {COP(totals.lineSubtotal)}
                   </span>
                 )}
