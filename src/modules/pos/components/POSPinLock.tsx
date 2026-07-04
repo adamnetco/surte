@@ -129,15 +129,21 @@ export default function POSPinLock({
     if (mode === "unlock") {
       const h = await hashPin(pin);
       if (h === pinHash) {
+        const wasGate = !!pendingResolveRef.current;
         setLocked(false);
         setDraft("");
         setReason(null);
+        logPosSecurityEvent(wasGate ? "pin_gate_pass" : "pin_unlock", {
+          trigger: wasGate ? "gate" : "manual",
+          reason: reason ?? undefined,
+        });
         if (pendingResolveRef.current) { pendingResolveRef.current(true); pendingResolveRef.current = null; }
         else toast.success("Caja desbloqueada");
       } else {
         setError("PIN incorrecto");
         setDraft("");
         try { navigator.vibrate?.([30, 60, 30]); } catch { /* noop */ }
+        logPosSecurityEvent("pin_unlock_failed", { reason: reason ?? undefined });
       }
       return;
     }
