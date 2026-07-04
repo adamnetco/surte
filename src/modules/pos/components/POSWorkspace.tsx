@@ -56,6 +56,8 @@ import POSCustomerPicker from "./POSCustomerPicker";
 // global de "Precios" se elimina (los precios derivan del cliente / lista por SKU).
 
 import TableGridSheet, { type PosTable } from "./TableGridSheet";
+import TablesOverviewSheet from "./TablesOverviewSheet";
+import DeliveriesListSheet from "./DeliveriesListSheet";
 import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
 import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
 import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithModifiers";
