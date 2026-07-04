@@ -199,8 +199,13 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
           <p className="text-[13px] font-bold tabular-nums leading-tight">{COP(finalTotal)}</p>
         </div>
 
-        {/* Acciones icon-only */}
-        <div className="flex items-center gap-0.5 shrink-0">
+        {/* Acciones icon-only — estilo Kodigo: se revelan al hover/focus/seleccion, ocultas en reposo */}
+        <div
+          className={`flex items-center gap-0.5 shrink-0 transition-opacity ${
+            selected ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+          }`}
+        >
+
           <Popover>
             <PopoverTrigger asChild>
               <button

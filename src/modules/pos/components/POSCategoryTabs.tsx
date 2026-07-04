@@ -124,20 +124,29 @@ function CategoryChip({
       aria-pressed={active}
       aria-label={typeof count === "number" ? `${label} (${count} productos)` : label}
       className={cn(
-        "shrink-0 inline-flex items-center gap-1.5 px-3 h-10 rounded-full border text-xs font-semibold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+        // Kodigo-style: sin píldora, tipografía uniforme, underline rojo 3px bajo la activa.
+        "relative shrink-0 inline-flex items-center gap-1.5 px-3 h-10 text-xs font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
         active
-          ? "bg-primary text-primary-foreground border-primary shadow-sm"
-          : "bg-muted/40 text-muted-foreground border-transparent hover:text-foreground hover:bg-muted"
+          ? "text-foreground"
+          : "text-muted-foreground hover:text-foreground"
       )}
     >
       {icon}
       <span className="whitespace-nowrap">{label}</span>
       {typeof count === "number" && (
-        <span className={cn(
-          "text-[10px] px-1.5 rounded-full font-bold tabular-nums",
-          active ? "bg-primary-foreground/20" : "bg-foreground/10"
-        )}>{count}</span>
+        <span className="text-[10px] font-bold tabular-nums text-muted-foreground/70">
+          {count}
+        </span>
       )}
+      {/* Underline rojo estilo Kodigo — sólo bajo la pestaña activa */}
+      <span
+        aria-hidden
+        className={cn(
+          "absolute left-2 right-2 -bottom-[1px] h-[3px] rounded-t-sm transition-opacity",
+          active ? "bg-[hsl(var(--destructive))] opacity-100" : "opacity-0"
+        )}
+      />
     </button>
   );
 }
+
