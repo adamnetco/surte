@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useImageUpload } from "@/modules/admin-cms/hooks/useImageUpload";
 import POSModesSettings from "@/modules/admin-cms/components/POSModesSettings";
 import POSSecuritySettings from "@/modules/admin-cms/components/POSSecuritySettings";
+import POSSecurityAuditList from "@/modules/admin-cms/components/POSSecurityAuditList";
 
 // Paleta base SistecPOS. Cada negocio (id_negocio) puede personalizarla desde Ajustes.
 const DEFAULT_COLORS: Record<string, { hex: string; label: string; desc: string }> = {
@@ -268,6 +269,8 @@ const SettingsTab = ({ settings, queryClient }: { settings: any[]; queryClient: 
 
       {/* Seguridad local del POS (PIN, auto-lock) */}
       <POSSecuritySettings />
+      <POSSecurityAuditList />
+
 
 
       {/* Default product image */}
