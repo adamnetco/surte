@@ -161,8 +161,6 @@ export default function POSTopBar({
                 <Settings className="w-4 h-4" />
               </Button>
             </SheetTrigger>
-              </Button>
-            </SheetTrigger>
             <SheetContent side="right" className="w-[320px]">
               <SheetHeader>
                 <SheetTitle>Sesión POS</SheetTitle>
