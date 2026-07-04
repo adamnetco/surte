@@ -102,6 +102,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [searchFocused, setSearchFocused] = useState(false);
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  // Draft del numpad permanente (columna derecha estilo Kodigo). Se sincroniza con la línea seleccionada.
+  const [numpadDraft, setNumpadDraft] = useState<string>("");
+
   const [payOpen, setPayOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
