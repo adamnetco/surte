@@ -1505,7 +1505,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 </Button>
               </div>
             ) : filtered.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8 text-sm">Sin productos en esta vista</p>
+              <div className="text-center py-10 px-4" role="status">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-muted/50 border border-border grid place-items-center mb-3">
+                  <ScanLine className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">Sin productos en esta vista</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                  Prueba con otra categoría, escanea un código de barras o busca por nombre/SKU (<kbd className="px-1 rounded bg-muted font-mono text-[10px]">F3</kbd>).
+                </p>
+              </div>
+
             ) : catalogDensity === "list" ? (
               <ul role="list" className="divide-y rounded-md border bg-card overflow-hidden">
                 {filtered.map((p, idx) => {
