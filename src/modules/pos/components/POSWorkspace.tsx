@@ -62,6 +62,8 @@ import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithMod
 import DriverPickerSheet, { type DriverInfo } from "./DriverPickerSheet";
 import TicketLineRow, { type TicketLineData } from "./TicketLineRow";
 import POSPinLock from "./POSPinLock";
+import Numpad from "./Numpad";
+
 import { usePOSModes } from "@/modules/pos/hooks/usePOSModes";
 import { POS_MODES } from "@/modules/pos/lib/posModes";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,6 +104,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [searchFocused, setSearchFocused] = useState(false);
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  // Draft del numpad permanente (columna derecha estilo Kodigo). Se sincroniza con la línea seleccionada.
+  const [numpadDraft, setNumpadDraft] = useState<string>("");
+
   const [payOpen, setPayOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
@@ -496,6 +501,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     [ticket, selectedLineId],
   );
 
+  // Sync numpad draft con la línea seleccionada (o última añadida)
+  useEffect(() => {
+    if (selectedLine) setNumpadDraft(String(selectedLine.quantity));
+    else setNumpadDraft("");
+  }, [selectedLine?.productId, selectedLine?.quantity]);
+
+  const applyNumpadQty = () => {
+    if (!selectedLine || !numpadDraft) return;
+    const n = Math.max(1, Math.min(9999, Number(numpadDraft) || 1));
+    setLineQty(selectedLine.productId, n);
+    try { navigator.vibrate?.(8); } catch { /* noop */ }
+  };
+
+
+
 
 
   // ===== Scanner handler =====
@@ -531,7 +551,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       if (ticket.length === 0) return;
       setClearConfirmOpen(true);
     },
-    onEscape: () => setCloseOpen(true),
+    // ESC estilo Kodigo: si hay ticket → alias de F2 (Cobrar); si vacío → cerrar caja/salir
+    onEscape: () => { if (ticket.length > 0) setPayOpen(true); else setCloseOpen(true); },
+
   });
 
   // ===== Derivados =====
@@ -1396,6 +1418,34 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               )}
             </div>
           </div>
+
+          {/* Numpad permanente estilo Kodigo — edita cantidad de la línea seleccionada.
+              Se muestra sólo en desktop (lg+) para no romper el thumb-zone móvil,
+              donde el numpad sigue apareciendo por línea vía Sheet. */}
+          <div className="hidden lg:block border-t bg-card px-3 py-2">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Cantidad
+              </span>
+              <span className="text-[11px] text-muted-foreground truncate max-w-[60%]" title={selectedLine?.name ?? ""}>
+                {selectedLine ? selectedLine.name : "Selecciona una línea"}
+              </span>
+            </div>
+            <div className="mb-2 h-10 rounded-md border bg-muted/30 grid place-items-center text-2xl font-heading font-bold tabular-nums">
+              {numpadDraft || "0"}
+            </div>
+            <Numpad
+              value={numpadDraft}
+              onChange={setNumpadDraft}
+              maxDigits={4}
+              compact
+              confirmLabel="Aplicar (Enter)"
+              confirmDisabled={!selectedLine || !numpadDraft || Number(numpadDraft) <= 0}
+              onConfirm={applyNumpadQty}
+            />
+          </div>
+
+
 
 
 
