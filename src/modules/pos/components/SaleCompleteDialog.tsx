@@ -383,9 +383,12 @@ export default function SaleCompleteDialog({
               size="sm"
               onClick={() => closeAndReset()}
               disabled={printState === "printing"}
-              className="h-10 font-heading font-semibold"
+              className="h-10 font-heading font-semibold justify-between"
             >
-              <Plus className="w-4 h-4 mr-1.5" /> Nueva venta
+              <span className="flex items-center">
+                <Plus className="w-4 h-4 mr-1.5" /> Nueva venta
+              </span>
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F3</kbd>
             </Button>
             {einvoice.status !== "idle" ? (
               <EinvoiceActions
@@ -402,12 +405,24 @@ export default function SaleCompleteDialog({
                 size="sm"
                 onClick={onEmitInvoice}
                 disabled={!canEmitInvoice || printState === "printing"}
-                className="h-10 font-heading font-semibold"
-                title={canEmitInvoice ? "Emitir factura electrónica DIAN" : "Disponible al sincronizar"}
+                className="h-10 font-heading font-semibold justify-between"
+                title={canEmitInvoice ? "Emitir factura electrónica DIAN (F2)" : "Disponible al sincronizar"}
               >
-                <FileSignature className="w-4 h-4 mr-1.5" /> Facturar DIAN
+                <span className="flex items-center">
+                  <FileSignature className="w-4 h-4 mr-1.5" /> Facturar DIAN
+                </span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F2</kbd>
               </Button>
             )}
+          </div>
+
+          {/* Leyenda de F-keys — estilo SitricPOS */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground/80 font-mono">
+            <span><kbd className="px-1 rounded bg-muted">F1</kbd> Reimprimir</span>
+            <span><kbd className="px-1 rounded bg-muted">F2</kbd> DIAN</span>
+            <span><kbd className="px-1 rounded bg-muted">F3</kbd> Nueva venta</span>
+            <span><kbd className="px-1 rounded bg-muted">F10/F12</kbd> Fin</span>
+            <span><kbd className="px-1 rounded bg-muted">Esc</kbd> Cerrar</span>
           </div>
         </div>
       </DialogContent>
