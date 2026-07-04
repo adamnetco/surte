@@ -55,7 +55,7 @@ import POSCustomerPicker from "./POSCustomerPicker";
 // POSContextualBar removed: Suspendidas se promovió al health strip; el selector
 // global de "Precios" se elimina (los precios derivan del cliente / lista por SKU).
 
-import TableGridSheet from "./TableGridSheet";
+import TableGridSheet, { type PosTable } from "./TableGridSheet";
 import POSQuickModifiersSheet from "./POSQuickModifiersSheet";
 import POSModifiersPickerSheet from "./POSModifiersPickerSheet";
 import { useProductsWithModifiers } from "@/modules/pos/hooks/useProductsWithModifiers";
