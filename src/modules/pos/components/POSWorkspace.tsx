@@ -894,60 +894,59 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         modes={posModes.enabled}
         activeMode={saleMode}
         onChangeMode={setSaleMode}
+        statusTone={
+          sync.lastError || (dianSnap.health && dianSnap.health !== "ok")
+            ? "error"
+            : sync.pending > 0 || parkedCount > 0 || !sync.online
+            ? "warn"
+            : "ok"
+        }
+        statusBadge={sync.pending + parkedCount}
+        statusContent={
+          <>
+            <POSStatusBar
+              organizationId={organizationId}
+              session={{ opening_amount: session.opening_amount, opened_at: session.opened_at }}
+            />
+            <DianHealthIndicator organizationId={organizationId} />
+            <EinvoiceShiftWidget organizationId={organizationId} />
+            {(sync.pending > 0 || sync.syncing) && (
+              <button
+                type="button"
+                onClick={() => sync.flushNow()}
+                title={sync.lastError ?? (sync.online ? "Sincronizar pendientes" : "Sin conexión · en cola")}
+                aria-label={sync.syncing ? "Sincronizando" : `${sync.pending} pendientes por sincronizar`}
+                className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border bg-amber-50 border-amber-300 hover:bg-amber-100 text-xs font-semibold text-amber-900 transition"
+              >
+                {sync.syncing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
+                ) : sync.online ? (
+                  <CloudUpload className="w-3.5 h-3.5" aria-hidden />
+                ) : (
+                  <CloudOff className="w-3.5 h-3.5" aria-hidden />
+                )}
+                {sync.syncing ? "Sincronizando" : `${sync.pending} pendiente${sync.pending === 1 ? "" : "s"}`}
+              </button>
+            )}
+            {parkedCount > 0 && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("pos:open-parked"))}
+                className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border bg-amber-50 border-amber-300 hover:bg-amber-100 text-xs font-semibold text-amber-900 transition"
+                title="Tickets suspendidos (F8 para suspender)"
+                aria-label={`${parkedCount} ticket(s) suspendido(s)`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden />
+                Suspendidas
+                <span className="inline-flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+                  {parkedCount}
+                </span>
+              </button>
+            )}
+          </>
+        }
       />
 
-
-      {/* Health strip — relocated out of POSTopBar's right cluster to prevent
-          flex-wrap overflow that broke the topbar layout on <1280px viewports.
-          Sticky under the ribbon, single scrollable row, hidden on mobile to
-          keep the catalog above the fold. Pills/widgets render inline-nowrap
-          with horizontal scroll fallback. */}
-      <div
-        role="region"
-        aria-label="Estado del sistema y facturación"
-        className="hidden md:flex sticky top-[104px] z-10 bg-card/95 backdrop-blur border-b px-3 py-1.5 items-center gap-2 overflow-x-auto scrollbar-none"
-      >
-        <POSStatusBar
-          organizationId={organizationId}
-          session={{ opening_amount: session.opening_amount, opened_at: session.opened_at }}
-        />
-        <DianHealthIndicator organizationId={organizationId} className="shrink-0" />
-        <EinvoiceShiftWidget organizationId={organizationId} className="hidden lg:inline-flex shrink-0" />
-        <div className="flex-1" />
-        {(sync.pending > 0 || sync.syncing) && (
-          <button
-            type="button"
-            onClick={() => sync.flushNow()}
-            title={sync.lastError ?? (sync.online ? "Sincronizar pendientes" : "Sin conexión · en cola")}
-            aria-label={sync.syncing ? "Sincronizando" : `${sync.pending} pendientes por sincronizar`}
-            className="shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border bg-amber-50 border-amber-300 hover:bg-amber-100 text-xs font-semibold text-amber-900 transition"
-          >
-            {sync.syncing ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : sync.online ? (
-              <CloudUpload className="w-3.5 h-3.5" />
-            ) : (
-              <CloudOff className="w-3.5 h-3.5" />
-            )}
-            {sync.syncing ? "Sincronizando" : `${sync.pending} pendiente${sync.pending === 1 ? "" : "s"}`}
-          </button>
-        )}
-        {parkedCount > 0 && (
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent("pos:open-parked"))}
-            className="shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border bg-amber-50 border-amber-300 hover:bg-amber-100 text-xs font-semibold text-amber-900 transition"
-            title="Tickets suspendidos (F8 para suspender)"
-            aria-label={`${parkedCount} ticket(s) suspendido(s)`}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-            Suspendidas
-            <span className="inline-flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full text-[10px] font-bold bg-amber-500 text-white">
-              {parkedCount}
-            </span>
-          </button>
-        )}
-      </div>
 
       {/* AC10/AC11 — Banner DIAN offline / contingencia */}
       <ContingencyBanner
