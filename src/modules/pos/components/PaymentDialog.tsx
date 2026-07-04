@@ -192,10 +192,8 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== "Enter") return;
-    // Kodigo-style Enter × N:
-    //   1) Si falta plata → autocompleta el último pago con el pendiente.
-    //   2) Si ya cuadra y se puede confirmar → confirma.
+    // Enter × N (Kodigo) + F10/F12 (SitricPOS Fin Venta) confirman
+    if (e.key !== "Enter" && e.key !== "F10" && e.key !== "F12") return;
     if (pending > 0 && payments.length > 0) {
       e.preventDefault();
       const lastIdx = payments.length - 1;
