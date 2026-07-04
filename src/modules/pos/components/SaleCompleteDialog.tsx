@@ -114,7 +114,9 @@ export default function SaleCompleteDialog({
     return () => window.clearInterval(iv);
   }, [open, printState, autoCloseMs, closeAndReset]);
 
-  // Hotkeys globales — solo si el foco no está en un editable (protege numpad y otros inputs)
+  // Hotkeys globales — captura en fase capture y stopImmediatePropagation para
+  // no colisionar con los F-keys del workspace (usePOSHotkeys). Ignora eventos
+  // desde campos editables (protege numpad y otros inputs).
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -123,26 +125,50 @@ export default function SaleCompleteDialog({
       const editable =
         tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el?.isContentEditable;
       if (editable) return;
-      if (e.key === "Enter") {
-        e.preventDefault();
+
+      // Acciones del modal — SitricPOS-style F-keys.
+      const isYes = e.key === "Enter" || e.key === "F10" || e.key === "F12";
+      const isNo = e.key === "Escape";
+      const isPrint = e.key === "F1"; // Imprimir POS (reimprimir)
+      const isInvoice = e.key === "F2"; // Facturar DIAN
+      const isNewSale = e.key === "F3"; // Nueva venta sin imprimir
+      const isEmit = canEmitInvoice && isInvoice;
+
+      if (!(isYes || isNo || isPrint || isEmit || isNewSale)) return;
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      if (isYes) {
         if (printState === "printing") return;
-        // Éxito o idle → imprime + cierra. Error → reintenta.
-        if (printState === "error") {
-          runPrint();
-        } else if (printState === "success") {
-          closeAndReset();
-        } else {
-          runPrint().then(closeAndReset).catch(() => { /* queda en error */ });
-        }
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        if (printState === "printing") return; // no abandonar durante impresión
+        if (printState === "error") { runPrint(); return; }
+        if (printState === "success") { closeAndReset(); return; }
+        runPrint().then(closeAndReset).catch(() => { /* queda en error */ });
+        return;
+      }
+      if (isNo) {
+        if (printState === "printing") return;
+        closeAndReset();
+        return;
+      }
+      if (isPrint) {
+        if (printState === "printing") return;
+        void runPrint();
+        return;
+      }
+      if (isEmit) {
+        onEmitInvoice();
+        return;
+      }
+      if (isNewSale) {
+        if (printState === "printing") return;
         closeAndReset();
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, printState, runPrint, closeAndReset]);
+    // capture=true → corre antes que usePOSHotkeys en window
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [open, printState, runPrint, closeAndReset, canEmitInvoice, onEmitInvoice]);
 
   const toggleSound = () => {
     const next = !soundOn;
@@ -332,7 +358,10 @@ export default function SaleCompleteDialog({
                   <Printer className="w-5 h-5" />
                 )}
                 {printState === "error" ? "Reintentar" : "Sí"}
-                <kbd className="ml-1 px-1.5 py-0.5 bg-black/20 rounded text-[10px] font-mono">↵</kbd>
+                <span className="ml-1 flex items-center gap-0.5">
+                  <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[10px] font-mono">↵</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[10px] font-mono">F10</kbd>
+                </span>
               </Button>
               <Button
                 variant="outline"
@@ -354,9 +383,12 @@ export default function SaleCompleteDialog({
               size="sm"
               onClick={() => closeAndReset()}
               disabled={printState === "printing"}
-              className="h-10 font-heading font-semibold"
+              className="h-10 font-heading font-semibold justify-between"
             >
-              <Plus className="w-4 h-4 mr-1.5" /> Nueva venta
+              <span className="flex items-center">
+                <Plus className="w-4 h-4 mr-1.5" /> Nueva venta
+              </span>
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F3</kbd>
             </Button>
             {einvoice.status !== "idle" ? (
               <EinvoiceActions
@@ -373,12 +405,24 @@ export default function SaleCompleteDialog({
                 size="sm"
                 onClick={onEmitInvoice}
                 disabled={!canEmitInvoice || printState === "printing"}
-                className="h-10 font-heading font-semibold"
-                title={canEmitInvoice ? "Emitir factura electrónica DIAN" : "Disponible al sincronizar"}
+                className="h-10 font-heading font-semibold justify-between"
+                title={canEmitInvoice ? "Emitir factura electrónica DIAN (F2)" : "Disponible al sincronizar"}
               >
-                <FileSignature className="w-4 h-4 mr-1.5" /> Facturar DIAN
+                <span className="flex items-center">
+                  <FileSignature className="w-4 h-4 mr-1.5" /> Facturar DIAN
+                </span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">F2</kbd>
               </Button>
             )}
+          </div>
+
+          {/* Leyenda de F-keys — estilo SitricPOS */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground/80 font-mono">
+            <span><kbd className="px-1 rounded bg-muted">F1</kbd> Reimprimir</span>
+            <span><kbd className="px-1 rounded bg-muted">F2</kbd> DIAN</span>
+            <span><kbd className="px-1 rounded bg-muted">F3</kbd> Nueva venta</span>
+            <span><kbd className="px-1 rounded bg-muted">F10/F12</kbd> Fin</span>
+            <span><kbd className="px-1 rounded bg-muted">Esc</kbd> Cerrar</span>
           </div>
         </div>
       </DialogContent>
