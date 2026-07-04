@@ -496,6 +496,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       ];
     });
     if (sticky) setStickyNotes([]);
+    // Anuncio a11y (screen readers) — cantidad total en el ticket tras la operación.
+    setTicket((cur) => {
+      const l = cur.find((x) => x.productId === p.id);
+      const qty = l?.quantity ?? 1;
+      setSrAnnounce(`${p.name} añadido al ticket. Cantidad ${qty}.`);
+      return cur;
+    });
     // Feedback móvil: vibración háptica + toast con acción a expandir ticket.
     if (isMobile) {
       try { navigator.vibrate?.(8); } catch { /* noop */ }
@@ -507,6 +514,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       }
     }
   };
+
 
 
   const addProduct = (p: Product) => {
