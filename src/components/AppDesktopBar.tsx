@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Home, MoreVertical, Settings, Lock,
   LogOut, HelpCircle, Building2, ShoppingBag, LayoutDashboard, Shield,
-  Minus, Square, X, Keyboard,
+  Minus, Square, X, Keyboard, Activity,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
