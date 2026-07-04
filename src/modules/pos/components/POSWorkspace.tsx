@@ -982,10 +982,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         </div>
       </div>
 
-      {/* Cuerpo: catálogo + ticket */}
+      {/* Cuerpo: catálogo (compacto, izq) + ticket (absorbe, der) */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* Catálogo (50%) */}
-        <div className="flex flex-col min-h-0 flex-1 lg:min-w-0">
+        {/* Catálogo — ancho fijo compacto (3 cols pequeñas), libera espacio al ticket */}
+        <div className="flex flex-col min-h-0 lg:w-[540px] xl:w-[600px] lg:shrink-0 lg:min-w-0">
           {isFood && (
             <div className="flex items-center gap-1 px-2.5 py-1.5 bg-card border-b">
               <div className="inline-flex rounded-md border bg-muted/30 p-0.5 text-xs">
@@ -1263,48 +1263,47 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 })}
               </ul>
             ) : (
-              <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+              <div className="grid gap-1.5 grid-cols-2 sm:grid-cols-3">
                 {filtered.map((p, idx) => {
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                   <button
                     key={p.id}
                     onClick={() => addProduct(p)}
-                    className="group relative bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all text-left overflow-hidden active:scale-[0.98] flex flex-col focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
+                    className="group relative bg-card rounded-md border border-border hover:border-primary/50 hover:shadow-sm transition text-left overflow-hidden active:scale-[0.98] flex flex-col focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
                     title={`${p.name}${cat ? ` · ${cat}` : ""} — ${COP(Number(p.price))}`}
                   >
                     {!isFood && idx < 9 && (
                       <kbd
-                        className="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-foreground/85 text-background shadow-sm"
+                        className="absolute top-1 left-1 z-10 px-1 py-0 text-[9px] font-bold rounded bg-foreground/80 text-background"
                         aria-hidden="true"
                       >
                         {idx + 1}
                       </kbd>
                     )}
-                    <div className="aspect-square bg-gradient-to-br from-muted/60 to-muted overflow-hidden">
+                    <div className="aspect-[4/3] bg-gradient-to-br from-muted/60 to-muted overflow-hidden">
                       {p.image_url ? (
                         <img
                           src={p.image_url}
                           alt={p.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full grid place-items-center text-muted-foreground/50 text-4xl font-heading font-bold">
+                        <div className="w-full h-full grid place-items-center text-muted-foreground/40 text-2xl font-heading font-bold">
                           {p.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
-                    <div className="px-2.5 py-2 leading-tight flex flex-col gap-1 flex-1">
-                      <p className="text-[12px] font-semibold line-clamp-2 min-h-[2em] text-foreground">{p.name}</p>
-                      <span className="text-[14px] font-extrabold tabular-nums text-primary mt-auto">
+                    <div className="px-1.5 py-1 leading-tight flex flex-col gap-0.5 flex-1">
+                      <p className="text-[11px] font-medium line-clamp-2 min-h-[1.7em] text-foreground">{p.name}</p>
+                      <span className="text-[12px] font-bold tabular-nums text-primary mt-auto">
                         {COP(Number(p.price))}
                       </span>
                     </div>
                   </button>
                   );
                 })}
-
               </div>
             )}
           </div>
@@ -1314,7 +1313,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
         {/* Ticket (sticky card en desktop; en móvil colapsable con footer fijo) */}
         <aside
-          className={`bg-muted/20 border-t lg:border-t-0 lg:border-l flex flex-col min-h-0 lg:w-[500px] xl:w-[540px] lg:flex-none lg:max-h-none ${
+          className={`bg-muted/20 border-t lg:border-t-0 lg:border-l flex flex-col min-h-0 lg:flex-1 lg:min-w-[520px] lg:max-h-none ${
             mobileTicketExpanded ? "max-h-[70dvh]" : "max-h-none"
           }`}
         >
@@ -1520,7 +1519,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
             {/* Numpad permanente estilo Kodigo — thumb-zone (una mano, dedo pulgar).
                 Columna lateral de ~210px anclada a la derecha del panel del ticket. */}
-            <div className="hidden lg:flex lg:w-[210px] shrink-0 border-l bg-card px-2 py-2 flex-col">
+            <div className="hidden lg:flex lg:w-[220px] shrink-0 border-l bg-card px-2 py-2 flex-col overflow-y-auto min-h-0">
               {/* Descripción de la línea seleccionada — reemplaza el label truncado
                   y da contexto claro (nombre completo + unitario · subtotal). */}
               <div
