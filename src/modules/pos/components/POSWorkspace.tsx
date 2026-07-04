@@ -1551,6 +1551,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         </aside>
       </div>
 
+      <POSPinLock userId={userId} cashierName={cashierName} />
+
       <PaymentDialog
         open={payOpen}
         onOpenChange={setPayOpen}
