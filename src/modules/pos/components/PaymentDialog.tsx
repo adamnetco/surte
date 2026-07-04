@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight, ShieldAlert, ShieldOff, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import DocumentTypeSelector from "./DocumentTypeSelector";
+import Numpad from "./Numpad";
 import { usePosCobroGate } from "@/modules/pos/hooks/usePosCobroGate";
 import { useTipConfig } from "@/modules/pos/hooks/useTipConfig";
 import { useAuth } from "@/modules/auth/context/AuthContext";
