@@ -116,8 +116,9 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
           !dragging ? "transition-[transform,box-shadow,border-color]" : ""
         } ${
           selected
-            ? "border-primary ring-1 ring-primary/40 bg-primary/5"
+            ? "border-primary ring-2 ring-primary/50 bg-primary/5 shadow-sm"
             : `${index % 2 === 1 ? "bg-muted/30" : "bg-card"} border-border hover:border-border/80 focus-within:ring-1 focus-within:ring-ring`
+
         }`}
 
         style={{ transform: `translateX(${dragX}px)` }}
