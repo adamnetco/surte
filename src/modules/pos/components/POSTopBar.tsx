@@ -31,6 +31,10 @@ interface Props {
   /** Acciones extra mostradas dentro del Sheet "Sesión POS"
    *  (post-refactor del POSRightRail: NC, Ventas día, Cajón, Recientes). */
   extraActions?: React.ReactNode;
+  /** Control de visibilidad del POSTopRibbon (estilo Office: click muestra, doble-click oculta). */
+  ribbonVisible?: boolean;
+  onToggleRibbon?: () => void;
+  onHideRibbon?: () => void;
 }
 
 function fmtElapsed(ms: number) {
