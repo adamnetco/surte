@@ -1424,44 +1424,43 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </div>
             </div>
 
-            {/* Botón principal (cambia label según modo) */}
+            {/* Botón principal (cambia label según modo) — thumb-zone XL */}
             <Button
               variant={saleMode === "consumo_interno" ? "cta-primary" : "cta"}
-              className="w-full h-14 text-base"
+              className="w-full h-16 text-lg font-extrabold shadow-md active:scale-[0.98] transition-transform [touch-action:manipulation]"
               disabled={ticket.length === 0}
-              onClick={() => setPayOpen(true)}
+              onClick={() => { try { navigator.vibrate?.(12); } catch { /* noop */ } setPayOpen(true); }}
             >
-              <CreditCard className="w-5 h-5 mr-2" />
+              <CreditCard className="w-6 h-6 mr-2" />
               {saleMode === "consumo_interno" ? "REGISTRAR CORTESÍA" : "COBRAR"}
               <kbd className="ml-2 px-1.5 py-0.5 bg-black/15 rounded text-[10px] font-mono">F2</kbd>
             </Button>
 
-            {/* Acciones secundarias (gastro-friendly) */}
-            <div className="grid grid-cols-3 gap-1">
-              {/* Cliente vive ahora en la barra superior (POSCustomerPicker) */}
-
+            {/* Acciones secundarias fila 1 — targets táctiles ≥44px */}
+            <div className="grid grid-cols-3 gap-2">
               {/* Descuento global */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    size="sm"
-                    className={`h-8 text-[10px] px-1 ${globalDiscPct > 0 ? "border-accent text-accent" : ""}`}
+                    className={`h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95 ${globalDiscPct > 0 ? "border-accent text-accent" : ""}`}
                     title="Descuento al ticket"
                     disabled={ticket.length === 0}
                   >
-                    <Percent className="w-3.5 h-3.5" />
-                    {globalDiscPct > 0 && <span className="ml-0.5">{globalDiscPct}</span>}
+                    <Percent className="w-5 h-5" />
+                    <span className="text-[10px] leading-none">
+                      {globalDiscPct > 0 ? `${globalDiscPct}%` : "Desc."}
+                    </span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-3 space-y-2" side="top">
+                <PopoverContent className="w-64 p-3 space-y-2" side="top">
                   <p className="text-xs font-semibold">Descuento ticket (%)</p>
-                  <div className="grid grid-cols-4 gap-1">
+                  <div className="grid grid-cols-4 gap-1.5">
                     {[0, 5, 10, 15, 20, 25, 30, 50].map((v) => (
                       <button
                         key={v}
-                        onClick={() => setGlobalDiscPct(v)}
-                        className={`text-[11px] py-1.5 rounded border ${
+                        onClick={() => { try { navigator.vibrate?.(6); } catch { /* noop */ } setGlobalDiscPct(v); }}
+                        className={`h-11 text-sm font-semibold rounded border [touch-action:manipulation] active:scale-95 ${
                           globalDiscPct === v ? "bg-accent text-accent-foreground border-accent" : "bg-muted hover:bg-accent/20"
                         }`}
                       >
@@ -1477,11 +1476,11 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    size="sm"
-                    className={`h-8 text-[10px] px-1 ${ticketNote ? "border-accent text-accent" : ""}`}
+                    className={`h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95 ${ticketNote ? "border-accent text-accent" : ""}`}
                     title="Nota del ticket"
                   >
-                    <StickyNote className="w-3.5 h-3.5" />
+                    <StickyNote className="w-5 h-5" />
+                    <span className="text-[10px] leading-none">Nota</span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-3 space-y-2" side="top">
@@ -1499,49 +1498,50 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               {/* Pausar */}
               <Button
                 variant="outline"
-                size="sm"
-                className="h-8 text-[10px] px-1"
+                className="h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={ticket.length === 0}
-                onClick={() => setActionMode("park")}
+                onClick={() => { try { navigator.vibrate?.(8); } catch { /* noop */ } setActionMode("park"); }}
                 title="Pausar / Suspender (F8)"
               >
-                <Pause className="w-3.5 h-3.5" />
+                <Pause className="w-5 h-5" />
+                <span className="text-[10px] leading-none">Suspender</span>
               </Button>
             </div>
 
-            {/* Acciones secundarias fila 2: gastro VectorPOS */}
-            <div className="grid grid-cols-3 gap-1">
+            {/* Acciones secundarias fila 2 — gastro VectorPOS, táctil */}
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant="ghost"
-                size="sm"
-                className="h-7 text-[10px]"
+                className="h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={ticket.length === 0}
                 onClick={() => setActionMode("quote")}
                 title="Cotizar (F7)"
               >
-                <FileText className="w-3 h-3 mr-1" /> Cotizar
+                <FileText className="w-4 h-4" />
+                <span className="text-[10px] leading-none">Cotizar</span>
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
-                className="h-7 text-[10px]"
+                className="h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={!lastOrderId}
                 onClick={() => setActionMode("emit")}
                 title="Facturar último (F6)"
               >
-                <FileSignature className="w-3 h-3 mr-1" /> Facturar
+                <FileSignature className="w-4 h-4" />
+                <span className="text-[10px] leading-none">Facturar</span>
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
-                className="h-7 text-[10px]"
+                className="h-11 text-xs flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={!lastOrderId}
                 onClick={() => window.print()}
                 title="Reimprimir última comanda"
               >
-                <Printer className="w-3 h-3 mr-1" /> Reimprimir
+                <Printer className="w-4 h-4" />
+                <span className="text-[10px] leading-none">Reimprimir</span>
               </Button>
             </div>
+
 
             {/* "Trasladar mesa / productos" eliminado: la transferencia vive en
                 TableOrderDrawer (split + ArrowRightLeft) y el switch de vista
