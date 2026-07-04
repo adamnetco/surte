@@ -175,12 +175,13 @@ export default function POSPinLock({
     }
   };
 
-  const lockNow = useCallback(() => {
+  const lockNow = useCallback((trigger: "manual" | "hotkey" = "manual") => {
     setLocked(true);
     setMode(pinHash ? "unlock" : "set");
     setDraft("");
     setError(null);
     setReason(null);
+    logPosSecurityEvent("pin_lock", { trigger });
   }, [pinHash]);
 
   // Ctrl+L / Cmd+L → bloquear caja al instante. Ignora si el foco está en un input
