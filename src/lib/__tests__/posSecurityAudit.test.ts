@@ -24,10 +24,10 @@ vi.mock("@/integrations/supabase/client", () => ({
 import { logPosSecurityEvent, resetPosSecurityAuditCache } from "../posSecurityAudit";
 
 async function flushMicrotasks() {
-  // queueMicrotask + awaits internos — dos ticks cubren el flush completo.
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
+  // queueMicrotask + tres awaits internos (getSession, from().maybeSingle(), getUser, insert)
+  // Con esperar un tick de macrotask + varios micros basta.
+  await new Promise((r) => setTimeout(r, 0));
+  for (let i = 0; i < 10; i++) await Promise.resolve();
 }
 
 describe("posSecurityAudit", () => {
