@@ -86,10 +86,25 @@ let win;
 function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 1024, minHeight: 600,
-    title: "SURTÉ YA POS Desktop",
-    webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname, "preload.cjs") },
+    title: "SistecPOS Desktop",
+    backgroundColor: "#0F172A", // evita flash blanco al abrir
+    frame: false,               // usamos AppDesktopBar como titlebar propia
+    titleBarStyle: "hidden",
+    show: false,                // se muestra tras 'ready-to-show' para evitar parpadeo
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false, // POS no puede pausar timers al perder foco
+      preload: path.join(__dirname, "preload.cjs"),
+    },
   });
+  win.once("ready-to-show", () => win.show());
+  win.on("maximize", () => win.webContents.send("window:maximize-change", true));
+  win.on("unmaximize", () => win.webContents.send("window:maximize-change", false));
   win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+
+  // Menú nativo oculto en producción — la app tiene su propia barra global.
+  if (app.isPackaged) Menu.setApplicationMenu(null);
 }
 
 ipcMain.handle("license:status", () => ({ fingerprint: machineFingerprint(), hasLicense: !!decFile(LIC_FILE) }));
