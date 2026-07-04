@@ -166,12 +166,28 @@ export default function POSPinLock({
     }
   };
 
-  const lockNow = () => {
+  const lockNow = useCallback(() => {
     setLocked(true);
     setMode(pinHash ? "unlock" : "set");
     setDraft("");
     setError(null);
-  };
+    setReason(null);
+  }, [pinHash]);
+
+  // Ctrl+L / Cmd+L → bloquear caja al instante. Ignora si el foco está en un input
+  // (Ctrl+L en algunos navegadores selecciona la URL; preventDefault en el POS es OK).
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return;
+      if (e.key !== "l" && e.key !== "L") return;
+      const t = e.target as HTMLElement | null;
+      if (t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable) return;
+      e.preventDefault();
+      lockNow();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lockNow]);
 
   return (
     <>
