@@ -289,11 +289,11 @@ export default function TicketLineRow({ line, onQty, onRemove, onNotes, onDiscou
 
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            onClick={(e) => { e.stopPropagation(); try { navigator.vibrate?.(8); } catch { /* noop */ } onRemove(); }}
             aria-label={`Eliminar ${line.name}`}
-            className="h-7 w-7 grid place-items-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+            className="h-9 w-9 grid place-items-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition touch-manipulation"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
