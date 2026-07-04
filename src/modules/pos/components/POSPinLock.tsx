@@ -210,7 +210,7 @@ export default function POSPinLock({
       {/* Botón flotante de bloqueo — thumb-zone abajo-izquierda */}
       {!locked && (
         <button
-          onClick={lockNow}
+          onClick={() => lockNow("manual")}
           aria-label="Bloquear caja"
           className="fixed bottom-4 left-4 z-40 h-12 w-12 rounded-full bg-background border-2 border-border shadow-lg flex items-center justify-center [touch-action:manipulation] active:scale-95 hover:bg-muted"
           title="Bloquear caja (Ctrl+L)"
