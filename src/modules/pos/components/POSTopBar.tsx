@@ -71,6 +71,36 @@ export default function POSTopBar({
 
   void sync;
 
+  // Robust click / dbl-click handling for the ribbon toggle.
+  // - Hidden → single click/tap SHOWS immediately (no delay, no dbl-click needed).
+  // - Visible → single click/tap is a NO-OP (prevents accidental hide on touch);
+  //   only a real double-click/tap within 320ms hides it (Office-style).
+  const clickTimerRef = useRef<number | null>(null);
+  const clearClickTimer = () => {
+    if (clickTimerRef.current !== null) {
+      window.clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+  };
+  useEffect(() => () => clearClickTimer(), []);
+
+  const handleRibbonClick = () => {
+    if (!ribbonVisible) {
+      clearClickTimer();
+      onToggleRibbon?.();
+      return;
+    }
+    // Ribbon visible: swallow single click, wait for potential dbl-click.
+    if (clickTimerRef.current !== null) return;
+    clickTimerRef.current = window.setTimeout(() => {
+      clickTimerRef.current = null;
+    }, 320);
+  };
+  const handleRibbonDoubleClick = () => {
+    clearClickTimer();
+    if (ribbonVisible) onHideRibbon?.();
+  };
+
   return (
     <header className="sticky top-0 z-30 bg-card border-b">
       <div className="h-12 flex items-center px-3 gap-3">
