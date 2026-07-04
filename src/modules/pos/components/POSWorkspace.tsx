@@ -107,6 +107,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   const [searchFocused, setSearchFocused] = useState(false);
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  // Anuncio a11y para lectores de pantalla al añadir/actualizar líneas del ticket.
+  const [srAnnounce, setSrAnnounce] = useState("");
+
   // Draft del numpad permanente (columna derecha estilo Kodigo). Se sincroniza con la línea seleccionada.
   const [numpadDraft, setNumpadDraft] = useState<string>("");
 
