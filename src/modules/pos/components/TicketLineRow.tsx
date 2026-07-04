@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Trash2, Plus, Minus, StickyNote, Percent } from "lucide-react";
+import Numpad from "./Numpad";
 
 export interface TicketLineData {
   productId: string;
