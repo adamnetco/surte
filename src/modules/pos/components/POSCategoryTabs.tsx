@@ -57,8 +57,9 @@ export default function POSCategoryTabs({ categories, activeId, onChange, counts
       <ScrollArea className="w-full">
         <div
           ref={scrollerRef}
-          className={cn("flex items-center gap-1.5 py-2", overflow ? "md:px-10 px-3" : "px-3")}
+          className={cn("flex items-center gap-1.5 py-2 scroll-smooth snap-x snap-mandatory", overflow ? "md:px-10 px-3" : "px-3")}
         >
+
           <CategoryChip
             label="Todos"
             icon={<LayoutGrid className="w-3.5 h-3.5" />}
