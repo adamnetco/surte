@@ -1798,12 +1798,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                       <span className="truncate">{driver ? driver.name : "Domiciliario"}</span>
                     </button>
                   )}
-                  {saleMode === "autoservicio" && (
-                    <span className="inline-flex items-center gap-1 px-1.5 h-6 rounded-md border bg-accent/10 text-accent border-accent/30 text-[10px] font-extrabold uppercase tracking-wide">
-                      <ShoppingBag className="w-3 h-3" />
-                      LLEVAR
-                    </span>
-                  )}
+                  {/* Modo autoservicio (Mostrador): sin badge LLEVAR — el flujo Llevar
+                      vive como pestaña dentro del modo Mesas (restaurante). */}
                   <span
                     className="text-[10px] font-semibold tabular-nums text-muted-foreground ml-auto shrink-0"
                     aria-label={`${ticket.length} ${ticket.length === 1 ? "ítem" : "ítems"} en el ticket`}
