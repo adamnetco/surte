@@ -141,6 +141,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   // Cuando true, el TableGridSheet mueve el ticket actual a la mesa elegida
   // (crea table_order + items, marca mesa ocupada, limpia el ticket).
   const [sendToTableMode, setSendToTableMode] = useState(false);
+  // Mesas reales cargadas desde dining_tables (para el TableGridSheet). Sin
+  // esto el picker mostraba labels genéricos "1..18" que no existen en DB y
+  // handleSendTicketToTable fallaba con "No se encontró la mesa X".
+  const [posTables, setPosTables] = useState<PosTable[]>([]);
   const [orgTip, setOrgTip] = useState<{ pct: number; enabled: boolean }>({ pct: 10, enabled: true });
   const [quickModsOpen, setQuickModsOpen] = useState(false);
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
