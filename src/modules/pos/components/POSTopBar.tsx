@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Settings, Clock, User, LogOut, Keyboard, LayoutGrid, PanelTop } from "lucide-react";
+import { Settings, Clock, User, LogOut, Keyboard, PanelTop } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PosMode } from "@/modules/pos/lib/posModes";
 
@@ -105,22 +104,6 @@ export default function POSTopBar({
             <Keyboard className="w-3.5 h-3.5" aria-hidden />
             <kbd className="px-1 bg-muted rounded text-[10px] font-mono">F1</kbd>
           </button>
-          <NavLink
-            to="/pos"
-            end
-            aria-label="Ir al panel del POS"
-            className={({ isActive }) =>
-              cn(
-                "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-md text-xs font-medium transition focus-visible:ring-2 focus-visible:ring-ring",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )
-            }
-          >
-            <LayoutGrid className="w-4 h-4" aria-hidden />
-            <span className="hidden sm:inline">Panel</span>
-          </NavLink>
           {onToggleRibbon && (
             <button
               type="button"
@@ -139,22 +122,6 @@ export default function POSTopBar({
               <PanelTop className="w-4 h-4" aria-hidden />
             </button>
           )}
-          <NavLink
-            to="/pos"
-            end
-            aria-label="Ir al panel del POS"
-            className={({ isActive }) =>
-              cn(
-                "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-md text-xs font-medium transition focus-visible:ring-2 focus-visible:ring-ring",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )
-            }
-          >
-            <LayoutGrid className="w-4 h-4" aria-hidden />
-            <span className="hidden sm:inline">Panel</span>
-          </NavLink>
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10 focus-visible:ring-2 focus-visible:ring-ring" aria-label="Abrir configuración del POS">
