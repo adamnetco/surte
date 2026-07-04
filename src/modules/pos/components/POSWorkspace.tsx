@@ -1427,15 +1427,22 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </div>
 
               {/* TOTAL XL — bloque derecho dominante, ocupa el espacio liberado */}
-              <div className="shrink-0 flex flex-col items-end justify-center min-w-[130px] px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground leading-none">
+              <div
+                data-testid="ticket-total-xl"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                aria-label={`Total del ticket: ${COP(totals.total)}`}
+                className="shrink-0 flex flex-col items-end justify-center min-w-[130px] px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20"
+              >
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground leading-none" aria-hidden="true">
                   Total
                 </span>
-                <span className="text-2xl xl:text-[28px] font-extrabold tabular-nums leading-tight text-primary font-heading">
+                <span className="text-2xl xl:text-[28px] font-extrabold tabular-nums leading-tight text-primary font-heading" aria-hidden="true">
                   {COP(totals.total)}
                 </span>
                 {(totals.globalDisc > 0 || totals.tax > 0) && (
-                  <span className="text-[9px] tabular-nums text-muted-foreground leading-none">
+                  <span className="text-[9px] tabular-nums text-muted-foreground leading-none" aria-hidden="true">
                     Sub {COP(totals.lineSubtotal)}
                   </span>
                 )}
