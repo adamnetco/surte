@@ -597,7 +597,13 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       setTableLabel("");
       setTicketNote("");
       setGlobalDiscPct(0);
-      toast.success(`Ticket enviado a mesa ${tableLabelPicked}`);
+      setActiveTableOrder(null);
+      // Volver a la vista de Mesas para que el mesero vea la mesa ocupada
+      // y pueda re-abrirla luego para cobrar/imprimir cuenta.
+      if (isFood) setCatalogView("tables");
+      toast.success(`Ticket enviado a mesa ${tableLabelPicked}`, {
+        description: "Toca la mesa para volver a abrirla y cobrar.",
+      });
     } catch (err) {
       console.error("[send-to-table]", err);
       toast.error("No se pudo enviar el ticket a la mesa");
