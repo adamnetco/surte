@@ -1318,7 +1318,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
         {/* Ticket (sticky card en desktop; en móvil colapsable con footer fijo) */}
         <aside
-          className={`bg-muted/20 border-t lg:border-t-0 lg:border-l flex flex-col lg:basis-1/2 lg:w-1/2 lg:flex-none lg:max-h-none ${
+          className={`bg-muted/20 border-t lg:border-t-0 lg:border-l flex flex-col min-h-0 lg:basis-1/2 lg:w-1/2 lg:flex-none lg:max-h-none ${
             mobileTicketExpanded ? "max-h-[70dvh]" : "max-h-none"
           }`}
         >
@@ -1430,68 +1430,65 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
 
 
 
-          <div className={`${mobileTicketExpanded ? "flex" : "hidden"} lg:flex flex-col flex-1 min-h-0`}>
+          {/* Zona central: listado (izq, absorbe) + Numpad (der, 210px thumb-zone).
+              En móvil se apila y numpad se oculta (se usa el sheet por línea). */}
+          <div className={`${mobileTicketExpanded ? "flex" : "hidden"} lg:flex flex-1 min-h-0 flex-col lg:flex-row`}>
 
-            {/* Encabezado visible del listado — deja claro dónde aparecen los productos añadidos */}
-            <div className="hidden lg:flex items-center justify-between px-3 pt-2 pb-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Productos añadidos
-              </span>
-              <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
-                {ticket.length}
-              </span>
-            </div>
+            <div className="flex flex-col flex-1 min-w-0 min-h-0">
+              {/* Encabezado visible del listado — deja claro dónde aparecen los productos añadidos */}
+              <div className="hidden lg:flex items-center justify-between px-3 pt-2 pb-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Productos añadidos
+                </span>
+                <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
+                  {ticket.length}
+                </span>
+              </div>
 
-            <div
-              className="flex-1 overflow-y-auto p-2.5 space-y-1.5"
-              role="list"
-              aria-label={`Productos en el ticket, ${ticket.length} ${ticket.length === 1 ? "ítem" : "ítems"}`}
-              aria-live="polite"
-            >
-              {ticket.length === 0 ? (
-                <div className="h-full min-h-[220px] grid place-items-center px-6" role="status">
-                  <div className="text-center max-w-xs">
-                    <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/10 grid place-items-center mb-3 shadow-sm">
-                      <ScanLine className="w-7 h-7 text-primary" aria-hidden="true" />
-                    </div>
-                    <p className="text-sm font-semibold text-foreground">Ticket vacío</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Escanea, toca un producto del catálogo o busca por nombre/SKU.
-                    </p>
-                    <div className="mt-4 grid grid-cols-3 gap-1.5 text-[10px]">
-                      <ShortcutHint k="F3" label="Buscar" />
-                      <ShortcutHint k="Alt 1–9" label="Añadir #N" />
-                      <ShortcutHint k="F2" label="Cobrar" />
+              <div
+                className="flex-1 overflow-y-auto p-2.5 space-y-1.5"
+                role="list"
+                aria-label={`Productos en el ticket, ${ticket.length} ${ticket.length === 1 ? "ítem" : "ítems"}`}
+                aria-live="polite"
+              >
+                {ticket.length === 0 ? (
+                  <div className="h-full min-h-[220px] grid place-items-center px-6" role="status">
+                    <div className="text-center max-w-xs">
+                      <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/10 grid place-items-center mb-3 shadow-sm">
+                        <ScanLine className="w-7 h-7 text-primary" aria-hidden="true" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">Ticket vacío</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Escanea, toca un producto del catálogo o busca por nombre/SKU.
+                      </p>
+                      <div className="mt-4 grid grid-cols-3 gap-1.5 text-[10px]">
+                        <ShortcutHint k="F3" label="Buscar" />
+                        <ShortcutHint k="Alt 1–9" label="Añadir #N" />
+                        <ShortcutHint k="F2" label="Cobrar" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-
-                ticket.map((l, i) => (
-                  <TicketLineRow
-                    key={l.productId}
-                    index={i}
-                    line={l}
-                    selected={selectedLineId === l.productId}
-                    onSelect={() => setSelectedLineId(l.productId)}
-                    onQty={(d) => updateQty(l.productId, d)}
-                    onRemove={() => removeLine(l.productId)}
-                    onNotes={(notes) => setLineNotes(l.productId, notes)}
-                    onDiscount={(pct) => setLineDiscount(l.productId, pct)}
-                  />
-                ))
-
-              )}
+                ) : (
+                  ticket.map((l, i) => (
+                    <TicketLineRow
+                      key={l.productId}
+                      index={i}
+                      line={l}
+                      selected={selectedLineId === l.productId}
+                      onSelect={() => setSelectedLineId(l.productId)}
+                      onQty={(d) => updateQty(l.productId, d)}
+                      onRemove={() => removeLine(l.productId)}
+                      onNotes={(notes) => setLineNotes(l.productId, notes)}
+                      onDiscount={(pct) => setLineDiscount(l.productId, pct)}
+                    />
+                  ))
+                )}
+              </div>
             </div>
-          </div>
 
-
-          {/* Numpad permanente estilo Kodigo — thumb-zone (una mano, dedo pulgar).
-              Se ancla a la derecha con ancho fijo ~200px para caber en el arco natural
-              del pulgar y no invadir el listado de productos. En móvil se sigue usando
-              el Sheet por línea (thumb-zone nativo). */}
-          <div className="hidden lg:flex border-t bg-card px-3 py-2 justify-end">
-            <div className="w-[200px] max-w-full">
+            {/* Numpad permanente estilo Kodigo — thumb-zone (una mano, dedo pulgar).
+                Columna lateral de ~210px anclada a la derecha del panel del ticket. */}
+            <div className="hidden lg:flex lg:w-[210px] shrink-0 border-l bg-card px-2 py-2 flex-col">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Cant.
@@ -1518,9 +1515,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 confirmDisabled={!selectedLine || !numpadDraft || Number(numpadDraft) <= 0}
                 onConfirm={applyNumpadQty}
               />
-
             </div>
           </div>
+
 
 
 
