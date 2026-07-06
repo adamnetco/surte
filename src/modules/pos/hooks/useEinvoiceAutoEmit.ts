@@ -11,7 +11,7 @@
 //   - El umbral vive en einvoice_configs.extra.auto_emit_threshold para no
 //     forzar una migración: 0 = emite siempre; >0 = solo cuando supera.
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
 import type { POSCustomer } from "@/modules/pos/lib/posCustomer";
 import { isConsumidorFinal } from "@/modules/pos/lib/posCustomer";
 
@@ -27,17 +27,12 @@ export function useEinvoiceAutoEmit(organizationId: string | undefined) {
     enabled: !!organizationId,
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<EinvoiceAutoEmitConfig> => {
-      const { data, error } = await supabase
-        .from("einvoice_configs")
-        .select("is_active, extra")
-        .eq("organization_id", organizationId!)
-        .maybeSingle();
+      const cfg = await supabaseEinvoiceRepository.loadAutoEmitConfig(organizationId!);
       // RLS puede negar lectura a cajeros sin rol admin; tratamos como "off".
-      if (error || !data) return { isActive: false, threshold: 0, autoEnabled: false };
-      const extra = (data.extra ?? {}) as Record<string, unknown>;
-      const threshold = Number(extra.auto_emit_threshold ?? 0) || 0;
-      const autoEnabled = extra.auto_emit_enabled !== false; // default true
-      return { isActive: !!data.is_active, threshold, autoEnabled };
+      if (!cfg) return { isActive: false, threshold: 0, autoEnabled: false };
+      const threshold = Number(cfg.extra.auto_emit_threshold ?? 0) || 0;
+      const autoEnabled = cfg.extra.auto_emit_enabled !== false; // default true
+      return { isActive: cfg.isActive, threshold, autoEnabled };
     },
   });
 

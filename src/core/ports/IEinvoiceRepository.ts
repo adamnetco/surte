@@ -54,4 +54,8 @@ export interface IEinvoiceRepository {
   ): () => void;
   listStatusesSince(organizationId: string, sinceIso: string): Promise<StatusCountByOrgRow[]>;
   subscribeByOrg(organizationId: string, onChange: () => void): () => void;
+  loadAutoEmitConfig(organizationId: string): Promise<{
+    isActive: boolean;
+    extra: Record<string, unknown>;
+  } | null>;
 }
