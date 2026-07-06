@@ -1,21 +1,17 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseKdsRepository } from "@/infrastructure/database/SupabaseKdsRepository";
+import type {
+  KdsStation as Station,
+  KdsTicket as Ticket,
+  KdsTicketItem as KdsItem,
+} from "@/core/ports/IKdsRepository";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { Loader2, LockKeyhole, ChefHat, Check, Play, BellRing } from "lucide-react";
+import { LockKeyhole, ChefHat, Check, Play, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
-
-interface Station { id: string; name: string; color: string | null; sla_minutes: number; }
-interface KdsItem { name: string; qty: number; done?: boolean }
-interface Ticket {
-  id: string; kitchen_station_id: string | null; dining_table_label: string | null;
-  items: KdsItem[]; status: string; sent_at: string; started_at: string | null; ready_at: string | null;
-  notes: string | null;
-}
 
 const elapsedSec = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
 const fmtMMSS = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
