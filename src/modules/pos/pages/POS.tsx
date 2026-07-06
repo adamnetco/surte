@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePosSessionRepository } from "@/infrastructure/database/SupabasePosSessionRepository";
+import type {
+  PosCashRegister,
+  PosLocation,
+  PosSession as Session,
+} from "@/core/ports/IPosSessionRepository";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { toast } from "sonner";
@@ -10,12 +15,8 @@ import POSWorkspace from "@/modules/pos/components/POSWorkspace";
 import POSErrorBoundary from "@/modules/pos/components/POSErrorBoundary";
 import ModuleInactiveScreen from "@/components/ModuleInactiveScreen";
 
-interface Location { id: string; name: string; }
-interface Register { id: string; name: string; location_id: string; }
-interface Session {
-  id: string; location_id: string; cash_register_id: string;
-  opening_amount: number; opened_at: string; status: string;
-}
+type Location = PosLocation;
+type Register = PosCashRegister;
 
 export default function POS() {
   const { user, loading: authLoading } = useAuth();
