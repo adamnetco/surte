@@ -133,4 +133,17 @@ export const supabaseEinvoiceRepository: IEinvoiceRepository = {
     }
     return () => safeRemoveChannel(channel);
   },
+
+  async loadAutoEmitConfig(organizationId) {
+    const { data, error } = await supabase
+      .from("einvoice_configs")
+      .select("is_active, extra")
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    if (error || !data) return null;
+    return {
+      isActive: !!data.is_active,
+      extra: (data.extra ?? {}) as Record<string, unknown>,
+    };
+  },
 };
