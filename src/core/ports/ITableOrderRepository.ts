@@ -45,5 +45,11 @@ export interface ITableOrderRepository {
 
   /** Realtime sobre cambios en `table_orders` de la organización. */
   subscribeTableOrders(organizationId: string, onChange: () => void): () => void;
+
+  /** Crea nueva sub-cuenta a partir de una orden fuente. Devuelve el id de la nueva orden. */
+  splitTableOrder(sourceOrderId: string): Promise<string>;
+
+  /** Mueve un item de una orden a otra sub-cuenta. */
+  transferTableItem(itemId: string, destOrderId: string): Promise<void>;
 }
 

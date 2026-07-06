@@ -80,5 +80,16 @@ export const supabaseTableOrderRepository: ITableOrderRepository = {
     }
     return () => safeRemoveChannel(channel);
   },
+
+  async splitTableOrder(sourceOrderId) {
+    const { data, error } = await (supabase.rpc as any)("split_table_order", { _source: sourceOrderId });
+    if (error) throw asError(error);
+    return data as string;
+  },
+
+  async transferTableItem(itemId, destOrderId) {
+    const { error } = await (supabase.rpc as any)("transfer_table_item", { _item: itemId, _dest_order: destOrderId });
+    if (error) throw asError(error);
+  },
 };
 
