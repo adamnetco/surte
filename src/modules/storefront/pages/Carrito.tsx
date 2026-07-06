@@ -386,8 +386,8 @@ const Carrito = () => {
         await supabase.rpc("redeem_coupon", { _coupon_id: appliedCoupon.id });
       }
 
-      // Mark the persistent cart as completed (best-effort, non-blocking)
-      try { await supabase.rpc("complete_persistent_cart", { _cart_token: cartToken }); } catch { /* ignore */ }
+      // Mark the persistent cart as completed via adapter (best-effort, non-blocking)
+      try { await supabaseCartRepository.complete(cartToken); } catch { /* ignore */ }
 
       clearCart();
       if (isAgent) clearAgent();
