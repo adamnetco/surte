@@ -41,15 +41,14 @@ export default function POS() {
   const load = async () => {
     if (!orgId || !user) return;
     setLoading(true);
-    const [{ data: locs }, { data: regs }, { data: ses }] = await Promise.all([
-      supabase.from("locations").select("id,name").eq("organization_id", orgId).eq("is_active", true).order("name"),
-      supabase.from("cash_registers").select("id,name,location_id").eq("organization_id", orgId).eq("is_active", true),
-      supabase.from("cash_sessions").select("id,location_id,cash_register_id,opening_amount,opened_at,status")
-        .eq("organization_id", orgId).eq("opened_by", user.id).eq("status", "open").maybeSingle(),
-    ]);
-    setLocations(locs ?? []);
-    setRegisters(regs ?? []);
-    setActiveSession((ses as Session) ?? null);
+    const { locations: locs, registers: regs, activeSession: ses } =
+      await supabasePosSessionRepository.loadBootstrap({
+        organizationId: orgId,
+        userId: user.id,
+      });
+    setLocations(locs);
+    setRegisters(regs);
+    setActiveSession(ses);
     setLoading(false);
   };
 
