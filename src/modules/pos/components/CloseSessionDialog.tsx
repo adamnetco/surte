@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseCashSessionRepository } from "@/infrastructure/database/SupabaseCashSessionRepository";
+import type { CashDenomination as Denomination, CashSessionTotals as Totals } from "@/core/ports/ICashSessionRepository";
 import { toast } from "sonner";
 import { Coins, Banknote, Wand2, Loader2, Eye, EyeOff, Camera, X } from "lucide-react";
 import { errorToMessage } from "@/lib/errors";
@@ -27,15 +28,7 @@ interface Props {
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const DIFF_THRESHOLD = 5_000; // COP — descuadre que dispara confirmación
 
-interface Totals {
-  cash: number; card: number; transfer: number; other: number; total: number; count: number; tips: number;
-}
-
-interface Denomination {
-  id: string;
-  value: number;
-  kind: string;
-}
+// Tipos re-exportados desde el port hexagonal (Totals, Denomination).
 
 export default function CloseSessionDialog({ open, onOpenChange, sessionId, openingAmount, organizationId, userId, onClosed }: Props) {
   const [totals, setTotals] = useState<Totals>({ cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: 0, tips: 0 });
@@ -57,29 +50,11 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
     setLoading(true);
     (async () => {
       try {
-        const [{ data: pays }, { count }, { data: dens }, { data: tipsRows }] = await Promise.all([
-          supabase.from("pos_payments").select("method,amount")
-            .eq("organization_id", organizationId).eq("cash_session_id", sessionId),
-          supabase.from("pos_orders").select("id", { count: "exact", head: true })
-            .eq("organization_id", organizationId).eq("cash_session_id", sessionId).eq("status", "paid"),
-          supabase.from("cash_denominations").select("id,value,kind")
-            .eq("currency", "COP").eq("is_active", true).order("value", { ascending: false }),
-          supabase.from("pos_orders").select("tip")
-            .eq("organization_id", organizationId).eq("cash_session_id", sessionId).eq("status", "paid"),
-        ]);
-
-        const tipsTotal = (tipsRows ?? []).reduce((s, r: { tip: number | null }) => s + Number(r.tip ?? 0), 0);
-        const t: Totals = { cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: count ?? 0, tips: tipsTotal };
-        (pays ?? []).forEach((p: any) => {
-          const a = Number(p.amount);
-          t.total += a;
-          if (p.method === "efectivo") t.cash += a;
-          else if (p.method?.startsWith("tarjeta")) t.card += a;
-          else if (["transferencia", "nequi", "daviplata"].includes(p.method)) t.transfer += a;
-          else t.other += a;
+        const { totals: t, denominations } = await supabaseCashSessionRepository.loadCloseSnapshot({
+          organizationId, sessionId,
         });
         setTotals(t);
-        setDenoms((dens ?? []) as Denomination[]);
+        setDenoms(denominations);
         setCounts({});
         setNotes("");
         setRevealed(false);
@@ -92,7 +67,7 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
         setLoading(false);
       }
     })();
-  }, [open, sessionId]);
+  }, [open, sessionId, organizationId]);
 
   const expected = openingAmount + totals.cash;
   const countedTotal = useMemo(
@@ -137,13 +112,9 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
     if (!photoFile) return null;
     setUploading(true);
     try {
-      const ext = (photoFile.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `org-${organizationId}/sessions/${sessionId}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("cash-arqueo").upload(path, photoFile, {
-        upsert: false, contentType: photoFile.type || "image/jpeg",
+      return await supabaseCashSessionRepository.uploadArqueoPhoto({
+        organizationId, sessionId, file: photoFile,
       });
-      if (error) throw error;
-      return path;
     } finally {
       setUploading(false);
     }
@@ -151,56 +122,27 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
 
   const doClose = async () => {
     setBusy(true);
-    const payload = denoms
+    const denominationCounts = denoms
       .map((d) => ({ denomination_id: d.id, quantity: parseInt(counts[d.id] || "0", 10) || 0 }))
       .filter((x) => x.quantity > 0);
 
     try {
       const photoPath = await uploadArqueoPhoto();
-      const { error: upErr } = await supabase
-        .from("cash_sessions")
-        .update({
-          expected_amount: expected,
-          total_sales: totals.total,
-          total_cash: totals.cash,
-          total_card: totals.card,
-          total_transfer: totals.transfer,
-          total_other: totals.other,
-          ticket_count: totals.count,
-          notes,
-          blind_count_enabled: blindMode,
-          arqueo_photo_url: photoPath,
-          arqueo_confirmed_at: new Date().toISOString(),
-          arqueo_confirmed_by: userId,
-        } as any)
-        .eq("organization_id", organizationId)
-        .eq("id", sessionId);
-      if (upErr) throw upErr;
-
-      const { error } = await supabase.rpc("close_cash_session_with_counts", {
-        _session_id: sessionId,
-        _counts: payload as any,
+      const { sealSequence, sealHash } = await supabaseCashSessionRepository.close({
+        organizationId,
+        sessionId,
+        userId,
+        expectedAmount: expected,
+        totals,
+        denominationCounts,
+        notes,
+        blindMode,
+        arqueoPhotoPath: photoPath,
       });
-      if (error) throw error;
 
-      // Calcula y persiste hash determinístico del conteo
-      const { data: hash } = await (supabase.rpc as any)("cash_session_compute_denom_hash", { p_session_id: sessionId });
-      if (hash) {
-        await supabase.from("cash_sessions")
-          .update({ denominations_hash: hash as string } as any)
-          .eq("organization_id", organizationId).eq("id", sessionId);
-      }
-
-      // Ola 25 · Slice 2 — recupera el sello fiscal emitido por el trigger
-      const { data: sealRow } = await supabase
-        .from("cash_session_seals")
-        .select("sequence,current_hash")
-        .eq("cash_session_id", sessionId)
-        .maybeSingle();
-
-      if (sealRow?.current_hash) {
+      if (sealHash) {
         toast.success("Caja cerrada · Sello fiscal emitido", {
-          description: `#${sealRow.sequence} · hash ${String(sealRow.current_hash).slice(0, 12)}…`,
+          description: `#${sealSequence ?? "?"} · hash ${sealHash.slice(0, 12)}…`,
           duration: 8000,
         });
       } else {
