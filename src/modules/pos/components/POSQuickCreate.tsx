@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePosQuickCreateRepository } from "@/infrastructure/database/SupabasePosQuickCreateRepository";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 
 /**
@@ -66,32 +66,27 @@ export default function POSQuickCreate({ open, onOpenChange, initialTab = "custo
         if (!prod.name.trim()) return toast.error("Nombre requerido");
         const priceNum = Number(prod.price || 0);
         if (!Number.isFinite(priceNum) || priceNum < 0) return toast.error("Precio inválido");
-        const { data, error } = await supabase
-          .from("products")
-          .insert({
-            name: prod.name.trim(),
-            price: priceNum,
-            sku: prod.sku.trim() || null,
-            organization_id: currentOrg.id,
-            is_active: true,
-          })
-          .select("id, name")
-          .single();
-        if (error) throw error;
+        const row = await supabasePosQuickCreateRepository.createProduct({
+          organizationId: currentOrg.id,
+          name: prod.name.trim(),
+          price: priceNum,
+          sku: prod.sku.trim() || null,
+        });
         toast.success("Artículo creado");
-        onCreated?.("product", { id: data.id, name: data.name });
+        onCreated?.("product", row);
         qc.invalidateQueries({ queryKey: ["admin-products"] });
         qc.invalidateQueries({ queryKey: ["products"] });
       } else {
         if (!sup.name.trim()) return toast.error("Nombre requerido");
-        const { data, error } = await supabase
-          .from("suppliers")
-          .insert({ ...sup, organization_id: currentOrg.id })
-          .select("id, name")
-          .single();
-        if (error) throw error;
+        const row = await supabasePosQuickCreateRepository.createSupplier({
+          organizationId: currentOrg.id,
+          name: sup.name.trim(),
+          tax_id: sup.tax_id,
+          phone: sup.phone,
+          email: sup.email,
+        });
         toast.success("Proveedor creado");
-        onCreated?.("supplier", { id: data.id, name: data.name });
+        onCreated?.("supplier", row);
         qc.invalidateQueries({ queryKey: ["suppliers", currentOrg.id] });
       }
       reset();

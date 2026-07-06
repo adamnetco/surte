@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Receipt, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePosVoidRepository } from "@/infrastructure/database/SupabasePosVoidRepository";
 import { toast } from "sonner";
 import { errorToMessage } from "@/lib/errors";
 
@@ -49,16 +49,13 @@ export default function VoidItemDialog({ open, onOpenChange, item, onVoided }: P
     if (!item || !code) return;
     setBusy(true);
     try {
-      const { data, error } = await (supabase.rpc as any)("pos_void_table_item", {
-        _item_id: item.id,
-        _reason_code: code,
-        _reason_text: text.trim(),
+      const { ticket, fiscal_hash } = await supabasePosVoidRepository.voidTableItem({
+        itemId: item.id,
+        reasonCode: code,
+        reasonText: text.trim(),
       });
-      if (error) throw error;
-      const ticket = (data as any)?.ticket;
-      const hash = (data as any)?.fiscal_hash as string | undefined;
       toast.success(`Vale de anulación #${ticket} emitido`, {
-        description: hash ? `Sello fiscal ${hash.slice(0, 12)}…` : undefined,
+        description: fiscal_hash ? `Sello fiscal ${fiscal_hash.slice(0, 12)}…` : undefined,
         duration: 7000,
       });
       reset();
