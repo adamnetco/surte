@@ -66,13 +66,10 @@ export default function POSSplitBillSheet({
     try {
       let target = destOrderId;
       if (!target) {
-        const { data, error } = await (supabase.rpc as any)("split_table_order", { _source: sourceOrderId });
-        if (error) throw error;
-        target = data as string;
+        target = await supabaseTableOrderRepository.splitTableOrder(sourceOrderId);
       }
       for (const itemId of ids) {
-        const { error } = await (supabase.rpc as any)("transfer_table_item", { _item: itemId, _dest_order: target });
-        if (error) throw error;
+        await supabaseTableOrderRepository.transferTableItem(itemId, target);
       }
       toast.success(`${ids.length} item(s) movido(s)`);
       setSelected(new Set());
