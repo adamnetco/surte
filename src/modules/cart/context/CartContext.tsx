@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { getCartToken, resetCartToken, setCartToken } from "@/modules/cart/lib/cartToken";
 import { computeTotals } from "@/core/use-cases/cart/ComputeTotals";
+import { supabaseCartRepository } from "@/infrastructure/database/SupabaseCartRepository";
 
 type Product = Tables<"products">;
 
@@ -112,32 +113,32 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (items.length === 0 && !phoneRef.current && !userIdRef.current) return;
     if (syncTimer.current) window.clearTimeout(syncTimer.current);
     syncTimer.current = window.setTimeout(() => {
-      const payload = items.map((i) => ({
-        product_id: i.product.id,
-        name: i.product.name,
-        quantity: i.quantity,
-        unit_price: i.unitPrice,
-        line_total: i.unitPrice * i.quantity,
-        image_url: i.product.image_url,
-        presentation_id: i.presentationId ?? null,
-        presentation_name: i.presentationName ?? null,
-        modifiers: i.modifiers ?? null,
-      }));
-      const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
       const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-      // Fire-and-forget — never block the UI on cart sync.
-      supabase.rpc("upsert_persistent_cart", {
-        _cart_token: cartToken,
-        _items: payload as any,
-        _subtotal: subtotal,
-        _total_items: totalItems,
-        _phone: phoneRef.current,
-        _user_id: userIdRef.current,
-        _channel: "web",
-        _metadata: {} as any,
-      }).then(({ error }) => {
-        if (error) console.warn("[cart-sync]", error.message);
-      });
+      const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+      // Adapter Supabase — la UI ya no habla directo con supabase.rpc.
+      supabaseCartRepository
+        .persist({
+          cartToken,
+          cart: {
+            currency: "COP",
+            lines: items.map((i) => ({
+              productId: i.product.id,
+              name: i.product.name,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+              presentationId: i.presentationId ?? null,
+            })),
+          },
+          subtotal,
+          totalItems,
+          phone: phoneRef.current,
+          userId: userIdRef.current,
+          channel: "web",
+          metadata: {},
+        })
+        .then(({ error }) => {
+          if (error) console.warn("[cart-sync]", error.message);
+        });
     }, 800);
     return () => {
       if (syncTimer.current) window.clearTimeout(syncTimer.current);
