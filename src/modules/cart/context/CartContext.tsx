@@ -9,10 +9,10 @@
  */
 import React, { createContext, useContext, useCallback, useEffect, useRef } from "react";
 import type { Tables } from "@/integrations/supabase/types";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { getCartToken, resetCartToken, setCartToken } from "@/modules/cart/lib/cartToken";
 import { supabaseCartRepository } from "@/infrastructure/database/SupabaseCartRepository";
+import { supabaseProductRepository } from "@/infrastructure/database/SupabaseProductRepository";
 import {
   useCartStore,
   selectCartTotals,
