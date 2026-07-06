@@ -26,6 +26,20 @@ export interface EinvoiceConfigRow {
 
 export type EinvoiceConfigPatch = Partial<EinvoiceConfigRow>;
 
+export interface EinvoiceStatusRow {
+  id: string;
+  status: string;
+  cufe: string | null;
+  last_error: string | null;
+  retry_count: number | null;
+  next_retry_at: string | null;
+  document_type: string | null;
+}
+
+export interface StatusCountByOrgRow {
+  status: string;
+}
+
 export interface IEinvoiceRepository {
   resend(payload: ResendPayload): Promise<void>;
   loadConfig(organizationId: string, opts?: { onlyProd?: boolean }): Promise<EinvoiceConfigRow | null>;
@@ -33,4 +47,11 @@ export interface IEinvoiceRepository {
     organizationId: string,
     onChange: (patch: EinvoiceConfigPatch) => void,
   ): () => void;
+  loadLatestByPosOrder(posOrderId: string): Promise<EinvoiceStatusRow | null>;
+  subscribeByPosOrder(
+    posOrderId: string,
+    onChange: (row: EinvoiceStatusRow) => void,
+  ): () => void;
+  listStatusesSince(organizationId: string, sinceIso: string): Promise<StatusCountByOrgRow[]>;
+  subscribeByOrg(organizationId: string, onChange: () => void): () => void;
 }
