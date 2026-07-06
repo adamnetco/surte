@@ -35,7 +35,9 @@ export interface SubmitWhatsAppOrderInput {
 }
 
 export interface SubmitWhatsAppOrderResult {
-  order_number?: string;
+  // Legacy edge function returns order_number as number in some tenants,
+  // string in others. Keep permissive until we canonicalize server-side.
+  order_number?: any;
   error?: string;
   [k: string]: unknown;
 }
