@@ -35,33 +35,19 @@ export default function DeliveriesListSheet({ open, onOpenChange, organizationId
   const load = async () => {
     if (!organizationId) return;
     setLoading(true);
-    const { data, error } = await (supabase as any)
-      .from("table_orders")
-      .select("id,order_number,customer_name,customer_phone,total,status,opened_at,notes,metadata,service_type_key")
-      .eq("organization_id", organizationId)
-      .in("status", ["open", "sent", "billed"])
-      .or("service_type_key.eq.delivery,metadata->>mode.eq.domicilio")
-      .order("opened_at", { ascending: false })
-      .limit(100);
-    if (error) console.warn("[deliveries]", error);
-    setRows((data as DeliveryRow[]) ?? []);
+    const data = await supabaseTableOrderRepository.listActiveDeliveries(organizationId);
+    setRows(data);
     setLoading(false);
   };
 
   useEffect(() => {
     if (!open) return;
     void load();
-    const ch = (supabase as any)
-      .channel(uniqueTopic(`deliveries-${organizationId}`))
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "table_orders", filter: `organization_id=eq.${organizationId}` },
-        () => void load(),
-      )
-      .subscribe();
-    return () => safeRemoveChannel(ch);
+    const off = supabaseTableOrderRepository.subscribeTableOrders(organizationId, () => void load());
+    return off;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, organizationId]);
+
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
