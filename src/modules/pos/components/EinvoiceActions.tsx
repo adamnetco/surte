@@ -4,7 +4,7 @@ import { Mail, MessageCircle, Eye, RotateCw, Printer, Loader2 } from "lucide-rea
 import { useEinvoiceActions } from "../hooks/useEinvoiceActions";
 import type { EinvoiceLiveSnapshot } from "../hooks/useEinvoiceLiveStatus";
 import InvoicePdfDrawer from "./InvoicePdfDrawer";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
 import { useQuery } from "@tanstack/react-query";
 
 interface Props {
@@ -30,14 +30,8 @@ export default function EinvoiceActions({
   const { data: invoice } = useQuery({
     enabled: drawerOpen && !!snap.invoiceId,
     queryKey: ["invoice-detail", snap.invoiceId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("electronic_invoices")
-        .select("pdf_url, xml_url, qr_url, cufe, full_number")
-        .eq("id", snap.invoiceId!)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => supabaseEinvoiceRepository.loadInvoiceDetail(snap.invoiceId!),
+
   });
 
   const accepted = snap.status === "accepted";

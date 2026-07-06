@@ -49,6 +49,15 @@ export interface RecentInvoiceRow {
   customer_name: string | null;
 }
 
+export interface InvoiceDetailRow {
+  pdf_url: string | null;
+  xml_url: string | null;
+  qr_url: string | null;
+  cufe: string | null;
+  full_number: string | null;
+}
+
+
 export interface RetryTodayResult {
   requeued?: number;
   candidates?: number;
@@ -84,4 +93,7 @@ export interface IEinvoiceRepository {
     organizationId: string,
     opts?: { dryRun?: boolean },
   ): Promise<RetryTodayResult>;
+  /** Detalle mínimo para el drawer de PDF/XML/QR. */
+  loadInvoiceDetail(invoiceId: string): Promise<InvoiceDetailRow | null>;
 }
+
