@@ -174,4 +174,15 @@ export const supabaseEinvoiceRepository: IEinvoiceRepository = {
     if (error) throw asError(error);
     return (data ?? {}) as RetryTodayResult;
   },
+
+  async loadInvoiceDetail(invoiceId) {
+    const { data, error } = await supabase
+      .from("electronic_invoices")
+      .select("pdf_url, xml_url, qr_url, cufe, full_number")
+      .eq("id", invoiceId)
+      .maybeSingle();
+    if (error) throw asError(error);
+    return (data ?? null) as InvoiceDetailRow | null;
+  },
+
 };
