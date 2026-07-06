@@ -1,21 +1,17 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseKdsRepository } from "@/infrastructure/database/SupabaseKdsRepository";
+import type {
+  KdsStation as Station,
+  KdsTicket as Ticket,
+  KdsTicketItem as KdsItem,
+} from "@/core/ports/IKdsRepository";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { Loader2, LockKeyhole, ChefHat, Check, Play, BellRing } from "lucide-react";
+import { LockKeyhole, ChefHat, Check, Play, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import POSWorkspaceNav from "@/modules/pos/components/POSWorkspaceNav";
-
-interface Station { id: string; name: string; color: string | null; sla_minutes: number; }
-interface KdsItem { name: string; qty: number; done?: boolean }
-interface Ticket {
-  id: string; kitchen_station_id: string | null; dining_table_label: string | null;
-  items: KdsItem[]; status: string; sent_at: string; started_at: string | null; ready_at: string | null;
-  notes: string | null;
-}
 
 const elapsedSec = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
 const fmtMMSS = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
@@ -54,13 +50,9 @@ export default function KDS() {
 
   const load = useCallback(async () => {
     if (!orgId) return;
-    const [{ data: st }, { data: tk }] = await Promise.all([
-      supabase.from("kitchen_stations").select("id,name,color,sla_minutes").eq("organization_id", orgId).eq("is_active", true).order("sort_order"),
-      supabase.from("kds_tickets").select("id,kitchen_station_id,dining_table_label,items,status,sent_at,started_at,ready_at,notes")
-        .eq("organization_id", orgId).in("status", ["pending","in_progress","ready"]).order("sent_at"),
-    ]);
-    setStations((st as Station[]) ?? []);
-    setTickets((tk as unknown as Ticket[]) ?? []);
+    const { stations: st, tickets: tk } = await supabaseKdsRepository.loadSnapshot(orgId);
+    setStations(st);
+    setTickets(tk);
     setLoading(false);
   }, [orgId]);
 
@@ -68,17 +60,11 @@ export default function KDS() {
 
   useEffect(() => {
     if (!orgId) return;
-    let ch: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      ch = supabase
-        .channel(uniqueTopic(`kds-${orgId}`))
-        .on("postgres_changes", { event: "*", schema: "public", table: "kds_tickets", filter: `organization_id=eq.${orgId}` },
-          () => load())
-        .subscribe();
-    } catch (err) {
-      console.warn("[KDS] realtime subscribe failed", err);
-    }
-    return () => { safeRemoveChannel(ch); };
+    const unsubscribe = supabaseKdsRepository.subscribeToTickets({
+      organizationId: orgId,
+      onChange: () => load(),
+    });
+    return unsubscribe;
   }, [orgId, load]);
 
   const stationById = useMemo(() => {
@@ -102,7 +88,11 @@ export default function KDS() {
       ...(next === "ready" ? { ready_at: nowIso } : {}),
       ...(next === "served" ? { served_at: nowIso } : {}),
     };
-    const { error } = await supabase.from("kds_tickets").update(patch).eq("id", t.id).eq("organization_id", orgId!);
+    const { error } = await supabaseKdsRepository.updateTicket({
+      ticketId: t.id,
+      organizationId: orgId!,
+      patch,
+    });
     if (error) return toast.error(error.message);
   };
 
@@ -114,8 +104,8 @@ export default function KDS() {
       items[idx] = { ...items[idx], done };
       return { ...t, items };
     }));
-    const { error } = await supabase.rpc("kds_toggle_item", {
-      p_ticket_id: ticketId, p_item_index: idx, p_done: done,
+    const { error } = await supabaseKdsRepository.toggleItem({
+      ticketId, itemIndex: idx, done,
     });
     if (error) { toast.error(error.message); load(); }
   };
