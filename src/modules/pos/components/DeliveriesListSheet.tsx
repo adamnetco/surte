@@ -3,25 +3,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bike, Clock, Loader2, Phone, User, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { safeRemoveChannel, uniqueTopic } from "@/lib/realtime/safeChannel";
+import { supabaseTableOrderRepository } from "@/infrastructure/database/SupabaseTableOrderRepository";
+import type { DeliveryRow } from "@/core/ports/ITableOrderRepository";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   organizationId: string;
-}
-
-interface DeliveryRow {
-  id: string;
-  order_number: number | null;
-  customer_name: string | null;
-  customer_phone: string | null;
-  total: number;
-  status: string;
-  opened_at: string;
-  notes: string | null;
-  metadata: any;
 }
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
@@ -34,6 +22,7 @@ const STATUS_TONE: Record<string, string> = {
   billed: "bg-violet-500/15 text-violet-700 border-violet-500/40",
   paid: "bg-emerald-500/15 text-emerald-700 border-emerald-500/40",
 };
+
 
 /**
  * Lista de domicilios abiertos: table_orders con service_type_key='delivery'
