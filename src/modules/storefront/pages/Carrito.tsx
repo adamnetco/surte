@@ -385,7 +385,7 @@ const Carrito = () => {
       const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(waText)}`;
 
       if (appliedCoupon) {
-        await supabase.rpc("redeem_coupon", { _coupon_id: appliedCoupon.id });
+        await supabaseCouponRepository.redeem(appliedCoupon.id);
       }
 
       // Mark the persistent cart as completed via adapter (best-effort, non-blocking)
