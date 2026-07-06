@@ -10,6 +10,7 @@ import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useAgent } from "@/modules/pos/context/AgentContext";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseCartRepository } from "@/infrastructure/database/SupabaseCartRepository";
 import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -386,8 +387,8 @@ const Carrito = () => {
         await supabase.rpc("redeem_coupon", { _coupon_id: appliedCoupon.id });
       }
 
-      // Mark the persistent cart as completed (best-effort, non-blocking)
-      try { await supabase.rpc("complete_persistent_cart", { _cart_token: cartToken }); } catch { /* ignore */ }
+      // Mark the persistent cart as completed via adapter (best-effort, non-blocking)
+      try { await supabaseCartRepository.complete(cartToken); } catch { /* ignore */ }
 
       clearCart();
       if (isAgent) clearAgent();
