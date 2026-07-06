@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseDocumentTypesRepository } from "@/infrastructure/database/SupabaseDocumentTypesRepository";
 
 export interface OrgDefaultDocTypes {
   consumerFinal: string;
@@ -19,29 +18,20 @@ const FALLBACK = {
 const queryKey = (orgId: string) => ["einvoice-defaults", orgId] as const;
 
 async function fetchDefaults(orgId: string): Promise<Omit<OrgDefaultDocTypes, "loading">> {
-  // Preferimos la fila activa; si no existe, la más reciente (cubre sandbox `dev`).
-  const { data } = await supabase
-    .from("einvoice_configs")
-    .select(
-      "default_doc_type_consumer_final, default_doc_type_with_nit, default_doc_type_fx_operation, is_active, updated_at",
-    )
-    .eq("organization_id", orgId)
-    .order("is_active", { ascending: false })
-    .order("updated_at", { ascending: false })
-    .limit(1);
-  const row = data?.[0] as any;
+  const row = await supabaseDocumentTypesRepository.getEinvoiceDefaults(orgId);
   return {
-    consumerFinal: row?.default_doc_type_consumer_final ?? FALLBACK.consumerFinal,
-    withNit: row?.default_doc_type_with_nit ?? FALLBACK.withNit,
-    fxOperation: row?.default_doc_type_fx_operation ?? FALLBACK.fxOperation,
+    consumerFinal: row.consumerFinal ?? FALLBACK.consumerFinal,
+    withNit: row.withNit ?? FALLBACK.withNit,
+    fxOperation: row.fxOperation ?? FALLBACK.fxOperation,
   };
 }
 
 /**
  * POS-einvoice-default-doctype-by-business
- * Lee defaults DIAN por tipo de cliente desde `einvoice_configs`.
- * - React Query con key `["einvoice-defaults", orgId]` → cache por-org, invalidación correcta al cambiar de tenant.
- * - Realtime UPDATE invalida la query.
+ * Lee defaults DIAN por tipo de cliente vía `supabaseDocumentTypesRepository`
+ * (Fase 2 hexagonal).
+ * - React Query con key `["einvoice-defaults", orgId]` → cache por-org.
+ * - Realtime UPDATE invalida la query mediante el puerto.
  * - Fallback estándar si la org no tiene config.
  */
 export function useOrgDefaultDocTypes(organizationId: string | null | undefined): OrgDefaultDocTypes {
@@ -57,24 +47,11 @@ export function useOrgDefaultDocTypes(organizationId: string | null | undefined)
 
   useEffect(() => {
     if (!organizationId) return;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(uniqueTopic(`einvoice-defaults-${organizationId}`))
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "einvoice_configs", filter: `organization_id=eq.${organizationId}` },
-          () => {
-            qc.invalidateQueries({ queryKey: queryKey(organizationId) });
-          },
-        )
-        .subscribe();
-    } catch (err) {
-      console.warn("[useOrgDefaultDocTypes] realtime subscribe failed", err);
-    }
-    return () => {
-      safeRemoveChannel(channel);
-    };
+    const unsubscribe = supabaseDocumentTypesRepository.subscribeEinvoiceDefaultsChanges(
+      organizationId,
+      () => qc.invalidateQueries({ queryKey: queryKey(organizationId) }),
+    );
+    return unsubscribe;
   }, [organizationId, qc]);
 
   return {
