@@ -192,26 +192,19 @@ const Carrito = () => {
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
     setValidatingCoupon(true);
-    try {
-      const { data, error } = await supabase.rpc("validate_coupon", {
-        _code: couponCode.toUpperCase().trim(),
-        _order_total: totalPrice,
-      });
-      if (error || !data || !data[0]) {
-        const msg = error?.message || "";
-        if (msg.includes("expired_coupon")) toast.error("Cupón expirado");
-        else if (msg.includes("exhausted_coupon")) toast.error("Cupón agotado");
-        else if (msg.includes("min_order_not_met")) toast.error("Pedido mínimo no alcanzado para este cupón");
-        else toast.error("Cupón no válido");
-        setValidatingCoupon(false);
-        return;
-      }
-      const row = data[0];
-      const disc = Number(row.discount_amount);
-      setCouponDiscount(disc);
-      setAppliedCoupon({ id: row.id, code: row.code });
-      toast.success(`Cupón aplicado: -${formatPrice(disc)}`);
-    } catch { toast.error("Error validando cupón"); }
+    const { coupon, errorCode } = await supabaseCouponRepository.validate(couponCode, totalPrice);
+    if (!coupon) {
+      if (errorCode === "expired_coupon") toast.error("Cupón expirado");
+      else if (errorCode === "exhausted_coupon") toast.error("Cupón agotado");
+      else if (errorCode === "min_order_not_met") toast.error("Pedido mínimo no alcanzado para este cupón");
+      else if (errorCode === "unknown_error") toast.error("Error validando cupón");
+      else toast.error("Cupón no válido");
+      setValidatingCoupon(false);
+      return;
+    }
+    setCouponDiscount(coupon.discount_amount);
+    setAppliedCoupon({ id: coupon.id, code: coupon.code });
+    toast.success(`Cupón aplicado: -${formatPrice(coupon.discount_amount)}`);
     setValidatingCoupon(false);
   };
 
