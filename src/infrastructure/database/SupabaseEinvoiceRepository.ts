@@ -9,6 +9,8 @@ import type {
   ResendPayload,
   EinvoiceConfigRow,
   EinvoiceConfigPatch,
+  EinvoiceStatusRow,
+  StatusCountByOrgRow,
 } from "@/core/ports/IEinvoiceRepository";
 
 const asError = (e: unknown): Error =>
