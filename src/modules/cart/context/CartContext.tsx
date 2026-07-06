@@ -207,13 +207,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const remoteItems = remote.items;
         if (remoteItems.length === 0) return false;
 
-        // Re-fetch live products to honour current price/stock.
-        const ids = Array.from(new Set(remoteItems.map((i: any) => i.product_id))).filter(Boolean);
-        const { data: prods } = await supabase
-          .from("products")
-          .select("*")
-          .in("id", ids as string[]);
-        const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
+        // Re-fetch live products via adapter to honour current price/stock.
+        const ids = Array.from(new Set(remoteItems.map((i: any) => i.product_id))).filter(Boolean) as string[];
+        const prods = await supabaseProductRepository.findByIds(ids);
+        const prodMap = new Map(prods.map((p) => [p.id, p]));
 
         const rebuilt: CartItem[] = remoteItems
           .map((it: any) => {
