@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
+import type { EinvoiceConfigPatch } from "@/core/ports/IEinvoiceRepository";
 
 export type ResolutionStatus =
   | "ok"            // todo configurado y dentro de rango
@@ -26,17 +26,27 @@ const EMPTY: ResolutionSnapshot = {
   prefix: null,
 };
 
-function parse(row: any): ResolutionSnapshot {
+function parse(row: EinvoiceConfigPatch | null | undefined): ResolutionSnapshot {
   if (!row) return EMPTY;
   if (!row.is_active) {
-    return { ...EMPTY, status: "inactive", resolutionNumber: row.resolution_number ?? null, prefix: row.resolution_prefix ?? null };
+    return {
+      ...EMPTY,
+      status: "inactive",
+      resolutionNumber: row.resolution_number ?? null,
+      prefix: row.resolution_prefix ?? null,
+    };
   }
   const num = row.resolution_number;
   const from = Number(row.resolution_from ?? 0);
   const to = Number(row.resolution_to ?? 0);
   const current = Number(row.resolution_current ?? from);
   if (!num || !from || !to || to <= from) {
-    return { ...EMPTY, status: "missing", resolutionNumber: num ?? null, prefix: row.resolution_prefix ?? null };
+    return {
+      ...EMPTY,
+      status: "missing",
+      resolutionNumber: num ?? null,
+      prefix: row.resolution_prefix ?? null,
+    };
   }
   const total = to - from + 1;
   const remaining = Math.max(0, to - current);
@@ -50,37 +60,28 @@ function parse(row: any): ResolutionSnapshot {
  * AC14: Lee `einvoice_configs` para saber si la organización tiene resolución DIAN
  * vigente, próxima a vencerse o agotada. Realtime para actualizar el banner sin recargar.
  */
-export function useEinvoiceResolutionStatus(organizationId: string | null | undefined): ResolutionSnapshot {
+export function useEinvoiceResolutionStatus(
+  organizationId: string | null | undefined,
+): ResolutionSnapshot {
   const [snap, setSnap] = useState<ResolutionSnapshot>(EMPTY);
 
   useEffect(() => {
     if (!organizationId) { setSnap(EMPTY); return; }
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("einvoice_configs")
-        .select("is_active, resolution_number, resolution_prefix, resolution_from, resolution_to, resolution_current, environment")
-        .eq("organization_id", organizationId)
-        .eq("environment", "prod")
-        .maybeSingle();
-      if (!cancelled) setSnap(parse(data));
+      try {
+        const row = await supabaseEinvoiceRepository.loadConfig(organizationId, { onlyProd: true });
+        if (!cancelled) setSnap(parse(row));
+      } catch {
+        if (!cancelled) setSnap(EMPTY);
+      }
     })();
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(uniqueTopic(`einvoice-cfg-${organizationId}`))
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "einvoice_configs", filter: `organization_id=eq.${organizationId}` },
-          (payload) => setSnap(parse(payload.new)),
-        )
-        .subscribe();
-    } catch (err) {
-      console.warn("[useEinvoiceResolutionStatus] realtime subscribe failed", err);
-    }
+    const unsubscribe = supabaseEinvoiceRepository.subscribeConfig(organizationId, (patch) => {
+      setSnap(parse(patch));
+    });
 
-    return () => { cancelled = true; safeRemoveChannel(channel); };
+    return () => { cancelled = true; unsubscribe(); };
   }, [organizationId]);
 
   return snap;
