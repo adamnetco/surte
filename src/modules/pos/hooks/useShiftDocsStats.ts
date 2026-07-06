@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
 
 export interface ShiftDocsStats {
   ok: number;        // sent | accepted
@@ -39,42 +38,31 @@ export function useShiftDocsStats(organizationId: string | null | undefined): Sh
     const since = startOfTodayISO();
 
     const reload = async () => {
-      const { data, error } = await supabase
-        .from("electronic_invoices")
-        .select("status")
-        .eq("organization_id", organizationId)
-        .gte("created_at", since);
-      if (cancelled) return;
-      if (error) { setStats((s) => ({ ...s, loading: false })); return; }
-      const next = { ok: 0, retry: 0, error: 0, total: 0, loading: false } as ShiftDocsStats;
-      for (const row of data ?? []) {
-        const b = bucket(String((row as any).status ?? ""));
-        if (b) next[b] += 1;
-        next.total += 1;
+      try {
+        const rows = await supabaseEinvoiceRepository.listStatusesSince(organizationId, since);
+        if (cancelled) return;
+        const next: ShiftDocsStats = { ok: 0, retry: 0, error: 0, total: 0, loading: false };
+        for (const row of rows) {
+          const b = bucket(String(row.status ?? ""));
+          if (b) next[b] += 1;
+          next.total += 1;
+        }
+        setStats(next);
+      } catch {
+        if (!cancelled) setStats((s) => ({ ...s, loading: false }));
       }
-      setStats(next);
     };
 
     reload();
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(uniqueTopic(`shift-docs-${organizationId}`))
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "electronic_invoices", filter: `organization_id=eq.${organizationId}` },
-          () => { reload(); },
-        )
-        .subscribe();
-    } catch (err) {
-      console.warn("[useShiftDocsStats] realtime subscribe failed", err);
-    }
+    const unsubscribe = supabaseEinvoiceRepository.subscribeByOrg(organizationId, () => {
+      reload();
+    });
 
     // Refresco defensivo cada 2 min por si Realtime se desconecta.
     const id = setInterval(reload, 120_000);
 
-    return () => { cancelled = true; clearInterval(id); safeRemoveChannel(channel); };
+    return () => { cancelled = true; clearInterval(id); unsubscribe(); };
   }, [organizationId]);
 
   return stats;

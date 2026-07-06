@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
+import type { EinvoiceStatusRow } from "@/core/ports/IEinvoiceRepository";
 
 export type EinvoiceLiveStatus =
   | "idle"
@@ -35,6 +35,18 @@ const STATUS_MAP: Record<string, EinvoiceLiveStatus> = {
   dead_letter: "dead_letter",
 };
 
+function toSnapshot(row: EinvoiceStatusRow): EinvoiceLiveSnapshot {
+  return {
+    status: STATUS_MAP[row.status] ?? "queued",
+    cufe: row.cufe ?? null,
+    errorMessage: row.last_error ?? null,
+    retryAttempt: row.retry_count ?? null,
+    nextRetryAt: row.next_retry_at ?? null,
+    invoiceId: row.id,
+    docType: row.document_type ?? null,
+  };
+}
+
 /**
  * Suscripción Realtime al estado DIAN de la factura emitida para un pos_order.
  * AC4, AC5, AC6 de POS-innapsis-emision-pos.
@@ -54,28 +66,16 @@ export function useEinvoiceLiveStatus(posOrderId: string | null | undefined): Ei
     let cancelled = false;
     setSnap({ status: "queued" });
 
-    // Fetch inicial
     (async () => {
-      const { data } = await supabase
-        .from("electronic_invoices")
-        .select("id, status, cufe, last_error, retry_count, next_retry_at, document_type")
-        .eq("pos_order_id", posOrderId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (cancelled || !data) return;
-      setSnap({
-        status: STATUS_MAP[data.status as string] ?? "queued",
-        cufe: data.cufe ?? null,
-        errorMessage: data.last_error ?? null,
-        retryAttempt: data.retry_count ?? null,
-        nextRetryAt: data.next_retry_at ?? null,
-        invoiceId: data.id,
-        docType: data.document_type ?? null,
-      });
+      try {
+        const row = await supabaseEinvoiceRepository.loadLatestByPosOrder(posOrderId);
+        if (cancelled || !row) return;
+        setSnap(toSnapshot(row));
+      } catch {
+        // silent
+      }
     })();
 
-    // Timeout suave a 3s — si no hay actualización, mostramos "procesando en background"
     const timeoutId = window.setTimeout(() => {
       if (cancelled) return;
       setSnap((cur) =>
@@ -83,42 +83,14 @@ export function useEinvoiceLiveStatus(posOrderId: string | null | undefined): Ei
       );
     }, 3000);
 
-    // Realtime sub
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(uniqueTopic(`einvoice-pos-${posOrderId}`))
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "electronic_invoices",
-            filter: `pos_order_id=eq.${posOrderId}`,
-          },
-          (payload) => {
-            const row = (payload.new ?? payload.old) as any;
-            if (!row) return;
-            setSnap({
-              status: STATUS_MAP[row.status] ?? "queued",
-              cufe: row.cufe ?? null,
-              errorMessage: row.last_error ?? null,
-              retryAttempt: row.retry_count ?? null,
-              nextRetryAt: row.next_retry_at ?? null,
-              invoiceId: row.id,
-              docType: row.document_type ?? null,
-            });
-          },
-        )
-        .subscribe();
-    } catch (err) {
-      console.warn("[useEinvoiceLiveStatus] realtime subscribe failed", err);
-    }
+    const unsubscribe = supabaseEinvoiceRepository.subscribeByPosOrder(posOrderId, (row) => {
+      setSnap(toSnapshot(row));
+    });
 
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
-      safeRemoveChannel(channel);
+      unsubscribe();
     };
   }, [posOrderId]);
 
