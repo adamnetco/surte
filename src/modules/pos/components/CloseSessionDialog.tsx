@@ -50,29 +50,11 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
     setLoading(true);
     (async () => {
       try {
-        const [{ data: pays }, { count }, { data: dens }, { data: tipsRows }] = await Promise.all([
-          supabase.from("pos_payments").select("method,amount")
-            .eq("organization_id", organizationId).eq("cash_session_id", sessionId),
-          supabase.from("pos_orders").select("id", { count: "exact", head: true })
-            .eq("organization_id", organizationId).eq("cash_session_id", sessionId).eq("status", "paid"),
-          supabase.from("cash_denominations").select("id,value,kind")
-            .eq("currency", "COP").eq("is_active", true).order("value", { ascending: false }),
-          supabase.from("pos_orders").select("tip")
-            .eq("organization_id", organizationId).eq("cash_session_id", sessionId).eq("status", "paid"),
-        ]);
-
-        const tipsTotal = (tipsRows ?? []).reduce((s, r: { tip: number | null }) => s + Number(r.tip ?? 0), 0);
-        const t: Totals = { cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: count ?? 0, tips: tipsTotal };
-        (pays ?? []).forEach((p: any) => {
-          const a = Number(p.amount);
-          t.total += a;
-          if (p.method === "efectivo") t.cash += a;
-          else if (p.method?.startsWith("tarjeta")) t.card += a;
-          else if (["transferencia", "nequi", "daviplata"].includes(p.method)) t.transfer += a;
-          else t.other += a;
+        const { totals: t, denominations } = await supabaseCashSessionRepository.loadCloseSnapshot({
+          organizationId, sessionId,
         });
         setTotals(t);
-        setDenoms((dens ?? []) as Denomination[]);
+        setDenoms(denominations);
         setCounts({});
         setNotes("");
         setRevealed(false);
@@ -85,7 +67,7 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
         setLoading(false);
       }
     })();
-  }, [open, sessionId]);
+  }, [open, sessionId, organizationId]);
 
   const expected = openingAmount + totals.cash;
   const countedTotal = useMemo(
