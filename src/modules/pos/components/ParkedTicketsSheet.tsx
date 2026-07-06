@@ -8,31 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import {
   Search, Play, Trash2, User, Package, Filter, Loader2, PauseCircle,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseParkedTicketRepository } from "@/infrastructure/database/SupabaseParkedTicketRepository";
+import type {
+  ParkedTicketItem as _ParkedTicketItem,
+  ParkedTicketRow,
+} from "@/core/ports/IParkedTicketRepository";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export interface ParkedTicketItem {
-  productId: string;
-  name?: string;
-  quantity: number;
-  unitPrice?: number;
-  total?: number;
-  notes?: string;
-}
+export type ParkedTicketItem = _ParkedTicketItem;
 
-interface ParkedTicketRow {
-  id: string;
-  label: string | null;
-  customer_name: string | null;
-  notes: string | null;
-  items: ParkedTicketItem[];
-  subtotal: number;
-  total: number;
-  cashier_id: string | null;
-  cash_session_id: string | null;
-  created_at: string;
-}
 
 interface Props {
   organizationId: string;
@@ -95,28 +80,20 @@ export default function ParkedTicketsSheet({
     let cancelled = false;
     const load = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("parked_tickets")
-        .select("id, label, customer_name, notes, items, subtotal, total, cashier_id, cash_session_id, created_at")
-        .eq("organization_id", organizationId)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (cancelled) return;
-      if (error) toast.error("No se pudieron cargar los tickets suspendidos");
-      else setRows((data ?? []) as unknown as ParkedTicketRow[]);
-      setLoading(false);
+      try {
+        const data = await supabaseParkedTicketRepository.list(organizationId);
+        if (cancelled) return;
+        setRows(data);
+      } catch {
+        if (!cancelled) toast.error("No se pudieron cargar los tickets suspendidos");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
     load();
 
-    const ch = supabase
-      .channel(`parked-sheet-${organizationId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "parked_tickets", filter: `organization_id=eq.${organizationId}` },
-        () => load(),
-      )
-      .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(ch); };
+    const unsubscribe = supabaseParkedTicketRepository.subscribe(organizationId, () => load());
+    return () => { cancelled = true; unsubscribe(); };
   }, [open, organizationId]);
 
   const filtered = useMemo(() => {
@@ -139,18 +116,22 @@ export default function ParkedTicketsSheet({
     }
     onResume(row);
     // Eliminar tras retomar — un ticket suspendido no se retoma dos veces.
-    supabase.from("parked_tickets").delete().eq("id", row.id).then(({ error }) => {
-      if (error) toast.error("Retomado pero no se pudo eliminar el suspendido");
+    supabaseParkedTicketRepository.remove(row.id).catch(() => {
+      toast.error("Retomado pero no se pudo eliminar el suspendido");
     });
     setOpen(false);
   };
 
   const handleDelete = async (row: ParkedTicketRow) => {
     if (!window.confirm(`Eliminar ticket suspendido${row.label ? ` "${row.label}"` : ""}? Esta acción no se puede deshacer.`)) return;
-    const { error } = await supabase.from("parked_tickets").delete().eq("id", row.id);
-    if (error) toast.error("No se pudo eliminar");
-    else toast.success("Ticket eliminado");
+    try {
+      await supabaseParkedTicketRepository.remove(row.id);
+      toast.success("Ticket eliminado");
+    } catch {
+      toast.error("No se pudo eliminar");
+    }
   };
+
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
