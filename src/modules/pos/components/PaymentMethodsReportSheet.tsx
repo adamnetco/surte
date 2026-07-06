@@ -73,13 +73,12 @@ export default function PaymentMethodsReportSheet({ open, onOpenChange }: Props)
     queryKey: ["payment-methods-report", organization?.id, preset],
     enabled: open && !!organization?.id,
     queryFn: async () => {
-      const { data: rows, error } = await supabase
-        .from("pos_payments")
-        .select("method, amount, created_at")
-        .eq("organization_id", organization!.id)
-        .gte("created_at", range.from.toISOString())
-        .lte("created_at", range.to.toISOString());
-      if (error) throw error;
+      const rows = await supabasePosPaymentsRepository.listInRange(
+        organization!.id,
+        range.from.toISOString(),
+        range.to.toISOString(),
+      );
+
       const agg = new Map<MethodKey, Row>();
       for (const r of rows ?? []) {
         const key = (r.method as MethodKey) in METHOD_META ? (r.method as MethodKey) : "otro";
