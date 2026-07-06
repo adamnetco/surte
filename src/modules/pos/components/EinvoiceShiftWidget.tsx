@@ -27,25 +27,24 @@ export default function EinvoiceShiftWidget({ organizationId, className }: Props
 
   const loadRecent = async () => {
     const since = new Date(); since.setHours(0, 0, 0, 0);
-    const { data } = await supabase
-      .from("electronic_invoices")
-      .select("id, full_number, status, total, created_at, customer_name")
-      .eq("organization_id", organizationId)
-      .gte("created_at", since.toISOString())
-      .order("created_at", { ascending: false })
-      .limit(10);
-    setRecent((data as any) ?? []);
+    try {
+      const rows = await supabaseEinvoiceRepository.listRecentInvoices(
+        organizationId,
+        since.toISOString(),
+        10,
+      );
+      setRecent(rows);
+    } catch {
+      setRecent([]);
+    }
   };
 
   const retryAll = async () => {
     setRetrying(true);
     try {
       // Preview con dry_run para confirmar count antes de mutar.
-      const { data: preview, error: preErr } = await supabase.functions.invoke("einvoice-resend", {
-        body: { action: "retry_all_today", organization_id: organizationId, dry_run: true },
-      });
-      if (preErr) throw preErr;
-      const candidates = (preview as any)?.candidates ?? 0;
+      const preview = await supabaseEinvoiceRepository.retryAllToday(organizationId, { dryRun: true });
+      const candidates = Number(preview?.candidates ?? 0);
       if (candidates === 0) {
         toast.info("Sin pendientes que reintentar");
         return;
@@ -53,11 +52,8 @@ export default function EinvoiceShiftWidget({ organizationId, className }: Props
       if (!window.confirm(`Se reencolarán ${candidates} documentos. ¿Continuar?`)) return;
 
       // POS-einvoice-retry-scoping AC3: enviar organization_id explícito
-      const { data, error } = await supabase.functions.invoke("einvoice-resend", {
-        body: { action: "retry_all_today", organization_id: organizationId },
-      });
-      if (error) throw error;
-      toast.success(`Reencoladas: ${(data as any)?.requeued ?? 0}`);
+      const result = await supabaseEinvoiceRepository.retryAllToday(organizationId);
+      toast.success(`Reencoladas: ${result?.requeued ?? 0}`);
       loadRecent();
     } catch (e: any) {
       toast.error("No se pudo reintentar", { description: e?.message });
