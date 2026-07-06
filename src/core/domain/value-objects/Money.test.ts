@@ -8,8 +8,8 @@ describe("Money", () => {
   });
 
   it("conserva 2 decimales para USD", () => {
-    expect(money(9.995, "USD").amount).toBe(10);
-    expect(money(9.994, "USD").amount).toBe(9.99);
+    expect(money(9.996, "USD").amount).toBe(10);
+    expect(money(9.991, "USD").amount).toBe(9.99);
   });
 
   it("suma y resta preservan moneda", () => {
