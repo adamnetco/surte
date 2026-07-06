@@ -50,13 +50,9 @@ export default function KDS() {
 
   const load = useCallback(async () => {
     if (!orgId) return;
-    const [{ data: st }, { data: tk }] = await Promise.all([
-      supabase.from("kitchen_stations").select("id,name,color,sla_minutes").eq("organization_id", orgId).eq("is_active", true).order("sort_order"),
-      supabase.from("kds_tickets").select("id,kitchen_station_id,dining_table_label,items,status,sent_at,started_at,ready_at,notes")
-        .eq("organization_id", orgId).in("status", ["pending","in_progress","ready"]).order("sent_at"),
-    ]);
-    setStations((st as Station[]) ?? []);
-    setTickets((tk as unknown as Ticket[]) ?? []);
+    const { stations: st, tickets: tk } = await supabaseKdsRepository.loadSnapshot(orgId);
+    setStations(st);
+    setTickets(tk);
     setLoading(false);
   }, [orgId]);
 
@@ -64,17 +60,11 @@ export default function KDS() {
 
   useEffect(() => {
     if (!orgId) return;
-    let ch: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      ch = supabase
-        .channel(uniqueTopic(`kds-${orgId}`))
-        .on("postgres_changes", { event: "*", schema: "public", table: "kds_tickets", filter: `organization_id=eq.${orgId}` },
-          () => load())
-        .subscribe();
-    } catch (err) {
-      console.warn("[KDS] realtime subscribe failed", err);
-    }
-    return () => { safeRemoveChannel(ch); };
+    const unsubscribe = supabaseKdsRepository.subscribeToTickets({
+      organizationId: orgId,
+      onChange: () => load(),
+    });
+    return unsubscribe;
   }, [orgId, load]);
 
   const stationById = useMemo(() => {
@@ -98,7 +88,11 @@ export default function KDS() {
       ...(next === "ready" ? { ready_at: nowIso } : {}),
       ...(next === "served" ? { served_at: nowIso } : {}),
     };
-    const { error } = await supabase.from("kds_tickets").update(patch).eq("id", t.id).eq("organization_id", orgId!);
+    const { error } = await supabaseKdsRepository.updateTicket({
+      ticketId: t.id,
+      organizationId: orgId!,
+      patch,
+    });
     if (error) return toast.error(error.message);
   };
 
@@ -110,8 +104,8 @@ export default function KDS() {
       items[idx] = { ...items[idx], done };
       return { ...t, items };
     }));
-    const { error } = await supabase.rpc("kds_toggle_item", {
-      p_ticket_id: ticketId, p_item_index: idx, p_done: done,
+    const { error } = await supabaseKdsRepository.toggleItem({
+      ticketId, itemIndex: idx, done,
     });
     if (error) { toast.error(error.message); load(); }
   };
