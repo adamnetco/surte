@@ -8,31 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import {
   Search, Play, Trash2, User, Package, Filter, Loader2, PauseCircle,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseParkedTicketRepository } from "@/infrastructure/database/SupabaseParkedTicketRepository";
+import type {
+  ParkedTicketItem as _ParkedTicketItem,
+  ParkedTicketRow,
+} from "@/core/ports/IParkedTicketRepository";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export interface ParkedTicketItem {
-  productId: string;
-  name?: string;
-  quantity: number;
-  unitPrice?: number;
-  total?: number;
-  notes?: string;
-}
+export type ParkedTicketItem = _ParkedTicketItem;
 
-interface ParkedTicketRow {
-  id: string;
-  label: string | null;
-  customer_name: string | null;
-  notes: string | null;
-  items: ParkedTicketItem[];
-  subtotal: number;
-  total: number;
-  cashier_id: string | null;
-  cash_session_id: string | null;
-  created_at: string;
-}
 
 interface Props {
   organizationId: string;
