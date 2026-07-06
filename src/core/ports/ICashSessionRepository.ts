@@ -85,4 +85,8 @@ export interface ICashSessionRepository {
    * Lanza si algo falla — la UI debe capturar con try/catch.
    */
   close(input: CashSessionCloseInput): Promise<CashSessionCloseResult>;
+
+  /** Abre una nueva sesión de caja (turno). */
+  open(input: CashSessionOpenInput): Promise<OpenedCashSession>;
 }
+
