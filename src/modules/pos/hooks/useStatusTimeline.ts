@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseHealthRepository } from "@/infrastructure/database/SupabaseHealthRepository";
 import type { HealthStatus } from "@/modules/pos/hooks/useHealthSnapshot";
 
 export type TimelineEntry = {
@@ -77,29 +77,31 @@ export function useStatusTimeline(
     if (!opts?.hydrateFromServer || !scope || scope === "local") return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("health_events")
-        .select("created_at,status_from,status_to,metadata")
-        .eq("source", source)
-        .eq("organization_id", scope)
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (cancelled || !data) return;
-      const serverEntries: TimelineEntry[] = data.map((r: any) => ({
-        at: r.created_at,
-        from: r.status_from,
-        to: r.status_to,
-        note: r.metadata?.message,
-        source: "server",
-      }));
-      setEntries((cur) => {
-        // Merge by `at` (dedupe) and sort desc.
-        const map = new Map<string, TimelineEntry>();
-        [...serverEntries, ...cur].forEach((e) => map.set(e.at, e));
-        return Array.from(map.values())
-          .sort((a, b) => (a.at < b.at ? 1 : -1))
-          .slice(0, MAX);
-      });
+      try {
+        const rows = await supabaseHealthRepository.listHealthEvents({
+          source,
+          organizationId: scope,
+          limit: 5,
+        });
+        if (cancelled) return;
+        const serverEntries: TimelineEntry[] = rows.map((r) => ({
+          at: r.created_at,
+          from: r.status_from,
+          to: r.status_to,
+          note: r.metadata?.message,
+          source: "server",
+        }));
+        setEntries((cur) => {
+          // Merge by `at` (dedupe) and sort desc.
+          const map = new Map<string, TimelineEntry>();
+          [...serverEntries, ...cur].forEach((e) => map.set(e.at, e));
+          return Array.from(map.values())
+            .sort((a, b) => (a.at < b.at ? 1 : -1))
+            .slice(0, MAX);
+        });
+      } catch {
+        /* silent — timeline es informativo */
+      }
     })();
     return () => {
       cancelled = true;
