@@ -9,9 +9,12 @@ import type {
   CashSessionCloseInput,
   CashSessionCloseResult,
   CashSessionCloseSnapshot,
+  CashSessionOpenInput,
   CashSessionTotals,
   ICashSessionRepository,
+  OpenedCashSession,
 } from "@/core/ports/ICashSessionRepository";
+
 
 export const supabaseCashSessionRepository: ICashSessionRepository = {
   async loadCloseSnapshot({ organizationId, sessionId }): Promise<CashSessionCloseSnapshot> {
