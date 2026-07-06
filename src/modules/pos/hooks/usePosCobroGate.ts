@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseHardBlockPolicyRepository } from "@/infrastructure/database/SupabaseHardBlockPolicyRepository";
 import { useDianHealth } from "./useDianHealth";
 
 /**
@@ -68,40 +67,22 @@ export function usePosCobroGate(
     let cancelled = false;
     setLoading(true);
     (async () => {
-      const { data } = await supabase
-        .from("einvoice_configs")
-        .select("hard_block_when_dian_down")
-        .eq("organization_id", organizationId)
-        .eq("environment", "prod")
-        .maybeSingle();
-      if (cancelled) return;
-      setHardBlock(!!(data as any)?.hard_block_when_dian_down);
-      setLoading(false);
+      try {
+        const value = await supabaseHardBlockPolicyRepository.getHardBlockFlag(organizationId);
+        if (!cancelled) setHardBlock(value);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(uniqueTopic(`hard-block-${organizationId}`))
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "einvoice_configs",
-            filter: `organization_id=eq.${organizationId}`,
-          },
-          (payload) =>
-            setHardBlock(!!(payload.new as any)?.hard_block_when_dian_down),
-        )
-        .subscribe();
-    } catch (err) {
-      console.warn("[usePosCobroGate] realtime subscribe failed", err);
-    }
+    const unsubscribe = supabaseHardBlockPolicyRepository.subscribeHardBlockFlag(
+      organizationId,
+      (next) => setHardBlock(next),
+    );
 
     return () => {
       cancelled = true;
-      safeRemoveChannel(channel);
+      unsubscribe();
     };
   }, [organizationId]);
 
@@ -123,19 +104,14 @@ export function usePosCobroGate(
       /* storage no disponible */
     }
     setOverrideActive(true);
-    const { data: userData } = await supabase.auth.getUser();
-    await supabase.from("sync_logs").insert({
-      organization_id: organizationId,
-      service_name: "pos_hard_block_override",
-      status: "warning",
-      payload: {
-        user_id: userData?.user?.id ?? null,
-        dian_health: dian.health,
-        has_contingency: dian.hasContingencyRange,
-        activated_at: new Date().toISOString(),
-        ttl_minutes: 30,
-      } as any,
-    } as any);
+    const userId = await supabaseHardBlockPolicyRepository.getCurrentUserId();
+    await supabaseHardBlockPolicyRepository.logOverrideActivation(organizationId, {
+      user_id: userId,
+      dian_health: dian.health,
+      has_contingency: dian.hasContingencyRange,
+      activated_at: new Date().toISOString(),
+      ttl_minutes: 30,
+    });
   }, [organizationId, dian.health, dian.hasContingencyRange]);
 
   // Resolver gate.
