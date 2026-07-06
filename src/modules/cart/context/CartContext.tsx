@@ -1,33 +1,28 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+/**
+ * CartContext — Phase 3 bridge.
+ *
+ * El estado del carrito ahora vive en `useCartStore` (Zustand) para
+ * reactividad instantánea. Este Provider mantiene la MISMA API pública
+ * (`useCart()`), y orquesta los efectos secundarios que no pertenecen
+ * al dominio: localStorage, sync a Supabase (via adapter), warn-on-leave
+ * e hidratación desde `persistent_carts`.
+ */
+import React, { createContext, useContext, useCallback, useEffect, useRef } from "react";
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { getCartToken, resetCartToken, setCartToken } from "@/modules/cart/lib/cartToken";
-import { computeTotals } from "@/core/use-cases/cart/ComputeTotals";
 import { supabaseCartRepository } from "@/infrastructure/database/SupabaseCartRepository";
+import {
+  useCartStore,
+  selectCartTotals,
+  type CartItem,
+  type CartModifier,
+} from "@/presentation/store/useCartStore";
 
 type Product = Tables<"products">;
 
-export interface CartModifier {
-  groupId: string;
-  groupName: string;
-  optionId: string;
-  displayName: string;
-  linkedProductId: string | null;
-  linkedProductName: string | null;
-  priceAdjustment: number;
-  quantity: number;
-}
-
-export interface CartItem {
-  product: Product;
-  quantity: number;
-  unitPrice: number;
-  presentationId?: string;
-  presentationName?: string;
-  modifiers?: CartModifier[];
-  modifierTotal?: number;
-}
+export type { CartItem, CartModifier };
 
 interface AddItemOptions {
   openDrawer?: boolean;
@@ -36,7 +31,15 @@ interface AddItemOptions {
 interface CartContextType {
   items: CartItem[];
   cartToken: string;
-  addItem: (product: Product, quantity?: number, unitPrice?: number, presentation?: { id: string; name: string }, modifiers?: CartModifier[], modifierTotal?: number, options?: AddItemOptions) => void;
+  addItem: (
+    product: Product,
+    quantity?: number,
+    unitPrice?: number,
+    presentation?: { id: string; name: string },
+    modifiers?: CartModifier[],
+    modifierTotal?: number,
+    options?: AddItemOptions,
+  ) => void;
   removeItem: (productId: string, presentationId?: string) => void;
   updateQuantity: (productId: string, quantity: number, presentationId?: string) => void;
   clearCart: () => void;
@@ -44,9 +47,7 @@ interface CartContextType {
   totalPrice: number;
   isDrawerOpen: boolean;
   setDrawerOpen: (open: boolean) => void;
-  /** Hydrate the cart from a Supabase persistent_carts row (omnichannel return). */
   hydrateFromRemote: (token: string) => Promise<boolean>;
-  /** Attach a phone number to the active cart (used after the user types one). */
   attachPhone: (phone: string) => void;
 }
 
@@ -54,19 +55,11 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const STORAGE_KEY = "tenant_cart";
 const LEGACY_STORAGE_KEY = "surteya_cart";
-const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const TTL_MS = 24 * 60 * 60 * 1000;
 
-/** Unique key for a cart line */
-const lineKey = (productId: string, presentationId?: string) =>
-  presentationId ? `${productId}__${presentationId}` : productId;
-
-const getLineKey = (item: CartItem) => lineKey(item.product.id, item.presentationId);
-
-/* ── persistence helpers ── */
 function saveCart(items: CartItem[]) {
   try {
-    const payload = { items, ts: Date.now() };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, ts: Date.now() }));
   } catch { /* quota exceeded – ignore */ }
 }
 
@@ -87,35 +80,50 @@ function loadCart(): CartItem[] {
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const [items, setItems] = useState<CartItem[]>(() => loadCart());
-  const [isDrawerOpen, setDrawerOpen] = useState(false);
-  const [cartToken, setCartTokenState] = useState<string>(() => getCartToken());
+
+  // Store selectors
+  const items = useCartStore((s) => s.items);
+  const isDrawerOpen = useCartStore((s) => s.isDrawerOpen);
+  const setItemsStore = useCartStore((s) => s.setItems);
+  const addItemStore = useCartStore((s) => s.addItem);
+  const removeItemStore = useCartStore((s) => s.removeItem);
+  const updateQuantityStore = useCartStore((s) => s.updateQuantity);
+  const clearCartStore = useCartStore((s) => s.clearCart);
+  const setDrawerOpenStore = useCartStore((s) => s.setDrawerOpen);
+
+  const [cartToken, setCartTokenState] = React.useState<string>(() => getCartToken());
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const phoneRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
   const syncTimer = useRef<number | null>(null);
   const isHydratingRef = useRef(false);
+  const didHydrateLocalRef = useRef(false);
 
-  // Track auth user_id to associate carts on login without competing auth token reads.
+  // Hydrate store from localStorage once on mount.
+  useEffect(() => {
+    if (didHydrateLocalRef.current) return;
+    didHydrateLocalRef.current = true;
+    const saved = loadCart();
+    if (saved.length > 0) setItemsStore(saved);
+  }, [setItemsStore]);
+
   useEffect(() => {
     userIdRef.current = user?.id ?? null;
   }, [user]);
 
-  // Persist whenever items change
+  // Persist to localStorage whenever items change.
   useEffect(() => {
     saveCart(items);
   }, [items]);
 
-  // Debounced remote sync to persistent_carts (skipped while hydrating)
+  // Debounced remote sync via SupabaseCartRepository adapter.
   useEffect(() => {
     if (isHydratingRef.current) return;
     if (items.length === 0 && !phoneRef.current && !userIdRef.current) return;
     if (syncTimer.current) window.clearTimeout(syncTimer.current);
     syncTimer.current = window.setTimeout(() => {
-      const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-      const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
-      // Adapter Supabase — la UI ya no habla directo con supabase.rpc.
+      const { totalItems, subtotal } = selectCartTotals(items);
       supabaseCartRepository
         .persist({
           cartToken,
@@ -145,7 +153,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [items, cartToken]);
 
-  // Warn before leaving the page when cart has items
+  // Warn before leaving with items in cart.
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (itemsRef.current.length > 0) {
@@ -157,134 +165,102 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  const addItem = useCallback((product: Product, quantity = 1, unitPrice?: number, presentation?: { id: string; name: string }, modifiers?: CartModifier[], modifierTotal?: number, options?: AddItemOptions) => {
-    const price = unitPrice ?? product.price;
-    const key = lineKey(product.id, presentation?.id);
-    setItems((prev) => {
-      if (modifiers && modifiers.length > 0) {
-        return [...prev, {
-          product, quantity,
-          unitPrice: price + (modifierTotal || 0),
-          presentationId: presentation?.id, presentationName: presentation?.name,
-          modifiers, modifierTotal: modifierTotal || 0,
-        }];
-      }
-      const existing = prev.find((i) => getLineKey(i) === key && (!i.modifiers || i.modifiers.length === 0));
-      if (existing) {
-        return prev.map((i) =>
-          getLineKey(i) === key && (!i.modifiers || i.modifiers.length === 0)
-            ? { ...i, quantity: i.quantity + quantity, unitPrice: price }
-            : i
-        );
-      }
-      return [...prev, {
-        product, quantity, unitPrice: price,
-        presentationId: presentation?.id, presentationName: presentation?.name,
-      }];
-    });
-    if (options?.openDrawer !== false) setDrawerOpen(true);
-  }, []);
+  const addItem: CartContextType["addItem"] = useCallback(
+    (product, quantity = 1, unitPrice, presentation, modifiers, modifierTotal, options) => {
+      const price = unitPrice ?? product.price;
+      addItemStore(product, quantity, price, presentation, modifiers, modifierTotal);
+      if (options?.openDrawer !== false) setDrawerOpenStore(true);
+    },
+    [addItemStore, setDrawerOpenStore],
+  );
 
-  const removeItem = useCallback((productId: string, presentationId?: string) => {
-    const key = lineKey(productId, presentationId);
-    setItems((prev) => prev.filter((i) => getLineKey(i) !== key));
-  }, []);
+  const removeItem = useCallback(
+    (productId: string, presentationId?: string) => removeItemStore(productId, presentationId),
+    [removeItemStore],
+  );
 
-  const updateQuantity = useCallback((productId: string, quantity: number, presentationId?: string) => {
-    const key = lineKey(productId, presentationId);
-    if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => getLineKey(i) !== key));
-      return;
-    }
-    setItems((prev) =>
-      prev.map((i) => (getLineKey(i) === key ? { ...i, quantity } : i))
-    );
-  }, []);
+  const updateQuantity = useCallback(
+    (productId: string, quantity: number, presentationId?: string) =>
+      updateQuantityStore(productId, quantity, presentationId),
+    [updateQuantityStore],
+  );
 
   const clearCart = useCallback(() => {
-    setItems([]);
+    clearCartStore();
     localStorage.removeItem(STORAGE_KEY);
-    // Rotate the cart_token so the next cart starts fresh in Supabase
     const next = resetCartToken();
     setCartTokenState(next);
-  }, []);
+  }, [clearCartStore]);
 
   const attachPhone = useCallback((phone: string) => {
     const digits = (phone || "").replace(/\D/g, "");
     phoneRef.current = digits || null;
   }, []);
 
-  /**
-   * Hydrate the in-memory cart from a remote cart_token. Used when the
-   * user returns from WhatsApp (?cart=token) or logs in on another device.
-   * Returns true when the remote cart is found and applied.
-   */
-  const hydrateFromRemote = useCallback(async (token: string): Promise<boolean> => {
-    if (!token) return false;
-    isHydratingRef.current = true;
-    try {
-      const { data, error } = await supabase.rpc("get_persistent_cart", { _cart_token: token });
-      if (error || !data || data.length === 0) return false;
-      const remote = data[0] as any;
-      const remoteItems = Array.isArray(remote.items) ? remote.items : [];
-      if (remoteItems.length === 0) return false;
+  const hydrateFromRemote = useCallback(
+    async (token: string): Promise<boolean> => {
+      if (!token) return false;
+      isHydratingRef.current = true;
+      try {
+        const { data, error } = await supabase.rpc("get_persistent_cart", { _cart_token: token });
+        if (error || !data || data.length === 0) return false;
+        const remote = data[0] as any;
+        const remoteItems = Array.isArray(remote.items) ? remote.items : [];
+        if (remoteItems.length === 0) return false;
 
-      // Re-fetch the live products referenced by the remote cart so we
-      // honour current price/stock and avoid stale data.
-      const ids = Array.from(new Set(remoteItems.map((i: any) => i.product_id))).filter(Boolean);
-      const { data: prods } = await supabase
-        .from("products")
-        .select("*")
-        .in("id", ids as string[]);
-      const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
+        const ids = Array.from(new Set(remoteItems.map((i: any) => i.product_id))).filter(Boolean);
+        const { data: prods } = await supabase
+          .from("products")
+          .select("*")
+          .in("id", ids as string[]);
+        const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
 
-      const rebuilt: CartItem[] = remoteItems
-        .map((it: any) => {
-          const p = prodMap.get(it.product_id);
-          if (!p) return null;
-          return {
-            product: p as Product,
-            quantity: Number(it.quantity) || 1,
-            unitPrice: Number(it.unit_price) || Number((p as any).price),
-            presentationId: it.presentation_id || undefined,
-            presentationName: it.presentation_name || undefined,
-            modifiers: it.modifiers || undefined,
-          } as CartItem;
-        })
-        .filter(Boolean) as CartItem[];
+        const rebuilt: CartItem[] = remoteItems
+          .map((it: any) => {
+            const p = prodMap.get(it.product_id);
+            if (!p) return null;
+            return {
+              product: p as Product,
+              quantity: Number(it.quantity) || 1,
+              unitPrice: Number(it.unit_price) || Number((p as any).price),
+              presentationId: it.presentation_id || undefined,
+              presentationName: it.presentation_name || undefined,
+              modifiers: it.modifiers || undefined,
+            } as CartItem;
+          })
+          .filter(Boolean) as CartItem[];
 
-      setCartToken(token);
-      setCartTokenState(token);
-      setItems(rebuilt);
-      if (remote.phone) phoneRef.current = remote.phone;
-      return true;
-    } finally {
-      // Allow auto-sync again after hydration settles
-      setTimeout(() => { isHydratingRef.current = false; }, 100);
-    }
-  }, []);
-
-  const totals = computeTotals({
-    cart: {
-      currency: "COP",
-      lines: items.map((i) => ({
-        productId: i.product.id,
-        name: i.product.name,
-        quantity: i.quantity,
-        unitPrice: i.unitPrice,
-        presentationId: i.presentationId ?? null,
-      })),
+        setCartToken(token);
+        setCartTokenState(token);
+        setItemsStore(rebuilt);
+        if (remote.phone) phoneRef.current = remote.phone;
+        return true;
+      } finally {
+        setTimeout(() => { isHydratingRef.current = false; }, 100);
+      }
     },
-  });
-  const totalItems = totals.totalItems;
-  const totalPrice = totals.total.amount;
+    [setItemsStore],
+  );
+
+  const { totalItems, totalPrice } = selectCartTotals(items);
 
   return (
-    <CartContext.Provider value={{
-      items, cartToken, addItem, removeItem, updateQuantity, clearCart,
-      totalItems, totalPrice, isDrawerOpen, setDrawerOpen,
-      hydrateFromRemote, attachPhone,
-    }}>
+    <CartContext.Provider
+      value={{
+        items,
+        cartToken,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        totalPrice,
+        isDrawerOpen,
+        setDrawerOpen: setDrawerOpenStore,
+        hydrateFromRemote,
+        attachPhone,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
