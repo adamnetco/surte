@@ -119,4 +119,23 @@ export const supabaseCashSessionRepository: ICashSessionRepository = {
       sealHash: (sealRow?.current_hash as string | undefined) ?? null,
     };
   },
+
+  async open({ organizationId, locationId, cashRegisterId, userId, openingAmount }): Promise<OpenedCashSession> {
+    const { data, error } = await supabase
+      .from("cash_sessions")
+      .insert({
+        organization_id: organizationId,
+        location_id: locationId,
+        cash_register_id: cashRegisterId,
+        opened_by: userId,
+        opening_amount: openingAmount,
+        expected_amount: openingAmount,
+        status: "open",
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as OpenedCashSession;
+  },
 };
+
