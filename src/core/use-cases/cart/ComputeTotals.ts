@@ -21,6 +21,7 @@ import {
   applyDiscount,
   discountAmount,
 } from "@/core/domain/value-objects/Discount";
+import type { CurrencyCode } from "@/core/domain/value-objects/Money";
 import { extractTax, NO_TAX } from "@/core/domain/value-objects/Tax";
 
 export interface CartTotals {
@@ -31,7 +32,7 @@ export interface CartTotals {
   readonly totalItems: number;
 }
 
-export const lineTotal = (line: CartLine, currency = "COP" as const): Money =>
+export const lineTotal = (line: CartLine, currency: CurrencyCode = "COP"): Money =>
   multiply(money(line.unitPrice, currency), line.quantity);
 
 export interface ComputeTotalsInput {
