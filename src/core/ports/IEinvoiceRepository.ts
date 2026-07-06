@@ -93,4 +93,7 @@ export interface IEinvoiceRepository {
     organizationId: string,
     opts?: { dryRun?: boolean },
   ): Promise<RetryTodayResult>;
+  /** Detalle mínimo para el drawer de PDF/XML/QR. */
+  loadInvoiceDetail(invoiceId: string): Promise<InvoiceDetailRow | null>;
 }
+
