@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
+import type { EinvoiceConfigPatch } from "@/core/ports/IEinvoiceRepository";
 
 export type DianHealth = "online" | "degraded" | "offline" | "unknown";
 
@@ -19,11 +19,17 @@ const cache = new Map<string, CacheEntry>();
 
 const EMPTY: DianHealthSnapshot = { health: "unknown", hasContingencyRange: false };
 
-function parseRow(row: any): DianHealthSnapshot {
+function parseRow(row: EinvoiceConfigPatch | null | undefined): DianHealthSnapshot {
   const range = row?.contingency_range ?? null;
   return {
     health: ((row?.dian_health_status ?? "unknown") as DianHealth),
-    hasContingencyRange: !!(range && typeof range === "object" && (range.from ?? range.current ?? range.to)),
+    hasContingencyRange: !!(
+      range &&
+      typeof range === "object" &&
+      ((range as Record<string, unknown>).from ??
+        (range as Record<string, unknown>).current ??
+        (range as Record<string, unknown>).to)
+    ),
   };
 }
 
@@ -51,50 +57,28 @@ export function useDianHealth(organizationId: string | null | undefined): DianHe
 
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("einvoice_configs")
-        .select("dian_health_status, contingency_range")
-        .eq("organization_id", organizationId)
-        .maybeSingle();
-      if (cancelled) return;
-      const v = parseRow(data);
-      cache.set(organizationId, { value: v, at: Date.now() });
-      setSnap(v);
+      try {
+        const row = await supabaseEinvoiceRepository.loadConfig(organizationId);
+        if (cancelled) return;
+        const v = parseRow(row);
+        cache.set(organizationId, { value: v, at: Date.now() });
+        setSnap(v);
+      } catch {
+        // silent: cache/EMPTY cubre
+      }
     })();
 
-    // Topic único por mount: evita "cannot add postgres_changes callbacks"
-    // cuando StrictMode/HMR remontan el hook y supabase.channel(name) devuelve
-    // una referencia ya joined.
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(uniqueTopic(`dian-health-${organizationId}`))
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "einvoice_configs",
-            filter: `organization_id=eq.${organizationId}`,
-          },
-          (payload) => {
-            const v = parseRow(payload.new);
-            cache.set(organizationId, { value: v, at: Date.now() });
-            setSnap(v);
-          },
-        )
-        .subscribe();
-    } catch (err) {
-      // Realtime no es crítico: el cache + fetch inicial cubren el caso.
-      console.warn("[useDianHealth] realtime subscribe failed", err);
-    }
+    const unsubscribe = supabaseEinvoiceRepository.subscribeConfig(organizationId, (patch) => {
+      const v = parseRow(patch);
+      cache.set(organizationId, { value: v, at: Date.now() });
+      setSnap(v);
+    });
 
     return () => {
       cancelled = true;
-      safeRemoveChannel(channel);
+      unsubscribe();
     };
   }, [organizationId]);
 
   return snap;
 }
-

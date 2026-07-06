@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
+import type { EinvoiceResendAction } from "@/core/ports/IEinvoiceRepository";
 
-export type EinvoiceResendAction = "send_email" | "send_whatsapp" | "retry_now";
+export type { EinvoiceResendAction };
 
 interface InvokePayload {
   invoice_id: string;
@@ -20,14 +21,11 @@ export function useEinvoiceActions() {
   async function run(payload: InvokePayload): Promise<boolean> {
     setPending(payload.action);
     try {
-      const { data, error } = await supabase.functions.invoke("einvoice-resend", {
-        body: payload,
+      await supabaseEinvoiceRepository.resend({
+        invoiceId: payload.invoice_id,
+        action: payload.action,
+        to: payload.to,
       });
-      if (error || (data as any)?.error) {
-        const msg = (data as any)?.error ?? error?.message ?? "Error";
-        toast.error(`No se pudo procesar: ${msg}`);
-        return false;
-      }
       const labels: Record<EinvoiceResendAction, string> = {
         send_email: "Email enviado al cliente",
         send_whatsapp: "WhatsApp enviado al cliente",
@@ -35,8 +33,8 @@ export function useEinvoiceActions() {
       };
       toast.success(labels[payload.action]);
       return true;
-    } catch (e: any) {
-      toast.error(e?.message ?? "Error de red");
+    } catch (e) {
+      toast.error((e as Error)?.message ?? "Error de red");
       return false;
     } finally {
       setPending(null);
