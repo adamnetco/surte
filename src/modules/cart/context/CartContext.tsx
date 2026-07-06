@@ -3,6 +3,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { getCartToken, resetCartToken, setCartToken } from "@/modules/cart/lib/cartToken";
+import { computeTotals } from "@/core/use-cases/cart/ComputeTotals";
 
 type Product = Tables<"products">;
 
@@ -262,8 +263,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+  const totals = computeTotals({
+    cart: {
+      currency: "COP",
+      lines: items.map((i) => ({
+        productId: i.product.id,
+        name: i.product.name,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        presentationId: i.presentationId ?? null,
+      })),
+    },
+  });
+  const totalItems = totals.totalItems;
+  const totalPrice = totals.total.amount;
 
   return (
     <CartContext.Provider value={{
