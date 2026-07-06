@@ -9,9 +9,9 @@ import { useCart } from "@/modules/cart/context/CartContext";
 import { useAppSettings } from "@/modules/storefront/hooks/useStore";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useAgent } from "@/modules/pos/context/AgentContext";
-import { supabase } from "@/integrations/supabase/client";
 import { supabaseCartRepository } from "@/infrastructure/database/SupabaseCartRepository";
 import { supabaseCouponRepository } from "@/infrastructure/database/SupabaseCouponRepository";
+import { supabaseShippingRepository } from "@/infrastructure/database/SupabaseShippingRepository";
 import { supabaseCheckoutGateway } from "@/infrastructure/messaging/SupabaseCheckoutGateway";
 import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 import { Calendar } from "@/components/ui/calendar";
@@ -165,25 +165,12 @@ const Carrito = () => {
 
   const { data: shippingZones } = useQuery({
     queryKey: ["shipping-zones", tenantOrgId],
-    queryFn: async () => {
-      let q: any = supabase.from("shipping_zones").select("*").eq("is_active", true).order("city").order("neighborhood");
-      if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => supabaseShippingRepository.listZones(tenantOrgId),
   });
 
   const { data: municipalitiesCfg } = useQuery({
     queryKey: ["municipalities-free-shipping"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("municipality_settings")
-        .select("city, free_shipping_enabled, free_shipping_threshold")
-        .eq("is_active", true);
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => supabaseShippingRepository.listMunicipalityConfigs(),
   });
 
   const selectedZone = shippingZones?.find((z: any) => z.id === neighborhoodId);
@@ -205,26 +192,19 @@ const Carrito = () => {
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
     setValidatingCoupon(true);
-    try {
-      const { data, error } = await supabase.rpc("validate_coupon", {
-        _code: couponCode.toUpperCase().trim(),
-        _order_total: totalPrice,
-      });
-      if (error || !data || !data[0]) {
-        const msg = error?.message || "";
-        if (msg.includes("expired_coupon")) toast.error("Cupón expirado");
-        else if (msg.includes("exhausted_coupon")) toast.error("Cupón agotado");
-        else if (msg.includes("min_order_not_met")) toast.error("Pedido mínimo no alcanzado para este cupón");
-        else toast.error("Cupón no válido");
-        setValidatingCoupon(false);
-        return;
-      }
-      const row = data[0];
-      const disc = Number(row.discount_amount);
-      setCouponDiscount(disc);
-      setAppliedCoupon({ id: row.id, code: row.code });
-      toast.success(`Cupón aplicado: -${formatPrice(disc)}`);
-    } catch { toast.error("Error validando cupón"); }
+    const { coupon, errorCode } = await supabaseCouponRepository.validate(couponCode, totalPrice);
+    if (!coupon) {
+      if (errorCode === "expired_coupon") toast.error("Cupón expirado");
+      else if (errorCode === "exhausted_coupon") toast.error("Cupón agotado");
+      else if (errorCode === "min_order_not_met") toast.error("Pedido mínimo no alcanzado para este cupón");
+      else if (errorCode === "unknown_error") toast.error("Error validando cupón");
+      else toast.error("Cupón no válido");
+      setValidatingCoupon(false);
+      return;
+    }
+    setCouponDiscount(coupon.discount_amount);
+    setAppliedCoupon({ id: coupon.id, code: coupon.code });
+    toast.success(`Cupón aplicado: -${formatPrice(coupon.discount_amount)}`);
     setValidatingCoupon(false);
   };
 
