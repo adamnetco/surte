@@ -3,7 +3,8 @@ import { FileCheck2, Loader2, AlertCircle, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useShiftDocsStats } from "@/modules/pos/hooks/useShiftDocsStats";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
+import type { RecentInvoiceRow } from "@/core/ports/IEinvoiceRepository";
 import { toast } from "sonner";
 
 interface Props {
@@ -11,14 +12,7 @@ interface Props {
   className?: string;
 }
 
-interface RecentRow {
-  id: string;
-  full_number: string | null;
-  status: string;
-  total: number;
-  created_at: string;
-  customer_name: string | null;
-}
+type RecentRow = RecentInvoiceRow;
 
 /**
  * AC15 — Widget de turno en la barra POS:

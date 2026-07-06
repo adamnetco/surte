@@ -40,6 +40,21 @@ export interface StatusCountByOrgRow {
   status: string;
 }
 
+export interface RecentInvoiceRow {
+  id: string;
+  full_number: string | null;
+  status: string;
+  total: number;
+  created_at: string;
+  customer_name: string | null;
+}
+
+export interface RetryTodayResult {
+  requeued?: number;
+  candidates?: number;
+  [k: string]: unknown;
+}
+
 export interface IEinvoiceRepository {
   resend(payload: ResendPayload): Promise<void>;
   loadConfig(organizationId: string, opts?: { onlyProd?: boolean }): Promise<EinvoiceConfigRow | null>;
@@ -58,4 +73,15 @@ export interface IEinvoiceRepository {
     isActive: boolean;
     extra: Record<string, unknown>;
   } | null>;
+  /** Últimos N documentos DIAN emitidos desde `sinceIso`. */
+  listRecentInvoices(
+    organizationId: string,
+    sinceIso: string,
+    limit?: number,
+  ): Promise<RecentInvoiceRow[]>;
+  /** Reintenta (o previsualiza) los pendientes del día vía edge function. */
+  retryAllToday(
+    organizationId: string,
+    opts?: { dryRun?: boolean },
+  ): Promise<RetryTodayResult>;
 }
