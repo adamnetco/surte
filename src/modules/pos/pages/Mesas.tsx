@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseTableOrderRepository } from "@/infrastructure/database/SupabaseTableOrderRepository";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { LockKeyhole, Users } from "lucide-react";
@@ -67,17 +67,12 @@ export default function Mesas() {
   const openTable = async (t: FloorTable) => {
     const existing = ordersByTable.get(t.id);
     if (existing && existing.length) { setOpenTableId(t.id); return; }
-    // create open order
-    const { data, error } = await supabase.from("table_orders").insert({
-      organization_id: orgId,
-      location_id: (await supabase.from("dining_tables").select("location_id").eq("id", t.id).single()).data?.location_id,
-      dining_table_id: t.id,
-      service_type_key: "dine_in",
-      waiter_id: user!.id,
-      status: "open",
-    }).select().single();
+    const { error } = await supabaseTableOrderRepository.openForTable({
+      organizationId: orgId!,
+      diningTableId: t.id,
+      waiterId: user!.id,
+    });
     if (error) return toast.error(error.message);
-    await supabase.from("dining_tables").update({ status: "occupied" }).eq("id", t.id).eq("organization_id", orgId!);
     setOpenTableId(t.id);
   };
 
