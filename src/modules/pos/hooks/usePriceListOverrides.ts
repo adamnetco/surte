@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePriceListRepository } from "@/infrastructure/database/SupabasePriceListRepository";
 
 /**
  * Carga el mapa productId -> precio para una lista de precios activa.
@@ -8,6 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
  *
  * Slice 6 (Fase 2 — Contextual Bar): la lista seleccionada en la
  * `POSContextualBar` debe aplicarse al añadir cada producto al ticket.
+ *
+ * Fase 2 hexagonal: consume `supabasePriceListRepository` en lugar
+ * del cliente Supabase directo.
  */
 export function usePriceListOverrides(organizationId: string, priceListId: string | null) {
   const [map, setMap] = useState<Map<string, number>>(new Map());
@@ -21,22 +24,17 @@ export function usePriceListOverrides(organizationId: string, priceListId: strin
     let cancel = false;
     setLoading(true);
     (async () => {
-      const { data, error } = await (supabase as any)
-        .from("price_list_items")
-        .select("product_id, price, presentation_id")
-        .eq("price_list_id", priceListId)
-        .is("presentation_id", null); // sólo overrides de precio base
-      if (cancel) return;
-      if (error) {
-        setMap(new Map());
-      } else {
+      try {
+        const rows = await supabasePriceListRepository.listBasePriceOverrides(priceListId);
+        if (cancel) return;
         const m = new Map<string, number>();
-        for (const row of (data ?? []) as Array<{ product_id: string; price: number }>) {
-          m.set(row.product_id, Number(row.price));
-        }
+        for (const row of rows) m.set(row.product_id, row.price);
         setMap(m);
+      } catch {
+        if (!cancel) setMap(new Map());
+      } finally {
+        if (!cancel) setLoading(false);
       }
-      setLoading(false);
     })();
     return () => {
       cancel = true;
