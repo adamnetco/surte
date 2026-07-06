@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseHardBlockPolicyRepository } from "@/infrastructure/database/SupabaseHardBlockPolicyRepository";
 import { useDianHealth } from "./useDianHealth";
 
 /**
@@ -68,40 +67,22 @@ export function usePosCobroGate(
     let cancelled = false;
     setLoading(true);
     (async () => {
-      const { data } = await supabase
-        .from("einvoice_configs")
-        .select("hard_block_when_dian_down")
-        .eq("organization_id", organizationId)
-        .eq("environment", "prod")
-        .maybeSingle();
-      if (cancelled) return;
-      setHardBlock(!!(data as any)?.hard_block_when_dian_down);
-      setLoading(false);
+      try {
+        const value = await supabaseHardBlockPolicyRepository.getHardBlockFlag(organizationId);
+        if (!cancelled) setHardBlock(value);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(uniqueTopic(`hard-block-${organizationId}`))
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "einvoice_configs",
-            filter: `organization_id=eq.${organizationId}`,
-          },
-          (payload) =>
-            setHardBlock(!!(payload.new as any)?.hard_block_when_dian_down),
-        )
-        .subscribe();
-    } catch (err) {
-      console.warn("[usePosCobroGate] realtime subscribe failed", err);
-    }
+    const unsubscribe = supabaseHardBlockPolicyRepository.subscribeHardBlockFlag(
+      organizationId,
+      (next) => setHardBlock(next),
+    );
 
     return () => {
       cancelled = true;
-      safeRemoveChannel(channel);
+      unsubscribe();
     };
   }, [organizationId]);
 
