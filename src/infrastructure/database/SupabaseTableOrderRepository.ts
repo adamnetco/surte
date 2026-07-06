@@ -3,11 +3,14 @@
  * usando las tablas `dining_tables` y `table_orders`.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { safeRemoveChannel, uniqueTopic } from "@/lib/realtime/safeChannel";
 import type {
   ITableOrderRepository,
   OpenTableOrderInput,
   OpenedTableOrder,
+  DeliveryRow,
 } from "@/core/ports/ITableOrderRepository";
+
 
 const asError = (raw: unknown): Error | null =>
   raw ? new Error((raw as { message?: string }).message ?? "table_order_open_failed") : null;
