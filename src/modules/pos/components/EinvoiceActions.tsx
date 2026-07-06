@@ -4,7 +4,7 @@ import { Mail, MessageCircle, Eye, RotateCw, Printer, Loader2 } from "lucide-rea
 import { useEinvoiceActions } from "../hooks/useEinvoiceActions";
 import type { EinvoiceLiveSnapshot } from "../hooks/useEinvoiceLiveStatus";
 import InvoicePdfDrawer from "./InvoicePdfDrawer";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
 import { useQuery } from "@tanstack/react-query";
 
 interface Props {
