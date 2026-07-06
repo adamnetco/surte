@@ -46,6 +46,26 @@ export interface CashSessionCloseResult {
   sealHash: string | null;
 }
 
+export interface CashSessionOpenInput {
+  organizationId: string;
+  locationId: string;
+  cashRegisterId: string;
+  userId: string;
+  openingAmount: number;
+}
+
+export interface OpenedCashSession {
+  id: string;
+  organization_id: string;
+  location_id: string;
+  cash_register_id: string;
+  status: string;
+  opening_amount: number;
+  expected_amount: number;
+  [k: string]: unknown;
+}
+
+
 export interface ICashSessionRepository {
   loadCloseSnapshot(input: {
     organizationId: string;
@@ -65,4 +85,8 @@ export interface ICashSessionRepository {
    * Lanza si algo falla — la UI debe capturar con try/catch.
    */
   close(input: CashSessionCloseInput): Promise<CashSessionCloseResult>;
+
+  /** Abre una nueva sesión de caja (turno). */
+  open(input: CashSessionOpenInput): Promise<OpenedCashSession>;
 }
+
