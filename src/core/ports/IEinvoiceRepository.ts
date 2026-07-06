@@ -49,6 +49,15 @@ export interface RecentInvoiceRow {
   customer_name: string | null;
 }
 
+export interface InvoiceDetailRow {
+  pdf_url: string | null;
+  xml_url: string | null;
+  qr_url: string | null;
+  cufe: string | null;
+  full_number: string | null;
+}
+
+
 export interface RetryTodayResult {
   requeued?: number;
   candidates?: number;
