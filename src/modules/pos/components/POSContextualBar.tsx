@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePriceListRepository } from "@/infrastructure/database/SupabasePriceListRepository";
 import { Tag, PauseCircle, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -46,18 +46,18 @@ export default function POSContextualBar({
   useEffect(() => {
     let cancel = false;
     (async () => {
-      const { data } = await (supabase as any)
-        .from("price_lists")
-        .select("id,name,is_active")
-        .eq("organization_id", organizationId)
-        .eq("is_active", true)
-        .order("name");
-      if (!cancel && data) setLists(data as PriceList[]);
+      try {
+        const data = await supabasePriceListRepository.listActive(organizationId);
+        if (!cancel) setLists(data);
+      } catch (err) {
+        console.warn("[POSContextualBar] listActive falló", err);
+      }
     })();
     return () => {
       cancel = true;
     };
   }, [organizationId]);
+
 
   const currentName =
     lists.find((l) => l.id === priceListId)?.name ?? "Pública";
