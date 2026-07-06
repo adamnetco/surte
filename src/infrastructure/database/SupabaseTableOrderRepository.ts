@@ -47,4 +47,38 @@ export const supabaseTableOrderRepository: ITableOrderRepository = {
 
     return { order: data as OpenedTableOrder, error: null };
   },
+
+  async listActiveDeliveries(organizationId) {
+    const { data, error } = await (supabase as any)
+      .from("table_orders")
+      .select("id,order_number,customer_name,customer_phone,total,status,opened_at,notes,metadata,service_type_key")
+      .eq("organization_id", organizationId)
+      .in("status", ["open", "sent", "billed"])
+      .or("service_type_key.eq.delivery,metadata->>mode.eq.domicilio")
+      .order("opened_at", { ascending: false })
+      .limit(100);
+    if (error) {
+      console.warn("[SupabaseTableOrderRepository.listActiveDeliveries]", error);
+      return [];
+    }
+    return (data ?? []) as DeliveryRow[];
+  },
+
+  subscribeTableOrders(organizationId, onChange) {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = (supabase as any)
+        .channel(uniqueTopic(`table-orders-${organizationId}`))
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "table_orders", filter: `organization_id=eq.${organizationId}` },
+          () => onChange(),
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("[SupabaseTableOrderRepository] realtime subscribe failed", err);
+    }
+    return () => safeRemoveChannel(channel);
+  },
 };
+
