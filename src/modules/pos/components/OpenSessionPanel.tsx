@@ -56,24 +56,18 @@ export default function OpenSessionPanel({ organizationId, locations, registers,
     setBusy(true);
     const amount = Number(opening) || 0;
     try {
-      const { data, error } = await supabase
-        .from("cash_sessions")
-        .insert({
-          organization_id: organizationId,
-          location_id: locationId,
-          cash_register_id: registerId,
-          opened_by: userId,
-          opening_amount: amount,
-          expected_amount: amount,
-          status: "open",
-        })
-        .select()
-        .single();
-      if (error) throw error;
+      const data = await supabaseCashSessionRepository.open({
+        organizationId,
+        locationId,
+        cashRegisterId: registerId,
+        userId,
+        openingAmount: amount,
+      });
       localStorage.setItem(LS_LOC, locationId);
       localStorage.setItem(LS_REG, registerId);
       toast.success("Caja abierta");
       onOpened(data);
+
     } catch (e) {
       toast.error(errorToMessage(e));
     } finally {
