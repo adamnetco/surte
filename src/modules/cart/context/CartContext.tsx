@@ -202,12 +202,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!token) return false;
       isHydratingRef.current = true;
       try {
-        const { data, error } = await supabase.rpc("get_persistent_cart", { _cart_token: token });
-        if (error || !data || data.length === 0) return false;
-        const remote = data[0] as any;
-        const remoteItems = Array.isArray(remote.items) ? remote.items : [];
+        const remote = await supabaseCartRepository.findByToken(token);
+        if (!remote) return false;
+        const remoteItems = remote.items;
         if (remoteItems.length === 0) return false;
 
+        // Re-fetch live products to honour current price/stock.
         const ids = Array.from(new Set(remoteItems.map((i: any) => i.product_id))).filter(Boolean);
         const { data: prods } = await supabase
           .from("products")
