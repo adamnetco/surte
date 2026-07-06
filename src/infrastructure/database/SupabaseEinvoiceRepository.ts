@@ -11,6 +11,8 @@ import type {
   EinvoiceConfigPatch,
   EinvoiceStatusRow,
   StatusCountByOrgRow,
+  RecentInvoiceRow,
+  RetryTodayResult,
 } from "@/core/ports/IEinvoiceRepository";
 
 const asError = (e: unknown): Error =>
@@ -145,5 +147,29 @@ export const supabaseEinvoiceRepository: IEinvoiceRepository = {
       isActive: !!data.is_active,
       extra: (data.extra ?? {}) as Record<string, unknown>,
     };
+  },
+
+  async listRecentInvoices(organizationId, sinceIso, limit = 10) {
+    const { data, error } = await supabase
+      .from("electronic_invoices")
+      .select("id, full_number, status, total, created_at, customer_name")
+      .eq("organization_id", organizationId)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw asError(error);
+    return (data ?? []) as RecentInvoiceRow[];
+  },
+
+  async retryAllToday(organizationId, opts) {
+    const { data, error } = await supabase.functions.invoke("einvoice-resend", {
+      body: {
+        action: "retry_all_today",
+        organization_id: organizationId,
+        ...(opts?.dryRun ? { dry_run: true } : {}),
+      },
+    });
+    if (error) throw asError(error);
+    return (data ?? {}) as RetryTodayResult;
   },
 };

@@ -3,7 +3,8 @@ import { FileCheck2, Loader2, AlertCircle, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useShiftDocsStats } from "@/modules/pos/hooks/useShiftDocsStats";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseEinvoiceRepository } from "@/infrastructure/database/SupabaseEinvoiceRepository";
+import type { RecentInvoiceRow } from "@/core/ports/IEinvoiceRepository";
 import { toast } from "sonner";
 
 interface Props {
@@ -11,14 +12,7 @@ interface Props {
   className?: string;
 }
 
-interface RecentRow {
-  id: string;
-  full_number: string | null;
-  status: string;
-  total: number;
-  created_at: string;
-  customer_name: string | null;
-}
+type RecentRow = RecentInvoiceRow;
 
 /**
  * AC15 — Widget de turno en la barra POS:
@@ -33,25 +27,24 @@ export default function EinvoiceShiftWidget({ organizationId, className }: Props
 
   const loadRecent = async () => {
     const since = new Date(); since.setHours(0, 0, 0, 0);
-    const { data } = await supabase
-      .from("electronic_invoices")
-      .select("id, full_number, status, total, created_at, customer_name")
-      .eq("organization_id", organizationId)
-      .gte("created_at", since.toISOString())
-      .order("created_at", { ascending: false })
-      .limit(10);
-    setRecent((data as any) ?? []);
+    try {
+      const rows = await supabaseEinvoiceRepository.listRecentInvoices(
+        organizationId,
+        since.toISOString(),
+        10,
+      );
+      setRecent(rows);
+    } catch {
+      setRecent([]);
+    }
   };
 
   const retryAll = async () => {
     setRetrying(true);
     try {
       // Preview con dry_run para confirmar count antes de mutar.
-      const { data: preview, error: preErr } = await supabase.functions.invoke("einvoice-resend", {
-        body: { action: "retry_all_today", organization_id: organizationId, dry_run: true },
-      });
-      if (preErr) throw preErr;
-      const candidates = (preview as any)?.candidates ?? 0;
+      const preview = await supabaseEinvoiceRepository.retryAllToday(organizationId, { dryRun: true });
+      const candidates = Number(preview?.candidates ?? 0);
       if (candidates === 0) {
         toast.info("Sin pendientes que reintentar");
         return;
@@ -59,11 +52,8 @@ export default function EinvoiceShiftWidget({ organizationId, className }: Props
       if (!window.confirm(`Se reencolarán ${candidates} documentos. ¿Continuar?`)) return;
 
       // POS-einvoice-retry-scoping AC3: enviar organization_id explícito
-      const { data, error } = await supabase.functions.invoke("einvoice-resend", {
-        body: { action: "retry_all_today", organization_id: organizationId },
-      });
-      if (error) throw error;
-      toast.success(`Reencoladas: ${(data as any)?.requeued ?? 0}`);
+      const result = await supabaseEinvoiceRepository.retryAllToday(organizationId);
+      toast.success(`Reencoladas: ${result?.requeued ?? 0}`);
       loadRecent();
     } catch (e: any) {
       toast.error("No se pudo reintentar", { description: e?.message });
