@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { ALL_POS_MODES, type PosMode } from "@/modules/pos/lib/posModes";
+import { supabasePosModesRepository } from "@/infrastructure/database/SupabasePosModesRepository";
 
 export interface POSModesConfig {
   enabled: PosMode[];
@@ -17,18 +17,11 @@ export function usePOSModes(organizationId: string | undefined) {
   const load = useCallback(async () => {
     if (!organizationId) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from("organizations")
-      .select("pos_enabled_modes, pos_default_mode")
-      .eq("id", organizationId)
-      .maybeSingle();
-    if (!error && data) {
-      const enabled = ((data as any).pos_enabled_modes ?? ALL_POS_MODES) as PosMode[];
-      const def = ((data as any).pos_default_mode ?? "autoservicio") as PosMode;
-      setConfig({
-        enabled: enabled.length ? enabled : ALL_POS_MODES,
-        default: enabled.includes(def) ? def : enabled[0] ?? "autoservicio",
-      });
+    const row = await supabasePosModesRepository.load(organizationId);
+    if (row) {
+      const enabled = (row.enabled?.length ? row.enabled : ALL_POS_MODES) as PosMode[];
+      const def = enabled.includes(row.default) ? row.default : enabled[0] ?? "autoservicio";
+      setConfig({ enabled, default: def });
     }
     setLoading(false);
   }, [organizationId]);
@@ -37,13 +30,7 @@ export function usePOSModes(organizationId: string | undefined) {
 
   const save = useCallback(async (next: POSModesConfig) => {
     if (!organizationId) return;
-    const { error } = await supabase
-      .from("organizations")
-      .update({
-        pos_enabled_modes: next.enabled,
-        pos_default_mode: next.default,
-      } as any)
-      .eq("id", organizationId);
+    const { error } = await supabasePosModesRepository.save(organizationId, next);
     if (error) throw error;
     setConfig(next);
   }, [organizationId]);
