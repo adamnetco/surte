@@ -28,15 +28,7 @@ interface Props {
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const DIFF_THRESHOLD = 5_000; // COP — descuadre que dispara confirmación
 
-interface Totals {
-  cash: number; card: number; transfer: number; other: number; total: number; count: number; tips: number;
-}
-
-interface Denomination {
-  id: string;
-  value: number;
-  kind: string;
-}
+// Tipos re-exportados desde el port hexagonal (Totals, Denomination).
 
 export default function CloseSessionDialog({ open, onOpenChange, sessionId, openingAmount, organizationId, userId, onClosed }: Props) {
   const [totals, setTotals] = useState<Totals>({ cash: 0, card: 0, transfer: 0, other: 0, total: 0, count: 0, tips: 0 });
