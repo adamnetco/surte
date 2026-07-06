@@ -165,25 +165,12 @@ const Carrito = () => {
 
   const { data: shippingZones } = useQuery({
     queryKey: ["shipping-zones", tenantOrgId],
-    queryFn: async () => {
-      let q: any = supabase.from("shipping_zones").select("*").eq("is_active", true).order("city").order("neighborhood");
-      if (tenantOrgId) q = q.eq("organization_id", tenantOrgId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => supabaseShippingRepository.listZones(tenantOrgId),
   });
 
   const { data: municipalitiesCfg } = useQuery({
     queryKey: ["municipalities-free-shipping"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("municipality_settings")
-        .select("city, free_shipping_enabled, free_shipping_threshold")
-        .eq("is_active", true);
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => supabaseShippingRepository.listMunicipalityConfigs(),
   });
 
   const selectedZone = shippingZones?.find((z: any) => z.id === neighborhoodId);
