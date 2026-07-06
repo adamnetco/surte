@@ -104,19 +104,14 @@ export function usePosCobroGate(
       /* storage no disponible */
     }
     setOverrideActive(true);
-    const { data: userData } = await supabase.auth.getUser();
-    await supabase.from("sync_logs").insert({
-      organization_id: organizationId,
-      service_name: "pos_hard_block_override",
-      status: "warning",
-      payload: {
-        user_id: userData?.user?.id ?? null,
-        dian_health: dian.health,
-        has_contingency: dian.hasContingencyRange,
-        activated_at: new Date().toISOString(),
-        ttl_minutes: 30,
-      } as any,
-    } as any);
+    const userId = await supabaseHardBlockPolicyRepository.getCurrentUserId();
+    await supabaseHardBlockPolicyRepository.logOverrideActivation(organizationId, {
+      user_id: userId,
+      dian_health: dian.health,
+      has_contingency: dian.hasContingencyRange,
+      activated_at: new Date().toISOString(),
+      ttl_minutes: 30,
+    });
   }, [organizationId, dian.health, dian.hasContingencyRange]);
 
   // Resolver gate.
