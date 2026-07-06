@@ -13,6 +13,8 @@ import type {
   StatusCountByOrgRow,
   RecentInvoiceRow,
   RetryTodayResult,
+  InvoiceDetailRow,
+
 } from "@/core/ports/IEinvoiceRepository";
 
 const asError = (e: unknown): Error =>
