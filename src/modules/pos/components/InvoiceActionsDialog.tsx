@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseInvoiceActionsRepository } from "@/infrastructure/database/SupabaseInvoiceActionsRepository";
 import { FileText, FileSignature, Pause, Loader2 } from "lucide-react";
 
 interface TicketLine {
@@ -39,69 +39,80 @@ export default function InvoiceActionsDialog({
   const [notes, setNotes] = useState("");
   const [validDays, setValidDays] = useState(15);
 
+  const items = ticket.map((l) => ({
+    productId: l.productId,
+    name: l.name,
+    quantity: l.quantity,
+    unitPrice: l.unitPrice,
+    total: l.total,
+  }));
+
   const handleEmit = async () => {
     if (!posOrderId) return toast.error("Falta el ID de la orden");
     setLoading(true);
-    const { data, error } = await supabase.functions.invoke("innapsis-emit", {
-      body: { organization_id: organizationId, pos_order_id: posOrderId, document_type: "invoice" },
-    });
-    setLoading(false);
-    if (error || !data?.success) {
-      toast.error(data?.error || error?.message || "Error al emitir");
-      return;
+    try {
+      const { trackId } = await supabaseInvoiceActionsRepository.emitInvoice({
+        organizationId,
+        posOrderId,
+      });
+      toast.success(`Factura enviada · ${trackId?.slice(0, 8) ?? ""}`);
+      onDone(); onOpenChange(false);
+    } catch (e) {
+      toast.error((e as Error).message || "Error al emitir");
+    } finally {
+      setLoading(false);
     }
-    toast.success(`Factura enviada · ${data.track_id?.slice(0, 8)}`);
-    onDone(); onOpenChange(false);
   };
 
   const handleQuote = async () => {
     setLoading(true);
-    const itemsJson = ticket.map(l => ({
-      product_id: l.productId, name: l.name, quantity: l.quantity,
-      unit_price: l.unitPrice, total: l.total,
-    }));
-    const validUntil = new Date();
-    validUntil.setDate(validUntil.getDate() + validDays);
-    const { error } = await supabase.from("pos_quotes").insert({
-      organization_id: organizationId,
-      location_id: locationId,
-      customer_name: customerName || null,
-      customer_phone: customerPhone || null,
-      customer_email: customerEmail || null,
-      items: itemsJson,
-      subtotal, total,
-      notes: notes || null,
-      valid_until: validUntil.toISOString().slice(0, 10),
-      created_by: userId,
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Cotización guardada");
-    onDone(); onOpenChange(false);
+    try {
+      await supabaseInvoiceActionsRepository.createQuote({
+        organizationId,
+        locationId,
+        userId,
+        customerName: customerName || null,
+        customerPhone: customerPhone || null,
+        customerEmail: customerEmail || null,
+        items,
+        subtotal,
+        total,
+        notes: notes || null,
+        validDays,
+      });
+      toast.success("Cotización guardada");
+      onDone(); onOpenChange(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePark = async () => {
     setLoading(true);
-    const itemsJson = ticket.map(l => ({
-      product_id: l.productId, name: l.name, quantity: l.quantity,
-      unit_price: l.unitPrice, total: l.total,
-    }));
-    const { error } = await supabase.from("parked_tickets").insert({
-      organization_id: organizationId,
-      location_id: locationId,
-      cash_session_id: cashSessionId,
-      cashier_id: userId,
-      label: customerName || `Ticket ${new Date().toLocaleTimeString("es-CO")}`,
-      customer_name: customerName || null,
-      items: itemsJson,
-      subtotal, total,
-      notes: notes || null,
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Ticket suspendido");
-    onDone(); onOpenChange(false);
+    try {
+      await supabaseInvoiceActionsRepository.parkTicket({
+        organizationId,
+        locationId,
+        cashSessionId,
+        userId,
+        label: customerName || null,
+        customerName: customerName || null,
+        items,
+        subtotal,
+        total,
+        notes: notes || null,
+      });
+      toast.success("Ticket suspendido");
+      onDone(); onOpenChange(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 
