@@ -1,40 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { uniqueTopic, safeRemoveChannel } from "@/lib/realtime/safeChannel";
+import { supabaseDiningFloorRepository } from "@/infrastructure/database/SupabaseDiningFloorRepository";
+import type {
+  DiningArea as Area,
+  DiningTable as FloorTable,
+  OpenTableOrder as OpenOrder,
+} from "@/core/ports/IDiningFloorRepository";
 
 /**
  * Hook compartido para vistas de salón (Mesas full-page + POS panel embebido).
  * Centraliza fetch + realtime de `dining_areas` / `dining_tables` / `table_orders`
  * y unifica el mapeo de órdenes por mesa para que ambas vistas se comporten igual.
+ *
+ * Este hook es UI-thin: toda la I/O vive en `SupabaseDiningFloorRepository`
+ * detrás del port `IDiningFloorRepository` (Fase 2 · Hexagonal).
  */
 
-export interface Area {
-  id: string;
-  name: string;
-  color: string | null;
-}
-
-export interface FloorTable {
-  id: string;
-  label: string;
-  capacity: number;
-  status: string;
-  dining_area_id: string | null;
-  pos_x?: number;
-  pos_y?: number;
-  width?: number;
-  height?: number;
-  shape?: string;
-  location_id?: string | null;
-}
-
-export interface OpenOrder {
-  id: string;
-  dining_table_id: string | null;
-  total: number;
-  opened_at: string;
-  sub_label: string | null;
-}
+export type { Area, FloorTable, OpenOrder };
 
 interface Options {
   /** Si se pasa `withCoords`, se traen pos_x/y/width/height/shape/location_id para el editor visual. */
@@ -48,37 +29,16 @@ export function useTablesFloor(organizationId: string | undefined, opts: Options
   const [openOrders, setOpenOrders] = useState<OpenOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const tableCols = withCoords
-    ? "id,label,capacity,pos_x,pos_y,width,height,shape,status,dining_area_id,location_id"
-    : "id,label,capacity,status,dining_area_id";
-
   const load = useCallback(async () => {
     if (!organizationId) return;
     setLoading(true);
-    const [{ data: a }, { data: t }, { data: o }] = await Promise.all([
-      supabase
-        .from("dining_areas")
-        .select("id,name,color")
-        .eq("organization_id", organizationId)
-        .eq("is_active", true)
-        .order("sort_order"),
-      supabase
-        .from("dining_tables")
-        .select(tableCols as "*")
-        .eq("organization_id", organizationId)
-        .eq("is_active", true)
-        .order("label"),
-      supabase
-        .from("table_orders")
-        .select("id,dining_table_id,total,opened_at,sub_label")
-        .eq("organization_id", organizationId)
-        .in("status", ["open", "sent", "billed"]),
-    ]);
-    setAreas((a as Area[]) ?? []);
-    setTables((t as unknown as FloorTable[]) ?? []);
-    setOpenOrders((o as OpenOrder[]) ?? []);
+    const { areas: a, tables: t, openOrders: o } =
+      await supabaseDiningFloorRepository.loadSnapshot({ organizationId, withCoords });
+    setAreas(a);
+    setTables(t);
+    setOpenOrders(o);
     setLoading(false);
-  }, [organizationId, tableCols]);
+  }, [organizationId, withCoords]);
 
   useEffect(() => {
     load();
@@ -86,27 +46,11 @@ export function useTablesFloor(organizationId: string | undefined, opts: Options
 
   useEffect(() => {
     if (!organizationId) return;
-    let ch: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      ch = supabase
-        .channel(uniqueTopic(`floor-${organizationId}`))
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "table_orders", filter: `organization_id=eq.${organizationId}` },
-          load,
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "dining_tables", filter: `organization_id=eq.${organizationId}` },
-          load,
-        )
-        .subscribe();
-    } catch (err) {
-      console.warn("[useTablesFloor] realtime subscribe failed", err);
-    }
-    return () => {
-      safeRemoveChannel(ch);
-    };
+    const unsubscribe = supabaseDiningFloorRepository.subscribeToFloor({
+      organizationId,
+      onChange: () => load(),
+    });
+    return unsubscribe;
   }, [organizationId, load]);
 
   /** Una orden "primaria" por mesa (la más antigua). Suficiente para el panel POS. */
