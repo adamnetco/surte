@@ -16,6 +16,18 @@ export interface OpenedTableOrder {
   status: string;
 }
 
+export interface DeliveryRow {
+  id: string;
+  order_number: number | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  total: number;
+  status: string;
+  opened_at: string;
+  notes: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
 export interface ITableOrderRepository {
   /**
    * Abre una orden nueva `dine_in` para la mesa indicada y marca la
@@ -24,4 +36,14 @@ export interface ITableOrderRepository {
   openForTable(
     input: OpenTableOrderInput,
   ): Promise<{ order: OpenedTableOrder | null; error: Error | null }>;
+
+  /**
+   * Lista los pedidos activos (`open|sent|billed`) de tipo domicilio,
+   * ya sea por `service_type_key='delivery'` o `metadata.mode='domicilio'`.
+   */
+  listActiveDeliveries(organizationId: string): Promise<DeliveryRow[]>;
+
+  /** Realtime sobre cambios en `table_orders` de la organización. */
+  subscribeTableOrders(organizationId: string, onChange: () => void): () => void;
 }
+

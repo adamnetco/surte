@@ -3,25 +3,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bike, Clock, Loader2, Phone, User, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { safeRemoveChannel, uniqueTopic } from "@/lib/realtime/safeChannel";
+import { supabaseTableOrderRepository } from "@/infrastructure/database/SupabaseTableOrderRepository";
+import type { DeliveryRow } from "@/core/ports/ITableOrderRepository";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   organizationId: string;
-}
-
-interface DeliveryRow {
-  id: string;
-  order_number: number | null;
-  customer_name: string | null;
-  customer_phone: string | null;
-  total: number;
-  status: string;
-  opened_at: string;
-  notes: string | null;
-  metadata: any;
 }
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
@@ -35,6 +23,7 @@ const STATUS_TONE: Record<string, string> = {
   paid: "bg-emerald-500/15 text-emerald-700 border-emerald-500/40",
 };
 
+
 /**
  * Lista de domicilios abiertos: table_orders con service_type_key='delivery'
  * o metadata.mode='domicilio'. Read-only, con auto-refresh via realtime.
@@ -46,33 +35,19 @@ export default function DeliveriesListSheet({ open, onOpenChange, organizationId
   const load = async () => {
     if (!organizationId) return;
     setLoading(true);
-    const { data, error } = await (supabase as any)
-      .from("table_orders")
-      .select("id,order_number,customer_name,customer_phone,total,status,opened_at,notes,metadata,service_type_key")
-      .eq("organization_id", organizationId)
-      .in("status", ["open", "sent", "billed"])
-      .or("service_type_key.eq.delivery,metadata->>mode.eq.domicilio")
-      .order("opened_at", { ascending: false })
-      .limit(100);
-    if (error) console.warn("[deliveries]", error);
-    setRows((data as DeliveryRow[]) ?? []);
+    const data = await supabaseTableOrderRepository.listActiveDeliveries(organizationId);
+    setRows(data);
     setLoading(false);
   };
 
   useEffect(() => {
     if (!open) return;
     void load();
-    const ch = (supabase as any)
-      .channel(uniqueTopic(`deliveries-${organizationId}`))
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "table_orders", filter: `organization_id=eq.${organizationId}` },
-        () => void load(),
-      )
-      .subscribe();
-    return () => safeRemoveChannel(ch);
+    const off = supabaseTableOrderRepository.subscribeTableOrders(organizationId, () => void load());
+    return off;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, organizationId]);
+
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -104,10 +79,13 @@ export default function DeliveriesListSheet({ open, onOpenChange, organizationId
           ) : (
             rows.map((r) => {
               const tone = STATUS_TONE[r.status] ?? "bg-muted text-muted-foreground border-muted";
+              const meta = (r.metadata ?? {}) as Record<string, unknown>;
               const address =
-                (r.metadata && (r.metadata.address || r.metadata.direccion)) ||
+                (typeof meta.address === "string" && meta.address) ||
+                (typeof meta.direccion === "string" && meta.direccion) ||
                 r.notes ||
                 null;
+
               return (
                 <div key={r.id} className="rounded-lg border p-3 bg-card hover:border-primary/50 transition">
                   <div className="flex items-start justify-between gap-2">
