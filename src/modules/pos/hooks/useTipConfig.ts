@@ -1,7 +1,7 @@
 // Configuración de propinas leída desde app_settings (key=`pos_tip_config`).
 // Defaults sanos para Colombia (10% sugerido).
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAppSettingsRepository } from "@/infrastructure/database/SupabaseAppSettingsRepository";
 
 export interface TipConfig {
   enabled: boolean;
@@ -30,16 +30,11 @@ export function useTipConfig(organizationId?: string) {
     if (!organizationId) { setLoaded(true); return; }
     let cancel = false;
     (async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("organization_id", organizationId)
-        .eq("key", KEY)
-        .maybeSingle();
+      const raw = await supabaseAppSettingsRepository.getRaw(organizationId, KEY);
       if (cancel) return;
-      if (data?.value) {
+      if (raw) {
         try {
-          const parsed = JSON.parse(data.value as string) as Partial<TipConfig>;
+          const parsed = JSON.parse(raw) as Partial<TipConfig>;
           setConfig({ ...DEFAULT, ...parsed });
         } catch { /* keep default */ }
       }
