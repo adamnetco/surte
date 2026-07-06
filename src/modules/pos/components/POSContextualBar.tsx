@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePriceListRepository } from "@/infrastructure/database/SupabasePriceListRepository";
 import { Tag, PauseCircle, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
