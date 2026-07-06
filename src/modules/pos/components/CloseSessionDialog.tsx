@@ -112,13 +112,9 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
     if (!photoFile) return null;
     setUploading(true);
     try {
-      const ext = (photoFile.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `org-${organizationId}/sessions/${sessionId}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("cash-arqueo").upload(path, photoFile, {
-        upsert: false, contentType: photoFile.type || "image/jpeg",
+      return await supabaseCashSessionRepository.uploadArqueoPhoto({
+        organizationId, sessionId, file: photoFile,
       });
-      if (error) throw error;
-      return path;
     } finally {
       setUploading(false);
     }
@@ -126,56 +122,27 @@ export default function CloseSessionDialog({ open, onOpenChange, sessionId, open
 
   const doClose = async () => {
     setBusy(true);
-    const payload = denoms
+    const denominationCounts = denoms
       .map((d) => ({ denomination_id: d.id, quantity: parseInt(counts[d.id] || "0", 10) || 0 }))
       .filter((x) => x.quantity > 0);
 
     try {
       const photoPath = await uploadArqueoPhoto();
-      const { error: upErr } = await supabase
-        .from("cash_sessions")
-        .update({
-          expected_amount: expected,
-          total_sales: totals.total,
-          total_cash: totals.cash,
-          total_card: totals.card,
-          total_transfer: totals.transfer,
-          total_other: totals.other,
-          ticket_count: totals.count,
-          notes,
-          blind_count_enabled: blindMode,
-          arqueo_photo_url: photoPath,
-          arqueo_confirmed_at: new Date().toISOString(),
-          arqueo_confirmed_by: userId,
-        } as any)
-        .eq("organization_id", organizationId)
-        .eq("id", sessionId);
-      if (upErr) throw upErr;
-
-      const { error } = await supabase.rpc("close_cash_session_with_counts", {
-        _session_id: sessionId,
-        _counts: payload as any,
+      const { sealSequence, sealHash } = await supabaseCashSessionRepository.close({
+        organizationId,
+        sessionId,
+        userId,
+        expectedAmount: expected,
+        totals,
+        denominationCounts,
+        notes,
+        blindMode,
+        arqueoPhotoPath: photoPath,
       });
-      if (error) throw error;
 
-      // Calcula y persiste hash determinístico del conteo
-      const { data: hash } = await (supabase.rpc as any)("cash_session_compute_denom_hash", { p_session_id: sessionId });
-      if (hash) {
-        await supabase.from("cash_sessions")
-          .update({ denominations_hash: hash as string } as any)
-          .eq("organization_id", organizationId).eq("id", sessionId);
-      }
-
-      // Ola 25 · Slice 2 — recupera el sello fiscal emitido por el trigger
-      const { data: sealRow } = await supabase
-        .from("cash_session_seals")
-        .select("sequence,current_hash")
-        .eq("cash_session_id", sessionId)
-        .maybeSingle();
-
-      if (sealRow?.current_hash) {
+      if (sealHash) {
         toast.success("Caja cerrada · Sello fiscal emitido", {
-          description: `#${sealRow.sequence} · hash ${String(sealRow.current_hash).slice(0, 12)}…`,
+          description: `#${sealSequence ?? "?"} · hash ${sealHash.slice(0, 12)}…`,
           duration: 8000,
         });
       } else {
