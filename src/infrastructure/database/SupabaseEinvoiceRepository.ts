@@ -9,6 +9,8 @@ import type {
   ResendPayload,
   EinvoiceConfigRow,
   EinvoiceConfigPatch,
+  EinvoiceStatusRow,
+  StatusCountByOrgRow,
 } from "@/core/ports/IEinvoiceRepository";
 
 const asError = (e: unknown): Error =>
@@ -59,6 +61,75 @@ export const supabaseEinvoiceRepository: IEinvoiceRepository = {
         .subscribe();
     } catch (err) {
       console.warn("[SupabaseEinvoiceRepository] realtime subscribe failed", err);
+    }
+    return () => safeRemoveChannel(channel);
+  },
+
+  async loadLatestByPosOrder(posOrderId) {
+    const { data, error } = await supabase
+      .from("electronic_invoices")
+      .select("id, status, cufe, last_error, retry_count, next_retry_at, document_type")
+      .eq("pos_order_id", posOrderId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw asError(error);
+    return (data ?? null) as EinvoiceStatusRow | null;
+  },
+
+  subscribeByPosOrder(posOrderId, onChange) {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(uniqueTopic(`einvoice-pos-${posOrderId}`))
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "electronic_invoices",
+            filter: `pos_order_id=eq.${posOrderId}`,
+          },
+          (payload) => {
+            const row = (payload.new ?? payload.old) as EinvoiceStatusRow | null;
+            if (row) onChange(row);
+          },
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("[SupabaseEinvoiceRepository] realtime subscribe pos-order failed", err);
+    }
+    return () => safeRemoveChannel(channel);
+  },
+
+  async listStatusesSince(organizationId, sinceIso) {
+    const { data, error } = await supabase
+      .from("electronic_invoices")
+      .select("status")
+      .eq("organization_id", organizationId)
+      .gte("created_at", sinceIso);
+    if (error) throw asError(error);
+    return (data ?? []) as StatusCountByOrgRow[];
+  },
+
+  subscribeByOrg(organizationId, onChange) {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(uniqueTopic(`shift-docs-${organizationId}`))
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "electronic_invoices",
+            filter: `organization_id=eq.${organizationId}`,
+          },
+          () => onChange(),
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("[SupabaseEinvoiceRepository] realtime subscribe org failed", err);
     }
     return () => safeRemoveChannel(channel);
   },
