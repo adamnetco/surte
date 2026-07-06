@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseTableOrderRepository } from "@/infrastructure/database/SupabaseTableOrderRepository";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { LockKeyhole, Users } from "lucide-react";
