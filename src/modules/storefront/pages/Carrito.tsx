@@ -12,6 +12,7 @@ import { useAgent } from "@/modules/pos/context/AgentContext";
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseCartRepository } from "@/infrastructure/database/SupabaseCartRepository";
 import { supabaseCouponRepository } from "@/infrastructure/database/SupabaseCouponRepository";
+import { supabaseCheckoutGateway } from "@/infrastructure/messaging/SupabaseCheckoutGateway";
 import { useTenantOrgId } from "@/modules/tenant/lib/useTenantSite";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
