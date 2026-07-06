@@ -79,10 +79,13 @@ export default function DeliveriesListSheet({ open, onOpenChange, organizationId
           ) : (
             rows.map((r) => {
               const tone = STATUS_TONE[r.status] ?? "bg-muted text-muted-foreground border-muted";
+              const meta = (r.metadata ?? {}) as Record<string, unknown>;
               const address =
-                (r.metadata && (r.metadata.address || r.metadata.direccion)) ||
+                (typeof meta.address === "string" && meta.address) ||
+                (typeof meta.direccion === "string" && meta.direccion) ||
                 r.notes ||
                 null;
+
               return (
                 <div key={r.id} className="rounded-lg border p-3 bg-card hover:border-primary/50 transition">
                   <div className="flex items-start justify-between gap-2">
