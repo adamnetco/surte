@@ -51,5 +51,17 @@ export interface ITableOrderRepository {
 
   /** Mueve un item de una orden a otra sub-cuenta. */
   transferTableItem(itemId: string, destOrderId: string): Promise<void>;
+
+  /**
+   * Mueve una cuenta (`table_orders.id`) de una mesa origen a una mesa
+   * destino libre, actualizando el status de ambas mesas
+   * (`origin → available`, `destination → occupied`).
+   */
+  moveOrderToTable(input: {
+    organizationId: string;
+    orderId: string;
+    fromTableId: string;
+    toTableId: string;
+  }): Promise<void>;
 }
 

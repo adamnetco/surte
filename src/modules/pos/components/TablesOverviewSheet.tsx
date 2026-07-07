@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Users, ArrowLeftRight, Loader2, X, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseTableOrderRepository } from "@/infrastructure/database/SupabaseTableOrderRepository";
 import { useTablesFloor } from "../hooks/useTablesFloor";
 import TableOrderDrawer from "./TableOrderDrawer";
 
@@ -71,24 +71,12 @@ export default function TablesOverviewSheet({ open, onOpenChange, organizationId
       }
       setMoving(true);
       try {
-        const { error: uErr } = await (supabase as any)
-          .from("table_orders")
-          .update({ dining_table_id: t.id })
-          .eq("id", moveSource.orderId)
-          .eq("organization_id", organizationId);
-        if (uErr) throw uErr;
-
-        await (supabase as any)
-          .from("dining_tables")
-          .update({ status: "occupied" })
-          .eq("id", t.id)
-          .eq("organization_id", organizationId);
-
-        await (supabase as any)
-          .from("dining_tables")
-          .update({ status: "available" })
-          .eq("id", moveSource.tableId)
-          .eq("organization_id", organizationId);
+        await supabaseTableOrderRepository.moveOrderToTable({
+          organizationId,
+          orderId: moveSource.orderId,
+          fromTableId: moveSource.tableId,
+          toTableId: t.id,
+        });
 
         toast.success(`Cuenta movida: mesa ${moveSource.label} → mesa ${t.label}`);
         cancelMove();
