@@ -91,5 +91,28 @@ export const supabaseTableOrderRepository: ITableOrderRepository = {
     const { error } = await (supabase.rpc as any)("transfer_table_item", { _item: itemId, _dest_order: destOrderId });
     if (error) throw asError(error);
   },
+
+  async moveOrderToTable({ organizationId, orderId, fromTableId, toTableId }) {
+    const { error: uErr } = await (supabase as any)
+      .from("table_orders")
+      .update({ dining_table_id: toTableId })
+      .eq("id", orderId)
+      .eq("organization_id", organizationId);
+    if (uErr) throw asError(uErr);
+
+    const { error: occErr } = await (supabase as any)
+      .from("dining_tables")
+      .update({ status: "occupied" })
+      .eq("id", toTableId)
+      .eq("organization_id", organizationId);
+    if (occErr) throw asError(occErr);
+
+    const { error: freeErr } = await (supabase as any)
+      .from("dining_tables")
+      .update({ status: "available" })
+      .eq("id", fromTableId)
+      .eq("organization_id", organizationId);
+    if (freeErr) throw asError(freeErr);
+  },
 };
 
