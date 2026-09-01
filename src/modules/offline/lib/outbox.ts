@@ -13,6 +13,9 @@ function uuid() {
   return (crypto as any).randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+const orgIdOf = (item: OutboxItem) => item.organization_id ?? "unknown";
+
+
 export async function enqueue(op: OutboxOp, payload: any, organization_id: string): Promise<string> {
   const client_uuid: string = payload.client_uuid ?? uuid();
   const item: OutboxItem = {
