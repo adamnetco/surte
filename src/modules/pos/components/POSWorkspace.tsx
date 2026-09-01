@@ -1616,8 +1616,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             onRetry={async () => {
               setLoading(true);
               try {
-                await refreshCatalogCache();
-                const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
+                await refreshCatalogCache(organizationId, true);
+                const [fresh, freshCats] = await Promise.all([
+                  getCachedProducts(organizationId), getCachedCategories(organizationId),
+                ]);
                 setProducts(fresh as Product[]);
                 setCategories(freshCats.map((c: any) => ({ id: c.id, name: c.name, icon_name: c.icon_name ?? null })));
                 setCatalogError(null);
