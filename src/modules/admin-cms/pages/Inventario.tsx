@@ -38,6 +38,8 @@ export default function Inventario() {
   const [criticalOpen, setCriticalOpen] = useState(false);
   const [countOpen, setCountOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [lots, setLots] = useState<{ productId: string; name: string } | null>(null);
+  const [expiryOpen, setExpiryOpen] = useState(false);
 
   useEffect(() => {
     if (!currentOrg) return;
