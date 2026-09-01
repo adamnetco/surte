@@ -20,7 +20,9 @@ const FOCUSABLE =
   'input:not([type="hidden"]):not([disabled]),select:not([disabled]),textarea:not([disabled]),[data-enter-flow-field]:not([disabled])';
 
 function isVisible(el: HTMLElement) {
-  return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  if (el.hidden) return false;
+  const cs = window.getComputedStyle(el);
+  return cs.display !== "none" && cs.visibility !== "hidden";
 }
 
 export interface UseEnterFlowOptions {
