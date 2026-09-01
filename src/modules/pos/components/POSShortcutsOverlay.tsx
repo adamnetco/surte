@@ -47,7 +47,7 @@ const SECTIONS: Section[] = [
       { key: "Backspace / Delete", label: "Eliminar línea seleccionada" },
       { key: "Enter", label: "Confirmar cantidad / edición" },
       { key: "F9", label: "Limpiar ticket completo", hint: "Pide confirmación" },
-      { key: "Ctrl+P", label: "Reimprimir última comanda" },
+      { key: "Ctrl+P", label: "Reimprimir último ticket", hint: "Abre la vista previa del último ticket del turno" },
     ],
   },
   {
