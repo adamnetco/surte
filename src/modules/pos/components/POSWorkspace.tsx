@@ -384,7 +384,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     (async () => {
       let cachedCatsLen = 0;
       try {
-        const [cached, cats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
+        const [cached, cats] = await Promise.all([
+          getCachedProducts(organizationId), getCachedCategories(organizationId),
+        ]);
         if (cached.length) {
           setProducts(cached as Product[]);
           setLoading(false);
@@ -403,8 +405,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       try {
         // Si no había categorías cacheadas, forzamos refresh para evitar quedar
         // pegados con un cache antiguo previo al fix de columna `icon`.
-        await refreshCatalogCache(cachedCatsLen === 0);
-        const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
+        await refreshCatalogCache(organizationId, cachedCatsLen === 0);
+        const [fresh, freshCats] = await Promise.all([
+          getCachedProducts(organizationId), getCachedCategories(organizationId),
+        ]);
         if (fresh.length) setProducts(fresh as Product[]);
         if (freshCats.length) setCategories(freshCats.map((c: any) => ({ id: c.id, name: c.name, icon_name: c.icon_name ?? null })));
 
@@ -1612,8 +1616,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             onRetry={async () => {
               setLoading(true);
               try {
-                await refreshCatalogCache();
-                const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
+                await refreshCatalogCache(organizationId, true);
+                const [fresh, freshCats] = await Promise.all([
+                  getCachedProducts(organizationId), getCachedCategories(organizationId),
+                ]);
                 setProducts(fresh as Product[]);
                 setCategories(freshCats.map((c: any) => ({ id: c.id, name: c.name, icon_name: c.icon_name ?? null })));
                 setCatalogError(null);

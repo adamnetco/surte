@@ -17,6 +17,8 @@ export interface CachedProduct {
   sku?: string | null;
   gtin?: string | null;
   updated_at?: string;
+  /** Tenant dueño de la fila (defensa extra sobre la partición por base). */
+  organization_id?: string;
 }
 
 export interface CachedCategory {
@@ -25,6 +27,7 @@ export interface CachedCategory {
   slug: string;
   icon_name?: string | null;
   sort_order?: number;
+  organization_id?: string;
 }
 
 export type OutboxOp =
