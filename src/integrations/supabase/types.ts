@@ -13305,6 +13305,7 @@ export type Database = {
           warehouse_name: string
         }[]
       }
+      is_active_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_feature_enabled: {
         Args: { _key: string; _tenant_id?: string }
         Returns: boolean
@@ -13313,6 +13314,7 @@ export type Database = {
       is_member_of: { Args: { _org_id: string }; Returns: boolean }
       is_tenant_readable: { Args: { _org_id: string }; Returns: boolean }
       is_tenant_writable: { Args: { _org_id: string }; Returns: boolean }
+      is_valid_public_org: { Args: { _org_id: string }; Returns: boolean }
       kds_toggle_item: {
         Args: { p_done: boolean; p_item_index: number; p_ticket_id: string }
         Returns: Json
