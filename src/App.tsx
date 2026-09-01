@@ -391,7 +391,7 @@ const App = () => (
                   </Suspense>
                   <FloatingWhatsApp />
                 </SwipeProvider>
-              </BrowserRouter>
+              </Router>
           </CartProvider>
           </AgentProvider>
           </LocationProvider>
