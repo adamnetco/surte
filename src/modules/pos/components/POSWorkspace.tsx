@@ -1643,7 +1643,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 onKeyDown={catalogNav.onKeyDown}
                 className="grid gap-1.5 grid-cols-2 sm:grid-cols-3"
               >
-                {filtered.map((p, idx) => {
+                {catalogPage.visible.map((p, idx) => {
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                   <button
