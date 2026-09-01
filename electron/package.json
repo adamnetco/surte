@@ -6,9 +6,9 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron main.cjs",
-    "package:linux": "electron-packager .. SistecPOSDesktop --platform=linux --arch=x64 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release",
-    "package:win": "electron-packager .. SistecPOSDesktop --platform=win32 --arch=x64 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release",
-    "package:mac": "electron-packager .. SistecPOSDesktop --platform=darwin --arch=x64 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release"
+    "package:linux": "electron-packager .. SistecPOSDesktop --platform=linux --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release",
+    "package:win": "electron-packager .. SistecPOSDesktop --platform=win32 --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release",
+    "package:mac": "electron-packager .. SistecPOSDesktop --platform=darwin --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release"
   },
   "devDependencies": {
     "electron": "^31.0.0",
