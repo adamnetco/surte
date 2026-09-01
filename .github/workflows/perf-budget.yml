@@ -1,0 +1,44 @@
+name: Perf budget (bundle del POS)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  budget:
+    name: vite build + presupuesto de bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # Falla si el JS/CSS gzip o el chunk más grande superan perf-budget.json.
+      # El LCP del POS escala con el JS de arranque: este gate frena regresiones
+      # antes de que lleguen a las terminales de caja.
+      - name: Perf budget
+        run: npm run perf:budget
+
+      - name: Upload dist stats
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-budget
+          path: perf-budget.json
+          retention-days: 14
