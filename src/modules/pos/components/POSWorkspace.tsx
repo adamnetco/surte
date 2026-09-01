@@ -33,6 +33,9 @@ import { usePrintQueue, TicketPreviewDialog, type TicketData } from "@/modules/p
 import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
 } from "@/modules/offline/lib/catalog";
+import {
+  refreshShiftTicketsCache, refreshCustomersCache,
+} from "@/modules/offline/lib/shiftCache";
 import { setMeta, getMeta } from "@/modules/offline/lib/db";
 import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
 import { usePriceListOverrides } from "@/modules/pos/hooks/usePriceListOverrides";
