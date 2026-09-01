@@ -19,11 +19,11 @@ const SECTIONS: Section[] = [
     icon: ShoppingCart,
     items: [
       { key: "F2", label: "Cobrar ticket", hint: "Abre el diálogo de pago (F12 alternativo)" },
-      { key: "F6", label: "Facturar último ticket", hint: "Emite factura electrónica DIAN" },
+      { key: "F6", label: "Pendiente / Facturar", hint: "Con ticket: lo suspende. Ticket vacío: factura el último pedido" },
       { key: "F7", label: "Generar cotización" },
       { key: "F8", label: "Suspender ticket", hint: "Guarda para retomarlo desde 'Suspendidas'" },
       { key: "F4", label: "Cambiar modo de venta", hint: "Ciclar Mesa / Autoservicio / Domicilio / Consumo interno" },
-      { key: "F5", label: "Asignar / cambiar mesa" },
+      { key: "F5", label: "Cambiar", hint: "En Mesas: asigna/cambia mesa. En el resto: cambia la cantidad de la línea" },
     ],
   },
   {
