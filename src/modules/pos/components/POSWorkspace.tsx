@@ -384,7 +384,9 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     (async () => {
       let cachedCatsLen = 0;
       try {
-        const [cached, cats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
+        const [cached, cats] = await Promise.all([
+          getCachedProducts(organizationId), getCachedCategories(organizationId),
+        ]);
         if (cached.length) {
           setProducts(cached as Product[]);
           setLoading(false);
