@@ -12891,6 +12891,7 @@ export type Database = {
         Args: { _org_id?: string }
         Returns: number
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       emit_webhook_if_subscribed: {
         Args: { p_event: string; p_org: string; p_payload: Json }
         Returns: undefined
