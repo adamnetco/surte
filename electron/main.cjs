@@ -1,5 +1,6 @@
-// SURTÉ YA Desktop — entry principal Electron
-// Fingerprint de máquina + activación de licencia + heartbeat cada 30 min.
+// SistecPOS Core Desktop — entry principal Electron (runtime GENÉRICO).
+// No contiene datos de ningún tenant: la identidad (branding, módulos, fiscal,
+// impresora) llega en el tenant_manifest devuelto al activar la licencia.
 const { app, BrowserWindow, dialog, ipcMain, Menu } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
@@ -14,12 +15,16 @@ app.commandLine.appendSwitch("enable-gpu-rasterization");
 app.commandLine.appendSwitch("enable-zero-copy");
 if (process.platform === "linux") app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
-const SUPA_URL = process.env.SURTEYA_SUPA_URL || "https://dimyhjzcwlgfczimqhet.supabase.co";
-const SUPA_ANON = process.env.SURTEYA_SUPA_ANON || "";
+// Config del backend: env genéricas SISTECPOS_*, con fallback a las legacy.
+const SUPA_URL =
+  process.env.SISTECPOS_SUPA_URL || process.env.SURTEYA_SUPA_URL || "";
+const SUPA_ANON =
+  process.env.SISTECPOS_SUPA_ANON || process.env.SURTEYA_SUPA_ANON || "";
 const APP_VERSION = app.getVersion();
 const USER_DIR = app.getPath("userData");
 const LIC_FILE = path.join(USER_DIR, "license.dat");
 const TOKEN_FILE = path.join(USER_DIR, "activation.token");
+const MANIFEST_FILE = path.join(USER_DIR, "tenant_manifest.dat");
 
 // --- Fingerprint de máquina (reforzado) ---
 function machineFingerprint() {
@@ -32,23 +37,42 @@ function machineFingerprint() {
 }
 
 // --- Persistencia cifrada simple (AES-256-GCM, key derivada del fingerprint) ---
+// `salt` legacy conservado para poder leer instalaciones previas sin reactivar.
+const SALTS = ["::sistecpos", "::surteya"];
+function derive(salt) {
+  return crypto.createHash("sha256").update(machineFingerprint() + salt).digest();
+}
 function encFile(filePath, plaintext) {
-  const key = crypto.createHash("sha256").update(machineFingerprint() + "::surteya").digest();
   const iv = crypto.randomBytes(12);
-  const c = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const c = crypto.createCipheriv("aes-256-gcm", derive(SALTS[0]), iv);
   const ct = Buffer.concat([c.update(plaintext, "utf8"), c.final()]);
   const tag = c.getAuthTag();
   fs.writeFileSync(filePath, Buffer.concat([iv, tag, ct]));
 }
 function decFile(filePath) {
   if (!fs.existsSync(filePath)) return null;
-  const key = crypto.createHash("sha256").update(machineFingerprint() + "::surteya").digest();
   const buf = fs.readFileSync(filePath);
   const iv = buf.subarray(0, 12), tag = buf.subarray(12, 28), ct = buf.subarray(28);
-  const d = crypto.createDecipheriv("aes-256-gcm", key, iv);
-  d.setAuthTag(tag);
-  try { return Buffer.concat([d.update(ct), d.final()]).toString("utf8"); } catch { return null; }
+  for (const salt of SALTS) {
+    try {
+      const d = crypto.createDecipheriv("aes-256-gcm", derive(salt), iv);
+      d.setAuthTag(tag);
+      return Buffer.concat([d.update(ct), d.final()]).toString("utf8");
+    } catch { /* prueba el siguiente salt */ }
+  }
+  return null;
 }
+function readManifest() {
+  const raw = decFile(MANIFEST_FILE);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+function wipeTenantData() {
+  for (const f of [LIC_FILE, TOKEN_FILE, MANIFEST_FILE]) {
+    try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch { /* noop */ }
+  }
+}
+
 
 async function callFn(fnName, body) {
   const res = await fetch(`${SUPA_URL}/functions/v1/${fnName}`, {
