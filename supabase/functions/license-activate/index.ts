@@ -55,11 +55,23 @@ Deno.serve(async (req) => {
     const sig = new Uint8Array(await crypto.subtle.sign({ name: "Ed25519" }, privKey, new TextEncoder().encode(signingInput)));
     const token = `${signingInput}.${b64u(sig)}`;
 
+    const organizationId = String((act as any).organization_id);
+    let tenant_manifest: unknown = null;
+    try {
+      tenant_manifest = await buildTenantManifest(supa, organizationId);
+    } catch (_e) {
+      tenant_manifest = null; // el desktop puede pedirlo luego vía desktop-tenant-bootstrap
+    }
+
     return new Response(JSON.stringify({
       token, public_key: lic?.public_key, expires_at: lic?.expires_at,
       activation_id: (act as any).activation_id,
+      organization_id: organizationId,
       max_terminals: (act as any).max_terminals,
+      tenant_manifest,
+      bootstrap_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/desktop-tenant-bootstrap`,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
   } catch (e) {
     return new Response(JSON.stringify({ error: String((e as Error).message) }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
