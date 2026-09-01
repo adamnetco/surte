@@ -304,7 +304,7 @@ const Carrito = () => {
       trackPurchase(data.order_number, grandTotal, payload.items);
 
       if (email) {
-        const trackingUrl = `${window.location.origin}/pedido/${data.order_number}`;
+        const trackingUrl = `${window.location.origin}/pedido/${data.order_number}?token=${encodeURIComponent(data.tracking_token ?? "")}`;
         const emailHtml = orderConfirmationTemplate({
           orderNumber: data.order_number,
           customerName: name,
@@ -335,7 +335,7 @@ const Carrito = () => {
       toast.success(`¡Pedido #${data.order_number} creado!`);
 
       const whatsappNumber = settings?.whatsapp_number || "573000000000";
-      const trackingUrl = `${window.location.origin}/pedido/${data.order_number}`;
+      const trackingUrl = `${window.location.origin}/pedido/${data.order_number}?token=${encodeURIComponent(data.tracking_token ?? "")}`;
       const orderLines = items.map(
         (i) => `• ${i.quantity}x ${i.product.name} — ${formatPrice(i.unitPrice * i.quantity)}`
       );
@@ -381,7 +381,7 @@ const Carrito = () => {
       if (!(window as any).__skipWhatsApp) {
         window.open(waUrl, "_blank");
       }
-      navigate(`/pedido/${data.order_number}`);
+      navigate(`/pedido/${data.order_number}?token=${encodeURIComponent(data.tracking_token ?? "")}`);
     } catch (err: any) {
       toast.error(err.message || "Error al crear pedido");
     } finally {

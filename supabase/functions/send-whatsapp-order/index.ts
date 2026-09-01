@@ -202,6 +202,7 @@ Deno.serve(async (req) => {
       success: true,
       order_id: order.id,
       order_number: order.order_number,
+      tracking_token: order.tracking_token,
       whatsapp_sent: whatsappSent,
       whatsapp_fallback_url: whatsappFallbackUrl,
     }), {

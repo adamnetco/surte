@@ -38,6 +38,7 @@ export interface SubmitWhatsAppOrderResult {
   // Legacy edge function returns order_number as number in some tenants,
   // string in others. Keep permissive until we canonicalize server-side.
   order_number?: any;
+  tracking_token?: string;
   error?: string;
   [k: string]: unknown;
 }
