@@ -1,6 +1,6 @@
 # Arquitectura local-first por tenant (SistecPOS Core)
 
-Estado: Fase 1 cerrada (modelo + contratos). Fases 2–15 planificadas por slices.
+Estado: Fases 1 y 5–9 cerradas (modelo, contratos, outbox, push, pull incremental, conflictos, modo offline). Fases 10–15 planificadas por slices.
 
 ## 1. Separación de planos
 
@@ -37,13 +37,26 @@ Ya implementado:
 - Bootstrap de tenant vía Edge Function `desktop-tenant-bootstrap` + manifiesto cifrado en Electron.
 - **Catálogo offline filtrado por `organization_id`** en lectura remota y en lectura local (defensa contra bases legacy).
 
+## 4.1 Motor de sincronización (Fases 5–9, implementado)
+
+| Fase | Entrega | Dónde |
+|---|---|---|
+| 5 · Outbox | idempotencia por `client_uuid`, backoff exponencial, GC de eventos aplicados, escalado a conflicto al agotar reintentos | `src/modules/offline/lib/outbox.ts` |
+| 6 · Push | commit atómico remoto vía RPC `pos_sale_commit` (todo o nada, 1 round-trip) | `outbox.ts` → Postgres |
+| 7 · Pull incremental | cursor por entidad y tenant en `syncCheckpoints`, paginado por `updated_at`, tombstones vía `is_active = false` | `src/modules/offline/lib/sync.ts` |
+| 8 · Conflictos | bitácora local `syncConflicts` (`outbox_gave_up`, `remote_newer`, `duplicate_close`) + resolución manual desde la UI | `sync.ts`, `SyncStatusPanel.tsx` |
+| 9 · Modo offline | `readiness()` indica si el terminal puede vender sin red (catálogo local + cola pendiente) y lo expone en el panel de estado | `sync.ts`, `src/components/SystemStatusDialog.tsx` |
+
+Contrato: `src/core/ports/ISyncEngine.ts`. La UI nunca llama Supabase para sincronizar: usa `syncEngine`.
+Base local Dexie v3 añade `syncCheckpoints` y `syncConflicts` sin borrar datos existentes.
+
 Pendiente por slices:
-1. SQLite cifrado en Desktop detrás de la misma interfaz local.
+1. SQLite cifrado en Desktop detrás de la misma interfaz local (Fase 10).
 2. Repositorios locales para stock, caja, clientes y ajustes (`ILocalCatalogRepository` como patrón de referencia).
-3. `sync-tenant-batch` (push por lotes) y pull incremental con checkpoints.
-4. Tabla `sync_conflicts` local/remota + UI de estado de sincronización.
-5. Flujo de restauración completo desde snapshot remoto.
-6. Suite de tests: venta offline, no duplicación en sync, aislamiento tenant A/B, restore.
+3. Extender el pull incremental a clientes, stock y ajustes (hoy cubre catálogo).
+4. Espejo remoto de conflictos para soporte central.
+5. Flujo de restauración completo desde snapshot remoto (Fase 11).
+6. Suite de tests: venta offline, no duplicación en sync, aislamiento tenant A/B, restore (Fase 14).
 
 ## 5. Riesgos abiertos
 

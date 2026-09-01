@@ -11,6 +11,7 @@ import { pendingCount, flushOutbox } from "@/modules/offline/lib/outbox";
 import { getDesktopBridge } from "@/infrastructure/desktop/ElectronDesktopBridge";
 import { useDesktopUpdate } from "@/modules/pos/hooks/useDesktopUpdate";
 import { toast } from "sonner";
+import SyncStatusPanel from "@/modules/offline/components/SyncStatusPanel";
 
 /**
  * SystemStatusDialog — panel de diagnóstico global.
@@ -94,6 +95,11 @@ export default function SystemStatusDialog() {
   const [snap, setSnap] = useState<Snapshot>(EMPTY);
   const [refreshing, setRefreshing] = useState(false);
   const update = useDesktopUpdate(open);
+  // Tenant activo del caché local-first (misma clave que usa la base offline).
+  const activeOrgId = (() => {
+    try { return localStorage.getItem("sistecpos:currentOrgId") ?? ""; } catch { return ""; }
+  })();
+
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -250,7 +256,10 @@ export default function SystemStatusDialog() {
           )}
         </div>
 
+        <SyncStatusPanel organizationId={activeOrgId} />
+
         <div className="flex items-center justify-between pt-2 border-t border-border">
+
           <p className="text-[11px] text-muted-foreground">
             Actualización automática cada 15 s
           </p>
