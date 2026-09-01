@@ -894,8 +894,14 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
         </div>
       )}
 
-      <div className="space-y-2">
-        {filtered?.map((p: any) => {
+      <VirtualRows
+        items={(filtered ?? []) as any[]}
+        estimateSize={84}
+        gap={8}
+        getKey={(p: any) => p.id}
+      >
+        {(p: any) => {
+
           const isSelected = selectedIds.has(p.id);
           return (
           <div
