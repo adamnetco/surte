@@ -74,3 +74,4 @@
 - [Kodigo vs SistecPOS Core — Gap Analysis](mem://references/kodigofuente-vs-sistecpos) — Ranking simplicidad Kodigo > VectorPOS > SoftwarePOS > SitricPOS > SistecPOS actual. Qué copiar (paleta reducida, numpad permanente, underline rojo, hotkeys visibles) y qué NO (reinicio config, sólo desktop, mono-nicho, sin omnichannel). Hoja de ruta 3 sprints (A estética, B hotkeys, C schema Marca/Fabricante).
 
 - [Desktop runtime genérico + tenant manifest](mem://features/desktop-multitenant-runtime) — Un solo binario para todos los tenants: globals `sistecposDesktop`, env `SISTECPOS_*`, tenant_manifest firmado por licencia, IndexedDB por organization_id, releases globales
+- [Tenant Access & Credentials](mem://features/tenant-access-credentials) — tenant-access-manage: crear cuenta + rol de tienda, definir contraseña explícita, owner_password en tenant-create-with-owner

@@ -28,6 +28,7 @@ import { CredentialsCard } from "@/modules/onboarding/components/CredentialsCard
 import { BUSINESS_TEMPLATES, getTemplate, type BusinessKey } from "@/modules/onboarding/lib/businessTemplates";
 import { EntitlementsWizardStep } from "@/modules/platform/components/EntitlementsWizardStep";
 import { cn } from "@/lib/utils";
+import { suggestPassword } from "@/modules/admin-cms/services/tenantAccess";
 
 type Result = {
   ok: boolean;
@@ -79,6 +80,7 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
+  const [ownerPassword, setOwnerPassword] = useState(suggestPassword);
   const [planKey, setPlanKey] = useState<string>("");
 
   // Planes desde BD
@@ -113,7 +115,7 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
   const reset = () => {
     setStep(1); setResult(null);
     setBusinessKey(null); setName(""); setSlug(""); setSlugStatus("idle");
-    setTaxId(""); setOwnerName(""); setOwnerEmail(""); setOwnerPhone("");
+    setTaxId(""); setOwnerName(""); setOwnerEmail(""); setOwnerPhone(""); setOwnerPassword(suggestPassword());
   };
 
   const back = () => setStep((s) => Math.max(1, s - 1));
@@ -122,7 +124,8 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
     switch (step) {
       case 1: return !!businessKey;
       case 2: return name.trim().length > 1 && slug.length >= 3 && slugStatus === "available";
-      case 3: return ownerName.trim().length > 1 && /\S+@\S+\.\S+/.test(ownerEmail);
+      case 3: return ownerName.trim().length > 1 && /\S+@\S+\.\S+/.test(ownerEmail)
+        && ownerPassword.length >= 8 && /[a-zA-Z]/.test(ownerPassword) && /[0-9]/.test(ownerPassword);
       case 4: return !!planKey;
       case 5: return true;
       default: return false;
@@ -158,6 +161,7 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
         body: {
           slug, name, tax_id: taxId || null, business_type: businessKey,
           owner_email: ownerEmail, owner_full_name: ownerName, owner_phone: ownerPhone || null,
+          owner_password: ownerPassword,
           modules: planModules, domain: `${slug}.sistecpos.com`,
         },
       });
@@ -214,7 +218,7 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
           slug={result.slug}
           ownerEmail={result.owner_email}
           ownerPhone={result.owner_phone}
-          password={result.generated_password}
+          password={result.generated_password ?? ownerPassword}
           loginUrl={`https://${result.slug}.sistecpos.com`}
           onCreateAnother={reset}
         />
@@ -372,6 +376,25 @@ const TenantOnboardingWizard = ({ onCreated }: { onCreated?: () => void }) => {
               className="h-12 text-base" aria-describedby="own-phone-help" />
             <p id="own-phone-help" className="text-xs text-muted-foreground">
               Le enviaremos sus credenciales con un toque.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="own-pw">Contraseña de acceso</Label>
+            <div className="flex gap-2">
+              <Input id="own-pw" type="text" autoComplete="off" value={ownerPassword}
+                onChange={(e) => setOwnerPassword(e.target.value)}
+                className="h-12 text-base font-mono" required aria-required="true"
+                aria-describedby="own-pw-help" />
+              <button type="button"
+                onClick={() => setOwnerPassword(suggestPassword())}
+                className="h-12 px-3 rounded-lg border border-border text-xs font-medium hover:bg-muted"
+              >
+                Generar
+              </button>
+            </div>
+            <p id="own-pw-help" className="text-xs text-muted-foreground">
+              Queda lista para entrar de inmediato (incluido el POS local). Mínimo 8 caracteres, con
+              al menos una letra y un número.
             </p>
           </div>
         </div>

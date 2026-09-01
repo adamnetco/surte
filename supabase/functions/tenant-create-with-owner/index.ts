@@ -60,8 +60,22 @@ Deno.serve(async (req) => {
     const owner_email = (body.owner_email ?? "").trim().toLowerCase();
     const owner_full_name = (body.owner_full_name ?? "").trim();
     const owner_phone = body.owner_phone ?? null;
+    // Contraseña explícita opcional: permite dejar la tienda lista para entrar
+    // (útil para el POS local, donde el correo de recuperación no siempre llega).
+    const owner_password_raw = typeof body.owner_password === "string" ? body.owner_password : "";
     const modules: string[] = Array.isArray(body.modules) ? body.modules : [];
     const domain: string | null = body.domain ? String(body.domain).trim().toLowerCase() : null;
+
+    if (owner_password_raw) {
+      if (owner_password_raw.length < 8 || owner_password_raw.length > 72 ||
+          !/[a-zA-Z]/.test(owner_password_raw) || !/[0-9]/.test(owner_password_raw)) {
+        return new Response(
+          JSON.stringify({ error: "weak_password", detail: "Mínimo 8 caracteres, con al menos una letra y un número." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
 
     if (!slug || !name || !owner_email) {
       return new Response(JSON.stringify({ error: "missing_fields", detail: "slug, name, owner_email required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -74,7 +88,8 @@ Deno.serve(async (req) => {
     }
 
     // Create or reuse owner user
-    const generated_password = randomPassword(10);
+    const explicit_password = owner_password_raw || null;
+    const effective_password = explicit_password ?? randomPassword(10);
     let owner_user_id: string | null = null;
     let password_returned: string | null = null;
     let owner_newly_created = false;
@@ -84,10 +99,18 @@ Deno.serve(async (req) => {
     const existing = listed?.users?.find((u) => (u.email ?? "").toLowerCase() === owner_email);
     if (existing) {
       owner_user_id = existing.id;
+      // Si el superadmin definió una contraseña explícita, la aplicamos también
+      // sobre la cuenta existente para que el acceso quede garantizado.
+      if (explicit_password) {
+        const { error: pwErr } = await admin.auth.admin.updateUserById(existing.id, { password: explicit_password });
+        if (pwErr) {
+          return new Response(JSON.stringify({ error: "set_password_failed", detail: pwErr.message }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
     } else {
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email: owner_email,
-        password: generated_password,
+        password: effective_password,
         email_confirm: true,
         user_metadata: { full_name: owner_full_name, phone: owner_phone, business_type: "casa" },
       });
@@ -95,9 +118,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: "create_user_failed", detail: createErr?.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       owner_user_id = created.user.id;
-      password_returned = generated_password;
+      // Sólo devolvemos la contraseña cuando la generamos nosotros.
+      password_returned = explicit_password ? null : effective_password;
       owner_newly_created = true;
     }
+
 
     // Create organization
     const { data: org, error: orgErr } = await admin
@@ -198,7 +223,7 @@ Deno.serve(async (req) => {
     let recovery_email_sent = false;
     const origin = req.headers.get("Origin") || req.headers.get("Referer")?.split("/").slice(0, 3).join("/") || "https://admin.sistecpos.com";
     const recovery_redirect_to = `${origin.replace(/\/$/, "")}/reset-password?tienda=${encodeURIComponent(slug)}`;
-    if (owner_newly_created) {
+    if (owner_newly_created && !explicit_password) {
       try {
         const anonClient = createClient(SUPABASE_URL, ANON);
         const { error: recErr } = await anonClient.auth.resetPasswordForEmail(owner_email, {
@@ -220,6 +245,7 @@ Deno.serve(async (req) => {
         owner_user_id,
         owner_email,
         generated_password: password_returned,
+        password_mode: explicit_password ? "explicit" : "generated",
         recovery_email_sent,
         recovery_redirect_to,
         modules,
