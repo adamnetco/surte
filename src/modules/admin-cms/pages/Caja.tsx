@@ -131,7 +131,8 @@ const METHOD_META: Record<string, { label: string; Icon: typeof Wallet }> = {
 };
 
 const CajaAdmin = () => {
-  const { activeOrgId } = useOrganization();
+  const { currentOrg } = useOrganization();
+  const activeOrgId = currentOrg?.id;
   const [range, setRange] = useState<RangeKey>("today");
   const { data, isLoading, error, refetch, isRefetching } = useCajaData(activeOrgId, range);
 
