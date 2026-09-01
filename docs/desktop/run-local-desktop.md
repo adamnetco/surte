@@ -175,6 +175,14 @@ Remove-Item -Recurse -Force ..\electron-release
 npx @electron/packager .. "SistecPOSDesktop" --platform=win32 --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore="^/src" --ignore="^/public" --ignore="^/electron-release"
 ```
 
+> **Versión de Electron fijada:** los scripts `package:linux|win|mac` de
+> `electron/package.json` ya incluyen `--electron-version=31.7.7`, igual que la
+> dependencia `electron` instalada, para que el binario empaquetado coincida
+> exactamente con el entorno probado en desarrollo. Además, el `package.json`
+> raíz declara `"main": "electron/main.cjs"` para que el empaquetador
+> encuentre siempre el proceso principal correcto.
+
+
 ### Licencia / heartbeat en local
 
 `electron/main.cjs` usa `SURTEYA_SUPA_ANON` para llamar a las edge functions de
