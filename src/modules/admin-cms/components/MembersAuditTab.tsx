@@ -19,6 +19,9 @@ import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCirc
 import { Skeleton } from "@/components/ui/skeleton";
 import MemberLocationsPopover from "./MemberLocationsPopover";
 import ResetPasswordButton from "./ResetPasswordButton";
+import SetPasswordButton from "./SetPasswordButton";
+import CreateMemberDialog from "./CreateMemberDialog";
+
 
 
 const roleBadge: Record<string, { label: string; cls: string; Icon: typeof Shield }> = {
