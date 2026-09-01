@@ -119,7 +119,7 @@ ver [`electron/README.md`](../../electron/README.md).
 
 | Síntoma | Causa / arreglo |
 | --- | --- |
-| Ventana en blanco | Falta `base: './'` en `vite.config.ts`; rehacer `bun run build` |
+| Ventana en blanco | Build hecho con `bun run build`; usa `bun run build:desktop` |
 | `__dirname is not defined` | El proceso principal debe ser `.cjs`, no `.js` |
 | “Agente de impresión no responde” | El agente no arrancó o el puerto 9101 está ocupado |
 | No aparece aviso de versión | No hay fila `is_current = true` para esa `platform` en `desktop_releases` |
