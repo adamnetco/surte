@@ -6,6 +6,10 @@
 // tickets, clientes ni outbox. La base legacy sin sufijo se mantiene como
 // fallback cuando todavía no hay organización activa resuelta.
 import Dexie, { Table } from "dexie";
+import type { SyncCheckpoint, SyncConflict } from "@/core/ports/ISyncEngine";
+
+export type { SyncCheckpoint, SyncConflict };
+
 
 export interface CachedProduct {
   id: string;
