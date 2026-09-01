@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
     let recovery_email_sent = false;
     const origin = req.headers.get("Origin") || req.headers.get("Referer")?.split("/").slice(0, 3).join("/") || "https://admin.sistecpos.com";
     const recovery_redirect_to = `${origin.replace(/\/$/, "")}/reset-password?tienda=${encodeURIComponent(slug)}`;
-    if (owner_newly_created) {
+    if (owner_newly_created && !explicit_password) {
       try {
         const anonClient = createClient(SUPABASE_URL, ANON);
         const { error: recErr } = await anonClient.auth.resetPasswordForEmail(owner_email, {
@@ -245,6 +245,7 @@ Deno.serve(async (req) => {
         owner_user_id,
         owner_email,
         generated_password: password_returned,
+        password_mode: explicit_password ? "explicit" : "generated",
         recovery_email_sent,
         recovery_redirect_to,
         modules,
