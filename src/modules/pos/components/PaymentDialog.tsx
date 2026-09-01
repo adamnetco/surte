@@ -437,7 +437,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
           </div>
 
 
-          <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+          <div className="bg-muted/50 rounded-lg px-3 py-2 text-xs space-y-0.5">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{COP(total)}</span></div>
             {tipAmount > 0 && (
               <div className="flex justify-between"><span className="text-muted-foreground">Propina</span><span className="tabular-nums">{COP(tipAmount)}</span></div>
@@ -450,7 +450,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
               </div>
             )}
             {change > 0 && (
-              <div className="flex justify-between font-bold text-primary text-base pt-1 border-t">
+              <div className="flex justify-between font-bold text-primary text-sm pt-1 border-t">
                 <span>Vuelto en efectivo</span><span className="tabular-nums">{COP(change)}</span>
               </div>
             )}
