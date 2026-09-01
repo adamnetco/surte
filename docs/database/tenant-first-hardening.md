@@ -128,3 +128,32 @@ order by name limit 50;
 | `client_downloads` / `desktop_releases` sin scope de tienda | Un cliente ve instaladores de otros | Añadir `organization_id` nullable + RLS y filtrar `ClientDownloadsTab` |
 | Reportes históricos calculados en vivo | Latencia en tenants grandes | Materializar resúmenes diarios por tienda |
 | Flujo de venta POS con inserts múltiples desde el cliente | Riesgo de venta parcial | RPC transaccional idempotente con `client_operation_id` |
+
+## Fase 4 — Commit transaccional idempotente de la venta POS
+
+**Problema:** el outbox insertaba `pos_orders`, luego `pos_order_items` y luego
+`pos_payments` en llamadas separadas. Si fallaba la segunda o tercera llamada,
+quedaba una orden huérfana sin líneas ni pagos (venta corrupta y no reintentable
+porque el `client_uuid` ya existía).
+
+**Solución:** `public.pos_sale_commit(_org_id, _client_uuid, _header, _items, _payments)`.
+
+- Inserta encabezado + líneas + pagos en **una sola transacción** (todo o nada).
+- **Idempotente:** si ya existe una orden con ese `client_uuid` en la organización,
+  devuelve su `id` sin insertar nada (cubre reintentos del outbox y dobles clics).
+- Maneja `unique_violation` (carrera entre dos pestañas) resolviendo la orden existente.
+- `SECURITY INVOKER`: las políticas RLS por organización siguen aplicando.
+- `EXECUTE` solo para `authenticated` y `service_role`.
+
+Consumida desde `src/modules/offline/lib/outbox.ts` (`case "pos_order_create"`),
+que pasó de 4 round-trips a 1.
+
+### Verificación
+
+```sql
+-- Debe devolver el mismo id dos veces (idempotencia)
+select public.pos_sale_commit(
+  '<org>'::uuid, '<uuid>'::uuid,
+  jsonb_build_object('location_id','<loc>','cash_session_id','<sess>','cashier_id','<user>','total',1000),
+  '[]'::jsonb, '[]'::jsonb);
+```
