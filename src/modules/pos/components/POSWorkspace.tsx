@@ -78,6 +78,7 @@ import { useOrganization } from "@/modules/platform/context/OrganizationContext"
 import { useIsMobile } from "@/hooks/use-mobile";
 import POSFloorMapPanel from "./POSFloorMapPanel";
 import { useGridKeyboardNav } from "@/presentation/hooks/useGridKeyboardNav";
+import { useProgressiveList } from "@/presentation/hooks/useProgressiveList";
 import { Utensils as UtensilsIcon, LayoutGrid, List as ListIcon, X } from "lucide-react";
 
 
