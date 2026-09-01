@@ -475,7 +475,7 @@ function DomainsTab({ orgId, currentOrgId, qc, focusDomainId }: { orgId: string;
           <TableBody>
             {domains?.map((d: any) => {
               // Foráneo = el dominio pertenece a una org distinta del sitio al que apunta
-              // (caso Freshlove: tenant_domains.org=surteya pero tenant_sites.org=freshlove).
+              // (p. ej. tenant_domains.org = A pero tenant_sites.org = B).
               // O bien el dominio aparece en "ver todos" y no es del scope actual.
               const siteOrg = d.tenant_sites?.organization_id;
               const isOrphan = siteOrg && siteOrg !== d.organization_id;

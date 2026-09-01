@@ -1,12 +1,13 @@
 /**
  * ElectronDesktopBridge / WebDesktopBridge — adaptadores del puerto
  * `IDesktopBridge`. Aíslan por completo el acceso a `window.electronWin`
- * y `window.surteyaDesktop` fuera de la capa de presentación.
+ * y `window.sistecposDesktop` fuera de la capa de presentación.
  */
 import type {
   DesktopPlatformInfo,
   DesktopWindowControls,
   IDesktopBridge,
+  TenantManifest,
 } from "@/core/ports/IDesktopBridge";
 import { APP_VERSION } from "@/lib/version";
 
@@ -20,17 +21,21 @@ type ElectronWinBridge = {
   onMaximizeChange: (cb: (max: boolean) => void) => () => void;
 };
 
-type SurteyaDesktopBridge = {
+type NativeDesktopBridge = {
   isDesktop: true;
   platform?: string;
   appVersion?: string;
   licenseStatus?: () => Promise<unknown>;
   activateLicense?: (key: string) => Promise<unknown>;
+  getTenantManifest?: () => Promise<TenantManifest | null>;
+  refreshTenantManifest?: () => Promise<TenantManifest | null>;
 };
 
 type HostWindow = Window & {
   electronWin?: ElectronWinBridge;
-  surteyaDesktop?: SurteyaDesktopBridge;
+  sistecposDesktop?: NativeDesktopBridge;
+  /** @deprecated alias legacy de `sistecposDesktop`. */
+  surteyaDesktop?: NativeDesktopBridge;
 };
 
 function host(): HostWindow | null {
@@ -41,8 +46,9 @@ function nativeWin(): ElectronWinBridge | null {
   return host()?.electronWin ?? null;
 }
 
-function nativeHost(): SurteyaDesktopBridge | null {
-  return host()?.surteyaDesktop ?? null;
+function nativeHost(): NativeDesktopBridge | null {
+  const w = host();
+  return w?.sistecposDesktop ?? w?.surteyaDesktop ?? null;
 }
 
 function detectPlatform(): DesktopPlatformInfo["platform"] {
@@ -98,6 +104,16 @@ class ElectronDesktopBridge implements IDesktopBridge {
   probePrintAgent(timeoutMs?: number) {
     return probePrintAgent(timeoutMs);
   }
+
+  async getTenantManifest(): Promise<TenantManifest | null> {
+    const api = nativeHost();
+    if (!api?.getTenantManifest) return null;
+    try {
+      return (await api.getTenantManifest()) ?? null;
+    } catch {
+      return null;
+    }
+  }
 }
 
 class WebDesktopBridge implements IDesktopBridge {
@@ -114,6 +130,11 @@ class WebDesktopBridge implements IDesktopBridge {
   /** El agente de impresión también puede correr junto al navegador. */
   probePrintAgent(timeoutMs?: number) {
     return probePrintAgent(timeoutMs);
+  }
+
+  /** En web la identidad del tenant viene de la sesión, no del host. */
+  async getTenantManifest(): Promise<TenantManifest | null> {
+    return null;
   }
 }
 

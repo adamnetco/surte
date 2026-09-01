@@ -2,15 +2,15 @@
   "name": "sistecpos-desktop",
   "private": true,
   "version": "1.0.0",
-  "description": "Dependencias del cliente de escritorio (Electron) y del print-agent. No forma parte del build web.",
+  "description": "Runtime genérico de escritorio (Electron) + print-agent. No contiene datos de ningún tenant.",
   "main": "main.cjs",
   "scripts": {
     "start": "electron main.cjs",
     "agent": "node print-agent.cjs",
 
-    "package:linux": "electron-packager .. SistecPOSDesktop --platform=linux --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release",
-    "package:win": "electron-packager .. SistecPOSDesktop --platform=win32 --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release",
-    "package:mac": "electron-packager .. SistecPOSDesktop --platform=darwin --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release"
+    "package:linux": "electron-packager .. SistecPOSDesktop --platform=linux --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release --ignore=^/supabase --ignore=^/docs --ignore=^/e2e --ignore=^/scripts --ignore=^/astro-starter --ignore=^/tests --ignore=^/.lovable --ignore=\\.env",
+    "package:win": "electron-packager .. SistecPOSDesktop --platform=win32 --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release --ignore=^/supabase --ignore=^/docs --ignore=^/e2e --ignore=^/scripts --ignore=^/astro-starter --ignore=^/tests --ignore=^/.lovable --ignore=\\.env",
+    "package:mac": "electron-packager .. SistecPOSDesktop --platform=darwin --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release --ignore=^/supabase --ignore=^/docs --ignore=^/e2e --ignore=^/scripts --ignore=^/astro-starter --ignore=^/tests --ignore=^/.lovable --ignore=\\.env"
   },
   "devDependencies": {
     "electron": "31.7.7",

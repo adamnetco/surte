@@ -43,7 +43,7 @@ export function buildMockOrder(channel: ReceiptChannel): MockOrder {
     store: {
       name: "SistecPOS Demo Store",
       nit: "NIT 900.123.456-7",
-      address: "Cra 27 #36-15, Bucaramanga",
+      address: "Calle 1 #1-01, Ciudad Demo",
       phone: "+57 607 555 0123",
       email: "ventas@sistecpos.com",
     },

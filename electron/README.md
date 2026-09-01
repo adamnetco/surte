@@ -1,4 +1,8 @@
-# SURTÉ YA Desktop (Electron) + Print Agent
+# SistecPOS Core Desktop (Electron) + Print Agent
+
+> Runtime **genérico**: el mismo binario sirve a todos los tenants. La identidad
+> (branding, módulos, fiscal, impresora) llega en el `tenant_manifest` que
+> devuelve la activación de licencia. Ver `docs/desktop/multitenant-runtime.md`.
 
 Cliente local reforzado con activación Ed25519, fingerprint de máquina, SQLite cifrado **y agente de impresión embebido** (USB nativo + LAN + Bluetooth).
 
@@ -18,7 +22,7 @@ El agente arranca automáticamente con Electron y expone:
 | --- | --- | --- |
 | `/health` | GET | Devuelve `capabilities` (lan, usb_native, usb_spooler, bluetooth) |
 | `/print` | POST | Imprime ESC/POS en base64. Campos: `connection`, `escpos_b64`, `ip_address`/`port` (LAN), `vendor_id`/`product_id`/`printer_name` (USB), `bluetooth_address` (BLE) |
-| `/ble/pairings` | GET | Lista pairings BLE persistidos en `~/.surteya-print-agent/ble-pairings.json` |
+| `/ble/pairings` | GET | Lista pairings BLE persistidos en `~/.sistecpos-print-agent/ble-pairings.json` |
 
 ### Capacidades por plataforma
 
@@ -55,12 +59,12 @@ Si no se instalan las deps nativas, el agente sigue funcionando con LAN + spoole
 ## Build local
 
 ```bash
-export SURTEYA_SUPA_URL="https://dimyhjzcwlgfczimqhet.supabase.co"
-export SURTEYA_SUPA_ANON="<anon-key>"
+export SISTECPOS_SUPA_URL="https://dimyhjzcwlgfczimqhet.supabase.co"
+export SISTECPOS_SUPA_ANON="<anon-key>"
 
 npm run build
 cd electron && npm i -D electron @electron/packager && npm i usb @abandonware/noble
-npx @electron/packager .. "SurteYaDesktop" \
+npx @electron/packager .. "SistecPOSDesktop" \
   --platform=linux --arch=x64 --out=../electron-release --overwrite \
   --ignore='^/src' --ignore='^/public' --ignore='^/electron-release'
 ```

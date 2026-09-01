@@ -100,9 +100,14 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (currentOrgId) {
       localStorage.setItem(STORAGE_KEY, currentOrgId);
+      // Aislamiento offline: el caché IndexedDB se abre por organización.
+      void import("@/modules/offline/lib/db").then((m) =>
+        m.setOfflineOrganization(currentOrgId),
+      );
       loadModules(currentOrgId);
     }
   }, [currentOrgId, loadModules]);
+
 
   const currentOrg = useMemo(
     () => orgs.find((o) => o.id === currentOrgId) ?? null,

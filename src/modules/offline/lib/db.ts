@@ -1,5 +1,10 @@
 // Offline-first storage layer (Dexie / IndexedDB)
 // Stores: cached catalog, outbox of pending mutations, sync metadata.
+//
+// AISLAMIENTO MULTI-TENANT: cada organización abre su PROPIA base IndexedDB
+// (`sistecpos_offline_<orgId>`). Cambiar de tienda nunca mezcla catálogo,
+// tickets, clientes ni outbox. La base legacy sin sufijo se mantiene como
+// fallback cuando todavía no hay organización activa resuelta.
 import Dexie, { Table } from "dexie";
 
 export interface CachedProduct {
@@ -75,7 +80,7 @@ export interface SyncMeta {
   updated_at: number;
 }
 
-class SurteyaOfflineDB extends Dexie {
+class SistecposOfflineDB extends Dexie {
   products!: Table<CachedProduct, string>;
   categories!: Table<CachedCategory, string>;
   outbox!: Table<OutboxItem, number>;
@@ -83,8 +88,8 @@ class SurteyaOfflineDB extends Dexie {
   shiftTickets!: Table<CachedShiftTicket, string>;
   customers!: Table<CachedCustomer, string>;
 
-  constructor() {
-    super("sistecpos_offline_v1");
+  constructor(dbName: string) {
+    super(dbName);
     this.version(1).stores({
       products: "id, name, category_id, updated_at",
       categories: "id, slug, sort_order",
@@ -100,7 +105,75 @@ class SurteyaOfflineDB extends Dexie {
   }
 }
 
-export const offlineDB = new SurteyaOfflineDB();
+const LEGACY_DB_NAME = "sistecpos_offline_v1";
+const ORG_STORAGE_KEY = "sistecpos:currentOrgId";
+
+function readActiveOrgId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(ORG_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function dbNameFor(orgId: string | null) {
+  return orgId ? `sistecpos_offline_${orgId}` : LEGACY_DB_NAME;
+}
+
+let currentOrgId: string | null = null;
+let instance: SistecposOfflineDB | null = null;
+
+function ensureInstance(): SistecposOfflineDB {
+  const orgId = currentOrgId ?? readActiveOrgId();
+  if (!instance || currentOrgId !== orgId) {
+    if (instance) { try { instance.close(); } catch { /* noop */ } }
+    currentOrgId = orgId;
+    instance = new SistecposOfflineDB(dbNameFor(orgId));
+  }
+  return instance;
+}
+
+/**
+ * Fija la organización activa del caché offline. Llamar al iniciar sesión o al
+ * cambiar de tienda: cierra la base anterior y abre la del tenant indicado.
+ */
+export function setOfflineOrganization(orgId: string | null) {
+  const next = orgId ?? readActiveOrgId();
+  if (instance && currentOrgId === next) return;
+  if (instance) { try { instance.close(); } catch { /* noop */ } }
+  currentOrgId = next;
+  instance = new SistecposOfflineDB(dbNameFor(next));
+}
+
+/** Nombre real de la base abierta (útil en diagnósticos). */
+export function getOfflineDBName(): string {
+  return ensureInstance().name;
+}
+
+/** Borra por completo el caché offline del tenant activo. */
+export async function clearOfflineTenantData(): Promise<void> {
+  const db = ensureInstance();
+  await db.delete();
+  instance = null;
+}
+
+/**
+ * Handle estable del caché offline. Resuelve perezosamente la base del tenant
+ * activo, de modo que todos los consumidores existentes siguen funcionando sin
+ * cambios mientras el aislamiento se aplica por debajo.
+ */
+export const offlineDB = new Proxy({} as SistecposOfflineDB, {
+  get(_t, prop) {
+    const db = ensureInstance() as any;
+    const value = db[prop];
+    return typeof value === "function" ? value.bind(db) : value;
+  },
+  set(_t, prop, value) {
+    (ensureInstance() as any)[prop] = value;
+    return true;
+  },
+}) as SistecposOfflineDB;
 
 export async function setMeta(key: string, value: any) {
   await offlineDB.meta.put({ key, value, updated_at: Date.now() });

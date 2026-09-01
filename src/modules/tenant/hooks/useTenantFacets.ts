@@ -4,8 +4,8 @@ import { useTenantSettings } from "./useTenantSettings";
 
 /**
  * Facetas tenant-aware de alto nivel para reemplazar literales hardcodeados
- * en el código del core. SIEMPRE devuelven fallbacks neutros — nunca
- * "SurteYa", "Bucaramanga", "Santander", "+573…".
+ * en el código del core. SIEMPRE devuelven fallbacks neutros — nunca nombre de
+ * tienda, ciudad, departamento ni teléfono de un tenant concreto.
  */
 
 const NEUTRAL = {

@@ -6,7 +6,7 @@ import { useOrganization } from "@/modules/platform/context/OrganizationContext"
  * Perfil extendido de la organización activa.
  * Lee de `organizations` las columnas añadidas en Etapa 33 (city, whatsapp_phone,
  * hero_title, primary_color, etc.). Fallbacks NEUTROS — nunca devolver
- * datos atados a SurteYa/Bucaramanga.
+ * datos atados a un tenant concreto.
  */
 export interface TenantProfile {
   id: string;

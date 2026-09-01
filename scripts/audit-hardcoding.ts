@@ -14,7 +14,7 @@
  */
 import { spawnSync } from "node:child_process";
 
-const BASELINE = 5; // Etapa 40 — docstrings tenant + cloudTasks superadmin (deuda controlada).
+const BASELINE = 3; // Runtime multi-tenant — solo queda cloudTasks (tarea superadmin de registro inicial).
 const TERMS = [
   "surteya",
   "SurteYa",
@@ -41,6 +41,9 @@ const IGNORE_GLOBS = [
   "supabase/functions/send-web-push",
   "supabase/functions/_shared/transactional-email-templates",
   "src/components/SurteyaRedirect.tsx",
+  // Adaptador del host nativo: mantiene el alias legacy `window.surteyaDesktop`
+  // para instalaciones desktop previas (ver docs/desktop/multitenant-runtime.md).
+  "src/infrastructure/desktop/ElectronDesktopBridge.ts",
   "src/modules/tenant/lib/legacyDomains.ts",
   "src/modules/cart/lib/cartToken.ts",
   "src/modules/cart/context/CartContext.tsx",
