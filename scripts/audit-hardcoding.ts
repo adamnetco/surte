@@ -41,6 +41,9 @@ const IGNORE_GLOBS = [
   "supabase/functions/send-web-push",
   "supabase/functions/_shared/transactional-email-templates",
   "src/components/SurteyaRedirect.tsx",
+  // Adaptador del host nativo: mantiene el alias legacy `window.surteyaDesktop`
+  // para instalaciones desktop previas (ver docs/desktop/multitenant-runtime.md).
+  "src/infrastructure/desktop/ElectronDesktopBridge.ts",
   "src/modules/tenant/lib/legacyDomains.ts",
   "src/modules/cart/lib/cartToken.ts",
   "src/modules/cart/context/CartContext.tsx",

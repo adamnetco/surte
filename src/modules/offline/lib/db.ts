@@ -107,15 +107,11 @@ class SistecposOfflineDB extends Dexie {
 
 const LEGACY_DB_NAME = "sistecpos_offline_v1";
 const ORG_STORAGE_KEY = "sistecpos:currentOrgId";
-const LEGACY_ORG_STORAGE_KEY = "surteya:currentOrgId";
 
 function readActiveOrgId(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return (
-      localStorage.getItem(ORG_STORAGE_KEY) ??
-      localStorage.getItem(LEGACY_ORG_STORAGE_KEY)
-    );
+    return localStorage.getItem(ORG_STORAGE_KEY);
   } catch {
     return null;
   }
