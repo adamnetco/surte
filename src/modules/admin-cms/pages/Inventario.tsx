@@ -173,6 +173,7 @@ export default function Inventario() {
                 <button onClick={() => setMovement({ row, type: "out" })} className="p-2 rounded-lg bg-accent text-accent-foreground" title="Salida"><Minus size={14} /></button>
                 <button onClick={() => setMovement({ row, type: "adjustment" })} className="p-2 rounded-lg bg-muted text-muted-foreground" title="Ajuste"><RotateCcw size={14} /></button>
                 <button onClick={() => setKardex({ productId: row.product_id, name: row.product?.name || "Producto" })} className="p-2 rounded-lg bg-primary/10 text-primary" title="Ver kárdex"><History size={14} /></button>
+                <button onClick={() => setLots({ productId: row.product_id, name: row.product?.name || "Producto" })} className="p-2 rounded-lg bg-secondary/60 text-secondary-foreground" title="Lotes y caducidad" aria-label={`Lotes de ${row.product?.name || "producto"}`}><CalendarClock size={14} /></button>
               </div>
             </div>
           );
