@@ -3,11 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2, History, ClipboardList } from "lucide-react";
+import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2, History, ClipboardList, CalendarClock, CalendarX2 } from "lucide-react";
 import KardexSheet from "../components/KardexSheet";
 import CriticalStockSheet from "../components/CriticalStockSheet";
 import ConteoFisicoSheet from "../components/ConteoFisicoSheet";
 import TrasladoSheet from "../components/TrasladoSheet";
+import LotsSheet from "../components/LotsSheet";
+import ExpiryAlertsSheet from "../components/ExpiryAlertsSheet";
 import { toast } from "sonner";
 
 type Warehouse = { id: string; name: string; code: string | null; is_default: boolean; location_id: string; warehouse_type: string };
