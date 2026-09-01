@@ -1,6 +1,8 @@
 // Activa un terminal: valida cupo, firma un token Ed25519 con expiración corta.
 // El desktop guarda el token y lo revalida en cada heartbeat.
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { buildTenantManifest } from "../_shared/tenantManifest.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
