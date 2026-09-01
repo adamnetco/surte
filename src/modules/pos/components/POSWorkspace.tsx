@@ -23,6 +23,8 @@ import SaleCompleteDialog from "./SaleCompleteDialog";
 import DianHealthIndicator from "./DianHealthIndicator";
 import ContingencyBanner from "./ContingencyBanner";
 import ResolutionStatusBanner from "./ResolutionStatusBanner";
+import ResolutionsInfoDialog from "./ResolutionsInfoDialog";
+import POSFooterActionsBar from "./POSFooterActionsBar";
 import EinvoiceShiftWidget from "./EinvoiceShiftWidget";
 import { useDianHealth } from "@/modules/pos/hooks/useDianHealth";
 import { useEinvoiceResolutionStatus } from "@/modules/pos/hooks/useEinvoiceResolutionStatus";
