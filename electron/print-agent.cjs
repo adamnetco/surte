@@ -17,7 +17,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 
-const PORT = Number(process.env.SURTEYA_PRINT_AGENT_PORT || 9101);
+const PORT = Number(process.env.SISTECPOS_PRINT_AGENT_PORT || process.env.SURTEYA_PRINT_AGENT_PORT || 9101);
 
 // ---------- carga perezosa de deps nativas ----------
 let usbLib = null;
@@ -29,8 +29,12 @@ let nobleError = null;
 try { nobleLib = require("@abandonware/noble"); } catch (e) { nobleError = e.message; }
 
 // ---------- persistencia de pairing BLE ----------
-const STATE_DIR = process.env.SURTEYA_AGENT_STATE_DIR
-  || path.join(os.homedir(), ".surteya-print-agent");
+// Estado local del agente (pairings BLE). Directorio genérico, con lectura
+// del legacy para no perder pairings de instalaciones previas.
+const LEGACY_STATE_DIR = path.join(os.homedir(), ".surteya-print-agent");
+const STATE_DIR = process.env.SISTECPOS_AGENT_STATE_DIR
+  || process.env.SURTEYA_AGENT_STATE_DIR
+  || (fs.existsSync(LEGACY_STATE_DIR) ? LEGACY_STATE_DIR : path.join(os.homedir(), ".sistecpos-print-agent"));
 try { fs.mkdirSync(STATE_DIR, { recursive: true }); } catch {}
 const BLE_PAIRINGS_FILE = path.join(STATE_DIR, "ble-pairings.json");
 
@@ -138,7 +142,7 @@ function sendToSpoolerRaw(printerName, bytes) {
     if (process.platform === "win32") {
       // PowerShell + Out-Printer no soporta RAW; usamos lpr.exe (presente en Windows con LPR Port Monitor)
       // Alternativa: copy /B file \\<host>\<printer>. Aquí usamos un tmp + lpr.
-      const tmp = path.join(os.tmpdir(), `surteya-print-${Date.now()}.bin`);
+      const tmp = path.join(os.tmpdir(), `sistecpos-print-${Date.now()}.bin`);
       fs.writeFileSync(tmp, bytes);
       const p = spawn("powershell.exe", ["-NoProfile", "-Command",
         `Get-Content -Path '${tmp}' -Encoding Byte -ReadCount 0 | Out-Printer -Name '${printerName.replace(/'/g, "''")}'`]);
