@@ -11,6 +11,7 @@ import { pendingCount, flushOutbox } from "@/modules/offline/lib/outbox";
 import { getDesktopBridge } from "@/infrastructure/desktop/ElectronDesktopBridge";
 import { useDesktopUpdate } from "@/modules/pos/hooks/useDesktopUpdate";
 import { toast } from "sonner";
+import SyncStatusPanel from "@/modules/offline/components/SyncStatusPanel";
 
 /**
  * SystemStatusDialog — panel de diagnóstico global.
