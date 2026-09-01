@@ -40,7 +40,7 @@ export default function MembersAuditTab() {
   const { role: currentRole } = useAuth();
   const canSee = currentRole === "superadmin" || currentRole === "admin";
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["members-audit", currentOrg?.id],
     enabled: !!currentOrg?.id && canSee,
     queryFn: async () => {
@@ -125,6 +125,13 @@ export default function MembersAuditTab() {
             Tenant: <strong>{currentOrg.name}</strong> · {active.length} activos · {owners.length} owner(s)
           </p>
         </div>
+        <CreateMemberDialog
+          organizationId={currentOrg.id}
+          organizationName={currentOrg.name}
+          canAssignOwner={currentRole === "superadmin"}
+          disabled={!canManageCredentials}
+          onCreated={() => refetch()}
+        />
       </header>
 
       {/* Estados críticos */}
@@ -214,7 +221,13 @@ export default function MembersAuditTab() {
               <div className="col-span-1 text-[11px] text-muted-foreground">
                 {m.created_at ? new Date(m.created_at).toLocaleDateString("es-CO") : "—"}
               </div>
-              <div className="col-span-2 flex justify-end">
+              <div className="col-span-2 flex justify-end gap-1.5 flex-wrap">
+                <SetPasswordButton
+                  organizationId={currentOrg.id}
+                  targetUserId={m.user_id}
+                  memberLabel={m.profile?.full_name || m.profile?.business_name || m.user_id}
+                  disabled={!canManageCredentials || !m.is_active}
+                />
                 <ResetPasswordButton
                   targetUserId={m.user_id}
                   organizationId={currentOrg.id}
