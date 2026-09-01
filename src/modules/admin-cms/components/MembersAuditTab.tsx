@@ -184,7 +184,7 @@ export default function MembersAuditTab() {
           const effectiveLocs = locOverrides[m.id] ?? m.location_ids ?? [];
           return (
             <div key={m.id} className="grid grid-cols-12 gap-2 px-3 py-2.5 border-t border-border text-sm items-center">
-              <div className="col-span-4 min-w-0">
+              <div className="col-span-3 min-w-0">
                 <p className="font-medium truncate">{m.profile?.full_name || m.profile?.business_name || "—"}</p>
                 <p className="text-[10px] text-muted-foreground truncate font-mono">{m.user_id}</p>
               </div>
@@ -207,8 +207,16 @@ export default function MembersAuditTab() {
                   ? <span className="text-[11px] text-success font-medium">Activo</span>
                   : <span className="text-[11px] text-muted-foreground">Inactivo</span>}
               </div>
-              <div className="col-span-2 text-[11px] text-muted-foreground">
+              <div className="col-span-1 text-[11px] text-muted-foreground">
                 {m.created_at ? new Date(m.created_at).toLocaleDateString("es-CO") : "—"}
+              </div>
+              <div className="col-span-2 flex justify-end">
+                <ResetPasswordButton
+                  targetUserId={m.user_id}
+                  organizationId={currentOrg.id}
+                  memberLabel={m.profile?.full_name || m.profile?.business_name || m.user_id}
+                  disabled={!canManageCredentials || !m.is_active}
+                />
               </div>
             </div>
           );
