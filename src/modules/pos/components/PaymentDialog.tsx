@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight, ShieldAlert, ShieldOff, ExternalLink } from "lucide-react";
+import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight, ShieldAlert, ShieldOff, ExternalLink, Keyboard, KeyboardOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import DocumentTypeSelector from "./DocumentTypeSelector";
 import Numpad from "./Numpad";
@@ -41,6 +41,16 @@ interface Props {
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const QUICK_BILLS = [2_000, 5_000, 10_000, 20_000, 50_000, 100_000];
+const NUMPAD_PREF_KEY = "pos_payment_numpad_visible";
+
+/** Detecta pantalla táctil primaria para pre-activar el numpad en pantalla. */
+function detectTouchPrimary(): boolean {
+  try {
+    return typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
+  } catch {
+    return false;
+  }
+}
 
 /** Devuelve el siguiente billete redondo igual o mayor al pendiente. */
 function suggestedQuickAmounts(pending: number): number[] {
@@ -62,6 +72,22 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   const [submitting, setSubmitting] = useState(false);
   const [tipPct, setTipPct] = useState<number>(0);
   const [tipCustom, setTipCustom] = useState<string>("");
+  // Numpad en pantalla: oculto por defecto para reducir altura y permitir teclado
+  // físico. Se pre-activa en dispositivos táctiles y se persiste la preferencia.
+  const [numpadVisible, setNumpadVisible] = useState<boolean>(() => {
+    try {
+      const saved = window.localStorage.getItem(NUMPAD_PREF_KEY);
+      if (saved !== null) return saved === "1";
+    } catch { /* noop */ }
+    return detectTouchPrimary();
+  });
+  const toggleNumpad = () => {
+    setNumpadVisible((v) => {
+      const next = !v;
+      try { window.localStorage.setItem(NUMPAD_PREF_KEY, next ? "1" : "0"); } catch { /* noop */ }
+      return next;
+    });
+  };
   const firstAmountRef = useRef<HTMLInputElement>(null);
   const { role } = useAuth();
   const gate = usePosCobroGate(organizationId, docType);
@@ -209,7 +235,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" onKeyDown={handleKeyDown}>
+      <DialogContent className="max-w-md max-h-[92dvh] overflow-y-auto" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between gap-2">
             <span>Cobrar {COP(grandTotal)}</span>
@@ -219,7 +245,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {organizationId && (
             <DocumentTypeSelector
               organizationId={organizationId}
@@ -231,7 +257,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
           )}
 
           {tipEnabled && (
-            <div className="rounded-lg border bg-card p-2.5 space-y-2">
+            <div className="rounded-lg border bg-card p-2 space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold">Propina</Label>
                 <span className="text-xs tabular-nums text-muted-foreground">
@@ -275,7 +301,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
             const quick = p.method === "efectivo" ? suggestedQuickAmounts(remaining) : [];
 
             return (
-              <div key={i} className="rounded-lg border bg-card p-2.5 space-y-2">
+              <div key={i} className="rounded-lg border bg-card p-2 space-y-1.5">
                 {/* Chips de método */}
                 <div className="flex flex-wrap gap-1">
                   {METHODS.map((m, mi) => {
@@ -307,8 +333,8 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                 </div>
 
 
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1 space-y-1">
+                <div className="flex gap-1.5 items-end">
+                  <div className="flex-1 space-y-0.5">
                     <Label htmlFor={amountId} className="text-[11px] text-muted-foreground">
                       {p.method === "efectivo" ? "Recibido" : "Monto"}
                     </Label>
@@ -316,40 +342,73 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                       id={amountId}
                       ref={i === 0 ? firstAmountRef : undefined}
                       type="text"
-                      inputMode="none"
-                      readOnly
-                      className="h-14 text-2xl font-bold tabular-nums text-right"
-                      value={p.amount ? COP(p.amount) : "$0"}
+                      inputMode="numeric"
+                      className="h-11 text-xl font-bold tabular-nums text-right"
+                      value={p.amount ? String(p.amount) : ""}
+                      placeholder="$0"
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/[^0-9]/g, "").slice(0, 9);
+                        updatePayment(i, { amount: Number(digits) || 0 });
+                      }}
                       onFocus={(e) => e.target.select()}
                     />
                   </div>
+                  <Button
+                    size="icon"
+                    variant={numpadVisible ? "secondary" : "ghost"}
+                    onClick={toggleNumpad}
+                    aria-label={numpadVisible ? "Ocultar teclado en pantalla" : "Mostrar teclado en pantalla"}
+                    aria-pressed={numpadVisible}
+                    title={numpadVisible ? "Ocultar teclado táctil" : "Teclado táctil"}
+                    className="h-11 w-11 shrink-0"
+                  >
+                    {numpadVisible ? <KeyboardOff className="w-5 h-5" /> : <Keyboard className="w-5 h-5" />}
+                  </Button>
                   {payments.length > 1 && (
                     <Button
                       size="icon"
                       variant="ghost"
                       onClick={() => setPayments((prev) => prev.filter((_, j) => j !== i))}
                       aria-label={`Eliminar pago ${i + 1}`}
-                      className="h-14 w-14"
+                      className="h-11 w-11 shrink-0"
                     >
                       <Trash2 className="w-5 h-5" />
                     </Button>
                   )}
                 </div>
 
-                {/* Numpad táctil siempre visible (operable sin teclado físico). */}
-                <Numpad
-                  compact
-                  value={String(p.amount || "")}
-                  onChange={(next) => updatePayment(i, { amount: Number(next.replace(/[^0-9]/g, "")) || 0 })}
-                  presets={
-                    p.method === "efectivo" && quick.length > 0
-                      ? [
-                          { label: `Exacto ${COP(remaining)}`, value: remaining, highlight: true },
-                          ...quick.filter((v) => v !== remaining).map((v) => ({ label: COP(v), value: v })),
-                        ]
-                      : undefined
-                  }
-                />
+                {/* Atajos de billetes: siempre visibles (útiles con teclado físico también). */}
+                {p.method === "efectivo" && quick.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    <button
+                      type="button"
+                      onClick={() => updatePayment(i, { amount: remaining })}
+                      className="px-2.5 h-8 rounded-md border text-[11px] font-bold tabular-nums bg-primary/10 border-primary/40 text-primary touch-manipulation active:scale-95 transition"
+                    >
+                      Exacto {COP(remaining)}
+                    </button>
+                    {quick.filter((v) => v !== remaining).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => updatePayment(i, { amount: v })}
+                        className="px-2.5 h-8 rounded-md border text-[11px] font-bold tabular-nums bg-muted border-border hover:bg-accent/20 touch-manipulation active:scale-95 transition"
+                      >
+                        {COP(v)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Numpad táctil bajo demanda: oculto por defecto para reducir altura
+                    y no bloquear el tecleo físico; toggle junto al monto. */}
+                {numpadVisible && (
+                  <Numpad
+                    compact
+                    value={String(p.amount || "")}
+                    onChange={(next) => updatePayment(i, { amount: Number(next.replace(/[^0-9]/g, "")) || 0 })}
+                  />
+                )}
               </div>
             );
           })}
@@ -378,7 +437,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
           </div>
 
 
-          <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+          <div className="bg-muted/50 rounded-lg px-3 py-2 text-xs space-y-0.5">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{COP(total)}</span></div>
             {tipAmount > 0 && (
               <div className="flex justify-between"><span className="text-muted-foreground">Propina</span><span className="tabular-nums">{COP(tipAmount)}</span></div>
@@ -391,7 +450,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
               </div>
             )}
             {change > 0 && (
-              <div className="flex justify-between font-bold text-primary text-base pt-1 border-t">
+              <div className="flex justify-between font-bold text-primary text-sm pt-1 border-t">
                 <span>Vuelto en efectivo</span><span className="tabular-nums">{COP(change)}</span>
               </div>
             )}
