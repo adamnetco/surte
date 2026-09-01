@@ -116,7 +116,7 @@ export default function ImpresorasAdmin() {
     try {
       let bytes: Uint8Array;
       if (kind === "ticket") {
-        bytes = buildReceipt(demoTicket(currentOrg?.business_name ?? ""), 80).build();
+        bytes = buildReceipt(demoTicket(currentOrg?.name ?? ""), 80).build();
       } else if (kind === "drawer") {
         bytes = new EscPosBuilder().init().openDrawer().build();
       } else {

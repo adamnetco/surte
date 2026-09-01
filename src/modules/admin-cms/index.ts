@@ -5,6 +5,7 @@
 export { default as AdminDashboardPage } from "./pages/AdminDashboard";
 export { default as DiarioPage } from "./pages/Diario";
 export { default as CajaAdminPage } from "./pages/Caja";
+export { default as ImpresorasAdminPage } from "./pages/Impresoras";
 export { default as InventarioPage } from "./pages/Inventario";
 export { default as FacturacionPage } from "./pages/Facturacion";
 export { default as ReportesPage } from "./pages/Reportes";
