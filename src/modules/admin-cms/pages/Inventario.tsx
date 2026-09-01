@@ -269,6 +269,15 @@ export default function Inventario() {
       />
 
       <ExpiryAlertsSheet open={expiryOpen} onClose={() => setExpiryOpen(false)} orgId={currentOrg.id} />
+      <ConversionSheet
+        open={conversionOpen}
+        onClose={() => setConversionOpen(false)}
+        orgId={currentOrg.id}
+        warehouseId={warehouseId}
+        warehouseName={warehouses.find((w) => w.id === warehouseId)?.name}
+        onApplied={loadStock}
+      />
+
     </div>
   );
 }
