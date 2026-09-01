@@ -78,6 +78,7 @@ import { useOrganization } from "@/modules/platform/context/OrganizationContext"
 import { useIsMobile } from "@/hooks/use-mobile";
 import POSFloorMapPanel from "./POSFloorMapPanel";
 import { useGridKeyboardNav } from "@/presentation/hooks/useGridKeyboardNav";
+import { useProgressiveList } from "@/presentation/hooks/useProgressiveList";
 import { Utensils as UtensilsIcon, LayoutGrid, List as ListIcon, X } from "lucide-react";
 
 
@@ -927,6 +928,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     });
   }, [products, search, activeCategory]);
 
+  // Ventana progresiva: con catálogos grandes (10k+ SKUs) sólo montamos los
+  // primeros 120 productos y ampliamos al scrollear. Mantiene los nodos en el
+  // DOM para no romper roving focus ni lectores de pantalla.
+  const catalogPage = useProgressiveList(filtered, {
+    pageSize: 120,
+    resetKey: `${activeCategory ?? ""}|${search}`,
+  });
+
+
+
   // Sugerencias de autocompletado mientras se escribe (máx 8). Si hay query
   // ignoramos el filtro de categoría activa para que el cajero encuentre
   // siempre por nombre/SKU/código de barras.
@@ -1545,7 +1556,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto p-3" onScroll={catalogPage.onScroll}>
             {loading ? (
               <div
                 className="grid gap-2"
@@ -1607,7 +1618,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 onKeyDown={catalogNav.onKeyDown}
                 className="divide-y rounded-md border bg-card overflow-hidden"
               >
-                {filtered.map((p, idx) => {
+                {catalogPage.visible.map((p, idx) => {
+
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                     <li key={p.id}>
@@ -1642,7 +1654,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 onKeyDown={catalogNav.onKeyDown}
                 className="grid gap-1.5 grid-cols-2 sm:grid-cols-3"
               >
-                {filtered.map((p, idx) => {
+                {catalogPage.visible.map((p, idx) => {
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                   <button
@@ -1685,6 +1697,20 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 })}
               </div>
             )}
+
+            {catalogPage.remaining > 0 && (
+              <div className="pt-2 text-center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={catalogPage.loadMore}
+                  className="h-9 text-xs"
+                >
+                  Mostrar más ({catalogPage.remaining} restantes)
+                </Button>
+              </div>
+            )}
+
           </div>
           </>
           )}
