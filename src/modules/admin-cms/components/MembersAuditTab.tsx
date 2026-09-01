@@ -14,7 +14,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
-import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import MemberLocationsPopover from "./MemberLocationsPopover";
 import ResetPasswordButton from "./ResetPasswordButton";
@@ -24,17 +24,6 @@ import MemberAccessActions from "./MemberAccessActions";
 import { listTenantMembers, type OrgRole } from "../services/tenantAccess";
 
 
-
-const roleBadge: Record<string, { label: string; cls: string; Icon: typeof Shield }> = {
-  owner:   { label: "Owner (Dueño)", cls: "bg-primary/15 text-primary",            Icon: Crown },
-  admin:   { label: "Admin",          cls: "bg-accent/15 text-accent",              Icon: ShieldCheck },
-  manager: { label: "Manager",        cls: "bg-secondary/30 text-secondary-foreground", Icon: Shield },
-  cashier: { label: "Cajero",         cls: "bg-muted text-foreground",              Icon: User },
-  waiter:  { label: "Mesero",         cls: "bg-muted text-foreground",              Icon: User },
-  kitchen: { label: "Cocina",         cls: "bg-muted text-foreground",              Icon: User },
-  agent:   { label: "Agente",         cls: "bg-muted text-foreground",              Icon: User },
-  member:  { label: "Miembro",        cls: "bg-muted/60 text-muted-foreground",     Icon: User },
-};
 
 export default function MembersAuditTab() {
   const { currentOrg } = useOrganization();
@@ -176,8 +165,6 @@ export default function MembersAuditTab() {
         {members.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No hay miembros registrados.</p>
         ) : members.map((m: any) => {
-          const meta = roleBadge[m.role] ?? roleBadge.member;
-          const Icon = meta.Icon;
           const effectiveLocs = locOverrides[m.id] ?? m.location_ids ?? [];
           return (
              <article key={m.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-2 p-4 md:px-3 md:py-2.5 border-t border-border text-sm items-center">
