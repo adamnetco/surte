@@ -182,6 +182,32 @@ npx @electron/packager .. "SistecPOSDesktop" --platform=win32 --arch=x64 --elect
 > raíz declara `"main": "electron/main.cjs"` para que el empaquetador
 > encuentre siempre el proceso principal correcto.
 
+### `npm audit` avisa de 10 vulnerabilidades en `electron/` — ¿qué hago?
+
+**Nada, y sobre todo NO ejecutes `npm audit fix --force`.**
+
+- Esas dependencias (`electron`, `@electron/packager`, `usb`, `noble`) son de
+  desarrollo/empaquetado: no se publican en el `.exe` ni las ejecuta el POS.
+- `npm audit fix --force` sube Electron a la major 44 y `@electron/packager` a la
+  20, que ya no coinciden con `--electron-version=31.7.7`; además intenta
+  resolver `undefined@undefined` y aborta con `ETARGET`, dejando `node_modules`
+  a medias.
+
+Si ya lo ejecutaste, restaura así:
+
+```powershell
+cd electron
+git checkout -- package.json          # descarta los cambios de audit fix
+Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue
+npm install
+npm install usb @abandonware/noble    # opcional (USB nativo + BLE)
+```
+
+Las versiones de `electron/package.json` están **fijadas sin `^`** justamente
+para que `npm install` reproduzca siempre el entorno probado (Electron 31.7.7).
+Si algún día quieres actualizar Electron, hazlo a mano y sincroniza el flag
+`--electron-version` de los scripts `package:*` en el mismo cambio.
+
 
 ### Licencia / heartbeat en local
 
