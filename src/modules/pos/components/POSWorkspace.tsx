@@ -23,6 +23,8 @@ import SaleCompleteDialog from "./SaleCompleteDialog";
 import DianHealthIndicator from "./DianHealthIndicator";
 import ContingencyBanner from "./ContingencyBanner";
 import ResolutionStatusBanner from "./ResolutionStatusBanner";
+import ResolutionsInfoDialog from "./ResolutionsInfoDialog";
+import POSFooterActionsBar from "./POSFooterActionsBar";
 import EinvoiceShiftWidget from "./EinvoiceShiftWidget";
 import { useDianHealth } from "@/modules/pos/hooks/useDianHealth";
 import { useEinvoiceResolutionStatus } from "@/modules/pos/hooks/useEinvoiceResolutionStatus";
@@ -208,6 +210,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   usePrintQueue({ organizationId });
   const [lastTicketData, setLastTicketData] = useState<TicketData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [resolutionsOpen, setResolutionsOpen] = useState(false);
   const orgInfoRef = useRef({ business_name: "SistecPOS" } as TicketData["org"]);
   useEffect(() => {
     (async () => {
@@ -881,8 +884,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       setSaleMode(next);
       toast.info(`Modo: ${next}`);
     },
-    onTables: () => { if (saleMode === "mesa") setTableSheetOpen(true); },
-    onInvoice: () => { if (lastOrderId) setActionMode("emit"); },
+    // F5 — "Cambiar" (estilo eleventa): en Mesas asigna/cambia mesa; en el resto
+    // enfoca el numpad para cambiar la cantidad de la línea seleccionada.
+    onTables: () => {
+      if (saleMode === "mesa") { setTableSheetOpen(true); return; }
+      if (selectedLine) {
+        setNumpadDraft("");
+        toast.info(`Cambiar cantidad: ${selectedLine.name}`);
+      }
+    },
+    // F6 — "Pendiente" (estilo eleventa): si hay ticket lo suspende;
+    // si no hay ticket, factura el último pedido cobrado.
+    onInvoice: () => {
+      if (ticket.length > 0) { handlePark(); return; }
+      if (lastOrderId) setActionMode("emit");
+    },
     onQuote: () => { if (ticket.length > 0) setActionMode("quote"); },
     onPark: () => { if (ticket.length > 0) setActionMode("park"); },
     onClear: () => {
@@ -991,6 +1007,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         return;
       }
 
+      // Ctrl+P / Cmd+P → reimprimir el último ticket emitido.
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "p" || e.key === "P")) {
+        e.preventDefault();
+        if (lastTicketData) setPreviewOpen(true);
+        else toast.info("Aún no hay un ticket para reimprimir en este turno");
+        return;
+      }
+
+
       if (typing) return;
       if (ticket.length === 0) return;
 
@@ -1015,7 +1040,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticket, selectedLineId]);
+  }, [ticket, selectedLineId, lastTicketData]);
 
 
   const totals = useMemo(() => {
@@ -1652,17 +1677,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 </PopoverContent>
               </Popover>
 
-              {/* Suspender */}
+              {/* Pendiente / Suspender (F6 · F8) */}
               <Button
                 variant="outline"
                 className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={ticket.length === 0}
                 onClick={() => { try { navigator.vibrate?.(8); } catch { /* noop */ } setActionMode("park"); }}
-                title="Pausar / Suspender (F8)"
+                title="Pendiente / Suspender ticket (F6 · F8)"
               >
                 <Pause className="w-5 h-5" />
-                <span className="text-[10px] leading-none">Suspender</span>
-                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F8</kbd>
+                <span className="text-[10px] leading-none">Pendiente</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F6</kbd>
               </Button>
 
               {/* Cotizar */}
@@ -1678,31 +1703,31 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F7</kbd>
               </Button>
 
-              {/* Facturar */}
+              {/* Facturar último */}
               <Button
                 variant="outline"
                 className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={!lastOrderId}
                 onClick={() => setActionMode("emit")}
-                title="Facturar último (F6)"
+                title="Facturar último pedido cobrado (F6 con ticket vacío)"
               >
                 <FileSignature className="w-5 h-5" />
                 <span className="text-[10px] leading-none">Facturar</span>
-                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F6</kbd>
               </Button>
 
-              {/* Reimprimir */}
+              {/* Reimprimir último ticket */}
               <Button
                 variant="outline"
                 className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
-                disabled={!lastOrderId}
-                onClick={() => window.print()}
-                title="Reimprimir última comanda (Ctrl+P)"
+                disabled={!lastTicketData}
+                onClick={() => setPreviewOpen(true)}
+                title="Reimprimir último ticket (Ctrl+P)"
               >
                 <Printer className="w-5 h-5" />
                 <span className="text-[10px] leading-none">Reimprimir</span>
                 <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">⌃P</kbd>
               </Button>
+
 
               {/* Cuenta (pre-cuenta con propina) — solo restaurante */}
               {posModes.enabled.includes("mesa" as PosMode) && (
@@ -2069,6 +2094,23 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </Button>
             </div>
 
+            {/* Franja inferior estilo eleventa: reimprimir · ventas del día · resoluciones */}
+            <POSFooterActionsBar
+              onReprintLast={() => setPreviewOpen(true)}
+              canReprint={!!lastTicketData}
+              onSalesOfDay={handleVentasDelDia}
+              onResolutions={() => setResolutionsOpen(true)}
+              resolutionTone={
+                resolutionSnap.status === "exhausted" || resolutionSnap.status === "missing"
+                  ? "error"
+                  : resolutionSnap.status === "near_limit"
+                  ? "warn"
+                  : "ok"
+              }
+            />
+
+
+
           </div>
 
         </aside>
@@ -2266,6 +2308,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         paperMm={80}
         kind="receipt"
       />
+
+      <ResolutionsInfoDialog
+        open={resolutionsOpen}
+        onOpenChange={setResolutionsOpen}
+        snapshot={resolutionSnap}
+        onOpenConfig={() => { setResolutionsOpen(false); navigate("/facturacion"); }}
+      />
+
+
 
     </div>
   );
