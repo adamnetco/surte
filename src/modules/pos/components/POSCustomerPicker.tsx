@@ -43,7 +43,7 @@ export default function POSCustomerPicker({ customer, onChange, requireEinvoice,
               className="h-9 w-full inline-flex items-center justify-center gap-2 rounded-full border-2 border-dashed border-accent/60 bg-accent/5 text-accent text-xs font-bold hover:bg-accent/15 transition px-3"
             >
               <UserPlus className="w-4 h-4" />
-              {compact ? "Cliente" : "Asignar cliente"}
+              Asignar cliente
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-64 p-2 space-y-1">
