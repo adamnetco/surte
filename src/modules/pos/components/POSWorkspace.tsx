@@ -1628,12 +1628,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 })}
               </ul>
             ) : (
-              <div className="grid gap-1.5 grid-cols-2 sm:grid-cols-3">
+              <div
+                ref={catalogNav.containerRef}
+                onKeyDown={catalogNav.onKeyDown}
+                className="grid gap-1.5 grid-cols-2 sm:grid-cols-3"
+              >
                 {filtered.map((p, idx) => {
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                   <button
                     key={p.id}
+                    data-kbd-item
                     onClick={() => addProduct(p)}
                     className="group relative bg-card rounded-md border border-border hover:border-primary/50 hover:shadow-sm transition text-left overflow-hidden active:scale-[0.98] flex flex-col focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
                     title={`${p.name}${cat ? ` · ${cat}` : ""} — ${COP(Number(p.price))}`}
