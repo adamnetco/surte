@@ -64,6 +64,7 @@ export default function MembersAuditTab() {
   const [locOverrides, setLocOverrides] = useState<Record<string, string[]>>({});
   useEffect(() => { setLocOverrides({}); }, [currentOrg?.id]);
   const canEditLocations = currentRole === "superadmin" || currentRole === "admin";
+  const canManageCredentials = currentRole === "superadmin" || currentRole === "admin";
 
 
   if (!canSee) {
