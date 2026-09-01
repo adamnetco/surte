@@ -18,6 +18,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import MemberLocationsPopover from "./MemberLocationsPopover";
+import ResetPasswordButton from "./ResetPasswordButton";
 
 
 const roleBadge: Record<string, { label: string; cls: string; Icon: typeof Shield }> = {
@@ -63,6 +64,7 @@ export default function MembersAuditTab() {
   const [locOverrides, setLocOverrides] = useState<Record<string, string[]>>({});
   useEffect(() => { setLocOverrides({}); }, [currentOrg?.id]);
   const canEditLocations = currentRole === "superadmin" || currentRole === "admin";
+  const canManageCredentials = currentRole === "superadmin" || currentRole === "admin";
 
 
   if (!canSee) {
@@ -168,11 +170,12 @@ export default function MembersAuditTab() {
       {/* Tabla */}
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-muted text-[10px] uppercase font-semibold text-muted-foreground">
-          <div className="col-span-4">Usuario</div>
+          <div className="col-span-3">Usuario</div>
           <div className="col-span-2">Rol</div>
           <div className="col-span-3">Sucursales</div>
           <div className="col-span-1">Activo</div>
-          <div className="col-span-2">Alta</div>
+          <div className="col-span-1">Alta</div>
+          <div className="col-span-2 text-right">Credenciales</div>
         </div>
         {members.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No hay miembros registrados.</p>
@@ -182,7 +185,7 @@ export default function MembersAuditTab() {
           const effectiveLocs = locOverrides[m.id] ?? m.location_ids ?? [];
           return (
             <div key={m.id} className="grid grid-cols-12 gap-2 px-3 py-2.5 border-t border-border text-sm items-center">
-              <div className="col-span-4 min-w-0">
+              <div className="col-span-3 min-w-0">
                 <p className="font-medium truncate">{m.profile?.full_name || m.profile?.business_name || "—"}</p>
                 <p className="text-[10px] text-muted-foreground truncate font-mono">{m.user_id}</p>
               </div>
@@ -205,8 +208,16 @@ export default function MembersAuditTab() {
                   ? <span className="text-[11px] text-success font-medium">Activo</span>
                   : <span className="text-[11px] text-muted-foreground">Inactivo</span>}
               </div>
-              <div className="col-span-2 text-[11px] text-muted-foreground">
+              <div className="col-span-1 text-[11px] text-muted-foreground">
                 {m.created_at ? new Date(m.created_at).toLocaleDateString("es-CO") : "—"}
+              </div>
+              <div className="col-span-2 flex justify-end">
+                <ResetPasswordButton
+                  targetUserId={m.user_id}
+                  organizationId={currentOrg.id}
+                  memberLabel={m.profile?.full_name || m.profile?.business_name || m.user_id}
+                  disabled={!canManageCredentials || !m.is_active}
+                />
               </div>
             </div>
           );
