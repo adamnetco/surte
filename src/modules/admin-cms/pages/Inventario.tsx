@@ -256,6 +256,19 @@ export default function Inventario() {
         warehouses={warehouses}
         onApplied={loadStock}
       />
+
+      <LotsSheet
+        open={!!lots}
+        onClose={() => setLots(null)}
+        orgId={currentOrg.id}
+        productId={lots?.productId ?? null}
+        productName={lots?.name}
+        warehouseId={warehouseId}
+        warehouseName={warehouses.find((w) => w.id === warehouseId)?.name}
+        onChanged={loadStock}
+      />
+
+      <ExpiryAlertsSheet open={expiryOpen} onClose={() => setExpiryOpen(false)} orgId={currentOrg.id} />
     </div>
   );
 }
