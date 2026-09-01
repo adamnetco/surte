@@ -169,11 +169,12 @@ export default function MembersAuditTab() {
       {/* Tabla */}
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-muted text-[10px] uppercase font-semibold text-muted-foreground">
-          <div className="col-span-4">Usuario</div>
+          <div className="col-span-3">Usuario</div>
           <div className="col-span-2">Rol</div>
           <div className="col-span-3">Sucursales</div>
           <div className="col-span-1">Activo</div>
-          <div className="col-span-2">Alta</div>
+          <div className="col-span-1">Alta</div>
+          <div className="col-span-2 text-right">Credenciales</div>
         </div>
         {members.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No hay miembros registrados.</p>
