@@ -6871,6 +6871,7 @@ export type Database = {
           city: string | null
           country: string
           created_at: string
+          created_by: string | null
           currency: string
           default_locale: string
           deleted_at: string | null
@@ -6911,6 +6912,7 @@ export type Database = {
           city?: string | null
           country?: string
           created_at?: string
+          created_by?: string | null
           currency?: string
           default_locale?: string
           deleted_at?: string | null
@@ -6951,6 +6953,7 @@ export type Database = {
           city?: string | null
           country?: string
           created_at?: string
+          created_by?: string | null
           currency?: string
           default_locale?: string
           deleted_at?: string | null
