@@ -40,6 +40,7 @@ const ERRORS: Record<string, string> = {
   cannot_deactivate_self: "No puedes desactivar tu propia cuenta.",
   role_change_failed: "No se pudo cambiar el rol.",
   unknown_action: "Acción no soportada.",
+  list_failed: "No se pudieron cargar los usuarios de la tienda.",
 };
 
 async function call<T>(payload: Record<string, unknown>): Promise<T> {
@@ -78,6 +79,21 @@ export function createTenantMember(input: CreateMemberInput) {
     role: input.role,
     password: input.password ?? "",
   });
+}
+
+export type TenantMember = {
+  id: string;
+  user_id: string;
+  email: string | null;
+  role: OrgRole;
+  is_active: boolean;
+  created_at: string;
+  location_ids: string[] | null;
+  profile: { full_name?: string | null; business_name?: string | null } | null;
+};
+
+export function listTenantMembers(organizationId: string) {
+  return call<{ members: TenantMember[] }>({ action: "list_members", organization_id: organizationId });
 }
 
 export function setTenantMemberPassword(input: {

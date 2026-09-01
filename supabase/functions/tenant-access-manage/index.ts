@@ -153,6 +153,22 @@ Deno.serve(async (req) => {
   const canTouchOwner = isSuperadmin || callerOrgRole === "owner";
 
   try {
+    // ------------------------------------------------------------------ list
+    if (action === "list_members") {
+      const { data: memberships, error: listErr } = await admin.from("organization_members")
+        .select("id,user_id,role,is_active,created_at,location_ids")
+        .eq("organization_id", organizationId).order("created_at");
+      if (listErr) return json({ error: listErr.message, code: "list_failed" }, 502);
+      const members = await Promise.all((memberships ?? []).map(async (membership) => {
+        const [{ data: authData }, { data: profile }] = await Promise.all([
+          admin.auth.admin.getUserById(membership.user_id),
+          admin.from("profiles").select("full_name,business_name").eq("user_id", membership.user_id).maybeSingle(),
+        ]);
+        return { ...membership, email: authData.user?.email ?? null, profile: profile ?? null };
+      }));
+      return json({ ok: true, members });
+    }
+
     // ---------------------------------------------------------------- create
     if (action === "create_member") {
       const email = String(body.email ?? "").trim().toLowerCase();
