@@ -14,7 +14,7 @@
  */
 import { spawnSync } from "node:child_process";
 
-const BASELINE = 5; // Etapa 40 — docstrings tenant + cloudTasks superadmin (deuda controlada).
+const BASELINE = 3; // Runtime multi-tenant — solo queda cloudTasks (tarea superadmin de registro inicial).
 const TERMS = [
   "surteya",
   "SurteYa",
