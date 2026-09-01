@@ -56,7 +56,11 @@ const isPreviewHost =
    window.location.hostname.includes("lovableproject.com") ||
    window.location.hostname.includes("lovable.app"));
 
-if ("serviceWorker" in navigator) {
+// Bajo file:// (Electron) el service worker no está permitido: registrarlo lanza
+// una excepción que puede dejar la ventana en negro.
+const isFileProtocol = typeof window !== "undefined" && window.location.protocol === "file:";
+
+if ("serviceWorker" in navigator && !isFileProtocol) {
   if (isInIframe || isPreviewHost) {
     // Cleanup any previously-registered SW so preview never serves stale code
     navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()));
