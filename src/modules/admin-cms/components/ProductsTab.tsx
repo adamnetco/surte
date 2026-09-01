@@ -977,10 +977,11 @@ const ProductsTab = ({ products, categories, queryClient }: { products: any[]; c
             <button onClick={(e) => { e.stopPropagation(); deleteProduct(p.id); }} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={15} /></button>
           </div>
           );
-        })}
-      </div>
+        }}
+      </VirtualRows>
     </div>
   );
 };
 
 export default ProductsTab;
+
