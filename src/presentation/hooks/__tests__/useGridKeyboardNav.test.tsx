@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { useGridKeyboardNav } from "../useGridKeyboardNav";
 import { useEnterFlow } from "../useEnterFlow";
 
@@ -28,30 +27,28 @@ function Form({ onSubmit }: { onSubmit: () => void }) {
 }
 
 describe("useGridKeyboardNav", () => {
-  it("mueve el foco con flechas", async () => {
-    const user = userEvent.setup();
+  it("mueve el foco con flechas", () => {
     render(<Grid />);
     const a = screen.getByText("a");
     a.focus();
-    await user.keyboard("{ArrowRight}");
+    fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
     expect(document.activeElement).toBe(screen.getByText("b"));
-    await user.keyboard("{End}");
+    fireEvent.keyDown(document.activeElement!, { key: "End" });
     expect(document.activeElement).toBe(screen.getByText("d"));
-    await user.keyboard("{Home}");
+    fireEvent.keyDown(document.activeElement!, { key: "Home" });
     expect(document.activeElement).toBe(a);
   });
 });
 
 describe("useEnterFlow", () => {
-  it("Enter avanza de campo y en el último envía", async () => {
-    const user = userEvent.setup();
+  it("Enter avanza de campo y en el último envía", () => {
     let submitted = 0;
     render(<Form onSubmit={() => submitted++} />);
     const uno = screen.getByLabelText("uno");
     uno.focus();
-    await user.keyboard("{Enter}");
+    fireEvent.keyDown(document.activeElement!, { key: "Enter" });
     expect(document.activeElement).toBe(screen.getByLabelText("dos"));
-    await user.keyboard("{Enter}");
+    fireEvent.keyDown(document.activeElement!, { key: "Enter" });
     expect(submitted).toBe(1);
   });
 });
