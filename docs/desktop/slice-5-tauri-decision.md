@@ -57,16 +57,23 @@ Reevaluar si se cumple **uno** de estos, medido y documentado:
 
 ## 5. Trabajo recomendado en lugar de migrar (orden de impacto)
 
-1. **Terminar el desacople de `POSWorkspace`** (hoy ~2.2k líneas): extraer
-   ticket, pagos y modo mesas a vistas de presentación con props tipadas.
-2. **Virtualización real** (`@tanstack/react-virtual`) en históricos y reportes,
-   donde no se requiere conservar todo el DOM para navegación con flechas.
-3. **Ampliar el caché offline** a últimos N tickets del turno + clientes
-   frecuentes, con TTL, antes de pensar en SQLite.
-4. **Presupuesto de rendimiento en CI** (LCP del POS, tiempo a primer render de
-   catálogo) para que los disparadores del §4 se midan solos.
-5. **Pipeline de releases** completamente automatizado (build → hash → bucket →
-   `desktop_releases`), aprovechando el puerto ya creado en el Slice 4.
+Estado a 2026-09-01 (revisión del slice 5):
+
+| # | Tarea | Estado | Detalle |
+| --- | --- | --- | --- |
+| 1 | Desacoplar `POSWorkspace` | 🟡 en curso | 2.336 líneas (bajó desde 2.370). Ya se extrajo `POSCatalogBody`; faltan ticket, pagos y modo mesas. |
+| 2 | Virtualización real (`@tanstack/react-virtual`) | 🟡 parcial | `VirtualRows` + `VirtualizedProductGrid` en admin/storefront. Faltan históricos de facturas y reportes densos. |
+| 3 | Ampliar caché offline (últimos N tickets + clientes frecuentes) | ⛔ pendiente | Dexie solo cachea catálogo; sin TTL para tickets del turno. |
+| 4 | Presupuesto de rendimiento en CI | ⛔ pendiente | No hay medición automática de LCP del POS ni de primer render de catálogo, así que los disparadores del §4 no se miden solos. |
+| 5 | Pipeline de releases automatizado | 🟡 parcial | Existe `IDesktopReleaseRepository` + tabla `desktop_releases` y aviso de versión; el build → hash → bucket sigue siendo manual. |
+
+Conclusión: el veredicto de no migrar sigue vigente, pero **falta cerrar 3 y 4**
+para poder afirmar con datos que los disparadores del §4 no se cumplen.
+
+## 6. Cómo ejecutarlo en local
+
+Ver [`docs/desktop/run-local-desktop.md`](./run-local-desktop.md) (web + escritorio,
+paso a paso) y [`docs/local-dev.md`](../local-dev.md) (entorno y variables).
 
 ## 6. Cómo ejecutarlo en local
 
