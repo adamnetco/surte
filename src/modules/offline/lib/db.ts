@@ -90,6 +90,8 @@ class SistecposOfflineDB extends Dexie {
   meta!: Table<SyncMeta, string>;
   shiftTickets!: Table<CachedShiftTicket, string>;
   customers!: Table<CachedCustomer, string>;
+  syncCheckpoints!: Table<SyncCheckpoint, string>;
+  syncConflicts!: Table<SyncConflict, number>;
 
   constructor(dbName: string) {
     super(dbName);
@@ -105,8 +107,15 @@ class SistecposOfflineDB extends Dexie {
       shiftTickets: "id, cash_session_id, created_at, organization_id",
       customers: "id, organization_id, search_key, cached_at",
     });
+    // v3 — motor de sincronización: cursores por entidad y bitácora de
+    // conflictos (Fases 6–8 del plan local-first).
+    this.version(3).stores({
+      syncCheckpoints: "key, entity, organization_id",
+      syncConflicts: "++id, organization_id, kind, entity_id, created_at, resolved_at",
+    });
   }
 }
+
 
 const LEGACY_DB_NAME = "sistecpos_offline_v1";
 const ORG_STORAGE_KEY = "sistecpos:currentOrgId";
