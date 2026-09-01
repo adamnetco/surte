@@ -94,6 +94,11 @@ export default function SystemStatusDialog() {
   const [snap, setSnap] = useState<Snapshot>(EMPTY);
   const [refreshing, setRefreshing] = useState(false);
   const update = useDesktopUpdate(open);
+  // Tenant activo del caché local-first (misma clave que usa la base offline).
+  const activeOrgId = (() => {
+    try { return localStorage.getItem("sistecpos:currentOrgId") ?? ""; } catch { return ""; }
+  })();
+
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
