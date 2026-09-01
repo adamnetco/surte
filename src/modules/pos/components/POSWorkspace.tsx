@@ -2309,6 +2309,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         kind="receipt"
       />
 
+      <ResolutionsInfoDialog
+        open={resolutionsOpen}
+        onOpenChange={setResolutionsOpen}
+        snapshot={resolutionSnap}
+        onOpenConfig={() => { setResolutionsOpen(false); navigate("/admin/facturacion"); }}
+      />
+
+
+
     </div>
   );
 }
