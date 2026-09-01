@@ -250,7 +250,10 @@ export default function SystemStatusDialog() {
           )}
         </div>
 
+        <SyncStatusPanel organizationId={activeOrgId} />
+
         <div className="flex items-center justify-between pt-2 border-t border-border">
+
           <p className="text-[11px] text-muted-foreground">
             Actualización automática cada 15 s
           </p>
