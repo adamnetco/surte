@@ -101,7 +101,27 @@ function createWindow() {
   win.once("ready-to-show", () => win.show());
   win.on("maximize", () => win.webContents.send("window:maximize-change", true));
   win.on("unmaximize", () => win.webContents.send("window:maximize-change", false));
-  win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+  const indexPath = path.join(__dirname, "..", "dist", "index.html");
+  if (!fs.existsSync(indexPath)) {
+    win.show();
+    dialog.showErrorBox(
+      "Falta el build web",
+      `No existe ${indexPath}.\n\nEjecuta "npm run build" en la raíz del proyecto antes de abrir el cliente de escritorio.`,
+    );
+    return;
+  }
+
+  // Diagnóstico: si el renderer no carga (assets con rutas absolutas, JS roto),
+  // la ventana quedaría en negro sin explicación. Mostramos el error real.
+  win.webContents.on("did-fail-load", (_e, code, desc, url) => {
+    win.show();
+    dialog.showErrorBox("No se pudo cargar la interfaz", `${desc} (${code})\n${url}`);
+  });
+  win.webContents.on("render-process-gone", (_e, details) => {
+    dialog.showErrorBox("La interfaz se cerró inesperadamente", JSON.stringify(details));
+  });
+
+  win.loadFile(indexPath);
 
   // Menú nativo oculto en producción — la app tiene su propia barra global.
   if (app.isPackaged) Menu.setApplicationMenu(null);
