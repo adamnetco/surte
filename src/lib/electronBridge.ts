@@ -1,36 +1,16 @@
 /**
- * Puente delgado con el proceso principal de Electron.
+ * @deprecated Usa el puerto `IDesktopBridge` vía
+ * `getDesktopBridge()` de `@/infrastructure/desktop/ElectronDesktopBridge`.
  *
- * En web (sin Electron), todas las llamadas son no-ops silenciosos.
- * El preload expone `window.surteyaDesktop` (histórico) y `window.electronWin`
- * (window controls). Ambos son opcionales.
+ * Este módulo queda como shim de compatibilidad para llamadas existentes.
  */
-
-type ElectronWinBridge = {
-  minimize: () => void;
-  maximize: () => void;
-  close: () => void;
-  isMaximized: () => Promise<boolean>;
-  onMaximizeChange: (cb: (max: boolean) => void) => () => void;
-};
-
-type SurteyaDesktopBridge = {
-  isDesktop: true;
-  licenseStatus?: () => Promise<unknown>;
-  activateLicense?: (key: string) => Promise<unknown>;
-};
-
-declare global {
-  interface Window {
-    electronWin?: ElectronWinBridge;
-    surteyaDesktop?: SurteyaDesktopBridge;
-  }
-}
+import { getDesktopBridge } from "@/infrastructure/desktop/ElectronDesktopBridge";
+import type { DesktopWindowControls } from "@/core/ports/IDesktopBridge";
 
 export function isElectron(): boolean {
-  return typeof window !== "undefined" && (!!window.electronWin || !!window.surteyaDesktop);
+  return getDesktopBridge().isDesktop;
 }
 
-export function getWindowBridge(): ElectronWinBridge | null {
-  return (typeof window !== "undefined" && window.electronWin) || null;
+export function getWindowBridge(): DesktopWindowControls | null {
+  return getDesktopBridge().getWindowControls();
 }
