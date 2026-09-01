@@ -1686,6 +1686,20 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 })}
               </div>
             )}
+
+            {catalogPage.remaining > 0 && (
+              <div className="pt-2 text-center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={catalogPage.loadMore}
+                  className="h-9 text-xs"
+                >
+                  Mostrar más ({catalogPage.remaining} restantes)
+                </Button>
+              </div>
+            )}
+
           </div>
           </>
           )}
