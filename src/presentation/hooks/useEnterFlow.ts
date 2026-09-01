@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 
 /**
  * useEnterFlow — Ergonomía estilo FoxPro/Clipper: Enter avanza al siguiente
@@ -8,10 +8,10 @@ import { useCallback } from "react";
  *
  * Uso:
  *   const { containerRef, onKeyDown } = useEnterFlow({ onSubmit: guardar });
- *   <form ref={containerRef} onKeyDown={onKeyDown}> … </form>
+ *   <div data-enter-flow ref={containerRef} onKeyDown={onKeyDown}> … </div>
  *
  * Reglas:
- *  - Ignora `textarea` (Enter debe insertar salto de línea) salvo Ctrl/Cmd+Enter.
+ *  - Ignora `textarea` (Enter inserta salto de línea) salvo Ctrl/Cmd+Enter.
  *  - Salta elementos deshabilitados, ocultos o `readOnly`.
  *  - Shift+Enter retrocede al campo anterior.
  */
@@ -30,16 +30,11 @@ export interface UseEnterFlowOptions {
   disabled?: boolean;
 }
 
-export function useEnterFlow<T extends HTMLElement = HTMLFormElement>({
+export function useEnterFlow<T extends HTMLElement = HTMLDivElement>({
   onSubmit,
   disabled,
 }: UseEnterFlowOptions = {}) {
-  const containerRef = useCallback((node: T | null) => {
-    ref.current = node;
-  }, []) as unknown as React.MutableRefObject<T | null>;
-
-  // Usamos un objeto ref clásico para permitir `ref={containerRef}` en JSX.
-  const ref = (useEnterFlow as unknown as { _r?: never }, { current: null as T | null });
+  const containerRef = useRef<T | null>(null);
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -59,7 +54,8 @@ export function useEnterFlow<T extends HTMLElement = HTMLFormElement>({
       }
 
       const container =
-        (target.closest("form,[data-enter-flow]") as HTMLElement | null) ?? null;
+        containerRef.current ??
+        (target.closest("form,[data-enter-flow]") as HTMLElement | null);
       if (!container) return;
 
       const fields = Array.from(
@@ -91,5 +87,5 @@ export function useEnterFlow<T extends HTMLElement = HTMLFormElement>({
     [disabled, onSubmit],
   );
 
-  return { onKeyDown, containerRef: ref as unknown as React.RefObject<T> };
+  return { onKeyDown, containerRef };
 }
