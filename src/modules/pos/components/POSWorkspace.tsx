@@ -405,8 +405,10 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       try {
         // Si no había categorías cacheadas, forzamos refresh para evitar quedar
         // pegados con un cache antiguo previo al fix de columna `icon`.
-        await refreshCatalogCache(cachedCatsLen === 0);
-        const [fresh, freshCats] = await Promise.all([getCachedProducts(), getCachedCategories()]);
+        await refreshCatalogCache(organizationId, cachedCatsLen === 0);
+        const [fresh, freshCats] = await Promise.all([
+          getCachedProducts(organizationId), getCachedCategories(organizationId),
+        ]);
         if (fresh.length) setProducts(fresh as Product[]);
         if (freshCats.length) setCategories(freshCats.map((c: any) => ({ id: c.id, name: c.name, icon_name: c.icon_name ?? null })));
 
