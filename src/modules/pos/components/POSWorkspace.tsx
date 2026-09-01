@@ -1040,7 +1040,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticket, selectedLineId]);
+  }, [ticket, selectedLineId, lastTicketData]);
 
 
   const totals = useMemo(() => {
