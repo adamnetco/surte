@@ -6451,6 +6451,7 @@ export type Database = {
           status: string
           subtotal: number
           total: number
+          tracking_token: string
           updated_at: string
           user_id: string | null
           whatsapp_ref: string | null
@@ -6482,6 +6483,7 @@ export type Database = {
           status?: string
           subtotal?: number
           total: number
+          tracking_token?: string
           updated_at?: string
           user_id?: string | null
           whatsapp_ref?: string | null
@@ -6513,6 +6515,7 @@ export type Database = {
           status?: string
           subtotal?: number
           total?: number
+          tracking_token?: string
           updated_at?: string
           user_id?: string | null
           whatsapp_ref?: string | null
@@ -13425,6 +13428,10 @@ export type Database = {
       }
       get_landing_by_slug: {
         Args: { _scope: string; _slug: string }
+        Returns: Json
+      }
+      get_order_tracking: {
+        Args: { p_order_number: number; p_tracking_token: string }
         Returns: Json
       }
       get_pending_survey: {
