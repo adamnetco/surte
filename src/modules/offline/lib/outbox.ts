@@ -102,47 +102,22 @@ async function executeOp(item: OutboxItem) {
 
   switch (op) {
     case "pos_order_create": {
-      // Idempotent: if an order with this client_uuid already exists, reuse it.
-      const { data: existing } = await (supabase as any)
-        .from("pos_orders")
-        .select("id")
-        .eq("client_uuid", item.client_uuid)
-        .eq("organization_id", orgId)
-        .maybeSingle();
-
-      let orderId: string;
-      if (existing?.id) {
-        orderId = existing.id;
-      } else {
-        const { data: order, error } = await supabase
-          .from("pos_orders")
-          .insert({ ...payload.header, organization_id: orgId, client_uuid: item.client_uuid })
-          .select("id")
-          .single();
-        if (error) throw error;
-        orderId = order.id;
-
-        if (payload.items?.length) {
-          const lines = payload.items.map((l: any) => ({
-            ...l,
-            organization_id: orgId,
-            pos_order_id: orderId,
-          }));
-          const { error: e2 } = await supabase.from("pos_order_items").insert(lines);
-          if (e2) throw e2;
-        }
-        if (payload.payments?.length) {
-          const pays = payload.payments.map((p: any) => ({
-            ...p,
-            organization_id: orgId,
-            pos_order_id: orderId,
-          }));
-          const { error: e3 } = await supabase.from("pos_payments").insert(pays);
-          if (e3) throw e3;
-        }
-      }
-      return orderId;
+      // Fase 4: commit transaccional idempotente en un único round-trip.
+      // La RPC inserta encabezado + líneas + pagos dentro de la misma
+      // transacción (todo o nada) y devuelve la orden existente si el
+      // client_uuid ya fue materializado por un reintento anterior.
+      const { data, error } = await (supabase as any).rpc("pos_sale_commit", {
+        _org_id: orgId,
+        _client_uuid: item.client_uuid,
+        _header: { ...payload.header, organization_id: orgId },
+        _items: payload.items ?? [],
+        _payments: payload.payments ?? [],
+      });
+      if (error) throw error;
+      if (!data) throw new Error("pos_sale_commit: no devolvió el id de la orden");
+      return data as string;
     }
+
     case "pos_payment_register": {
       const { error } = await supabase
         .from("pos_payments")
