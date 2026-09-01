@@ -47,6 +47,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Operación",
     items: [
       { path: "/pos", label: "POS", icon: Monitor },
+      { path: "/admin/caja", label: "Caja", icon: Wallet },
       { path: "/mesas", label: "Mesas", icon: Utensils },
       { path: "/kds", label: "Cocina (KDS)", icon: ChefHat },
       { path: "/facturacion", label: "Facturación", icon: Receipt },
