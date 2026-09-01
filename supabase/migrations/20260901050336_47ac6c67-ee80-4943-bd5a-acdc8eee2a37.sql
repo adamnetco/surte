@@ -1,0 +1,1 @@
+ALTER VIEW public.v_lifecycle_by_sequence_30d SET (security_invoker = true);
