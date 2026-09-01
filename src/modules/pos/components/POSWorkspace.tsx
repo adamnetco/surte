@@ -927,6 +927,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     });
   }, [products, search, activeCategory]);
 
+  // Ventana progresiva: con catálogos grandes (10k+ SKUs) sólo montamos los
+  // primeros 120 productos y ampliamos al scrollear. Mantiene los nodos en el
+  // DOM para no romper roving focus ni lectores de pantalla.
+  const catalogPage = useProgressiveList(filtered, {
+    pageSize: 120,
+    resetKey: `${activeCategory ?? ""}|${search}`,
+  });
+
+
+
   // Sugerencias de autocompletado mientras se escribe (máx 8). Si hay query
   // ignoramos el filtro de categoría activa para que el cajero encuentre
   // siempre por nombre/SKU/código de barras.
