@@ -415,6 +415,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       } finally {
         setLoading(false);
       }
+
+      // Caché offline ampliado (best-effort, nunca bloquea el POS):
+      // tickets del turno + clientes frecuentes para operar sin red.
+      try {
+        await Promise.allSettled([
+          refreshShiftTicketsCache(organizationId, session.id),
+          refreshCustomersCache(organizationId),
+        ]);
+      } catch { /* offline: se usa lo cacheado */ }
+      } catch (err: any) {
+        // offline o falla de red: usamos cache si existe
+        if (!products.length) setCatalogError(err?.message || "No se pudo cargar el catálogo");
+      } finally {
+        setLoading(false);
+      }
     })();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
