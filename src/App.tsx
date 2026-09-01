@@ -1,6 +1,13 @@
 import { lazy, Suspense, useEffect } from "react";
 import { QueryCache, QueryClient, QueryClientProvider, MutationCache } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, HashRouter, Route, Routes } from "react-router-dom";
+
+// Electron carga dist/index.html por file://: el history API no puede resolver
+// rutas como /pos/vender, así que ahí usamos HashRouter. En web sigue BrowserRouter.
+const Router =
+  typeof window !== "undefined" && window.location.protocol === "file:"
+    ? HashRouter
+    : BrowserRouter;
 import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
