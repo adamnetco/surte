@@ -28,19 +28,21 @@ type SurteyaDesktopBridge = {
   activateLicense?: (key: string) => Promise<unknown>;
 };
 
-declare global {
-  interface Window {
-    electronWin?: ElectronWinBridge;
-    surteyaDesktop?: SurteyaDesktopBridge;
-  }
+type HostWindow = Window & {
+  electronWin?: ElectronWinBridge;
+  surteyaDesktop?: SurteyaDesktopBridge;
+};
+
+function host(): HostWindow | null {
+  return typeof window === "undefined" ? null : (window as HostWindow);
 }
 
 function nativeWin(): ElectronWinBridge | null {
-  return (typeof window !== "undefined" && window.electronWin) || null;
+  return host()?.electronWin ?? null;
 }
 
 function nativeHost(): SurteyaDesktopBridge | null {
-  return (typeof window !== "undefined" && window.surteyaDesktop) || null;
+  return host()?.surteyaDesktop ?? null;
 }
 
 function detectPlatform(): DesktopPlatformInfo["platform"] {
