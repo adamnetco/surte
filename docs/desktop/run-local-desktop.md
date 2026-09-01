@@ -132,3 +132,55 @@ ver [`electron/README.md`](../../electron/README.md).
 Decisión vigente: **no migrar**. Justificación, cobertura por slice y
 disparadores para reevaluar en
 [`docs/desktop/slice-5-tauri-decision.md`](./slice-5-tauri-decision.md).
+
+---
+
+## 10. Pantalla en negro / sin datos al abrir el .exe (causas y arreglo)
+
+Cinco fallos concretos producen exactamente ese síntoma. Ya están corregidos en el
+código; si vienes de un build anterior, **rehaz `npm run build`**.
+
+| Causa | Síntoma | Arreglo |
+| --- | --- | --- |
+| `vite.config.ts` sin `base: './'` | Ventana negra total, `dist/index.html` pide `/assets/...` que no existe bajo `file://` | Ya aplicado (`base: './'`). Rehacer `npm run build` |
+| `BrowserRouter` bajo `file://` | Assets cargan pero ninguna vista se monta | Ya aplicado: la app usa `HashRouter` automáticamente cuando `location.protocol === 'file:'` |
+| Build sin `.env.local` | No se conecta a la base de datos; pantalla vacía sin mensaje | Ya aplicado: ahora sale una pantalla “Configuración incompleta”. Crea `.env.local` (copia `.env.local.example`) y **rehaz el build** |
+| Service worker bajo `file://` | Excepción en el arranque que aborta el render | Ya aplicado: registro de SW deshabilitado bajo `file://` |
+| `HostGuard` sin hostname | Pantallas “Esta sección vive en…” en rutas del panel | Ya aplicado: `file://` se trata como entorno de desarrollo |
+
+Además, el proceso principal ahora avisa con un cuadro de diálogo si falta
+`dist/index.html` o si el renderer falla al cargar, en vez de quedarse en negro.
+
+### Orden correcto de ejecución
+
+```powershell
+copy .env.local.example .env.local   # y revisa los valores
+npm install
+npm run build                        # SIEMPRE después de tocar .env.local
+cd electron
+npm install
+npx electron ../electron/main.cjs
+```
+
+### `EBUSY: resource busy or locked ... electron-release\...`
+
+El empaquetador no puede borrar la carpeta porque la app anterior sigue abierta o
+la tiene tomada el antivirus/explorador. Cierra `SistecPOSDesktop.exe`, cierra el
+Explorador en esa ruta y borra la carpeta antes de reempaquetar:
+
+```powershell
+taskkill /IM SistecPOSDesktop.exe /F 2>$null
+Remove-Item -Recurse -Force ..\electron-release
+npx @electron/packager .. "SistecPOSDesktop" --platform=win32 --arch=x64 --electron-version=31.7.7 --out=../electron-release --overwrite --ignore="^/src" --ignore="^/public" --ignore="^/electron-release"
+```
+
+### Licencia / heartbeat en local
+
+`electron/main.cjs` usa `SURTEYA_SUPA_ANON` para llamar a las edge functions de
+licencia. Si está vacío, la activación falla (la UI sigue funcionando). Para
+probar el flujo completo, exporta la variable antes de arrancar:
+
+```powershell
+$env:SURTEYA_SUPA_ANON="<anon key>"
+npx electron ../electron/main.cjs
+```
