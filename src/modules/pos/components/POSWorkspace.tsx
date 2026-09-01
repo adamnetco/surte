@@ -2313,7 +2313,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         open={resolutionsOpen}
         onOpenChange={setResolutionsOpen}
         snapshot={resolutionSnap}
-        onOpenConfig={() => { setResolutionsOpen(false); navigate("/admin/facturacion"); }}
+        onOpenConfig={() => { setResolutionsOpen(false); navigate("/facturacion"); }}
       />
 
 
