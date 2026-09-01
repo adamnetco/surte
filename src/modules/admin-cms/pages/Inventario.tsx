@@ -139,6 +139,17 @@ export default function Inventario() {
           </span>
           <span className="font-semibold">Ver →</span>
         </button>
+        <button
+          onClick={() => setConversionOpen(true)}
+          disabled={!warehouseId}
+          className="mt-2 w-full flex items-center justify-between gap-2 text-xs text-foreground bg-muted hover:bg-muted/80 rounded-lg px-3 py-2 transition disabled:opacity-50"
+        >
+          <span className="flex items-center gap-2">
+            <Boxes size={14} /> Convertir empaques (bulto → unidades)
+          </span>
+          <span className="font-semibold">Abrir →</span>
+        </button>
+
       </div>
 
       {/* Stock list */}
