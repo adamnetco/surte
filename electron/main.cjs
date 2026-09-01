@@ -92,19 +92,45 @@ async function activate(licenseKey) {
   });
   encFile(LIC_FILE, licenseKey);
   encFile(TOKEN_FILE, JSON.stringify(out));
+  if (out && out.tenant_manifest) encFile(MANIFEST_FILE, JSON.stringify(out.tenant_manifest));
+  else await refreshManifest(licenseKey);
   return out;
+}
+
+/** Descarga (o refresca) el tenant manifest de la licencia activa. */
+async function refreshManifest(licenseKey) {
+  const key = licenseKey || decFile(LIC_FILE);
+  if (!key) return null;
+  try {
+    const out = await callFn("desktop-tenant-bootstrap", {
+      license_key: key, fingerprint: machineFingerprint(),
+    });
+    if (out && out.tenant_manifest) {
+      encFile(MANIFEST_FILE, JSON.stringify(out.tenant_manifest));
+      if (win) win.webContents.send("tenant:manifest-change", out.tenant_manifest);
+      return out.tenant_manifest;
+    }
+  } catch (e) {
+    console.warn("[tenant] manifest refresh failed:", e.message);
+  }
+  return readManifest();
 }
 
 async function heartbeat() {
   const key = decFile(LIC_FILE); if (!key) return;
-  try { await callFn("license-heartbeat", { license_key: key, fingerprint: machineFingerprint() }); }
-  catch (e) {
-    if (String(e.message).match(/revoked|expired|cap|invalid/)) {
+  try {
+    await callFn("license-heartbeat", { license_key: key, fingerprint: machineFingerprint() });
+    await refreshManifest(key);
+  } catch (e) {
+    if (String(e.message).match(/revoked|expired|cap|invalid|suspended/)) {
+      // Aislamiento: si el seat deja de ser válido, se borra todo rastro del tenant.
+      wipeTenantData();
       dialog.showErrorBox("Licencia inválida", `La licencia fue ${e.message}. Contacta soporte.`);
       app.quit();
     }
   }
 }
+
 
 let win;
 function createWindow() {
