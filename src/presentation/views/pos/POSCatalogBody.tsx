@@ -2,7 +2,7 @@ import React from "react";
 import { ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { COP } from "@/lib/format";
+const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 
 export interface CatalogProduct {
   id: string;
