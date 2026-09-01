@@ -3,11 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2, History, ClipboardList } from "lucide-react";
+import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2, History, ClipboardList, CalendarClock, CalendarX2 } from "lucide-react";
 import KardexSheet from "../components/KardexSheet";
 import CriticalStockSheet from "../components/CriticalStockSheet";
 import ConteoFisicoSheet from "../components/ConteoFisicoSheet";
 import TrasladoSheet from "../components/TrasladoSheet";
+import LotsSheet from "../components/LotsSheet";
+import ExpiryAlertsSheet from "../components/ExpiryAlertsSheet";
 import { toast } from "sonner";
 
 type Warehouse = { id: string; name: string; code: string | null; is_default: boolean; location_id: string; warehouse_type: string };
@@ -36,6 +38,8 @@ export default function Inventario() {
   const [criticalOpen, setCriticalOpen] = useState(false);
   const [countOpen, setCountOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [lots, setLots] = useState<{ productId: string; name: string } | null>(null);
+  const [expiryOpen, setExpiryOpen] = useState(false);
 
   useEffect(() => {
     if (!currentOrg) return;
@@ -126,6 +130,15 @@ export default function Inventario() {
           </span>
           <span className="font-semibold">Ver →</span>
         </button>
+        <button
+          onClick={() => setExpiryOpen(true)}
+          className="mt-2 w-full flex items-center justify-between gap-2 text-xs text-foreground bg-muted hover:bg-muted/80 rounded-lg px-3 py-2 transition"
+        >
+          <span className="flex items-center gap-2">
+            <CalendarX2 size={14} /> Vencimientos de lotes (60 días)
+          </span>
+          <span className="font-semibold">Ver →</span>
+        </button>
       </div>
 
       {/* Stock list */}
@@ -169,6 +182,7 @@ export default function Inventario() {
                 <button onClick={() => setMovement({ row, type: "out" })} className="p-2 rounded-lg bg-accent text-accent-foreground" title="Salida"><Minus size={14} /></button>
                 <button onClick={() => setMovement({ row, type: "adjustment" })} className="p-2 rounded-lg bg-muted text-muted-foreground" title="Ajuste"><RotateCcw size={14} /></button>
                 <button onClick={() => setKardex({ productId: row.product_id, name: row.product?.name || "Producto" })} className="p-2 rounded-lg bg-primary/10 text-primary" title="Ver kárdex"><History size={14} /></button>
+                <button onClick={() => setLots({ productId: row.product_id, name: row.product?.name || "Producto" })} className="p-2 rounded-lg bg-secondary/60 text-secondary-foreground" title="Lotes y caducidad" aria-label={`Lotes de ${row.product?.name || "producto"}`}><CalendarClock size={14} /></button>
               </div>
             </div>
           );
@@ -242,6 +256,19 @@ export default function Inventario() {
         warehouses={warehouses}
         onApplied={loadStock}
       />
+
+      <LotsSheet
+        open={!!lots}
+        onClose={() => setLots(null)}
+        orgId={currentOrg.id}
+        productId={lots?.productId ?? null}
+        productName={lots?.name}
+        warehouseId={warehouseId}
+        warehouseName={warehouses.find((w) => w.id === warehouseId)?.name}
+        onChanged={loadStock}
+      />
+
+      <ExpiryAlertsSheet open={expiryOpen} onClose={() => setExpiryOpen(false)} orgId={currentOrg.id} />
     </div>
   );
 }

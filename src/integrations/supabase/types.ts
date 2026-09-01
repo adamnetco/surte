@@ -8208,6 +8208,85 @@ export type Database = {
           },
         ]
       }
+      product_lots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          lot_code: string
+          manufactured_at: string | null
+          notes: string | null
+          organization_id: string
+          product_id: string
+          quantity: number
+          received_quantity: number
+          supplier_id: string | null
+          unit_cost: number
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          lot_code: string
+          manufactured_at?: string | null
+          notes?: string | null
+          organization_id: string
+          product_id: string
+          quantity?: number
+          received_quantity?: number
+          supplier_id?: string | null
+          unit_cost?: number
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          lot_code?: string
+          manufactured_at?: string | null
+          notes?: string | null
+          organization_id?: string
+          product_id?: string
+          quantity?: number
+          received_quantity?: number
+          supplier_id?: string | null
+          unit_cost?: number
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_lots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_lots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_lots_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_media: {
         Row: {
           created_at: string
@@ -12761,6 +12840,20 @@ export type Database = {
         }
         Returns: Json
       }
+      consume_lots_fefo: {
+        Args: {
+          _org_id: string
+          _product_id: string
+          _quantity: number
+          _warehouse_id: string
+        }
+        Returns: {
+          expires_at: string
+          lot_code: string
+          lot_id: string
+          taken: number
+        }[]
+      }
       conversion_funnel_summary: { Args: { p_days?: number }; Returns: Json }
       cosign_critical_action: {
         Args: { _action_id: string; _decision: string; _reason?: string }
@@ -13261,6 +13354,23 @@ export type Database = {
           _qty?: number
         }
         Returns: string
+      }
+      lots_expiry_summary: {
+        Args: { _days?: number; _org_id: string }
+        Returns: {
+          days_left: number
+          expires_at: string
+          lot_code: string
+          lot_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          severity: string
+          sku: string
+          unit_cost: number
+          warehouse_id: string
+          warehouse_name: string
+        }[]
       }
       loyalty_accrue: {
         Args: {
