@@ -1677,17 +1677,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 </PopoverContent>
               </Popover>
 
-              {/* Suspender */}
+              {/* Pendiente / Suspender (F6 · F8) */}
               <Button
                 variant="outline"
                 className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={ticket.length === 0}
                 onClick={() => { try { navigator.vibrate?.(8); } catch { /* noop */ } setActionMode("park"); }}
-                title="Pausar / Suspender (F8)"
+                title="Pendiente / Suspender ticket (F6 · F8)"
               >
                 <Pause className="w-5 h-5" />
-                <span className="text-[10px] leading-none">Suspender</span>
-                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F8</kbd>
+                <span className="text-[10px] leading-none">Pendiente</span>
+                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F6</kbd>
               </Button>
 
               {/* Cotizar */}
@@ -1703,31 +1703,31 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F7</kbd>
               </Button>
 
-              {/* Facturar */}
+              {/* Facturar último */}
               <Button
                 variant="outline"
                 className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
                 disabled={!lastOrderId}
                 onClick={() => setActionMode("emit")}
-                title="Facturar último (F6)"
+                title="Facturar último pedido cobrado (F6 con ticket vacío)"
               >
                 <FileSignature className="w-5 h-5" />
                 <span className="text-[10px] leading-none">Facturar</span>
-                <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">F6</kbd>
               </Button>
 
-              {/* Reimprimir */}
+              {/* Reimprimir último ticket */}
               <Button
                 variant="outline"
                 className="relative flex-1 min-w-[84px] h-12 text-xs px-1 flex-col gap-0.5 [touch-action:manipulation] active:scale-95"
-                disabled={!lastOrderId}
-                onClick={() => window.print()}
-                title="Reimprimir última comanda (Ctrl+P)"
+                disabled={!lastTicketData}
+                onClick={() => setPreviewOpen(true)}
+                title="Reimprimir último ticket (Ctrl+P)"
               >
                 <Printer className="w-5 h-5" />
                 <span className="text-[10px] leading-none">Reimprimir</span>
                 <kbd className="absolute top-0.5 right-0.5 px-1 text-[8px] font-mono rounded bg-muted text-muted-foreground">⌃P</kbd>
               </Button>
+
 
               {/* Cuenta (pre-cuenta con propina) — solo restaurante */}
               {posModes.enabled.includes("mesa" as PosMode) && (
