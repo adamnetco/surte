@@ -77,6 +77,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import POSFloorMapPanel from "./POSFloorMapPanel";
+import { useGridKeyboardNav } from "@/presentation/hooks/useGridKeyboardNav";
 import { Utensils as UtensilsIcon, LayoutGrid, List as ListIcon, X } from "lucide-react";
 
 
@@ -189,6 +190,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     tableOrderId: string; tableId: string; tableLabel: string; releaseTableOnPaid: boolean;
   } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  // Navegación 100% teclado sobre el catálogo (↑↓←→, Home/End, PageUp/Down).
+  const catalogNav = useGridKeyboardNav<HTMLDivElement>();
   const navigate = useNavigate();
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
@@ -1598,13 +1601,19 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </div>
 
             ) : catalogDensity === "list" ? (
-              <ul role="list" className="divide-y rounded-md border bg-card overflow-hidden">
+              <ul
+                role="list"
+                ref={catalogNav.containerRef as unknown as React.RefObject<HTMLUListElement>}
+                onKeyDown={catalogNav.onKeyDown}
+                className="divide-y rounded-md border bg-card overflow-hidden"
+              >
                 {filtered.map((p, idx) => {
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                     <li key={p.id}>
                       <button
                         type="button"
+                        data-kbd-item
                         onClick={() => addProduct(p)}
                         className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-primary/5 focus:bg-primary/10 focus:outline-none transition"
                       >
@@ -1628,12 +1637,17 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 })}
               </ul>
             ) : (
-              <div className="grid gap-1.5 grid-cols-2 sm:grid-cols-3">
+              <div
+                ref={catalogNav.containerRef}
+                onKeyDown={catalogNav.onKeyDown}
+                className="grid gap-1.5 grid-cols-2 sm:grid-cols-3"
+              >
                 {filtered.map((p, idx) => {
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                   <button
                     key={p.id}
+                    data-kbd-item
                     onClick={() => addProduct(p)}
                     className="group relative bg-card rounded-md border border-border hover:border-primary/50 hover:shadow-sm transition text-left overflow-hidden active:scale-[0.98] flex flex-col focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
                     title={`${p.name}${cat ? ` · ${cat}` : ""} — ${COP(Number(p.price))}`}
