@@ -301,7 +301,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
             const quick = p.method === "efectivo" ? suggestedQuickAmounts(remaining) : [];
 
             return (
-              <div key={i} className="rounded-lg border bg-card p-2.5 space-y-2">
+              <div key={i} className="rounded-lg border bg-card p-2 space-y-1.5">
                 {/* Chips de método */}
                 <div className="flex flex-wrap gap-1">
                   {METHODS.map((m, mi) => {
