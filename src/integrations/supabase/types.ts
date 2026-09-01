@@ -4551,6 +4551,138 @@ export type Database = {
           },
         ]
       }
+      inventory_conversions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          factor: number
+          from_presentation_id: string | null
+          from_product_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          qty_from: number
+          qty_to: number
+          rule_id: string | null
+          to_presentation_id: string | null
+          to_product_id: string
+          unit_cost_to: number | null
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          factor: number
+          from_presentation_id?: string | null
+          from_product_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          qty_from: number
+          qty_to: number
+          rule_id?: string | null
+          to_presentation_id?: string | null
+          to_product_id: string
+          unit_cost_to?: number | null
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          factor?: number
+          from_presentation_id?: string | null
+          from_product_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          qty_from?: number
+          qty_to?: number
+          rule_id?: string | null
+          to_presentation_id?: string | null
+          to_product_id?: string
+          unit_cost_to?: number | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_conversions_from_presentation_id_fkey"
+            columns: ["from_presentation_id"]
+            isOneToOne: false
+            referencedRelation: "product_presentations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_from_product_id_fkey"
+            columns: ["from_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_from_product_id_fkey"
+            columns: ["from_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "product_conversion_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_to_presentation_id_fkey"
+            columns: ["to_presentation_id"]
+            isOneToOne: false
+            referencedRelation: "product_presentations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_to_product_id_fkey"
+            columns: ["to_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_to_product_id_fkey"
+            columns: ["to_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_conversions_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_scan_items: {
         Row: {
           applied: boolean
@@ -8205,6 +8337,112 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_tenant_entitlements_modules"
             referencedColumns: ["organization_id"]
+          },
+        ]
+      }
+      product_conversion_rules: {
+        Row: {
+          created_at: string
+          factor: number
+          from_presentation_id: string | null
+          from_product_id: string
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          to_presentation_id: string | null
+          to_product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          factor?: number
+          from_presentation_id?: string | null
+          from_product_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          to_presentation_id?: string | null
+          to_product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          factor?: number
+          from_presentation_id?: string | null
+          from_product_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          to_presentation_id?: string | null
+          to_product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_conversion_rules_from_presentation_id_fkey"
+            columns: ["from_presentation_id"]
+            isOneToOne: false
+            referencedRelation: "product_presentations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_conversion_rules_from_product_id_fkey"
+            columns: ["from_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_conversion_rules_from_product_id_fkey"
+            columns: ["from_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_conversion_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_conversion_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "product_conversion_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "product_conversion_rules_to_presentation_id_fkey"
+            columns: ["to_presentation_id"]
+            isOneToOne: false
+            referencedRelation: "product_presentations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_conversion_rules_to_product_id_fkey"
+            columns: ["to_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_conversion_rules_to_product_id_fkey"
+            columns: ["to_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -12855,6 +13093,21 @@ export type Database = {
         }[]
       }
       conversion_funnel_summary: { Args: { p_days?: number }; Returns: Json }
+      convert_inventory: {
+        Args: {
+          p_factor: number
+          p_from_presentation: string
+          p_from_product: string
+          p_notes?: string
+          p_org_id: string
+          p_qty: number
+          p_rule_id?: string
+          p_to_presentation: string
+          p_to_product: string
+          p_warehouse_id: string
+        }
+        Returns: Json
+      }
       cosign_critical_action: {
         Args: { _action_id: string; _decision: string; _reason?: string }
         Returns: Json

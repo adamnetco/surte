@@ -3,13 +3,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
-import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2, History, ClipboardList, CalendarClock, CalendarX2 } from "lucide-react";
+import { ArrowLeft, Warehouse as WarehouseIcon, Plus, Minus, RotateCcw, AlertTriangle, Search, ArrowRightLeft, Loader2, History, ClipboardList, CalendarClock, CalendarX2, Boxes } from "lucide-react";
 import KardexSheet from "../components/KardexSheet";
 import CriticalStockSheet from "../components/CriticalStockSheet";
 import ConteoFisicoSheet from "../components/ConteoFisicoSheet";
 import TrasladoSheet from "../components/TrasladoSheet";
 import LotsSheet from "../components/LotsSheet";
 import ExpiryAlertsSheet from "../components/ExpiryAlertsSheet";
+import ConversionSheet from "../components/ConversionSheet";
+
 import { toast } from "sonner";
 
 type Warehouse = { id: string; name: string; code: string | null; is_default: boolean; location_id: string; warehouse_type: string };
@@ -40,6 +42,8 @@ export default function Inventario() {
   const [transferOpen, setTransferOpen] = useState(false);
   const [lots, setLots] = useState<{ productId: string; name: string } | null>(null);
   const [expiryOpen, setExpiryOpen] = useState(false);
+  const [conversionOpen, setConversionOpen] = useState(false);
+
 
   useEffect(() => {
     if (!currentOrg) return;
@@ -139,6 +143,17 @@ export default function Inventario() {
           </span>
           <span className="font-semibold">Ver →</span>
         </button>
+        <button
+          onClick={() => setConversionOpen(true)}
+          disabled={!warehouseId}
+          className="mt-2 w-full flex items-center justify-between gap-2 text-xs text-foreground bg-muted hover:bg-muted/80 rounded-lg px-3 py-2 transition disabled:opacity-50"
+        >
+          <span className="flex items-center gap-2">
+            <Boxes size={14} /> Convertir empaques (bulto → unidades)
+          </span>
+          <span className="font-semibold">Abrir →</span>
+        </button>
+
       </div>
 
       {/* Stock list */}
@@ -269,6 +284,15 @@ export default function Inventario() {
       />
 
       <ExpiryAlertsSheet open={expiryOpen} onClose={() => setExpiryOpen(false)} orgId={currentOrg.id} />
+      <ConversionSheet
+        open={conversionOpen}
+        onClose={() => setConversionOpen(false)}
+        orgId={currentOrg.id}
+        warehouseId={warehouseId}
+        warehouseName={warehouses.find((w) => w.id === warehouseId)?.name}
+        onApplied={loadStock}
+      />
+
     </div>
   );
 }
