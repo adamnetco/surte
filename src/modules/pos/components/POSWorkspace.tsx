@@ -189,6 +189,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
     tableOrderId: string; tableId: string; tableLabel: string; releaseTableOnPaid: boolean;
   } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  // Navegación 100% teclado sobre el catálogo (↑↓←→, Home/End, PageUp/Down).
+  const catalogNav = useGridKeyboardNav<HTMLDivElement>();
   const navigate = useNavigate();
   const sync = useSyncService();
   const { config: posModes } = usePOSModes(organizationId);
@@ -1600,7 +1602,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             ) : catalogDensity === "list" ? (
               <ul
                 role="list"
-                ref={catalogNav.containerRef as React.RefObject<HTMLUListElement>}
+                ref={catalogNav.containerRef as unknown as React.RefObject<HTMLUListElement>}
                 onKeyDown={catalogNav.onKeyDown}
                 className="divide-y rounded-md border bg-card overflow-hidden"
               >
