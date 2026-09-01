@@ -235,7 +235,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" onKeyDown={handleKeyDown}>
+      <DialogContent className="max-w-md max-h-[92dvh] overflow-y-auto" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between gap-2">
             <span>Cobrar {COP(grandTotal)}</span>
@@ -245,7 +245,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {organizationId && (
             <DocumentTypeSelector
               organizationId={organizationId}
@@ -257,7 +257,7 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
           )}
 
           {tipEnabled && (
-            <div className="rounded-lg border bg-card p-2.5 space-y-2">
+            <div className="rounded-lg border bg-card p-2 space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold">Propina</Label>
                 <span className="text-xs tabular-nums text-muted-foreground">
