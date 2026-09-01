@@ -208,9 +208,10 @@ app.whenReady().then(async () => {
     dialog.showMessageBox({
       type: "info",
       title: "Activación requerida",
-      message: "Esta es la primera vez que abres SURTÉ YA Desktop.",
-      detail: `Huella de equipo:\n${machineFingerprint()}\n\nEn la app, ingresa la clave de licencia entregada por SURTÉ YA.`,
+      message: "Este equipo aún no está activado en SistecPOS Core.",
+      detail: `Huella de equipo:\n${machineFingerprint()}\n\nIngresa en la app la clave de licencia entregada por tu proveedor.`,
     });
+
   } else {
     heartbeat();
   }
