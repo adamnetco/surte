@@ -13430,10 +13430,6 @@ export type Database = {
         Args: { _scope: string; _slug: string }
         Returns: Json
       }
-      get_order_tracking: {
-        Args: { p_order_number: number; p_tracking_token: string }
-        Returns: Json
-      }
       get_pending_survey: {
         Args: never
         Returns: {
