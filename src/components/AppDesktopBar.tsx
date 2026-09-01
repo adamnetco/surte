@@ -12,7 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ROUTE_LABELS } from "@/lib/routeLabels";
-import { isElectron, getWindowBridge } from "@/lib/electronBridge";
+import { getDesktopBridge } from "@/infrastructure/desktop/ElectronDesktopBridge";
 import { cn } from "@/lib/utils";
 
 /**
@@ -48,8 +48,9 @@ export default function AppDesktopBar() {
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
   const [maximized, setMaximized] = useState(false);
-  const runningInElectron = isElectron();
-  const bridge = getWindowBridge();
+  const desktop = getDesktopBridge();
+  const runningInElectron = desktop.isDesktop;
+  const bridge = desktop.getWindowControls();
 
   // Publica altura como CSS var y limpia al desmontar.
   useEffect(() => {
@@ -185,7 +186,7 @@ export default function AppDesktopBar() {
               <Minus className="w-3.5 h-3.5" />
             </BarButton>
             <BarButton
-              onClick={() => bridge.maximize()}
+              onClick={() => bridge.toggleMaximize()}
               title={maximized ? "Restaurar" : "Maximizar"}
               ariaLabel={maximized ? "Restaurar ventana" : "Maximizar ventana"}
             >

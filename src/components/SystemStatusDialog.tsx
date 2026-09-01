@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Activity, Wifi, WifiOff, CloudUpload, Printer, MonitorSmartphone,
-  ShieldCheck, RefreshCw, CheckCircle2, AlertTriangle, XCircle,
+  ShieldCheck, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Download,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { pendingCount, flushOutbox } from "@/modules/offline/lib/outbox";
-import { isElectron, getWindowBridge } from "@/lib/electronBridge";
+import { getDesktopBridge } from "@/infrastructure/desktop/ElectronDesktopBridge";
+import { useDesktopUpdate } from "@/modules/pos/hooks/useDesktopUpdate";
 import { toast } from "sonner";
 
 /**
@@ -39,17 +40,10 @@ interface Snapshot {
 const PRINT_AGENT_PORT = 9101;
 
 async function checkPrintAgent(): Promise<Snapshot["printAgent"]> {
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 1200);
-    const res = await fetch(`http://127.0.0.1:${PRINT_AGENT_PORT}/health`, { signal: ctrl.signal });
-    clearTimeout(timer);
-    if (!res.ok) return { status: "warn", port: PRINT_AGENT_PORT };
-    const j = await res.json().catch(() => ({}));
-    return { status: "ok", version: j.version, port: PRINT_AGENT_PORT };
-  } catch {
-    return { status: "off", port: PRINT_AGENT_PORT };
-  }
+  const probe = await getDesktopBridge().probePrintAgent();
+  if (!probe) return { status: "off", port: PRINT_AGENT_PORT };
+  if (!probe.ok) return { status: "warn", port: PRINT_AGENT_PORT };
+  return { status: "ok", version: probe.version, port: PRINT_AGENT_PORT };
 }
 
 async function checkDian(): Promise<Snapshot["dian"]> {
@@ -90,7 +84,7 @@ const EMPTY: Snapshot = {
   dian: { status: "loading", hasContingency: false, org: null },
   printAgent: { status: "loading", port: PRINT_AGENT_PORT },
   runtime: {
-    kind: isElectron() ? "electron" : "browser",
+    kind: getDesktopBridge().isDesktop ? "electron" : "browser",
     ua: typeof navigator !== "undefined" ? navigator.userAgent : "",
   },
 };
@@ -99,6 +93,7 @@ export default function SystemStatusDialog() {
   const [open, setOpen] = useState(false);
   const [snap, setSnap] = useState<Snapshot>(EMPTY);
   const [refreshing, setRefreshing] = useState(false);
+  const update = useDesktopUpdate(open);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -149,7 +144,7 @@ export default function SystemStatusDialog() {
     toast.success(`Sync: ${res.sent} enviados · ${res.failed} fallidos · ${res.skipped} en espera`);
   };
 
-  const bridge = getWindowBridge();
+  const bridge = getDesktopBridge().getWindowControls();
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -229,6 +224,30 @@ export default function SystemStatusDialog() {
             }
             health="ok"
           />
+
+          {snap.runtime.kind === "electron" && (
+            <StatusRow
+              icon={<Download className="w-4 h-4" />}
+              title="Versión del cliente"
+              subtitle={
+                update.checking
+                  ? "Buscando actualizaciones…"
+                  : update.updateAvailable
+                    ? `v${update.installedVersion} instalada · v${update.latest?.version} disponible`
+                    : `v${update.installedVersion} — al día`
+              }
+              health={update.checking ? "loading" : update.updateAvailable ? "warn" : "ok"}
+              action={
+                update.updateAvailable && update.latest ? (
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={update.latest.downloadUrl} target="_blank" rel="noreferrer">
+                      Descargar
+                    </a>
+                  </Button>
+                ) : null
+              }
+            />
+          )}
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-border">
