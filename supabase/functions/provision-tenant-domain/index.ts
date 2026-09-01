@@ -1,5 +1,5 @@
 // Provision a tenant subdomain on Cloudflare Pages + DNS, and record it in tenant_domains.
-// POST body: { hostname: "surteya.sistecpos.com", site_id: uuid, organization_id: uuid, is_primary?: boolean }
+// POST body: { hostname: "tienda.sistecpos.com", site_id: uuid, organization_id: uuid, is_primary?: boolean }
 // Auth: requires authenticated superadmin (verified in code; verify_jwt = false at gateway)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";

@@ -133,9 +133,9 @@ function buildInnapsisPayload(input: BuildInput) {
     RazonSocial: cfg.razon_social ?? org.legal_name ?? org.name,
     Regimen: String(extra.regimen ?? "49"), // 49=No responsable IVA, 48=Responsable
     IdMunicipio: String(locSettings.municipio_code ?? extra.municipio_code ?? "68001"),
-    Ciudad: location?.city ?? extra.ciudad ?? "Bucaramanga",
+    Ciudad: location?.city ?? extra.ciudad ?? "",
     CodigoPostal: String(locSettings.codigo_postal ?? extra.codigo_postal ?? "680001"),
-    Departamento: locSettings.departamento ?? extra.departamento ?? "Santander",
+    Departamento: locSettings.departamento ?? extra.departamento ?? "",
     IdDepartamento: String(locSettings.departamento_code ?? extra.departamento_code ?? "68"),
     Direccion: location?.address ?? extra.direccion ?? "N/A",
     CodigoPais: "CO",
