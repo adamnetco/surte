@@ -101,7 +101,7 @@ export function useGridKeyboardNav<T extends HTMLElement = HTMLDivElement>({
       e.preventDefault();
       const target = items[next];
       target?.focus();
-      target?.scrollIntoView({ block: "nearest" });
+      target?.scrollIntoView?.({ block: "nearest" });
     },
     [disabled, loop],
   );
