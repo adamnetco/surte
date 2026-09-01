@@ -210,6 +210,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
   usePrintQueue({ organizationId });
   const [lastTicketData, setLastTicketData] = useState<TicketData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [resolutionsOpen, setResolutionsOpen] = useState(false);
   const orgInfoRef = useRef({ business_name: "SistecPOS" } as TicketData["org"]);
   useEffect(() => {
     (async () => {
