@@ -37,9 +37,10 @@ function demoTicket(businessName: string): TicketData {
     cashier_name: "Configuración",
     created_at: new Date(),
     items: [
-      { name: "Producto de prueba", qty: 2, unit_price: 5000, total: 10000 },
-      { name: "Servicio de prueba", qty: 1, unit_price: 3500, total: 3500 },
-    ] as TicketData["items"],
+      { name: "Producto de prueba", quantity: 2, unit_price: 5000, total: 10000 },
+      { name: "Servicio de prueba", quantity: 1, unit_price: 3500, total: 3500 },
+    ],
+
     subtotal: 13500,
     discount: 0,
     tax: 0,
