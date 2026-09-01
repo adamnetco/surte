@@ -4,6 +4,32 @@ import "./index.css";
 import { wireOutboxListeners } from "@/modules/offline/lib/outbox";
 import { consumeHandoff } from "./modules/auth/lib/ssoHandoff";
 
+// Guard de arranque: si el build se generó sin .env / .env.local, el cliente de
+// Supabase queda con URL undefined y la app muere en blanco/negro sin mensaje.
+// Mostramos el motivo real en pantalla en vez de dejar la ventana vacía.
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
+  const root = document.getElementById("root");
+  if (root) {
+    root.innerHTML = `
+      <main style="min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#0F172A;color:#E2E8F0;font-family:system-ui,sans-serif;padding:24px">
+        <div style="max-width:560px;border:1px solid #1E293B;border-radius:12px;padding:24px;background:#111C2E">
+          <h1 style="font-size:18px;margin:0 0 8px">Configuración incompleta</h1>
+          <p style="font-size:14px;line-height:1.5;margin:0 0 12px;color:#94A3B8">
+            Este build se generó sin las variables de entorno de la base de datos,
+            por eso no carga ninguna pantalla ni datos.
+          </p>
+          <p style="font-size:13px;line-height:1.6;margin:0;color:#94A3B8">
+            Crea <code>.env.local</code> en la raíz del proyecto (copia
+            <code>.env.local.example</code>) con <code>VITE_SUPABASE_URL</code> y
+            <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>, y vuelve a ejecutar
+            <code>npm run build</code> antes de abrir el cliente de escritorio.
+          </p>
+        </div>
+      </main>`;
+  }
+  throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY at build time");
+}
+
 wireOutboxListeners();
 
 // CSP violation telemetry — POSTea cada violación a la edge function csp-report.
