@@ -207,7 +207,6 @@ export default function MembersAuditTab() {
                   disabled={!canManageCredentials || !m.is_active}
                 />
              </article>
-            </div>
           );
         })}
       </div>
