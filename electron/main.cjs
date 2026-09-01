@@ -177,8 +177,19 @@ function createWindow() {
   if (app.isPackaged) Menu.setApplicationMenu(null);
 }
 
-ipcMain.handle("license:status", () => ({ fingerprint: machineFingerprint(), hasLicense: !!decFile(LIC_FILE) }));
+ipcMain.handle("license:status", () => {
+  const manifest = readManifest();
+  return {
+    fingerprint: machineFingerprint(),
+    hasLicense: !!decFile(LIC_FILE),
+    organizationId: manifest ? manifest.organization_id : null,
+  };
+});
 ipcMain.handle("license:activate", async (_e, key) => activate(key));
+ipcMain.handle("tenant:manifest", () => readManifest());
+ipcMain.handle("tenant:refresh-manifest", async () => refreshManifest());
+ipcMain.handle("tenant:reset", () => { wipeTenantData(); return true; });
+
 
 // Window controls — llamados desde AppDesktopBar (renderer) vía preload bridge.
 ipcMain.handle("window:minimize", () => { if (win) win.minimize(); });
