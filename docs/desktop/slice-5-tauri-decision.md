@@ -63,12 +63,14 @@ Estado a 2026-09-01 (revisión del slice 5):
 | --- | --- | --- | --- |
 | 1 | Desacoplar `POSWorkspace` | 🟡 en curso | 2.336 líneas (bajó desde 2.370). Ya se extrajo `POSCatalogBody`; faltan ticket, pagos y modo mesas. |
 | 2 | Virtualización real (`@tanstack/react-virtual`) | 🟡 parcial | `VirtualRows` + `VirtualizedProductGrid` en admin/storefront. Faltan históricos de facturas y reportes densos. |
-| 3 | Ampliar caché offline (últimos N tickets + clientes frecuentes) | ⛔ pendiente | Dexie solo cachea catálogo; sin TTL para tickets del turno. |
-| 4 | Presupuesto de rendimiento en CI | ⛔ pendiente | No hay medición automática de LCP del POS ni de primer render de catálogo, así que los disparadores del §4 no se miden solos. |
+| 3 | Ampliar caché offline (últimos N tickets + clientes frecuentes) | ✅ cerrado | Dexie v2 con `shiftTickets` (60 últimos del turno, TTL 2 min) y `customers` (500, TTL 12 h) en `src/modules/offline/lib/shiftCache.ts`; refresco best-effort al abrir el POS. |
+| 4 | Presupuesto de rendimiento en CI | ✅ cerrado | `scripts/perf-budget.mjs` + `perf-budget.json` + workflow `perf-budget.yml`. Ver [`perf-budget.md`](./perf-budget.md). |
 | 5 | Pipeline de releases automatizado | 🟡 parcial | Existe `IDesktopReleaseRepository` + tabla `desktop_releases` y aviso de versión; el build → hash → bucket sigue siendo manual. |
 
-Conclusión: el veredicto de no migrar sigue vigente, pero **falta cerrar 3 y 4**
-para poder afirmar con datos que los disparadores del §4 no se cumplen.
+Conclusión: el veredicto de no migrar sigue vigente. Cerrados 3 y 4, los
+disparadores del §4 ya se miden solos en CI (bundle) y el POS opera sin red con
+tickets del turno y clientes cacheados. Queda 1, 2 y 5 como trabajo incremental.
+
 
 ## 6. Cómo ejecutarlo en local
 

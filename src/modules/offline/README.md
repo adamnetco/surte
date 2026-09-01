@@ -4,8 +4,9 @@ Offline-first primitives for the POS: Dexie/IndexedDB catalog cache and outbox s
 
 ## Contents
 
-- `lib/db.ts` — Dexie schema (catalog snapshot + outbox tables).
+- `lib/db.ts` — Dexie schema v2 (catálogo, outbox, `shiftTickets`, `customers`).
 - `lib/catalog.ts` — catalog snapshot read/write helpers (products, presentations, prices).
+- `lib/shiftCache.ts` — caché ampliado: últimos 60 tickets del turno (TTL 2 min) y hasta 500 clientes frecuentes (TTL 12 h), con búsqueda local.
 - `lib/outbox.ts` — enqueue/flush for `pos_order`, `payment`, `einvoice`, `stock` operations.
 - `hooks/useOnlineStatus.ts` — reactive online/offline state.
 - `components/OfflineIndicator.tsx` — UI banner for offline state.

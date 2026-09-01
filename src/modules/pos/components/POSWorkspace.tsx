@@ -33,6 +33,9 @@ import { usePrintQueue, TicketPreviewDialog, type TicketData } from "@/modules/p
 import {
   refreshCatalogCache, getCachedProducts, getCachedCategories,
 } from "@/modules/offline/lib/catalog";
+import {
+  refreshShiftTicketsCache, refreshCustomersCache,
+} from "@/modules/offline/lib/shiftCache";
 import { setMeta, getMeta } from "@/modules/offline/lib/db";
 import { usePOSHotkeys } from "@/modules/pos/hooks/usePOSHotkeys";
 import { usePriceListOverrides } from "@/modules/pos/hooks/usePriceListOverrides";
@@ -412,6 +415,16 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       } finally {
         setLoading(false);
       }
+
+      // Caché offline ampliado (best-effort, nunca bloquea el POS):
+      // tickets del turno + clientes frecuentes para operar sin red.
+      try {
+        await Promise.allSettled([
+          refreshShiftTicketsCache(organizationId, session.id),
+          refreshCustomersCache(organizationId),
+        ]);
+      } catch { /* offline: se usa lo cacheado */ }
+
     })();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

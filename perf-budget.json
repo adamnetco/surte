@@ -1,0 +1,10 @@
+{
+  "$comment": "Presupuesto de rendimiento del build. Ver docs/desktop/perf-budget.md. Actualiza con `node scripts/perf-budget.mjs --update` y justifica el cambio en el PR.",
+  "measuredAt": "2026-03-31",
+  "budgets": {
+    "totalJsGzipKb": 1750,
+    "totalCssGzipKb": 40,
+    "largestJsChunkGzipKb": 420,
+    "distRawMb": 7.5
+  }
+}
