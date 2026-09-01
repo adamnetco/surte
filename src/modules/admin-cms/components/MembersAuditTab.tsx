@@ -206,6 +206,7 @@ export default function MembersAuditTab() {
                   memberLabel={m.profile?.full_name || m.profile?.business_name || m.user_id}
                   disabled={!canManageCredentials || !m.is_active}
                 />
+               </div>
              </article>
           );
         })}
