@@ -1545,7 +1545,7 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto p-3" onScroll={catalogPage.onScroll}>
             {loading ? (
               <div
                 className="grid gap-2"
