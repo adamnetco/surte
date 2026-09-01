@@ -272,7 +272,7 @@ const App = () => (
             <DynamicThemeInjector />
             <CustomScriptInjector />
                 <AgentBar />
-              <BrowserRouter>
+              <Router>
                 <AppDesktopBar />
                 <SystemStatusDialog />
                 <ApproachingLimitBanner />
