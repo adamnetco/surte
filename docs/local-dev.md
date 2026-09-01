@@ -117,3 +117,9 @@ Ver [`docs/cursor-handoff.md`](./cursor-handoff.md). En resumen:
 2. Asegúrate de tener `.env.local` con las 3 variables `VITE_SUPABASE_*`.
 3. Lee primero `docs/api/README.md` y `docs/views-map.md`.
 4. Pídele a la IA: "construye la vista X consumiendo los endpoints documentados en `docs/api/`".
+
+---
+
+## 9. Ejecutar como aplicación de escritorio
+
+Ver [`docs/desktop/run-local-desktop.md`](./desktop/run-local-desktop.md) (Electron, print-agent, empaquetado y publicación de releases) y la decisión de arquitectura sobre Tauri/SQLite en [`docs/desktop/slice-5-tauri-decision.md`](./desktop/slice-5-tauri-decision.md).
