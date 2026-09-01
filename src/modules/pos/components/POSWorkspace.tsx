@@ -2094,6 +2094,23 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </Button>
             </div>
 
+            {/* Franja inferior estilo eleventa: reimprimir · ventas del día · resoluciones */}
+            <POSFooterActionsBar
+              onReprintLast={() => setPreviewOpen(true)}
+              canReprint={!!lastTicketData}
+              onSalesOfDay={handleVentasDelDia}
+              onResolutions={() => setResolutionsOpen(true)}
+              resolutionTone={
+                resolutionSnap.status === "exhausted" || resolutionSnap.status === "missing"
+                  ? "error"
+                  : resolutionSnap.status === "near_limit"
+                  ? "warn"
+                  : "ok"
+              }
+            />
+
+
+
           </div>
 
         </aside>
