@@ -18,6 +18,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import MemberLocationsPopover from "./MemberLocationsPopover";
+import ResetPasswordButton from "./ResetPasswordButton";
 
 
 const roleBadge: Record<string, { label: string; cls: string; Icon: typeof Shield }> = {
