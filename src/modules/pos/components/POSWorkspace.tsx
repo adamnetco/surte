@@ -1007,6 +1007,15 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
         return;
       }
 
+      // Ctrl+P / Cmd+P → reimprimir el último ticket emitido.
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "p" || e.key === "P")) {
+        e.preventDefault();
+        if (lastTicketData) setPreviewOpen(true);
+        else toast.info("Aún no hay un ticket para reimprimir en este turno");
+        return;
+      }
+
+
       if (typing) return;
       if (ticket.length === 0) return;
 
