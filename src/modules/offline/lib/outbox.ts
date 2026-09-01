@@ -80,11 +80,27 @@ export async function flushOutbox(): Promise<{ sent: number; failed: number; ski
         const attempts = item.attempts + 1;
         const isPermanent = attempts >= MAX_ATTEMPTS;
         await offlineDB.outbox.update(item.id!, {
-          status: isPermanent ? "failed" : "failed",
+          status: "failed",
           attempts,
           last_error: `${isPermanent ? "[GAVE UP] " : ""}${String(e?.message ?? e)}`,
         });
+        // Fase 8: al agotar reintentos el evento pasa a la bitácora de
+        // conflictos para revisión humana (nunca se pierde silenciosamente).
+        if (isPermanent) {
+          try {
+            await offlineDB.syncConflicts.add({
+              organization_id: orgIdOf(item),
+              kind: "outbox_gave_up",
+              entity: item.op,
+              entity_id: item.client_uuid,
+              detail: String(e?.message ?? e).slice(0, 500),
+              created_at: Date.now(),
+              resolved_at: null,
+            });
+          } catch { /* la bitácora no debe romper el flush */ }
+        }
       }
+
     }
     // Garbage-collect "done" items older than 1 day.
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
