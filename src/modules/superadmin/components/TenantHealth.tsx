@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   CheckCircle2, AlertCircle, Clock, RefreshCw, Receipt, Key, ToggleRight,
-  Store, ExternalLink, Activity, Globe, Plus,
+  Store, ExternalLink, Activity, Globe, Plus, Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -39,7 +39,7 @@ export default function TenantHealth() {
       const base = `/superadmin/t/${currentOrg.slug}`;
 
       // Paralelo
-      const [modulesRes, fiscalRes, licRes, syncRes, ordersRes, sitesRes, domainsRes, orgRes] = await Promise.all([
+      const [modulesRes, fiscalRes, licRes, syncRes, ordersRes, sitesRes, domainsRes, orgRes, membersRes] = await Promise.all([
         (supabase as any).from("organization_modules").select("module_key,enabled").eq("organization_id", orgId),
         (supabase as any).from("fiscal_settings").select("id").eq("organization_id", orgId).maybeSingle(),
         (supabase as any).from("organization_licenses").select("plan,expires_at,status").eq("organization_id", orgId).maybeSingle(),
@@ -50,6 +50,7 @@ export default function TenantHealth() {
         (supabase as any).from("tenant_sites").select("id,is_published").eq("organization_id", orgId),
         (supabase as any).from("tenant_domains").select("id,verified_at,cf_ssl_status").eq("organization_id", orgId),
         (supabase as any).from("organizations").select("signing_public_key,signing_key_created_at").eq("id", orgId).maybeSingle(),
+        (supabase as any).from("organization_members").select("role,is_active").eq("organization_id", orgId),
       ]);
 
       const modulesEnabled = (modulesRes.data ?? []).filter((m: any) => m.enabled).length;
@@ -76,6 +77,8 @@ export default function TenantHealth() {
         ? `${base}/sitios?tab=domains&focus=${criticalDomain.id}`
         : `${base}/sitios?tab=domains`;
       const signingOk = !!orgRes.data?.signing_public_key;
+      const activeMembers = (membersRes.data ?? []).filter((m: any) => m.is_active);
+      const ownerCount = activeMembers.filter((m: any) => m.role === "owner").length;
       const signingDate = orgRes.data?.signing_key_created_at
         ? new Date(orgRes.data.signing_key_created_at).toLocaleDateString()
         : null;
@@ -84,6 +87,12 @@ export default function TenantHealth() {
 
       setStats({ syncPending: pending, syncFailed: failed, orders24h: ordersRes.count ?? 0 });
       setChecks([
+        {
+          id: "users", label: "Usuarios POS",
+          status: activeMembers.length === 0 || ownerCount !== 1 ? "warn" : "ok",
+          detail: activeMembers.length === 0 ? "Sin cuentas activas" : `${activeMembers.length} activos · ${ownerCount} owner`,
+          to: `${base}/usuarios`,
+        },
         {
           id: "modules", label: "Módulos activos",
           status: modulesEnabled > 0 ? "ok" : "pending",
@@ -250,7 +259,8 @@ export default function TenantHealth() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <QuickLink to={`/superadmin/t/${currentOrg.slug}/usuarios`} icon={Users} label="Usuarios POS" />
         <QuickLink to={`/superadmin/t/${currentOrg.slug}/modulos`} icon={ToggleRight} label="Módulos" />
         <QuickLink to={`/superadmin/t/${currentOrg.slug}/fiscal`} icon={Receipt} label="Fiscal" />
         <QuickLink to={`/superadmin/t/${currentOrg.slug}/sync`} icon={RefreshCw} label="Sincronización" />

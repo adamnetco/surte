@@ -42,6 +42,7 @@ const FiscalHub = lazy(() => import("@/modules/superadmin/pages/FiscalHub"));
 const FiscalCashBookPanel = lazy(() => import("@/modules/superadmin/pages/FiscalCashBookPanel"));
 const FiscalAdjustmentsPanel = lazy(() => import("@/modules/superadmin/pages/FiscalAdjustmentsPanel"));
 const RoutingAlertsCronHealth = lazy(() => import("@/modules/superadmin/pages/RoutingAlertsCronHealth"));
+const MembersAuditTab = lazy(() => import("@/modules/admin-cms/components/MembersAuditTab"));
 
 const SyncSection = () => (
   <div className="space-y-4">
@@ -140,6 +141,7 @@ const SuperadminDashboard = () => {
                 {/* POR TIENDA (siempre /t/:slug/...) */}
                 <Route path="t/:slug" element={<RequireActiveTenant><TenantHealth /></RequireActiveTenant>} />
                 <Route path="t/:slug/modulos" element={<RequireActiveTenant><ModulesTab /></RequireActiveTenant>} />
+                <Route path="t/:slug/usuarios" element={<RequireActiveTenant><MembersAuditTab /></RequireActiveTenant>} />
                 <Route path="t/:slug/fiscal" element={<RequireActiveTenant><FiscalHub /></RequireActiveTenant>} />
                 <Route path="t/:slug/fiscal/config" element={<RequireActiveTenant><FiscalSettingsTab /></RequireActiveTenant>} />
                 <Route path="t/:slug/datos" element={<RequireActiveTenant><TenantDataIsland /></RequireActiveTenant>} />

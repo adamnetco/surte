@@ -6451,6 +6451,7 @@ export type Database = {
           status: string
           subtotal: number
           total: number
+          tracking_token: string
           updated_at: string
           user_id: string | null
           whatsapp_ref: string | null
@@ -6482,6 +6483,7 @@ export type Database = {
           status?: string
           subtotal?: number
           total: number
+          tracking_token?: string
           updated_at?: string
           user_id?: string | null
           whatsapp_ref?: string | null
@@ -6513,6 +6515,7 @@ export type Database = {
           status?: string
           subtotal?: number
           total?: number
+          tracking_token?: string
           updated_at?: string
           user_id?: string | null
           whatsapp_ref?: string | null

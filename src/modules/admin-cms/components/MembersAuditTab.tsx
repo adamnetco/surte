@@ -12,28 +12,18 @@
  */
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
-import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { ShieldAlert, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import MemberLocationsPopover from "./MemberLocationsPopover";
 import ResetPasswordButton from "./ResetPasswordButton";
 import SetPasswordButton from "./SetPasswordButton";
 import CreateMemberDialog from "./CreateMemberDialog";
+import MemberAccessActions from "./MemberAccessActions";
+import { listTenantMembers, type OrgRole } from "../services/tenantAccess";
 
 
-
-const roleBadge: Record<string, { label: string; cls: string; Icon: typeof Shield }> = {
-  owner:   { label: "Owner (Dueño)", cls: "bg-primary/15 text-primary",            Icon: Crown },
-  admin:   { label: "Admin",          cls: "bg-accent/15 text-accent",              Icon: ShieldCheck },
-  manager: { label: "Manager",        cls: "bg-secondary/30 text-secondary-foreground", Icon: Shield },
-  cashier: { label: "Cajero",         cls: "bg-muted text-foreground",              Icon: User },
-  waiter:  { label: "Mesero",         cls: "bg-muted text-foreground",              Icon: User },
-  kitchen: { label: "Cocina",         cls: "bg-muted text-foreground",              Icon: User },
-  agent:   { label: "Agente",         cls: "bg-muted text-foreground",              Icon: User },
-  member:  { label: "Miembro",        cls: "bg-muted/60 text-muted-foreground",     Icon: User },
-};
 
 export default function MembersAuditTab() {
   const { currentOrg } = useOrganization();
@@ -44,23 +34,8 @@ export default function MembersAuditTab() {
     queryKey: ["members-audit", currentOrg?.id],
     enabled: !!currentOrg?.id && canSee,
     queryFn: async () => {
-      const { data: members, error } = await supabase
-        .from("organization_members")
-        .select("id, user_id, role, is_active, created_at, location_ids")
-        .eq("organization_id", currentOrg!.id)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-
-      // Best-effort profile lookup (puede fallar por RLS para algunos roles)
-      const userIds = (members ?? []).map((m: any) => m.user_id);
-      let profilesById: Record<string, any> = {};
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles").select("user_id, full_name, business_name")
-          .in("user_id", userIds);
-        for (const p of profiles ?? []) profilesById[(p as any).user_id] = p;
-      }
-      return (members ?? []).map((m: any) => ({ ...m, profile: profilesById[m.user_id] ?? null }));
+      const result = await listTenantMembers(currentOrg.id);
+      return result.members;
     },
   });
 
@@ -120,7 +95,7 @@ export default function MembersAuditTab() {
     <div className="space-y-4">
       <header className="flex items-baseline justify-between">
         <div>
-          <h2 className="text-lg font-heading font-bold">Auditoría de miembros</h2>
+          <h2 className="text-lg font-heading font-bold">Usuarios POS</h2>
           <p className="text-[11px] text-muted-foreground">
             Tenant: <strong>{currentOrg.name}</strong> · {active.length} activos · {owners.length} owner(s)
           </p>
@@ -179,9 +154,9 @@ export default function MembersAuditTab() {
 
       {/* Tabla */}
       <div className="rounded-lg border border-border overflow-hidden">
-        <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-muted text-[10px] uppercase font-semibold text-muted-foreground">
+        <div className="hidden md:grid grid-cols-12 gap-2 px-3 py-2 bg-muted text-[10px] uppercase font-semibold text-muted-foreground">
           <div className="col-span-3">Usuario</div>
-          <div className="col-span-2">Rol</div>
+          <div className="col-span-2">Rol y acceso</div>
           <div className="col-span-3">Sucursales</div>
           <div className="col-span-1">Activo</div>
           <div className="col-span-1">Alta</div>
@@ -190,21 +165,18 @@ export default function MembersAuditTab() {
         {members.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No hay miembros registrados.</p>
         ) : members.map((m: any) => {
-          const meta = roleBadge[m.role] ?? roleBadge.member;
-          const Icon = meta.Icon;
           const effectiveLocs = locOverrides[m.id] ?? m.location_ids ?? [];
           return (
-            <div key={m.id} className="grid grid-cols-12 gap-2 px-3 py-2.5 border-t border-border text-sm items-center">
-              <div className="col-span-3 min-w-0">
+             <article key={m.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-2 p-4 md:px-3 md:py-2.5 border-t border-border text-sm items-center">
+               <div className="md:col-span-3 min-w-0">
                 <p className="font-medium truncate">{m.profile?.full_name || m.profile?.business_name || "—"}</p>
-                <p className="text-[10px] text-muted-foreground truncate font-mono">{m.user_id}</p>
+                 <p className="text-[11px] text-muted-foreground truncate">{m.email || m.user_id}</p>
               </div>
-              <div className="col-span-2">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium ${meta.cls}`}>
-                  <Icon size={11} /> {meta.label}
-                </span>
+               <div className="md:col-span-2">
+                 <MemberAccessActions organizationId={currentOrg.id} userId={m.user_id} role={m.role as OrgRole} active={m.is_active} canAssignOwner={currentRole === "superadmin"} onChanged={() => void refetch()} />
               </div>
-              <div className="col-span-3">
+               <div className="md:col-span-3">
+                 <span className="md:hidden text-[10px] uppercase text-muted-foreground">Sucursales</span>
                 <MemberLocationsPopover
                   memberId={m.id}
                   role={m.role}
@@ -213,15 +185,15 @@ export default function MembersAuditTab() {
                   onChange={(next) => setLocOverrides((prev) => ({ ...prev, [m.id]: next }))}
                 />
               </div>
-              <div className="col-span-1">
+               <div className="md:col-span-1">
                 {m.is_active
                   ? <span className="text-[11px] text-success font-medium">Activo</span>
                   : <span className="text-[11px] text-muted-foreground">Inactivo</span>}
               </div>
-              <div className="col-span-1 text-[11px] text-muted-foreground">
+               <div className="md:col-span-1 text-[11px] text-muted-foreground">
                 {m.created_at ? new Date(m.created_at).toLocaleDateString("es-CO") : "—"}
               </div>
-              <div className="col-span-2 flex justify-end gap-1.5 flex-wrap">
+               <div className="md:col-span-2 flex md:justify-end gap-1.5 flex-wrap border-t md:border-0 border-border pt-3 md:pt-0">
                 <SetPasswordButton
                   organizationId={currentOrg.id}
                   targetUserId={m.user_id}
@@ -234,8 +206,8 @@ export default function MembersAuditTab() {
                   memberLabel={m.profile?.full_name || m.profile?.business_name || m.user_id}
                   disabled={!canManageCredentials || !m.is_active}
                 />
-              </div>
-            </div>
+               </div>
+             </article>
           );
         })}
       </div>

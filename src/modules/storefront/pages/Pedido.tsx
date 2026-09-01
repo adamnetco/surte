@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import TopBar from "@/modules/storefront/components/TopBar";
@@ -62,6 +62,8 @@ const PedidoSkeleton = () => (
 
 const Pedido = () => {
   const { orderNumber } = useParams();
+  const [searchParams] = useSearchParams();
+  const trackingToken = searchParams.get("token") ?? "";
   const navigate = useNavigate();
   const { data: settings } = useAppSettings();
   const [isRetrying, setIsRetrying] = useState(false);
@@ -69,16 +71,14 @@ const Pedido = () => {
   const [visibleCount, setVisibleCount] = useState(TIMELINE_PAGE);
 
   const { data: order, isLoading, refetch } = useQuery({
-    queryKey: ["public-order", orderNumber],
+    queryKey: ["public-order", orderNumber, trackingToken],
     queryFn: async () => {
       const num = parseInt(orderNumber || "0");
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*, order_items(*)")
-        .eq("order_number", num)
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke("order-tracking", {
+        body: { order_number: num, tracking_token: trackingToken },
+      });
       if (error) throw error;
-      return data;
+      return (data as any)?.order ?? null;
     },
     enabled: !!orderNumber,
     retry: false,
@@ -90,17 +90,14 @@ const Pedido = () => {
     isError: waError,
     refetch: refetchEvents,
   } = useQuery({
-    queryKey: ["wa-events", order?.id],
+    queryKey: ["wa-events", order?.id, trackingToken],
     queryFn: async () => {
       if (!order?.id) return [];
-      const { data, error } = await (supabase as any)
-        .from("whatsapp_message_events")
-        .select("id, order_id, whatsapp_ref, status, error, created_at, payload")
-        .eq("order_id", order.id)
-        .order("created_at", { ascending: true })
-        .limit(500);
+      const { data, error } = await supabase.functions.invoke("order-tracking", {
+        body: { order_number: Number(orderNumber), tracking_token: trackingToken },
+      });
       if (error) throw error;
-      return (data ?? []) as WaEvent[];
+      return (((data as any)?.events ?? []) as WaEvent[]);
     },
     enabled: !!order?.id,
     retry: 1,

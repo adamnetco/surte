@@ -38,7 +38,9 @@ const ERRORS: Record<string, string> = {
   set_password_failed: "No se pudo actualizar la contraseña.",
   membership_failed: "No se pudo asociar el usuario a la tienda.",
   cannot_deactivate_self: "No puedes desactivar tu propia cuenta.",
+  role_change_failed: "No se pudo cambiar el rol.",
   unknown_action: "Acción no soportada.",
+  list_failed: "No se pudieron cargar los usuarios de la tienda.",
 };
 
 async function call<T>(payload: Record<string, unknown>): Promise<T> {
@@ -79,6 +81,21 @@ export function createTenantMember(input: CreateMemberInput) {
   });
 }
 
+export type TenantMember = {
+  id: string;
+  user_id: string;
+  email: string | null;
+  role: OrgRole;
+  is_active: boolean;
+  created_at: string;
+  location_ids: string[] | null;
+  profile: { full_name?: string | null; business_name?: string | null } | null;
+};
+
+export function listTenantMembers(organizationId: string) {
+  return call<{ members: TenantMember[] }>({ action: "list_members", organization_id: organizationId });
+}
+
 export function setTenantMemberPassword(input: {
   organizationId: string;
   targetUserId: string;
@@ -97,6 +114,23 @@ export function deactivateTenantMember(input: { organizationId: string; targetUs
     action: "deactivate",
     organization_id: input.organizationId,
     target_user_id: input.targetUserId,
+  });
+}
+
+export function reactivateTenantMember(input: { organizationId: string; targetUserId: string }) {
+  return call<Record<string, never>>({
+    action: "reactivate",
+    organization_id: input.organizationId,
+    target_user_id: input.targetUserId,
+  });
+}
+
+export function changeTenantMemberRole(input: { organizationId: string; targetUserId: string; role: OrgRole }) {
+  return call<{ role: OrgRole }>({
+    action: "change_role",
+    organization_id: input.organizationId,
+    target_user_id: input.targetUserId,
+    role: input.role,
   });
 }
 

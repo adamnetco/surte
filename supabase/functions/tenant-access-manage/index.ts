@@ -7,7 +7,8 @@
 // Acciones:
 //   create_member  -> crea (o reutiliza) la cuenta auth y la asocia a la org
 //   set_password   -> define una contraseña explícita para un miembro
-//   deactivate     -> desactiva la membresía (no borra la cuenta auth)
+//   change_role    -> cambia el rol dentro de la organización
+//   deactivate/reactivate -> suspende o restaura la membresía
 //
 // Autorización: superadmin global, u owner/admin activo de la organización.
 // El owner sólo puede ser modificado por el propio owner o por un superadmin.
@@ -152,6 +153,22 @@ Deno.serve(async (req) => {
   const canTouchOwner = isSuperadmin || callerOrgRole === "owner";
 
   try {
+    // ------------------------------------------------------------------ list
+    if (action === "list_members") {
+      const { data: memberships, error: listErr } = await admin.from("organization_members")
+        .select("id,user_id,role,is_active,created_at,location_ids")
+        .eq("organization_id", organizationId).order("created_at");
+      if (listErr) return json({ error: listErr.message, code: "list_failed" }, 502);
+      const members = await Promise.all((memberships ?? []).map(async (membership) => {
+        const [{ data: authData }, { data: profile }] = await Promise.all([
+          admin.auth.admin.getUserById(membership.user_id),
+          admin.from("profiles").select("full_name,business_name").eq("user_id", membership.user_id).maybeSingle(),
+        ]);
+        return { ...membership, email: authData.user?.email ?? null, profile: profile ?? null };
+      }));
+      return json({ ok: true, members });
+    }
+
     // ---------------------------------------------------------------- create
     if (action === "create_member") {
       const email = String(body.email ?? "").trim().toLowerCase();
@@ -213,9 +230,9 @@ Deno.serve(async (req) => {
       );
       if (memErr) return json({ error: memErr.message, code: "membership_failed" }, 502);
 
-      await admin
-        .from("user_roles")
-        .upsert({ user_id: userId, role: GLOBAL_ROLE_BY_ORG_ROLE[role] }, { onConflict: "user_id,role" });
+      // El rol global es una compatibilidad interna y nunca se acepta desde el cliente.
+      await admin.from("user_roles").delete().eq("user_id", userId).neq("role", "superadmin");
+      await admin.from("user_roles").upsert({ user_id: userId, role: GLOBAL_ROLE_BY_ORG_ROLE[role] }, { onConflict: "user_id,role" });
 
       if (fullName) {
         await admin
@@ -281,11 +298,33 @@ Deno.serve(async (req) => {
       return json({ ok: true, email, masked_email: email ? maskEmail(email) : null });
     }
 
-    // -------------------------------------------------------------- deactivate
-    if (action === "deactivate") {
+    // ------------------------------------------------------------ change_role
+    if (action === "change_role") {
+      const targetUserId = String(body.target_user_id ?? "").trim();
+      const role = String(body.role ?? "") as OrgRole;
+      if (!targetUserId) return json({ error: "target_user_id_required" }, 400);
+      if (!ORG_ROLES.includes(role)) return json({ error: "invalid_role" }, 400);
+      const { data: targetMem } = await admin.from("organization_members")
+        .select("id, role").eq("organization_id", organizationId).eq("user_id", targetUserId).maybeSingle();
+      if (!targetMem) return json({ error: "target_not_in_org" }, 403);
+      if ((targetMem.role === "owner" || role === "owner") && !canTouchOwner) return json({ error: "forbidden_owner_target" }, 403);
+      const { data: targetIsMaster } = await admin.rpc("is_master_superadmin", { _user_id: targetUserId });
+      if (targetIsMaster) return json({ error: "forbidden" }, 403);
+      const { error: roleErr } = await admin.from("organization_members").update({ role }).eq("id", targetMem.id);
+      if (roleErr) return json({ error: roleErr.message, code: "role_change_failed" }, 502);
+      await admin.from("user_roles").delete().eq("user_id", targetUserId).neq("role", "superadmin");
+      await admin.from("user_roles").upsert({ user_id: targetUserId, role: GLOBAL_ROLE_BY_ORG_ROLE[role] }, { onConflict: "user_id,role" });
+      await audit(admin, organizationId, caller.id, caller.email ?? null, "tenant_member_role_changed", {
+        target_user_id: targetUserId, previous_role: targetMem.role, role, by_superadmin: isSuperadmin,
+      });
+      return json({ ok: true, role });
+    }
+
+    // ------------------------------------------------ deactivate / reactivate
+    if (action === "deactivate" || action === "reactivate") {
       const targetUserId = String(body.target_user_id ?? "").trim();
       if (!targetUserId) return json({ error: "target_user_id_required" }, 400);
-      if (targetUserId === caller.id) return json({ error: "cannot_deactivate_self" }, 400);
+      if (action === "deactivate" && targetUserId === caller.id) return json({ error: "cannot_deactivate_self" }, 400);
 
       const { data: targetMem } = await admin
         .from("organization_members")
@@ -298,11 +337,11 @@ Deno.serve(async (req) => {
 
       const { error: upErr } = await admin
         .from("organization_members")
-        .update({ is_active: false })
+        .update({ is_active: action === "reactivate" })
         .eq("id", targetMem.id);
       if (upErr) return json({ error: upErr.message, code: "deactivate_failed" }, 502);
 
-      await audit(admin, organizationId, caller.id, caller.email ?? null, "tenant_member_deactivated", {
+      await audit(admin, organizationId, caller.id, caller.email ?? null, action === "reactivate" ? "tenant_member_reactivated" : "tenant_member_deactivated", {
         target_user_id: targetUserId,
         role: targetMem.role,
         by_superadmin: isSuperadmin,

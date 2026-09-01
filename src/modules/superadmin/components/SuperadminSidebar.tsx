@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
 
   BarChart3, Building2, RefreshCw, Database, Package,
-  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu, AlertOctagon, Mail, Gift, Smile,
+  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu, AlertOctagon, Mail, Gift, Smile, Users,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -35,6 +35,7 @@ const GLOBAL_ITEMS = [
 
 const TENANT_ITEMS = [
   { sub: "", label: "Salud del tenant", icon: HeartPulse, desc: "Estado y completitud" },
+  { sub: "usuarios", label: "Usuarios POS", icon: Users, desc: "Cuentas, roles y contraseñas" },
   { sub: "modulos", label: "Módulos", icon: ToggleRight, desc: "Habilitar capacidades" },
   { sub: "fiscal", label: "Fiscal (DIAN)", icon: Receipt, desc: "Resolución e impuestos" },
   { sub: "datos", label: "Datos (isla)", icon: Database, desc: "Export/import aislado" },
