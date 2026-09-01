@@ -72,6 +72,7 @@ const TenantAwareLogin = lazy(() => import("./modules/auth/components/TenantAwar
 const AdminDashboard = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.AdminDashboardPage })));
 const Diario = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.DiarioPage })));
 const CajaAdmin = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.CajaAdminPage })));
+const ImpresorasAdmin = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.ImpresorasAdminPage })));
 const Reportes = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.ReportesPage })));
 const Innapsis = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisPage })));
 const InnapsisDetail = lazy(() => import("./modules/admin-cms").then((m) => ({ default: m.InnapsisDetailPage })));
@@ -339,6 +340,7 @@ const App = () => (
                     <Route path="/admin" element={<RoleGuard section="admin"><SubscriptionGate><AdminDashboard /></SubscriptionGate></RoleGuard>} />
                     <Route path="/admin/diario" element={<RoleGuard section="admin"><SubscriptionGate><Diario /></SubscriptionGate></RoleGuard>} />
                     <Route path="/admin/caja" element={<RoleGuard section="admin"><SubscriptionGate><CajaAdmin /></SubscriptionGate></RoleGuard>} />
+                    <Route path="/admin/impresoras" element={<RoleGuard section="admin"><SubscriptionGate><ImpresorasAdmin /></SubscriptionGate></RoleGuard>} />
 
                     <Route path="/admin/reportes" element={<RoleGuard section="admin"><SubscriptionGate><Reportes /></SubscriptionGate></RoleGuard>} />
                     <Route path="/admin/innapsis" element={<RoleGuard section="admin"><SubscriptionGate><Innapsis /></SubscriptionGate></RoleGuard>} />
