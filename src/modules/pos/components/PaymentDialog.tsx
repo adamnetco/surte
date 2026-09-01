@@ -72,6 +72,22 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
   const [submitting, setSubmitting] = useState(false);
   const [tipPct, setTipPct] = useState<number>(0);
   const [tipCustom, setTipCustom] = useState<string>("");
+  // Numpad en pantalla: oculto por defecto para reducir altura y permitir teclado
+  // físico. Se pre-activa en dispositivos táctiles y se persiste la preferencia.
+  const [numpadVisible, setNumpadVisible] = useState<boolean>(() => {
+    try {
+      const saved = window.localStorage.getItem(NUMPAD_PREF_KEY);
+      if (saved !== null) return saved === "1";
+    } catch { /* noop */ }
+    return detectTouchPrimary();
+  });
+  const toggleNumpad = () => {
+    setNumpadVisible((v) => {
+      const next = !v;
+      try { window.localStorage.setItem(NUMPAD_PREF_KEY, next ? "1" : "0"); } catch { /* noop */ }
+      return next;
+    });
+  };
   const firstAmountRef = useRef<HTMLInputElement>(null);
   const { role } = useAuth();
   const gate = usePosCobroGate(organizationId, docType);
