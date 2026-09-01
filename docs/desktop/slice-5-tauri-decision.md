@@ -74,4 +74,3 @@ para poder afirmar con datos que los disparadores del §4 no se cumplen.
 
 Ver [`docs/desktop/run-local-desktop.md`](./run-local-desktop.md) (web + escritorio,
 paso a paso) y [`docs/local-dev.md`](../local-dev.md) (entorno y variables).
-paso a paso) y [`docs/local-dev.md`](../local-dev.md) (entorno y variables).
