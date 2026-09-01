@@ -1598,13 +1598,19 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
               </div>
 
             ) : catalogDensity === "list" ? (
-              <ul role="list" className="divide-y rounded-md border bg-card overflow-hidden">
+              <ul
+                role="list"
+                ref={catalogNav.containerRef as React.RefObject<HTMLUListElement>}
+                onKeyDown={catalogNav.onKeyDown}
+                className="divide-y rounded-md border bg-card overflow-hidden"
+              >
                 {filtered.map((p, idx) => {
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                     <li key={p.id}>
                       <button
                         type="button"
+                        data-kbd-item
                         onClick={() => addProduct(p)}
                         className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-primary/5 focus:bg-primary/10 focus:outline-none transition"
                       >
