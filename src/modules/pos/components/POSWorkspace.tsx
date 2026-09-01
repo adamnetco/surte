@@ -1607,7 +1607,8 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
                 onKeyDown={catalogNav.onKeyDown}
                 className="divide-y rounded-md border bg-card overflow-hidden"
               >
-                {filtered.map((p, idx) => {
+                {catalogPage.visible.map((p, idx) => {
+
                   const cat = p.category_id ? categoryNameById[p.category_id] : null;
                   return (
                     <li key={p.id}>
