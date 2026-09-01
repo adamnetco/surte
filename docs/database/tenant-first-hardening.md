@@ -73,6 +73,7 @@ Detalle en [`docs/desktop/multitenant-runtime.md`](../desktop/multitenant-runtim
 
 ```bash
 # Auditoría de scoping y select("*") en el código
+# baseline actual: 161 select("*") y 40 queries tenant sin filtro explícito
 node scripts/audit-tenant-scope.mjs
 
 # Presupuesto de bundle / rendimiento

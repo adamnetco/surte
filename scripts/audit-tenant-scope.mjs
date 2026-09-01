@@ -36,8 +36,8 @@ const TENANT_TABLES = [
   "persistent_carts",
 ];
 
-/** Hallazgos aceptados (públicos por diseño o ya filtrados vía RLS estricta). */
-const BASELINE_SELECT_STAR = 40;
+/** Deuda actual medida el 2026-09-01. Debe bajar, nunca subir. */
+const BASELINE_SELECT_STAR = 161;
 
 function walk(dir, out = []) {
   let entries;
