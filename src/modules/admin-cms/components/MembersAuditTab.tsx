@@ -14,7 +14,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
 import { useAuth } from "@/modules/auth/context/AuthContext";
-import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck, User, Crown, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import MemberLocationsPopover from "./MemberLocationsPopover";
 import ResetPasswordButton from "./ResetPasswordButton";
@@ -165,7 +165,7 @@ export default function MembersAuditTab() {
 
       {/* Tabla */}
       <div className="rounded-lg border border-border overflow-hidden">
-        <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-muted text-[10px] uppercase font-semibold text-muted-foreground">
+        <div className="hidden md:grid grid-cols-12 gap-2 px-3 py-2 bg-muted text-[10px] uppercase font-semibold text-muted-foreground">
           <div className="col-span-3">Usuario</div>
           <div className="col-span-2">Rol y acceso</div>
           <div className="col-span-3">Sucursales</div>
@@ -180,15 +180,16 @@ export default function MembersAuditTab() {
           const Icon = meta.Icon;
           const effectiveLocs = locOverrides[m.id] ?? m.location_ids ?? [];
           return (
-            <div key={m.id} className="grid grid-cols-12 gap-2 px-3 py-2.5 border-t border-border text-sm items-center">
-              <div className="col-span-3 min-w-0">
+             <article key={m.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-2 p-4 md:px-3 md:py-2.5 border-t border-border text-sm items-center">
+               <div className="md:col-span-3 min-w-0">
                 <p className="font-medium truncate">{m.profile?.full_name || m.profile?.business_name || "—"}</p>
                  <p className="text-[11px] text-muted-foreground truncate">{m.email || m.user_id}</p>
               </div>
-              <div className="col-span-2">
+               <div className="md:col-span-2">
                  <MemberAccessActions organizationId={currentOrg.id} userId={m.user_id} role={m.role as OrgRole} active={m.is_active} canAssignOwner={currentRole === "superadmin"} onChanged={() => void refetch()} />
               </div>
-              <div className="col-span-3">
+               <div className="md:col-span-3">
+                 <span className="md:hidden text-[10px] uppercase text-muted-foreground">Sucursales</span>
                 <MemberLocationsPopover
                   memberId={m.id}
                   role={m.role}
@@ -197,15 +198,15 @@ export default function MembersAuditTab() {
                   onChange={(next) => setLocOverrides((prev) => ({ ...prev, [m.id]: next }))}
                 />
               </div>
-              <div className="col-span-1">
+               <div className="md:col-span-1">
                 {m.is_active
                   ? <span className="text-[11px] text-success font-medium">Activo</span>
                   : <span className="text-[11px] text-muted-foreground">Inactivo</span>}
               </div>
-              <div className="col-span-1 text-[11px] text-muted-foreground">
+               <div className="md:col-span-1 text-[11px] text-muted-foreground">
                 {m.created_at ? new Date(m.created_at).toLocaleDateString("es-CO") : "—"}
               </div>
-              <div className="col-span-2 flex justify-end gap-1.5 flex-wrap">
+               <div className="md:col-span-2 flex md:justify-end gap-1.5 flex-wrap border-t md:border-0 border-border pt-3 md:pt-0">
                 <SetPasswordButton
                   organizationId={currentOrg.id}
                   targetUserId={m.user_id}
@@ -218,7 +219,7 @@ export default function MembersAuditTab() {
                   memberLabel={m.profile?.full_name || m.profile?.business_name || m.user_id}
                   disabled={!canManageCredentials || !m.is_active}
                 />
-              </div>
+             </article>
             </div>
           );
         })}

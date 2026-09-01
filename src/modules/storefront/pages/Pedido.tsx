@@ -80,7 +80,7 @@ const Pedido = () => {
       if (error) throw error;
       return (data as any)?.order ?? null;
     },
-    enabled: !!orderNumber && !!trackingToken,
+    enabled: !!orderNumber,
     retry: false,
   });
 
