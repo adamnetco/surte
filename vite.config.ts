@@ -24,6 +24,9 @@ const sitemapPlugin = () => ({
 });
 
 export default defineConfig(({ mode }) => ({
+  // Rutas relativas: obligatorio para que dist/ funcione bajo file:// (Electron).
+  // Con base "/" el index.html pide /assets/... y el cliente de escritorio queda en negro.
+  base: "./",
   server: { host: "::", port: 8080, hmr: { overlay: false } },
   plugins: [
     react(),
