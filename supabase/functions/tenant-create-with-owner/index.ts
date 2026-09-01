@@ -88,7 +88,8 @@ Deno.serve(async (req) => {
     }
 
     // Create or reuse owner user
-    const generated_password = randomPassword(10);
+    const explicit_password = owner_password_raw || null;
+    const effective_password = explicit_password ?? randomPassword(10);
     let owner_user_id: string | null = null;
     let password_returned: string | null = null;
     let owner_newly_created = false;
@@ -98,10 +99,18 @@ Deno.serve(async (req) => {
     const existing = listed?.users?.find((u) => (u.email ?? "").toLowerCase() === owner_email);
     if (existing) {
       owner_user_id = existing.id;
+      // Si el superadmin definió una contraseña explícita, la aplicamos también
+      // sobre la cuenta existente para que el acceso quede garantizado.
+      if (explicit_password) {
+        const { error: pwErr } = await admin.auth.admin.updateUserById(existing.id, { password: explicit_password });
+        if (pwErr) {
+          return new Response(JSON.stringify({ error: "set_password_failed", detail: pwErr.message }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
     } else {
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email: owner_email,
-        password: generated_password,
+        password: effective_password,
         email_confirm: true,
         user_metadata: { full_name: owner_full_name, phone: owner_phone, business_type: "casa" },
       });
@@ -109,9 +118,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: "create_user_failed", detail: createErr?.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       owner_user_id = created.user.id;
-      password_returned = generated_password;
+      // Sólo devolvemos la contraseña cuando la generamos nosotros.
+      password_returned = explicit_password ? null : effective_password;
       owner_newly_created = true;
     }
+
 
     // Create organization
     const { data: org, error: orgErr } = await admin
