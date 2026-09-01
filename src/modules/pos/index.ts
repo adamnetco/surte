@@ -12,6 +12,7 @@
 // Páginas montadas en el router
 export { default as POSPage } from "./pages/POS";
 export { default as PosHubPage } from "./pages/PosHub";
+export { default as OpenTicketsPage } from "./pages/OpenTickets";
 export { default as KDSPage } from "./pages/KDS";
 export { default as MenuPage } from "./pages/MenuPage";
 export { default as MesasPage } from "./pages/Mesas";

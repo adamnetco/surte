@@ -87,6 +87,7 @@ const TratamientoDatos = lazy(() => import("./pages/TratamientoDatos"));
 const ResetPassword = lazy(() => import("./modules/auth/pages/ResetPassword"));
 const POS = lazy(() => import("./modules/pos").then((m) => ({ default: m.POSPage })));
 const PosHub = lazy(() => import("./modules/pos").then((m) => ({ default: m.PosHubPage })));
+const PosOpenTickets = lazy(() => import("./modules/pos").then((m) => ({ default: m.OpenTicketsPage })));
 const Mesas = lazy(() => import("./modules/pos").then((m) => ({ default: m.MesasPage })));
 const Reservas = lazy(() => import("./modules/pos").then((m) => ({ default: m.ReservasPage })));
 const KDS = lazy(() => import("./modules/pos").then((m) => ({ default: m.KDSPage })));
@@ -336,6 +337,7 @@ const App = () => (
 
                     <Route path="/pos" element={<PosHub />} />
                     <Route path="/pos/vender" element={<POS />} />
+                    <Route path="/pos/tickets-abiertos" element={<PosOpenTickets />} />
                     <Route path="/pos/fx" element={<PosFx />} />
                     <Route path="/mesas" element={<Mesas />} />
                     <Route path="/reservas" element={<Reservas />} />
