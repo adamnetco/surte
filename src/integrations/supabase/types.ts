@@ -13452,6 +13452,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      pos_sale_commit: {
+        Args: {
+          _client_uuid: string
+          _header: Json
+          _items?: Json
+          _org_id: string
+          _payments?: Json
+        }
+        Returns: string
+      }
       pos_void_table_item: {
         Args: { _item_id: string; _reason_code: string; _reason_text: string }
         Returns: Json
