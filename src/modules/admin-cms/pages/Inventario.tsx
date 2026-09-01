@@ -130,6 +130,15 @@ export default function Inventario() {
           </span>
           <span className="font-semibold">Ver →</span>
         </button>
+        <button
+          onClick={() => setExpiryOpen(true)}
+          className="mt-2 w-full flex items-center justify-between gap-2 text-xs text-foreground bg-muted hover:bg-muted/80 rounded-lg px-3 py-2 transition"
+        >
+          <span className="flex items-center gap-2">
+            <CalendarX2 size={14} /> Vencimientos de lotes (60 días)
+          </span>
+          <span className="font-semibold">Ver →</span>
+        </button>
       </div>
 
       {/* Stock list */}
