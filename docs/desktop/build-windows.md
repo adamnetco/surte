@@ -45,7 +45,7 @@ Crea `.env.local` (ver [`run-local-desktop.md`](./run-local-desktop.md#2-variabl
 ## 4. Build web + dependencias de Electron
 
 ```powershell
-npm run build          # genera dist/ (requiere base: './' en vite.config.ts)
+npm run build:desktop  # genera dist/ con rutas relativas (base './') para file://
 
 cd electron
 npm install            # instala electron + @electron/packager
@@ -69,7 +69,7 @@ Comprueba en la app: **Menú ⋮ → Estado del sistema** debe decir
 
 ```powershell
 cd ..
-npm run build
+npm run build:desktop
 cd electron
 npx @electron/packager .. "SistecPOSDesktop" `
   --platform=win32 --arch=x64 `
@@ -101,6 +101,6 @@ ruta `usb_spooler` (driver del fabricante + `printer_name`).
 | `gyp ERR! find VS` | Falta la carga "Desarrollo para el escritorio con C++" |
 | `gyp ERR! find Python` | `npm config set python <ruta python.exe>` |
 | `MSB8020 / v143 not found` | Instala el Windows SDK dentro de Build Tools |
-| Ventana en blanco | Falta `base: './'`; rehacer `npm run build` |
+| Ventana en blanco | Usaste `npm run build` en vez de `npm run build:desktop` |
 | `LIBUSB_ERROR_NOT_SUPPORTED` | Driver WinUSB no instalado (usa Zadig) |
 | BLE no aparece | Requiere Windows 10 1709+ y Bluetooth activado |

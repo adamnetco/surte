@@ -24,6 +24,10 @@ const sitemapPlugin = () => ({
 });
 
 export default defineConfig(({ mode }) => ({
+  // Escritorio (Electron carga dist/ vía file://) necesita rutas relativas o la
+  // ventana queda en negro. La web debe seguir con "/" o las rutas profundas
+  // (/pos/vender) resolverían los assets contra el segmento equivocado.
+  base: mode === "desktop" ? "./" : "/",
   server: { host: "::", port: 8080, hmr: { overlay: false } },
   plugins: [
     react(),

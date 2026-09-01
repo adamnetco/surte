@@ -83,6 +83,9 @@ export const isTenant = (...t: Tenant[]) => t.includes(detectTenant());
 /** True si estamos en preview / dev (no aplican redirects entre hosts). */
 export function isPreviewHost(): boolean {
   if (typeof window === "undefined") return false;
+  // Cliente de escritorio (Electron carga dist/ vía file://): no hay hostname,
+  // por lo que los HostGuard deben comportarse como en dev y no bloquear rutas.
+  if (window.location.protocol === "file:") return true;
   const h = window.location.hostname.toLowerCase();
   return (
     h === "localhost" ||
