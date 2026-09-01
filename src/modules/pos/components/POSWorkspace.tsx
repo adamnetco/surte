@@ -884,8 +884,21 @@ export default function POSWorkspace({ session, organizationId, userId, onClosed
       setSaleMode(next);
       toast.info(`Modo: ${next}`);
     },
-    onTables: () => { if (saleMode === "mesa") setTableSheetOpen(true); },
-    onInvoice: () => { if (lastOrderId) setActionMode("emit"); },
+    // F5 — "Cambiar" (estilo eleventa): en Mesas asigna/cambia mesa; en el resto
+    // enfoca el numpad para cambiar la cantidad de la línea seleccionada.
+    onTables: () => {
+      if (saleMode === "mesa") { setTableSheetOpen(true); return; }
+      if (selectedLine) {
+        setNumpadDraft("");
+        toast.info(`Cambiar cantidad: ${selectedLine.name}`);
+      }
+    },
+    // F6 — "Pendiente" (estilo eleventa): si hay ticket lo suspende;
+    // si no hay ticket, factura el último pedido cobrado.
+    onInvoice: () => {
+      if (ticket.length > 0) { handlePark(); return; }
+      if (lastOrderId) setActionMode("emit");
+    },
     onQuote: () => { if (ticket.length > 0) setActionMode("quote"); },
     onPark: () => { if (ticket.length > 0) setActionMode("park"); },
     onClear: () => {
