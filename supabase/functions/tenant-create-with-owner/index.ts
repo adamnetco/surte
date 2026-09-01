@@ -60,8 +60,22 @@ Deno.serve(async (req) => {
     const owner_email = (body.owner_email ?? "").trim().toLowerCase();
     const owner_full_name = (body.owner_full_name ?? "").trim();
     const owner_phone = body.owner_phone ?? null;
+    // Contraseña explícita opcional: permite dejar la tienda lista para entrar
+    // (útil para el POS local, donde el correo de recuperación no siempre llega).
+    const owner_password_raw = typeof body.owner_password === "string" ? body.owner_password : "";
     const modules: string[] = Array.isArray(body.modules) ? body.modules : [];
     const domain: string | null = body.domain ? String(body.domain).trim().toLowerCase() : null;
+
+    if (owner_password_raw) {
+      if (owner_password_raw.length < 8 || owner_password_raw.length > 72 ||
+          !/[a-zA-Z]/.test(owner_password_raw) || !/[0-9]/.test(owner_password_raw)) {
+        return new Response(
+          JSON.stringify({ error: "weak_password", detail: "Mínimo 8 caracteres, con al menos una letra y un número." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
 
     if (!slug || !name || !owner_email) {
       return new Response(JSON.stringify({ error: "missing_fields", detail: "slug, name, owner_email required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
