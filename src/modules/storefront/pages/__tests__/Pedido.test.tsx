@@ -59,7 +59,9 @@ vi.mock("@/integrations/supabase/client", () => {
         return ch;
       },
       removeChannel: () => {},
-      functions: { invoke: vi.fn(async () => ({ data: { success: true }, error: null })) },
+      functions: { invoke: vi.fn(async (name: string) => name === "order-tracking"
+        ? ({ data: { order: orderRow, events: waEventsStore }, error: null })
+        : ({ data: { success: true }, error: null })) },
     },
   };
 });
