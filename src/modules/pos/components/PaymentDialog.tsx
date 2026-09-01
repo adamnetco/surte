@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight, ShieldAlert, ShieldOff, ExternalLink } from "lucide-react";
+import { Trash2, Plus, Banknote, CreditCard, Smartphone, ArrowLeftRight, ShieldAlert, ShieldOff, ExternalLink, Keyboard, KeyboardOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import DocumentTypeSelector from "./DocumentTypeSelector";
 import Numpad from "./Numpad";
@@ -41,6 +41,16 @@ interface Props {
 
 const COP = (n: number) => "$" + Math.round(n).toLocaleString("es-CO");
 const QUICK_BILLS = [2_000, 5_000, 10_000, 20_000, 50_000, 100_000];
+const NUMPAD_PREF_KEY = "pos_payment_numpad_visible";
+
+/** Detecta pantalla táctil primaria para pre-activar el numpad en pantalla. */
+function detectTouchPrimary(): boolean {
+  try {
+    return typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
+  } catch {
+    return false;
+  }
+}
 
 /** Devuelve el siguiente billete redondo igual o mayor al pendiente. */
 function suggestedQuickAmounts(pending: number): number[] {
