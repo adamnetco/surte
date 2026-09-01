@@ -333,8 +333,8 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                 </div>
 
 
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1 space-y-1">
+                <div className="flex gap-1.5 items-end">
+                  <div className="flex-1 space-y-0.5">
                     <Label htmlFor={amountId} className="text-[11px] text-muted-foreground">
                       {p.method === "efectivo" ? "Recibido" : "Monto"}
                     </Label>
@@ -342,40 +342,73 @@ export default function PaymentDialog({ open, onOpenChange, total, onConfirm, or
                       id={amountId}
                       ref={i === 0 ? firstAmountRef : undefined}
                       type="text"
-                      inputMode="none"
-                      readOnly
-                      className="h-14 text-2xl font-bold tabular-nums text-right"
-                      value={p.amount ? COP(p.amount) : "$0"}
+                      inputMode="numeric"
+                      className="h-11 text-xl font-bold tabular-nums text-right"
+                      value={p.amount ? String(p.amount) : ""}
+                      placeholder="$0"
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/[^0-9]/g, "").slice(0, 9);
+                        updatePayment(i, { amount: Number(digits) || 0 });
+                      }}
                       onFocus={(e) => e.target.select()}
                     />
                   </div>
+                  <Button
+                    size="icon"
+                    variant={numpadVisible ? "secondary" : "ghost"}
+                    onClick={toggleNumpad}
+                    aria-label={numpadVisible ? "Ocultar teclado en pantalla" : "Mostrar teclado en pantalla"}
+                    aria-pressed={numpadVisible}
+                    title={numpadVisible ? "Ocultar teclado táctil" : "Teclado táctil"}
+                    className="h-11 w-11 shrink-0"
+                  >
+                    {numpadVisible ? <KeyboardOff className="w-5 h-5" /> : <Keyboard className="w-5 h-5" />}
+                  </Button>
                   {payments.length > 1 && (
                     <Button
                       size="icon"
                       variant="ghost"
                       onClick={() => setPayments((prev) => prev.filter((_, j) => j !== i))}
                       aria-label={`Eliminar pago ${i + 1}`}
-                      className="h-14 w-14"
+                      className="h-11 w-11 shrink-0"
                     >
                       <Trash2 className="w-5 h-5" />
                     </Button>
                   )}
                 </div>
 
-                {/* Numpad táctil siempre visible (operable sin teclado físico). */}
-                <Numpad
-                  compact
-                  value={String(p.amount || "")}
-                  onChange={(next) => updatePayment(i, { amount: Number(next.replace(/[^0-9]/g, "")) || 0 })}
-                  presets={
-                    p.method === "efectivo" && quick.length > 0
-                      ? [
-                          { label: `Exacto ${COP(remaining)}`, value: remaining, highlight: true },
-                          ...quick.filter((v) => v !== remaining).map((v) => ({ label: COP(v), value: v })),
-                        ]
-                      : undefined
-                  }
-                />
+                {/* Atajos de billetes: siempre visibles (útiles con teclado físico también). */}
+                {p.method === "efectivo" && quick.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    <button
+                      type="button"
+                      onClick={() => updatePayment(i, { amount: remaining })}
+                      className="px-2.5 h-8 rounded-md border text-[11px] font-bold tabular-nums bg-primary/10 border-primary/40 text-primary touch-manipulation active:scale-95 transition"
+                    >
+                      Exacto {COP(remaining)}
+                    </button>
+                    {quick.filter((v) => v !== remaining).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => updatePayment(i, { amount: v })}
+                        className="px-2.5 h-8 rounded-md border text-[11px] font-bold tabular-nums bg-muted border-border hover:bg-accent/20 touch-manipulation active:scale-95 transition"
+                      >
+                        {COP(v)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Numpad táctil bajo demanda: oculto por defecto para reducir altura
+                    y no bloquear el tecleo físico; toggle junto al monto. */}
+                {numpadVisible && (
+                  <Numpad
+                    compact
+                    value={String(p.amount || "")}
+                    onChange={(next) => updatePayment(i, { amount: Number(next.replace(/[^0-9]/g, "")) || 0 })}
+                  />
+                )}
               </div>
             );
           })}
