@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
 
   const origin = req.headers.get("origin") ?? "";
   let host = ""; try { host = new URL(origin).hostname; } catch { /* noop */ }
-  const rpID = Deno.env.get("AUTH_WEBAUTHN_RP_ID") ?? host || "localhost";
+  const rpID = (Deno.env.get("AUTH_WEBAUTHN_RP_ID") ?? host) || "localhost";
 
   const sb = serviceClient();
   const credentialId = body.credential.id as string;

@@ -10,7 +10,7 @@ function rpFromReq(req: Request) {
   let host = "";
   try { host = new URL(origin).hostname; } catch { /* noop */ }
   return {
-    rpID: Deno.env.get("AUTH_WEBAUTHN_RP_ID") ?? host || "localhost",
+    rpID: (Deno.env.get("AUTH_WEBAUTHN_RP_ID") ?? host) || "localhost",
     rpName: "SistecPOS",
     origin,
   };
