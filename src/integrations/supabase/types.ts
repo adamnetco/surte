@@ -11998,6 +11998,164 @@ export type Database = {
           },
         ]
       }
+      tiendaplus_connections: {
+        Row: {
+          allow_owner_manage: boolean
+          api_key: string | null
+          api_key_prefix: string | null
+          base_url: string
+          catalog_cursor: string | null
+          company_name: string | null
+          created_at: string
+          currency_code: string | null
+          enabled: boolean
+          exposed: boolean
+          id: string
+          last_error: string | null
+          last_ping_at: string | null
+          last_sync_at: string | null
+          orders_cursor: string | null
+          organization_id: string
+          remote_company_id: string | null
+          scopes: string[]
+          sync_catalog: boolean
+          sync_orders: boolean
+          sync_payments: boolean
+          updated_at: string
+        }
+        Insert: {
+          allow_owner_manage?: boolean
+          api_key?: string | null
+          api_key_prefix?: string | null
+          base_url?: string
+          catalog_cursor?: string | null
+          company_name?: string | null
+          created_at?: string
+          currency_code?: string | null
+          enabled?: boolean
+          exposed?: boolean
+          id?: string
+          last_error?: string | null
+          last_ping_at?: string | null
+          last_sync_at?: string | null
+          orders_cursor?: string | null
+          organization_id: string
+          remote_company_id?: string | null
+          scopes?: string[]
+          sync_catalog?: boolean
+          sync_orders?: boolean
+          sync_payments?: boolean
+          updated_at?: string
+        }
+        Update: {
+          allow_owner_manage?: boolean
+          api_key?: string | null
+          api_key_prefix?: string | null
+          base_url?: string
+          catalog_cursor?: string | null
+          company_name?: string | null
+          created_at?: string
+          currency_code?: string | null
+          enabled?: boolean
+          exposed?: boolean
+          id?: string
+          last_error?: string | null
+          last_ping_at?: string | null
+          last_sync_at?: string | null
+          orders_cursor?: string | null
+          organization_id?: string
+          remote_company_id?: string | null
+          scopes?: string[]
+          sync_catalog?: boolean
+          sync_orders?: boolean
+          sync_payments?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiendaplus_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tiendaplus_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "tiendaplus_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
+      tiendaplus_sync_log: {
+        Row: {
+          created_at: string
+          detail: Json
+          direction: string
+          entity: string
+          failed_count: number
+          id: string
+          items: number
+          ok_count: number
+          organization_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json
+          direction?: string
+          entity: string
+          failed_count?: number
+          id?: string
+          items?: number
+          ok_count?: number
+          organization_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          detail?: Json
+          direction?: string
+          entity?: string
+          failed_count?: number
+          id?: string
+          items?: number
+          ok_count?: number
+          organization_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiendaplus_sync_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tiendaplus_sync_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "tiendaplus_sync_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       usage_events: {
         Row: {
           created_at: string
