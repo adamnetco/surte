@@ -11998,6 +11998,164 @@ export type Database = {
           },
         ]
       }
+      tiendaplus_connections: {
+        Row: {
+          allow_owner_manage: boolean
+          api_key: string | null
+          api_key_prefix: string | null
+          base_url: string
+          catalog_cursor: string | null
+          company_name: string | null
+          created_at: string
+          currency_code: string | null
+          enabled: boolean
+          exposed: boolean
+          id: string
+          last_error: string | null
+          last_ping_at: string | null
+          last_sync_at: string | null
+          orders_cursor: string | null
+          organization_id: string
+          remote_company_id: string | null
+          scopes: string[]
+          sync_catalog: boolean
+          sync_orders: boolean
+          sync_payments: boolean
+          updated_at: string
+        }
+        Insert: {
+          allow_owner_manage?: boolean
+          api_key?: string | null
+          api_key_prefix?: string | null
+          base_url?: string
+          catalog_cursor?: string | null
+          company_name?: string | null
+          created_at?: string
+          currency_code?: string | null
+          enabled?: boolean
+          exposed?: boolean
+          id?: string
+          last_error?: string | null
+          last_ping_at?: string | null
+          last_sync_at?: string | null
+          orders_cursor?: string | null
+          organization_id: string
+          remote_company_id?: string | null
+          scopes?: string[]
+          sync_catalog?: boolean
+          sync_orders?: boolean
+          sync_payments?: boolean
+          updated_at?: string
+        }
+        Update: {
+          allow_owner_manage?: boolean
+          api_key?: string | null
+          api_key_prefix?: string | null
+          base_url?: string
+          catalog_cursor?: string | null
+          company_name?: string | null
+          created_at?: string
+          currency_code?: string | null
+          enabled?: boolean
+          exposed?: boolean
+          id?: string
+          last_error?: string | null
+          last_ping_at?: string | null
+          last_sync_at?: string | null
+          orders_cursor?: string | null
+          organization_id?: string
+          remote_company_id?: string | null
+          scopes?: string[]
+          sync_catalog?: boolean
+          sync_orders?: boolean
+          sync_payments?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiendaplus_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tiendaplus_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "tiendaplus_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
+      tiendaplus_sync_log: {
+        Row: {
+          created_at: string
+          detail: Json
+          direction: string
+          entity: string
+          failed_count: number
+          id: string
+          items: number
+          ok_count: number
+          organization_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json
+          direction?: string
+          entity: string
+          failed_count?: number
+          id?: string
+          items?: number
+          ok_count?: number
+          organization_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          detail?: Json
+          direction?: string
+          entity?: string
+          failed_count?: number
+          id?: string
+          items?: number
+          ok_count?: number
+          organization_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiendaplus_sync_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tiendaplus_sync_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_limits"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "tiendaplus_sync_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_entitlements_modules"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       usage_events: {
         Row: {
           created_at: string
@@ -14243,12 +14401,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -14272,11 +14430,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -14297,11 +14455,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -14322,11 +14480,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -14339,11 +14497,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

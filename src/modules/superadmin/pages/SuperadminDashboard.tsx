@@ -29,6 +29,7 @@ const SoporteConfig = lazy(() => import("@/modules/superadmin/pages/SoporteConfi
 const CriticalActionsQueue = lazy(() => import("@/modules/superadmin/pages/CriticalActionsQueue"));
 const AuditLogViewer = lazy(() => import("@/modules/superadmin/pages/AuditLogViewer"));
 const SitiosTenantRoute = lazy(() => import("@/modules/superadmin/pages/SitiosTenantRoute"));
+const TenantIntegrationsPanel = lazy(() => import("@/modules/superadmin/components/TenantIntegrationsPanel"));
 const EinvoiceBulkRetry = lazy(() => import("@/modules/superadmin/pages/EinvoiceBulkRetry"));
 const EinvoiceBulkRetryAudit = lazy(() => import("@/modules/superadmin/pages/EinvoiceBulkRetryAudit"));
 const DiagnosticoRLS = lazy(() => import("@/modules/superadmin/pages/DiagnosticoRLS"));
@@ -153,6 +154,7 @@ const SuperadminDashboard = () => {
                 <Route path="t/:slug/licencia" element={<RequireActiveTenant><TenantLicenseSection /></RequireActiveTenant>} />
                 <Route path="t/:slug/entitlements" element={<RequireActiveTenant><TenantEntitlements /></RequireActiveTenant>} />
                 <Route path="t/:slug/sitios" element={<RequireActiveTenant><SitiosTenantRoute /></RequireActiveTenant>} />
+                <Route path="t/:slug/integraciones" element={<RequireActiveTenant><TenantIntegrationsPanel /></RequireActiveTenant>} />
                 <Route path="t/:slug/admin" element={<RequireActiveTenant><AdminRedirect /></RequireActiveTenant>} />
 
                 <Route path="*" element={<Navigate to="/superadmin" replace />} />

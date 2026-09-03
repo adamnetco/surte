@@ -24,7 +24,7 @@ import {
   ChevronRight,
   ChevronDown,
   LogOut,
-  ArrowRightLeft, Printer,
+  ArrowRightLeft, Printer, Plug,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/modules/auth/context/AuthContext";
@@ -49,6 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
       { path: "/pos", label: "POS", icon: Monitor },
       { path: "/admin/caja", label: "Caja", icon: Wallet },
       { path: "/admin/impresoras", label: "Impresoras", icon: Printer },
+      { path: "/admin/tienda-plus", label: "Tienda Plus", icon: Plug },
       { path: "/mesas", label: "Mesas", icon: Utensils },
       { path: "/kds", label: "Cocina (KDS)", icon: ChefHat },
       { path: "/facturacion", label: "Facturación", icon: Receipt },
