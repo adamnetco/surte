@@ -83,7 +83,7 @@ export default function TiendaPlusAdmin() {
   if (orgLoading || loading) {
     return (
       <div className="min-h-[100dvh] bg-background">
-        <AdminHeader title="Tienda Plus" />
+        <AdminHeader />
         <div className="mx-auto max-w-7xl space-y-4 p-4">
           <Skeleton className="h-28 w-full rounded-lg" />
           <Skeleton className="h-56 w-full rounded-lg" />
@@ -94,7 +94,7 @@ export default function TiendaPlusAdmin() {
 
   return (
     <div className="min-h-[100dvh] bg-background">
-      <AdminHeader title="Tienda Plus" />
+      <AdminHeader />
       <main className="mx-auto max-w-7xl space-y-4 p-4">
         {/* Estado */}
         <Card className="rounded-lg border-border p-4">
