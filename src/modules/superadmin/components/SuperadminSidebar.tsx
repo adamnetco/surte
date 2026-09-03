@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
 
   BarChart3, Building2, RefreshCw, Database, Package,
-  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu, AlertOctagon, Mail, Gift, Smile, Users,
+  ToggleRight, Receipt, Key, Sparkles, ShieldCheck, LogOut, Globe2, Store, HeartPulse, Zap, MessageCircle, ShieldAlert, ScrollText, FileText, History, Menu, AlertOctagon, Mail, Gift, Smile, Users, Plug,
 } from "lucide-react";
 import TenantSwitcher from "./TenantSwitcher";
 import { useOrganization } from "@/modules/platform/context/OrganizationContext";
@@ -42,6 +42,7 @@ const TENANT_ITEMS = [
   { sub: "sync", label: "Sincronización", icon: RefreshCw, desc: "WP, WhatsApp, DIAN" },
   { sub: "licencia", label: "Licencia", icon: Key, desc: "Plan y vigencia" },
   { sub: "entitlements", label: "Anulaciones", icon: ShieldCheck, desc: "Overrides de módulos y límites" },
+  { sub: "integraciones", label: "Integraciones", icon: Plug, desc: "Tienda Plus · exposición y permisos" },
 ];
 
 const itemCls = ({ isActive }: { isActive: boolean }) =>

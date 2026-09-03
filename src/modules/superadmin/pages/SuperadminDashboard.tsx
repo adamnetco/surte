@@ -29,6 +29,7 @@ const SoporteConfig = lazy(() => import("@/modules/superadmin/pages/SoporteConfi
 const CriticalActionsQueue = lazy(() => import("@/modules/superadmin/pages/CriticalActionsQueue"));
 const AuditLogViewer = lazy(() => import("@/modules/superadmin/pages/AuditLogViewer"));
 const SitiosTenantRoute = lazy(() => import("@/modules/superadmin/pages/SitiosTenantRoute"));
+const TenantIntegrationsPanel = lazy(() => import("@/modules/superadmin/components/TenantIntegrationsPanel"));
 const EinvoiceBulkRetry = lazy(() => import("@/modules/superadmin/pages/EinvoiceBulkRetry"));
 const EinvoiceBulkRetryAudit = lazy(() => import("@/modules/superadmin/pages/EinvoiceBulkRetryAudit"));
 const DiagnosticoRLS = lazy(() => import("@/modules/superadmin/pages/DiagnosticoRLS"));
